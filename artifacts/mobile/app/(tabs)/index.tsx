@@ -120,10 +120,46 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Trusted Landscapers */}
+        <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 28 }]}>
+          🔥 Trusted Landscapers on TheLawn
+        </Text>
+        {TRUSTED_PROS.map((pro) => (
+          <TouchableOpacity
+            key={pro.name}
+            style={styles.proCard}
+            onPress={() => router.navigate("/pay")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.proIconWrap}>
+              <Ionicons name={pro.icon} size={28} color="#34FF7A" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={styles.proTopRow}>
+                <Text style={[styles.proName, { fontFamily: "Inter_600SemiBold" }]}>{pro.name}</Text>
+                <Text style={[styles.proRating, { fontFamily: "Inter_500Medium" }]}>{pro.rating} ★</Text>
+              </View>
+              <Text style={[styles.proMeta, { fontFamily: "Inter_400Regular" }]}>{pro.meta}</Text>
+              <TouchableOpacity
+                style={styles.bookNowBtn}
+                onPress={() => router.navigate("/pay")}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.bookNowText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </View>
   );
 }
+
+const TRUSTED_PROS = [
+  { name: "John Rivera Landscaping", rating: "4.9", meta: "2.3 mi • 87 jobs completed", icon: "leaf" as const },
+  { name: "Sarah's Lawn Care", rating: "5.0", meta: "1.8 mi • 142 jobs completed", icon: "grid" as const },
+];
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000000" },
@@ -219,4 +255,40 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   svcChipText: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
+  proCard: {
+    backgroundColor: "#111111",
+    borderRadius: 20,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  proIconWrap: {
+    width: 52,
+    height: 52,
+    backgroundColor: "#0d2e18",
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  proTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  proName: { fontSize: 14, color: "#34FF7A", flex: 1, marginRight: 8 },
+  proRating: { fontSize: 13, color: "#34FF7A" },
+  proMeta: { fontSize: 12, color: "#34FF7A", marginBottom: 10 },
+  bookNowBtn: {
+    backgroundColor: "#34C759",
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+  },
+  bookNowText: { color: "#000", fontSize: 13 },
 });
