@@ -24,12 +24,17 @@ const PAYMENT_METHODS = [
   { label: "📱  Cash App",  value: "Cash App",    emoji: "📱", shortLabel: "Cash App" },
 ];
 
+type PriceMatrix = Record<string, Record<string, string>>;
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
   const { role, logout } = useAuth();
   const [isLandscaper, setIsLandscaper] = useState(role === "landscaper");
+  const [matrix, setMatrix] = useState<PriceMatrix>(
+    JSON.parse(JSON.stringify(DEFAULT_PRICE_MATRIX))
+  );
 
   const toggle = () => {
     Haptics.selectionAsync();
@@ -49,7 +54,9 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {isLandscaper ? <LandscaperProfile /> : <CustomerProfile />}
+        {isLandscaper
+          ? <LandscaperProfile matrix={matrix} setMatrix={setMatrix} />
+          : <CustomerProfile matrix={matrix} />}
       </ScrollView>
     </View>
   );
@@ -76,10 +83,14 @@ const DEFAULT_PRICE_MATRIX: Record<string, Record<string, string>> = {
 };
 
 
-function LandscaperProfile() {
-  const [matrix, setMatrix] = useState<Record<string, Record<string, string>>>(
-    JSON.parse(JSON.stringify(DEFAULT_PRICE_MATRIX))
-  );
+function LandscaperProfile({
+  matrix,
+  setMatrix,
+}: {
+  matrix: PriceMatrix;
+  setMatrix: React.Dispatch<React.SetStateAction<PriceMatrix>>;
+}) {
+  const [focusedCell, setFocusedCell] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "loading" | "success">("idle");
   const successOpacity = useRef(new Animated.Value(0)).current;
   const successScale = useRef(new Animated.Value(0.8)).current;
@@ -164,23 +175,31 @@ function LandscaperProfile() {
                   <Text style={[styles.priceMatrixColSub, { fontFamily: "Inter_400Regular" }]}>
                     {col.sub}
                   </Text>
-                  <View style={styles.priceInputWrapper}>
-                    <Text style={styles.priceDollar}>$</Text>
-                    <TextInput
-                      style={[styles.priceInput, { fontFamily: "Inter_500Medium" }]}
-                      value={matrix[svc][col.key]}
-                      onChangeText={(t) =>
-                        setMatrix((m) => ({
-                          ...m,
-                          [svc]: { ...m[svc], [col.key]: t.replace(/[^0-9]/g, "") },
-                        }))
-                      }
-                      keyboardType="numeric"
-                      maxLength={5}
-                      selectTextOnFocus
-                      placeholderTextColor="#555"
-                    />
-                  </View>
+                  {(() => {
+                    const cellKey = `${svc}:${col.key}`;
+                    const isFocused = focusedCell === cellKey;
+                    return (
+                      <View style={[styles.priceInputWrapper, isFocused && styles.priceInputWrapperFocused]}>
+                        <Text style={[styles.priceDollar, isFocused && { color: "#34FF7A" }]}>$</Text>
+                        <TextInput
+                          style={[styles.priceInput, { fontFamily: "Inter_600SemiBold" }, isFocused && { color: "#34FF7A" }]}
+                          value={matrix[svc][col.key]}
+                          onChangeText={(t) =>
+                            setMatrix((m) => ({
+                              ...m,
+                              [svc]: { ...m[svc], [col.key]: t.replace(/[^0-9]/g, "") },
+                            }))
+                          }
+                          onFocus={() => setFocusedCell(cellKey)}
+                          onBlur={() => setFocusedCell(null)}
+                          keyboardType="numeric"
+                          maxLength={5}
+                          selectTextOnFocus
+                          placeholderTextColor="#555"
+                        />
+                      </View>
+                    );
+                  })()}
                 </View>
               ))}
             </View>
@@ -243,7 +262,7 @@ function LandscaperProfile() {
   );
 }
 
-function CustomerProfile() {
+function CustomerProfile({ matrix }: { matrix: PriceMatrix }) {
   const { logout } = useAuth();
   const [selectedPayment, setSelectedPayment] = useState("");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
@@ -390,7 +409,7 @@ function CustomerProfile() {
                 <Text style={[styles.priceColLabel, { fontFamily: "Inter_400Regular" }]}>{col.label}</Text>
                 <Text style={[styles.priceColSub, { fontFamily: "Inter_400Regular" }]}>{col.sub}</Text>
                 <Text style={[styles.priceColValue, { fontFamily: "Inter_700Bold" }]}>
-                  ${PRICE_MATRIX[service][col.label]}
+                  ${matrix[service]?.[col.label] ?? "–"}
                 </Text>
               </View>
             ))}
@@ -534,20 +553,28 @@ const styles = StyleSheet.create({
   priceInputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1a1a1a",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#333333",
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    justifyContent: "center",
+    backgroundColor: "#222222",
+    borderRadius: 9999,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    marginTop: 6,
     alignSelf: "stretch",
+    gap: 2,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
-  priceDollar: { fontSize: 13, color: "#34FF7A", marginRight: 1 },
+  priceInputWrapperFocused: {
+    backgroundColor: "#1a1a1a",
+    borderColor: "#34FF7A",
+  },
+  priceDollar: { fontSize: 18, color: "#34FF7A", fontWeight: "600" },
   priceInput: {
-    fontSize: 14,
+    fontSize: 18,
     color: "#FFFFFF",
-    flex: 1,
-    textAlign: "right",
+    width: 52,
+    textAlign: "center",
+    fontWeight: "600",
   },
   savePricesBtn: {
     backgroundColor: "#34FF7A",
