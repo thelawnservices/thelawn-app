@@ -249,35 +249,31 @@ export default function HomeScreen() {
         <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
           Popular Services
         </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.servicesRow}
-        >
+        <View style={styles.servicesGrid}>
           {[
-            { name: "Lawn Mowing",   icon: "leaf" as const,   price: "$45" },
-            { name: "Hedge Trimming",icon: "cut" as const,    price: "$65" },
-            { name: "Mulching",      icon: "flower" as const, price: "$120" },
-            { name: "Cleanup",       icon: "trash" as const,  price: "$35" },
+            { name: "Lawn\nMowing",    icon: "leaf" as const,   price: "$45" },
+            { name: "Hedge\nTrimming", icon: "cut" as const,    price: "$65" },
+            { name: "Mulching",        icon: "flower" as const, price: "$120" },
+            { name: "Clean Up",        icon: "trash" as const,  price: "$35" },
           ].map((svc) => (
             <TouchableOpacity
               key={svc.name}
-              style={styles.svcChip}
+              style={styles.svcGridCard}
               onPress={() => router.navigate("/(tabs)/search")}
               activeOpacity={0.8}
             >
-              <View style={styles.svcChipIcon}>
-                <Ionicons name={svc.icon} size={20} color="#34FF7A" />
+              <View style={styles.svcGridIconWrap}>
+                <Ionicons name={svc.icon} size={28} color="#34FF7A" />
               </View>
-              <Text style={[styles.svcChipText, { fontFamily: "Inter_500Medium" }]}>
+              <Text style={[styles.svcGridName, { fontFamily: "Inter_500Medium" }]}>
                 {svc.name}
               </Text>
-              <Text style={[styles.svcChipPrice, { fontFamily: "Inter_600SemiBold" }]}>
+              <Text style={[styles.svcGridPrice, { fontFamily: "Inter_600SemiBold" }]}>
                 {svc.price}
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
 
         {/* Upcoming */}
         <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
@@ -453,27 +449,33 @@ const styles = StyleSheet.create({
   },
   apptTitle: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
   apptSub: { fontSize: 12, color: "#FFFFFF" },
-  servicesRow: { gap: 10, paddingRight: 4 },
-  svcChip: {
+  servicesGrid: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 28,
+  },
+  svcGridCard: {
+    flex: 1,
     backgroundColor: "#111111",
     borderRadius: 18,
-    padding: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 6,
     alignItems: "center",
-    gap: 8,
-    width: 100,
+    gap: 6,
     borderWidth: 1,
     borderColor: "#222222",
   },
-  svcChipIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+  svcGridIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     backgroundColor: "#0d2e18",
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 2,
   },
-  svcChipText: { fontSize: 11, color: "#FFFFFF", textAlign: "center" },
-  svcChipPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
+  svcGridName: { fontSize: 10, color: "#FFFFFF", textAlign: "center", lineHeight: 14 },
+  svcGridPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
   proRow: { marginTop: 20, marginBottom: 24, marginHorizontal: -20 },
   proRowContent: { paddingHorizontal: 20, gap: 12 },
   proHCard: {
