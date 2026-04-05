@@ -7,19 +7,23 @@ import {
   Platform,
   Animated,
   ScrollView,
+  TextInput,
+  Alert,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
-type PayState = "review" | "processing" | "success";
+type PayState = "details" | "review" | "processing" | "success";
 
 const TIP_OPTIONS = [
   { label: "10%", value: 0.1 },
   { label: "15%", value: 0.15 },
   { label: "20%", value: 0.2 },
 ];
+
+const PHOTO_EMOJIS = ["🌳", "📸", "🏡", "🪴", "🌿", "🍃"];
 
 export default function PayScreen() {
   const insets = useSafeAreaInsets();
@@ -39,8 +43,10 @@ export default function PayScreen() {
   const proColor = params.proColor || "#34C759";
   const basePrice = parseFloat(params.price || "45");
 
-  const [payState, setPayState] = useState<PayState>("review");
+  const [payState, setPayState] = useState<PayState>("details");
   const [tipIdx, setTipIdx] = useState(1);
+  const [instructions, setInstructions] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
   const spinValue = useRef(new Animated.Value(0)).current;
 
   const tip = Math.round(basePrice * TIP_OPTIONS[tipIdx].value * 100) / 100;
@@ -64,7 +70,16 @@ export default function PayScreen() {
     outputRange: ["0deg", "360deg"],
   });
 
-  const handlePay = () => {
+  const addPhoto = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (photos.length >= 6) {
+      Alert.alert("Max Photos", "You can attach up to 6 photos.");
+      return;
+    }
+    setPhotos((prev) => [...prev, PHOTO_EMOJIS[prev.length % PHOTO_EMOJIS.length]]);
+  };
+
+  const handleAuthorize = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setPayState("processing");
     setTimeout(() => {
@@ -73,36 +88,61 @@ export default function PayScreen() {
     }, 1800);
   };
 
+  // ─── Processing ───────────────────────────────────────────────
   if (payState === "processing") {
     return (
       <View style={[styles.fullCenter, { backgroundColor: "#fff" }]}>
-        <Animated.View
-          style={[
-            styles.spinner,
-            { transform: [{ rotate: spin }] },
-          ]}
-        />
+        <Animated.View style={[styles.spinner, { transform: [{ rotate: spin }] }]} />
         <Text style={[styles.processingText, { fontFamily: "Inter_500Medium" }]}>
-          Processing Payment...
+          Authorizing Escrow Hold...
         </Text>
       </View>
     );
   }
 
+  // ─── Success ──────────────────────────────────────────────────
   if (payState === "success") {
     return (
-      <View style={[styles.fullCenter, { backgroundColor: "#fff" }]}>
-        <View style={styles.successIcon}>
-          <Ionicons name="checkmark-circle" size={80} color="#34C759" />
+      <View style={[styles.fullCenter, { backgroundColor: "#fff", paddingBottom: bottomPadding + 20 }]}>
+        <View style={styles.lockIconBox}>
+          <Ionicons name="lock-closed" size={52} color="#34C759" />
         </View>
         <Text style={[styles.successTitle, { fontFamily: "Inter_700Bold" }]}>
-          Payment Successful!
+          Payment Held in Escrow
         </Text>
         <Text style={[styles.successSub, { fontFamily: "Inter_400Regular" }]}>
-          ${total} paid · John Rivera is on his way
+          Funds will be released only after both you and {proName.split(" ")[0]} confirm the work is complete.
         </Text>
+
+        <View style={styles.escrowInfoBox}>
+          <View style={styles.escrowStep}>
+            <View style={[styles.escrowStepNum, { backgroundColor: "#E8F5E8" }]}>
+              <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold" }]}>1</Text>
+            </View>
+            <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
+              Landscaper completes the job
+            </Text>
+          </View>
+          <View style={styles.escrowStep}>
+            <View style={[styles.escrowStepNum, { backgroundColor: "#E8F5E8" }]}>
+              <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold" }]}>2</Text>
+            </View>
+            <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
+              You confirm you're satisfied
+            </Text>
+          </View>
+          <View style={styles.escrowStep}>
+            <View style={[styles.escrowStepNum, { backgroundColor: "#E8F5E8" }]}>
+              <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold" }]}>3</Text>
+            </View>
+            <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
+              ${total} is released to {proName.split(" ")[0]}
+            </Text>
+          </View>
+        </View>
+
         <TouchableOpacity
-          style={[styles.successBtn, { marginBottom: bottomPadding + 16 }]}
+          style={[styles.successBtn, { width: "100%" }]}
           onPress={() => {
             router.dismiss();
             router.navigate("/(tabs)/jobs");
@@ -114,24 +154,118 @@ export default function PayScreen() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.dismiss()} style={styles.doneLink}>
-          <Text style={[styles.doneLinkText, { fontFamily: "Inter_400Regular" }]}>
-            Done
-          </Text>
+          <Text style={[styles.doneLinkText, { fontFamily: "Inter_400Regular" }]}>Done</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  // ─── Job Details ──────────────────────────────────────────────
+  if (payState === "details") {
+    return (
+      <View style={[styles.container, { backgroundColor: "#fff" }]}>
+        <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
+          <TouchableOpacity onPress={() => router.dismiss()} style={styles.backBtn}>
+            <Ionicons name="chevron-down" size={24} color="#374151" />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Job Details</Text>
+          <View style={{ width: 36 }} />
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ padding: 20, paddingBottom: bottomPadding + 100 }}
+        >
+          {/* Pro summary */}
+          <View style={styles.proSummary}>
+            <View style={[styles.proAvatar, { backgroundColor: proColor }]}>
+              <Text style={styles.proAvatarText}>{proInitials}</Text>
+            </View>
+            <View>
+              <Text style={[styles.proSummaryName, { fontFamily: "Inter_600SemiBold" }]}>
+                {proName}
+              </Text>
+              <Text style={[styles.proSummaryService, { fontFamily: "Inter_400Regular" }]}>
+                Lawn Mowing · ${basePrice}/hr
+              </Text>
+            </View>
+          </View>
+
+          <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold" }]}>
+            Special Instructions
+          </Text>
+          <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+            Tell the landscaper exactly what you want done
+          </Text>
+          <TextInput
+            style={[styles.textArea, { fontFamily: "Inter_400Regular" }]}
+            placeholder="Example: Please edge the driveway, remove weeds from flower beds, trim around the fence..."
+            placeholderTextColor="#9ca3af"
+            multiline
+            numberOfLines={5}
+            value={instructions}
+            onChangeText={setInstructions}
+            textAlignVertical="top"
+          />
+
+          <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 8 }]}>
+            Attach Photos
+            <Text style={[{ fontFamily: "Inter_400Regular", color: "#9ca3af", fontSize: 13 }]}>
+              {" "}(optional)
+            </Text>
+          </Text>
+          <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+            Help the pro understand the scope of work
+          </Text>
+
+          {photos.length > 0 && (
+            <View style={styles.photoGrid}>
+              {photos.map((emoji, i) => (
+                <View key={i} style={styles.photoTile}>
+                  <Text style={{ fontSize: 36 }}>{emoji}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <TouchableOpacity style={styles.addPhotoBtn} onPress={addPhoto}>
+            <Ionicons name="camera-outline" size={22} color="#34C759" />
+            <Text style={[styles.addPhotoBtnText, { fontFamily: "Inter_500Medium" }]}>
+              + Add Photo
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        <View style={[styles.bottomBar, { paddingBottom: bottomPadding + 12 }]}>
+          <TouchableOpacity
+            style={styles.continueBtn}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setPayState("review");
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.continueBtnText, { fontFamily: "Inter_700Bold" }]}>
+              Continue to Review & Pay
+            </Text>
+            <Ionicons name="arrow-forward" size={18} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // ─── Review & Pay ─────────────────────────────────────────────
   return (
     <View style={[styles.container, { backgroundColor: "#fff" }]}>
-      {/* Header */}
       <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
-        <TouchableOpacity onPress={() => router.dismiss()} style={styles.backBtn}>
-          <Ionicons name="chevron-down" size={24} color="#374151" />
+        <TouchableOpacity
+          onPress={() => setPayState("details")}
+          style={styles.backBtn}
+        >
+          <Ionicons name="chevron-back" size={24} color="#374151" />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>
-          Review & Pay
-        </Text>
+        <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Review & Pay</Text>
         <View style={{ width: 36 }} />
       </View>
 
@@ -156,6 +290,16 @@ export default function PayScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Job Instructions preview */}
+        {instructions.trim().length > 0 && (
+          <View style={styles.instructionsPreview}>
+            <Ionicons name="document-text-outline" size={16} color="#34C759" />
+            <Text style={[styles.instructionsPreviewText, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
+              {instructions}
+            </Text>
+          </View>
+        )}
 
         {/* Tip */}
         <Text style={[styles.tipLabel, { fontFamily: "Inter_600SemiBold" }]}>
@@ -194,30 +338,35 @@ export default function PayScreen() {
         <View style={styles.breakdown}>
           <View style={styles.lineItem}>
             <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>Subtotal</Text>
-            <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>
-              ${basePrice.toFixed(2)}
-            </Text>
+            <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${basePrice.toFixed(2)}</Text>
           </View>
           <View style={styles.lineItem}>
-            <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>
-              Tip ({TIP_OPTIONS[tipIdx].label})
-            </Text>
-            <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>
-              ${tip.toFixed(2)}
-            </Text>
+            <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>Tip ({TIP_OPTIONS[tipIdx].label})</Text>
+            <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${tip.toFixed(2)}</Text>
           </View>
           <View style={styles.lineItem}>
-            <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>
-              TheLawn Platform Fee (3%)
-            </Text>
-            <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>
-              ${fee.toFixed(2)}
-            </Text>
+            <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>TheLawn Platform Fee (3%)</Text>
+            <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${fee.toFixed(2)}</Text>
           </View>
           <View style={[styles.lineItem, styles.totalRow]}>
             <Text style={[styles.totalLabel, { fontFamily: "Inter_700Bold" }]}>Total</Text>
             <Text style={[styles.totalValue, { fontFamily: "Inter_700Bold" }]}>${total}</Text>
           </View>
+        </View>
+
+        {/* Escrow Notice */}
+        <View style={styles.escrowNotice}>
+          <View style={styles.escrowNoticeTop}>
+            <Ionicons name="lock-closed" size={16} color="#1d4ed8" />
+            <Text style={[styles.escrowNoticeTitle, { fontFamily: "Inter_600SemiBold" }]}>
+              Secure Escrow Payment
+            </Text>
+          </View>
+          <Text style={[styles.escrowNoticeText, { fontFamily: "Inter_400Regular" }]}>
+            Your payment will be held securely and{" "}
+            <Text style={{ fontFamily: "Inter_600SemiBold" }}>not charged</Text> until both you and
+            the landscaper confirm the work is complete.
+          </Text>
         </View>
 
         {/* Payment Method */}
@@ -237,16 +386,11 @@ export default function PayScreen() {
         </View>
       </ScrollView>
 
-      {/* Pay Button */}
-      <View style={[styles.payBarContainer, { paddingBottom: bottomPadding + 12 }]}>
-        <TouchableOpacity
-          style={styles.payBtn}
-          onPress={handlePay}
-          activeOpacity={0.85}
-        >
+      <View style={[styles.bottomBar, { paddingBottom: bottomPadding + 12 }]}>
+        <TouchableOpacity style={styles.authorizeBtn} onPress={handleAuthorize} activeOpacity={0.85}>
           <Ionicons name="lock-closed" size={18} color="#fff" />
-          <Text style={[styles.payBtnText, { fontFamily: "Inter_700Bold" }]}>
-            Pay ${total}
+          <Text style={[styles.authorizeBtnText, { fontFamily: "Inter_700Bold" }]}>
+            Authorize Payment Hold · ${total}
           </Text>
         </TouchableOpacity>
       </View>
@@ -260,8 +404,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 16,
-    paddingHorizontal: 32,
+    gap: 14,
+    paddingHorizontal: 28,
   },
   spinner: {
     width: 56,
@@ -272,17 +416,47 @@ const styles = StyleSheet.create({
     borderTopColor: "transparent",
     marginBottom: 8,
   },
-  processingText: { fontSize: 18, color: "#374151" },
-  successIcon: { marginBottom: 8 },
-  successTitle: { fontSize: 28, color: "#111827" },
-  successSub: { fontSize: 15, color: "#6b7280", textAlign: "center" },
-  successBtn: {
+  processingText: { fontSize: 17, color: "#374151" },
+  lockIconBox: {
+    width: 96,
+    height: 96,
+    backgroundColor: "#E8F5E8",
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  successTitle: { fontSize: 26, color: "#111827", textAlign: "center" },
+  successSub: { fontSize: 14, color: "#6b7280", textAlign: "center", lineHeight: 22 },
+  escrowInfoBox: {
     width: "100%",
+    backgroundColor: "#f9fafb",
+    borderRadius: 20,
+    padding: 18,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  escrowStep: { flexDirection: "row", alignItems: "center", gap: 14 },
+  escrowStepNum: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  escrowStepNumText: { fontSize: 14, color: "#34C759" },
+  escrowStepText: { fontSize: 14, color: "#374151", flex: 1 },
+  successBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 16,
-    borderRadius: 24,
+    borderRadius: 22,
     alignItems: "center",
-    marginTop: 24,
+    shadowColor: "#34C759",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
   successBtnText: { color: "#fff", fontSize: 16 },
   doneLink: { padding: 8 },
@@ -297,6 +471,91 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   headerTitle: { flex: 1, textAlign: "center", fontSize: 17, color: "#111827" },
+  proSummary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: "#f9fafb",
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+  },
+  proAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  proAvatarText: { color: "#fff", fontWeight: "700", fontSize: 18 },
+  proSummaryName: { fontSize: 15, color: "#111827", marginBottom: 2 },
+  proSummaryService: { fontSize: 13, color: "#6b7280" },
+  fieldLabel: { fontSize: 15, color: "#111827", marginBottom: 4 },
+  fieldHint: { fontSize: 13, color: "#9ca3af", marginBottom: 12 },
+  textArea: {
+    backgroundColor: "#f9fafb",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 18,
+    padding: 16,
+    fontSize: 14,
+    color: "#374151",
+    minHeight: 120,
+    marginBottom: 24,
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 12,
+  },
+  photoTile: {
+    width: 90,
+    height: 90,
+    backgroundColor: "#f0fdf4",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#dcfce7",
+  },
+  addPhotoBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: "#34C759",
+    borderRadius: 22,
+    paddingVertical: 20,
+    marginBottom: 8,
+  },
+  addPhotoBtnText: { fontSize: 15, color: "#34C759" },
+  bottomBar: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+    backgroundColor: "#fff",
+  },
+  continueBtn: {
+    backgroundColor: "#34C759",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 16,
+    borderRadius: 22,
+    shadowColor: "#34C759",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  continueBtnText: { color: "#fff", fontSize: 16 },
   summaryCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -304,7 +563,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
     borderRadius: 20,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: "#f0f0f0",
   },
@@ -319,8 +578,26 @@ const styles = StyleSheet.create({
   summaryService: { fontSize: 15, color: "#111827", marginBottom: 3 },
   summaryDate: { fontSize: 13, color: "#6b7280", marginBottom: 2 },
   summaryPro: { fontSize: 13, color: "#9ca3af" },
-  tipLabel: { fontSize: 13, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
-  tipRow: { flexDirection: "row", gap: 8, marginBottom: 24 },
+  instructionsPreview: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: "#f0fdf4",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#dcfce7",
+  },
+  instructionsPreviewText: { flex: 1, fontSize: 13, color: "#374151" },
+  tipLabel: {
+    fontSize: 13,
+    color: "#6b7280",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+  tipRow: { flexDirection: "row", gap: 8, marginBottom: 20 },
   tipBtn: {
     flex: 1,
     paddingVertical: 12,
@@ -335,7 +612,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
     borderRadius: 20,
     padding: 18,
-    marginBottom: 16,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: "#f0f0f0",
     gap: 12,
@@ -351,6 +628,18 @@ const styles = StyleSheet.create({
   },
   totalLabel: { fontSize: 17, color: "#111827" },
   totalValue: { fontSize: 26, color: "#34C759" },
+  escrowNotice: {
+    backgroundColor: "#eff6ff",
+    borderWidth: 1,
+    borderColor: "#bfdbfe",
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 14,
+    gap: 8,
+  },
+  escrowNoticeTop: { flexDirection: "row", alignItems: "center", gap: 8 },
+  escrowNoticeTitle: { fontSize: 14, color: "#1d4ed8" },
+  escrowNoticeText: { fontSize: 13, color: "#1e40af", lineHeight: 20 },
   paymentMethod: {
     flexDirection: "row",
     alignItems: "center",
@@ -372,14 +661,7 @@ const styles = StyleSheet.create({
   },
   cardLabel: { fontSize: 14, color: "#374151", letterSpacing: 1 },
   cardSub: { fontSize: 12, color: "#9ca3af" },
-  payBarContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-    backgroundColor: "#fff",
-  },
-  payBtn: {
+  authorizeBtn: {
     backgroundColor: "#34C759",
     flexDirection: "row",
     alignItems: "center",
@@ -393,5 +675,5 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  payBtnText: { color: "#fff", fontSize: 17 },
+  authorizeBtnText: { color: "#fff", fontSize: 16 },
 });
