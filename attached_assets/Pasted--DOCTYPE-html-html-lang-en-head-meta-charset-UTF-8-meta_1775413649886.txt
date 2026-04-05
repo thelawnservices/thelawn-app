@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Arcane Blade</title>
+<style>
+  body { margin:0; background:#000; overflow:hidden; touch-action: none; }
+  canvas { display:block; }
+  #ui { position:absolute; top:10px; left:10px; color:#0ff; font-family:Arial; font-size:20px; text-shadow:0 0 10px #0ff; pointer-events:none; }
+</style>
+</head>
+<body>
+<div id="ui">Score: <span id="score">0</span></div>
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let player = { x: 100, y: canvas.height - 150, size: 60, velY: 0, jumping: false };
+let enemies = [];
+let particles = [];
+let score = 0;
+let gameOver = false;
+let gravity = 0.8;
+let jumpPower = -22;
+
+function spawnEnemy() {
+  enemies.push({
+    x: canvas.width + Math.random()*200,
+    y: canvas.height - 120,
+    size: 50,
+    speed: 4 + Math.random()*3
+  });
+}
+
+function createParticles(x, y) {
+  for(let i=0; i<15; i++) {
+    particles.push({
+      x: x,
+      y: y,
+      size: Math.random()*8 + 4,
+      vx: Math.random()*12 - 6,
+      vy: Math.random()*12 - 10,
+      life: 30
+    });
+  }
+}
+
+document.addEventListener('touchstart', e => {
+  if(gameOver) return;
+  const touch = e.touches[0];
+  if(touch.clientY < canvas.height/2 && !player.jumping) {
+    player.velY = jumpPower;
+    player.jumping = true;
+  } else {
+    // Slash attack
+    createParticles(player.x + player.size, player.y + 30);
+    score += 10;
+    // Check hit on enemies
+    for(let i=enemies.length-1; i>=0; i--) {
+      if(enemies[i].x < player.x + player.size + 80 && enemies[i].x + enemies[i].size > player.x) {
+        createParticles(enemies[i].x, enemies[i].y);
+        enemies.splice(i,1);
+        score += 50;
+      }
+    }
+  }
+});
+
+setInterval(() => {
+  if(gameOver) return;
+  ctx.fillStyle = '#1a0033';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  // ground
+  ctx.fillStyle = '#220022';
+  ctx.fillRect(0, canvas.height-80, canvas.width, 80);
+  
+  // player
+  ctx.fillStyle = '#00ffff';
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+  ctx.fillStyle = '#ff00ff';
+  ctx.fillRect(player.x+20, player.y+10, 20, 20); // blade glow
+  
+  // physics
+  player.velY += gravity;
+  player.y += player.velY;
+  if(player.y >= canvas.height - 150) {
+    player.y = canvas.height - 150;
+    player.velY = 0;
+    player.jumping = false;
+  }
+  
+  // enemies
+  if(Math.random() < 0.04) spawnEnemy();
+  for(let i=0; i<enemies.length; i++) {
+    let e = enemies[i];
+    e.x -= e.speed;
+    ctx.fillStyle = '#ff3300';
+    ctx.fillRect(e.x, e.y, e.size, e.size);
+    if(e.x + e.size < player.x) {
+      gameOver = true;
+    }
+  }
+  
+  // particles
+  for(let i=particles.length-1; i>=0; i--) {
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    p.size *= 0.95;
+    ctx.globalAlpha = p.life/30;
+    ctx.fillStyle = '#ffff00';
+    ctx.fillRect(p.x, p.y, p.size, p.size);
+    if(p.life <= 0) particles.splice(i,1);
+  }
+  ctx.globalAlpha = 1;
+  
+  score += 1;
+  document.getElementById('score').textContent = score;
+  
+  if(gameOver) {
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#ff00ff';
+    ctx.font = 'bold 60px Arial';
+    ctx.fillText('GAME OVER', canvas.width/2 - 220, canvas.height/2);
+    ctx.font = '30px Arial';
+    ctx.fillText('Final Score: ' + score, canvas.width/2 - 140, canvas.height/2 + 80);
+    ctx.fillText('Tap to restart', canvas.width/2 - 140, canvas.height/2 + 140);
+  }
+}, 16);
+
+document.addEventListener('touchend', () => {
+  if(gameOver) location.reload();
+});
+
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+</script>
+</body>
+</html>
