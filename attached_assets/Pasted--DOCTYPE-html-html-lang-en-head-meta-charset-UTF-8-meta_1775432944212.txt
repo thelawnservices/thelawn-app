@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Lawn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+    body { font-family: 'Montserrat', system-ui, sans-serif; background: #000000; color: #FFFFFF; font-size: 16px; }
+    .logo-font { font-family: 'Great Vibes', cursive; letter-spacing: -4px; font-size: 34px; font-weight: 400; }
+    .iphone { max-width: 390px; transition: all 0.4s ease; }
+    .header { background: #000000; position: relative; overflow: hidden; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #111111; border-top: 1px solid #222222; max-width: 390px; margin: 0 auto; box-shadow: 0 -2px 10px rgba(0,0,0,0.6); }
+    .nav-item { transition: all 0.2s; }
+    .nav-item.active { color: #34FF7A; }
+    .card { background: #111111; border: 1px solid #222222; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 15px 25px -5px rgb(52 255 122 / 0.3); }
+    button, .btn-hover { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    button:active, .btn-hover:active { transform: scale(0.92); }
+    button:hover, .btn-hover:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(52, 255, 122, 0.5); filter: brightness(1.1); }
+    .micro-tap:active { transform: scale(0.92) !important; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in-up { animation: fadeInUp 0.6s ease forwards; }
+    .status-pill { padding: 2px 12px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
+    .notification-panel { animation: slideUp 0.3s ease forwards; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .refined-notif { background: #111111; border: 1px solid #222222; }
+
+    /* Refined Payment Dropdown Styling */
+    select#payment-method {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2334FF7A' viewBox='0 0 16 16'%3E%3Cpath d='M8 12L2 6h12z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 16px center;
+      padding-right: 40px;
+    }
+    .payment-field-input {
+      transition: all 0.2s ease;
+    }
+    .payment-field-input:focus {
+      border-color: #34FF7A;
+      box-shadow: 0 0 0 3px rgba(52, 255, 122, 0.2);
+    }
+
+    /* Refined Price Input Styling – EXACTLY matches screenshot style */
+    .price-box {
+      background: #222222;
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .price-box span { color: #34FF7A; }
+    .price-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #FFFFFF;
+      font-size: 18px;
+      font-weight: 600;
+      width: 60px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="preview-container" class="iphone bg-[#000000] shadow-2xl relative">
+
+    <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="flex flex-col justify-center h-screen p-8">
+      <div class="text-center mb-12">
+        <span class="logo-font text-[#34FF7A] text-6xl">theLawn</span>
+      </div>
+      <div class="space-y-6">
+        <button onclick="showLogin('customer')" class="w-full bg-[#34FF7A] text-black py-5 rounded-3xl font-semibold btn-hover micro-tap">Sign in as Customer</button>
+        <p onclick="showRegister('customer')" class="text-center text-xs text-[#34FF7A] underline cursor-pointer">Don't have an account? Register here</p>
+        <button onclick="showLogin('landscaper')" class="w-full bg-[#111111] border-2 border-[#34FF7A] text-white py-5 rounded-3xl font-semibold btn-hover micro-tap">Sign in as Landscaper</button>
+        <p onclick="showRegister('landscaper')" class="text-center text-xs text-[#34FF7A] underline cursor-pointer">Don't have an account? Register here</p>
+      </div>
+    </div>
+
+    <!-- LOGIN & REGISTRATION SCREENS (unchanged) -->
+    <!-- ... (full previous auth logic kept for continuity) ... -->
+
+    <!-- SELECT DATE & TIME PAGE -->
+    <div id="availability-screen" class="hidden space-y-8 bg-[#000000]">
+      <div class="flex items-center justify-between">
+        <button onclick="goBack()" class="text-2xl text-[#34FF7A]">←</button>
+        <h2 class="text-2xl font-semibold text-white">Select Date & Time</h2>
+      </div>
+
+      <!-- RECURRING OPTIONS -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between">
+          <p class="text-white">Recurring Appointment</p>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="recurring-toggle" onchange="toggleRecurring()" class="sr-only peer">
+            <div class="w-11 h-6 bg-[#222222] peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#34FF7A] rounded-full peer peer-checked:bg-[#34FF7A]"></div>
+            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
+          </label>
+        </div>
+        <div id="recurring-options" class="hidden mt-4 space-y-4">
+          <div>
+            <p class="text-xs text-white/70">Start Date</p>
+            <input id="recurring-start" type="date" class="w-full border border-[#222222] bg-[#111111] text-white rounded-3xl p-4">
+          </div>
+          <div>
+            <p class="text-xs text-white/70">Frequency</p>
+            <select id="recurring-frequency" class="w-full border border-[#222222] bg-[#111111] text-white rounded-3xl p-4">
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Bi-weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <div>
+            <p class="text-xs text-white/70">End Date (max 1 year)</p>
+            <input id="recurring-end" type="date" class="w-full border border-[#222222] bg-[#111111] text-white rounded-3xl p-4">
+          </div>
+        </div>
+      </div>
+
+      <div id="job-map" class="h-64 rounded-3xl overflow-hidden border border-[#222222]"></div>
+      <p class="text-sm text-white">John Rivera’s Availability</p>
+      <input type="date" value="2026-04-12" id="single-date" class="w-full border border-[#222222] bg-[#111111] text-white rounded-3xl p-4">
+      <button onclick="goToJobDetails()" id="continue-btn" disabled class="w-full bg-[#34FF7A] text-black py-5 rounded-3xl font-semibold btn-hover">Continue to Job Details</button>
+    </div>
+
+    <!-- JOB DETAILS SCREEN – SERVICE TYPES AT THE TOP -->
+    <div id="job-details-screen" class="hidden space-y-8 bg-[#000000]">
+      <div class="flex items-center justify-between">
+        <button onclick="goBack()" class="text-2xl text-[#34FF7A]">←</button>
+        <h2 class="text-2xl font-semibold text-white">Job Details</h2>
+      </div>
+
+      <!-- SERVICE TYPE BUTTONS AT THE TOP OF JOB DETAILS -->
+      <div class="mb-6">
+        <p class="text-xs text-white/70 mb-3">Service Type</p>
+        <div class="grid grid-cols-2 gap-3" id="service-type-buttons"></div>
+      </div>
+
+      <div>
+        <p class="text-white mb-2">Service Address <span class="text-red-400">*</span></p>
+        <input id="service-address" type="text" placeholder="8910 45th Ave E, Ellenton, FL" class="w-full border border-[#222222] bg-[#111111] text-white rounded-3xl p-4">
+      </div>
+      <div>
+        <p class="text-white mb-3">What size is your yard?</p>
+        <div class="grid grid-cols-3 gap-3" id="yard-size-options"></div>
+      </div>
+      <textarea id="special-instructions" rows="3" class="w-full border border-[#222222] bg-[#111111] text-white rounded-3xl p-5 text-sm resize-none" placeholder="Special instructions..."></textarea>
+      <button onclick="goToPay()" id="continue-pay-btn" disabled class="w-full bg-[#34FF7A] text-black py-5 rounded-3xl font-semibold text-lg btn-hover">Continue to Review & Pay</button>
+    </div>
+
+    <!-- REVIEW & PAY SCREEN -->
+    <div id="pay-screen" class="hidden space-y-8 bg-[#000000]">
+      <div class="flex items-center justify-between px-4">
+        <button onclick="goBack()" class="text-2xl text-[#34FF7A]">←</button>
+        <h2 class="text-xl font-semibold text-white">Review & Pay</h2>
+      </div>
+
+      <div class="bg-[#111111] rounded-3xl p-5 flex items-center gap-4 mx-4">
+        <div class="w-12 h-12 bg-[#34FF7A] text-black rounded-2xl flex items-center justify-center text-2xl font-bold">JR</div>
+        <div class="flex-1">
+          <p id="service-name-display" class="font-semibold text-white">Lawn Mowing</p>
+          <p id="recurring-badge" class="hidden text-xs text-[#34FF7A]">Recurring • Charged per appointment</p>
+          <p class="text-sm text-white/70">Apr 9, 2026 • 10:30 AM with John Rivera</p>
+        </div>
+      </div>
+
+      <!-- TIP SECTION -->
+      <div class="px-4">
+        <p class="text-xs text-white/70 mb-3">ADD A TIP FOR JOHN</p>
+        <div class="flex gap-3 mb-4">
+          <button onclick="selectTip(this)" class="flex-1 bg-[#111111] rounded-3xl py-3 text-center text-sm">10%<br><span class="text-xs">$4.50</span></button>
+          <button onclick="selectTip(this)" class="flex-1 bg-[#34FF7A] text-black rounded-3xl py-3 text-center text-sm font-semibold">15%<br><span class="text-xs">$6.75</span></button>
+          <button onclick="selectTip(this)" class="flex-1 bg-[#111111] rounded-3xl py-3 text-center text-sm">20%<br><span class="text-xs">$9.00</span></button>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="showCustomTip()" class="flex-1 bg-[#222222] text-white rounded-3xl py-4 text-sm font-medium btn-hover">Custom Tip</button>
+          <button onclick="selectNoTip()" class="flex-none bg-[#111111] text-white rounded-3xl py-4 px-6 text-xs font-medium">No Tip</button>
+        </div>
+        <div id="custom-tip-input" class="hidden mt-4">
+          <input id="custom-tip-amount" type="number" placeholder="Enter tip amount" class="w-full bg-[#111111] border border-[#222222] rounded-3xl p-4 text-white text-center">
+          <button onclick="applyCustomTip()" class="mt-3 w-full bg-[#34FF7A] text-black py-3 rounded-3xl font-semibold">Apply Custom Tip</button>
+        </div>
+      </div>
+
+      <!-- PAYMENT DROPDOWN -->
+      <div class="px-4">
+        <p class="text-xs text-white/70 mb-3">PAYMENT METHOD</p>
+        <select id="payment-method" onchange="handlePaymentMethodChange()" class="w-full bg-[#111111] border border-[#222222] rounded-3xl p-4 text-white">
+          <option value="applepay">Apple Pay</option>
+          <option value="debit">Debit Card</option>
+          <option value="venmo">Venmo</option>
+          <option value="paypal">PayPal</option>
+          <option value="cashapp">Cash App</option>
+        </select>
+        <div id="payment-fields" class="mt-4 space-y-4"></div>
+      </div>
+
+      <div class="bg-[#111111] rounded-3xl p-6 mx-4 space-y-4 text-sm">
+        <div class="flex justify-between"><span>Subtotal</span><span id="subtotal-display">$45.00</span></div>
+        <div class="flex justify-between"><span>Tip</span><span id="tip-display">$0.00</span></div>
+        <div class="flex justify-between"><span>TheLawn Platform Fee (3%)</span><span id="fee-amount">$1.35</span></div>
+        <div class="border-t border-white/20 pt-4 flex justify-between text-xl font-semibold"><span>Total</span><span id="total-display" class="text-[#34FF7A]">$46.35</span></div>
+      </div>
+
+      <div class="bg-[#0A1F1A] rounded-3xl p-5 text-[#34FF7A] text-sm flex items-start gap-3 mx-4">
+        <span class="text-xl">🔒</span>
+        <div>
+          <p class="font-medium">Secure Escrow Payment</p>
+          <p id="recurring-note" class="hidden">Each recurring appointment requires dual confirmation before payment release.</p>
+          <p>Your payment will be held securely and not charged until both you and the landscaper confirm the work is complete.</p>
+        </div>
+      </div>
+
+      <button onclick="authorizeEscrowHold()" id="authorize-btn" class="w-full bg-[#34FF7A] text-black py-5 rounded-3xl font-semibold text-lg mx-4">Authorize Payment Hold • <span id="final-total">$46.35</span></button>
+    </div>
+
+    <!-- MY JOBS -->
+    <div id="myjobs-screen" class="hidden space-y-8 bg-[#000000]">
+      <h2 class="text-2xl font-semibold text-white">My Jobs</h2>
+      <div id="job-status-list" class="space-y-6"></div>
+    </div>
+
+    <!-- PROFILE SCREEN -->
+    <div id="profile-screen" class="hidden space-y-8 bg-[#000000]">
+      <div class="flex justify-between items-center">
+        <h2 class="text-2xl font-semibold text-white">Profile</h2>
+        <div onclick="toggleProfileMode()" class="text-xs bg-[#111111] px-4 py-2 rounded-3xl flex items-center gap-2 cursor-pointer btn-hover micro-tap">
+          <span id="profile-mode-label">Landscaper View</span>
+          <span class="text-xl">🔄</span>
+        </div>
+      </div>
+
+      <!-- LANDSCAPER PROFILE – REFINED PRICE INPUT STYLING -->
+      <div id="landscaper-profile">
+        <div class="flex items-center gap-4">
+          <div class="w-20 h-20 bg-[#111111] rounded-3xl flex items-center justify-center text-5xl border border-[#34FF7A]">🌳</div>
+          <div>
+            <p class="text-2xl font-semibold text-white">John Rivera Landscaping</p>
+            <p class="text-sm text-white">Established 2019 • Ellenton, FL</p>
+          </div>
+        </div>
+
+        <div class="mt-8">
+          <p class="text-xs text-white/70 font-medium mb-6">SERVICE PRICES BY YARD SIZE</p>
+
+          <!-- Lawn Mowing -->
+          <div class="bg-[#111111] rounded-3xl p-6 mb-6">
+            <p class="font-semibold text-white mb-4">Lawn Mowing</p>
+            <div class="grid grid-cols-3 gap-4">
+              <div class="text-center">
+                <p class="text-xs text-white/70">Small</p>
+                <p class="text-xs text-white/70">&lt; 5k sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="45" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-white/70">Medium</p>
+                <p class="text-xs text-white/70">5-10k sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="65" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-white/70">Large</p>
+                <p class="text-xs text-white/70">10k+ sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="120" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hedge Trimming -->
+          <div class="bg-[#111111] rounded-3xl p-6 mb-6">
+            <p class="font-semibold text-white mb-4">Hedge Trimming</p>
+            <div class="grid grid-cols-3 gap-4">
+              <div class="text-center">
+                <p class="text-xs text-white/70">Small</p>
+                <p class="text-xs text-white/70">&lt; 5k sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="55" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-white/70">Medium</p>
+                <p class="text-xs text-white/70">5-10k sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="75" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-white/70">Large</p>
+                <p class="text-xs text-white/70">10k+ sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="95" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mulching -->
+          <div class="bg-[#111111] rounded-3xl p-6 mb-6">
+            <p class="font-semibold text-white mb-4">Mulching</p>
+            <div class="grid grid-cols-3 gap-4">
+              <div class="text-center">
+                <p class="text-xs text-white/70">Small</p>
+                <p class="text-xs text-white/70">&lt; 5k sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="110" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-white/70">Medium</p>
+                <p class="text-xs text-white/70">5-10k sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="140" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-white/70">Large</p>
+                <p class="text-xs text-white/70">10k+ sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="180" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Clean Up -->
+          <div class="bg-[#111111] rounded-3xl p-6">
+            <p class="font-semibold text-white mb-4">Clean Up</p>
+            <div class="grid grid-cols-3 gap-4">
+              <div class="text-center">
+                <p class="text-xs text-white/70">Small</p>
+                <p class="text-xs text-white/70">&lt; 5k sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="30" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-white/70">Medium</p>
+                <p class="text-xs text-white/70">5-10k sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="40" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+              <div class="text-center">
+                <p class="text-xs text-white/70">Large</p>
+                <p class="text-xs text-white/70">10k+ sq ft</p>
+                <div class="price-box mx-auto mt-3">
+                  <span>$</span>
+                  <input type="text" value="55" class="bg-transparent text-white text-center font-semibold w-14 outline-none">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CUSTOMER PRICE VIEW (new) -->
+      <div id="customer-profile">
+        <div class="flex items-center gap-4">
+          <div class="w-20 h-20 bg-[#111111] rounded-3xl flex items-center justify-center text-5xl border border-[#34FF7A]">🌳</div>
+          <div>
+            <p class="text-2xl font-semibold text-white">John Rivera Landscaping</p>
+            <p class="text-sm text-white">Ellenton, FL</p>
+          </div>
+        </div>
+
+        <div class="mt-8">
+          <p class="text-xs text-white/70 font-medium mb-6">LANDSCAPER PRICES BY YARD SIZE</p>
+          <div id="customer-price-view" class="space-y-6"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav h-16 flex items-center justify-around text-xs font-medium text-[#34FF7A]">
+    <div onclick="switchTab(0)" class="nav-item flex flex-col items-center active micro-tap"><div class="text-3xl">🌿</div><div>Home</div></div>
+    <div onclick="switchTab(1)" class="nav-item flex flex-col items-center micro-tap"><div class="text-3xl">🔍</div><div>Search</div></div>
+    <div onclick="switchTab(2)" class="nav-item flex flex-col items-center micro-tap"><div class="text-3xl">📅</div><div>Appointments</div></div>
+    <div onclick="switchTab(3)" class="nav-item flex flex-col items-center micro-tap"><div class="text-3xl">📌</div><div>My Jobs</div></div>
+    <div onclick="switchTab(4)" class="nav-item flex flex-col items-center micro-tap"><div class="text-3xl">👤</div><div>Profile</div></div>
+  </div>
+
+  <script>
+    let db = { users: {}, jobs: [], landscaperPrices: { "John Rivera Landscaping": { "Lawn Mowing": {Small:45,Medium:65,Large:120}, "Hedge Trimming":{Small:55,Medium:75,Large:95}, "Mulching":{Small:110,Medium:140,Large:180}, "Clean Up":{Small:30,Medium:40,Large:55} } } };
+    let currentUserType = null;
+    let selectedService = '';
+    let selectedYardSize = '';
+    let selectedLandscaper = "John Rivera Landscaping";
+    let currentTip = 0;
+    let isRecurring = false;
+    let notificationsEnabled = true;
+    let notificationCount = 3;
+
+    function loadDB() { const saved = localStorage.getItem('thelawn_db'); if(saved) db = JSON.parse(saved); }
+    function saveDB() { localStorage.setItem('thelawn_db', JSON.stringify(db)); }
+
+    function toggleNotificationSetting() {
+      notificationsEnabled = !notificationsEnabled;
+      const statusEl = document.getElementById('notif-status');
+      statusEl.textContent = notificationsEnabled ? "ON" : "OFF";
+      updateNotificationBadge();
+    }
+    function updateNotificationBadge() {
+      const bell = document.querySelector('.header span[onclick="toggleNotifications()"]');
+      if (!bell) return;
+      if (notificationsEnabled) {
+        bell.innerHTML = `🛎️`;
+        bell.onclick = toggleNotifications;
+      } else {
+        bell.innerHTML = `🛎️<span class="absolute -top-1 -right-1 bg-[#FF3B30] text-white text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">${notificationCount}</span>`;
+        bell.onclick = () => alert("Notifications are turned OFF");
+      }
+    }
+
+    function pushNotification(title, message) {
+      if (!notificationsEnabled) { notificationCount++; updateNotificationBadge(); return; }
+      const list = document.getElementById('notification-list');
+      const html = `<div class="refined-notif rounded-3xl p-4 flex gap-3"><div class="text-3xl">🛎️</div><div><p class="font-medium text-white">${title}</p><p class="text-xs text-white/70">${message}</p></div></div>`;
+      list.innerHTML = html + list.innerHTML;
+      document.getElementById('notification-panel').classList.remove('hidden');
+    }
+
+    function toggleNotifications() {
+      if (!notificationsEnabled) return;
+      const panel = document.getElementById('notification-panel');
+      panel.classList.toggle('hidden');
+    }
+    function hideNotifications() { document.getElementById('notification-panel').classList.add('hidden'); }
+
+    function handlePaymentMethodChange() {
+      const method = document.getElementById('payment-method').value;
+      const container = document.getElementById('payment-fields');
+      container.innerHTML = '';
+      if (method === 'applepay') {
+        container.innerHTML = `<div class="bg-[#111111] rounded-3xl p-6 text-center flex flex-col items-center"><div class="text-5xl mb-2"></div><p class="text-[#34FF7A]">Apple Pay ready</p><p class="text-xs text-white/70">Tap button to confirm</p></div>`;
+      } else if (method === 'debit') {
+        container.innerHTML = `
+          <div class="space-y-4">
+            <input id="card-number" type="text" placeholder="4242 4242 4242 4242" maxlength="19" class="payment-field-input w-full bg-[#111111] border border-[#222222] rounded-3xl p-4 text-white">
+            <div class="grid grid-cols-2 gap-4">
+              <input id="expiry" type="text" placeholder="MM/YY" maxlength="5" class="payment-field-input bg-[#111111] border border-[#222222] rounded-3xl p-4 text-white">
+              <input id="cvv" type="text" placeholder="CVV" maxlength="4" class="payment-field-input bg-[#111111] border border-[#222222] rounded-3xl p-4 text-white">
+            </div>
+          </div>`;
+      } else if (method === 'venmo') {
+        container.innerHTML = `<input id="venmo-username" type="text" placeholder="@username" class="payment-field-input w-full bg-[#111111] border border-[#222222] rounded-3xl p-4 text-white">`;
+      } else if (method === 'paypal') {
+        container.innerHTML = `<input id="paypal-email" type="email" placeholder="paypal@email.com" class="payment-field-input w-full bg-[#111111] border border-[#222222] rounded-3xl p-4 text-white">`;
+      } else if (method === 'cashapp') {
+        container.innerHTML = `<input id="cashapp-tag" type="text" placeholder="$cashtag" class="payment-field-input w-full bg-[#111111] border border-[#222222] rounded-3xl p-4 text-white">`;
+      }
+    }
+
+    function validatePayment() {
+      const method = document.getElementById('payment-method').value;
+      if (method === 'applepay') return true;
+      if (method === 'debit') {
+        const card = (document.getElementById('card-number')?.value || '').replace(/\s/g,'');
+        const expiry = document.getElementById('expiry')?.value || '';
+        const cvv = document.getElementById('cvv')?.value || '';
+        if (!/^\d{16}$/.test(card)) return "Invalid card number";
+        if (!/^\d{2}\/\d{2}$/.test(expiry)) return "Invalid expiry (MM/YY)";
+        if (!/^\d{3,4}$/.test(cvv)) return "Invalid CVV";
+        return true;
+      }
+      if (method === 'venmo') {
+        const username = document.getElementById('venmo-username')?.value || '';
+        if (!username || !username.startsWith('@')) return "Invalid Venmo username";
+        return true;
+      }
+      if (method === 'paypal') {
+        const email = document.getElementById('paypal-email')?.value || '';
+        if (!email.includes('@')) return "Invalid PayPal email";
+        return true;
+      }
+      if (method === 'cashapp') {
+        const tag = document.getElementById('cashapp-tag')?.value || '';
+        if (!tag || !tag.startsWith('$')) return "Invalid Cash App $tag";
+        return true;
+      }
+      return true;
+    }
+
+    function authorizeEscrowHold() {
+      const validation = validatePayment();
+      if (validation !== true) {
+        alert("❌ " + validation);
+        return;
+      }
+      const btn = document.getElementById('authorize-btn');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="inline-block animate-spin mr-2">⟳</span> Processing...`;
+      setTimeout(() => {
+        btn.innerHTML = `✅ Payment Authorized!`;
+        setTimeout(() => {
+          alert("✅ Payment successfully held in escrow via secure gateway.\n\nBoth parties must confirm completion before funds are released.");
+          if (db.jobs.length) db.jobs[db.jobs.length - 1].status = "Completed";
+          saveDB();
+          pushNotification("Payment Authorized", "Your escrow payment for " + selectedService + " has been secured.");
+          switchTab(3);
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+        }, 800);
+      }, 2200);
+    }
+
+    function renderServiceTypeButtons() {
+      const container = document.getElementById('service-type-buttons');
+      container.innerHTML = `
+        <button onclick="selectService(this, 'Lawn Mowing')" class="service-btn bg-[#111111] border border-[#222222] rounded-3xl py-6 text-center font-medium text-white">Lawn Mowing</button>
+        <button onclick="selectService(this, 'Hedge Trimming')" class="service-btn bg-[#111111] border border-[#222222] rounded-3xl py-6 text-center font-medium text-white">Hedge Trimming</button>
+        <button onclick="selectService(this, 'Mulching')" class="service-btn bg-[#111111] border border-[#222222] rounded-3xl py-6 text-center font-medium text-white">Mulching</button>
+        <button onclick="selectService(this, 'Clean Up')" class="service-btn bg-[#111111] border border-[#222222] rounded-3xl py-6 text-center font-medium text-white">Clean Up</button>`;
+    }
+
+    function selectService(btn, service) {
+      selectedService = service;
+      document.querySelectorAll('.service-btn').forEach(b => b.classList.remove('border-[#34FF7A]', 'bg-[#34FF7A]', 'text-black'));
+      btn.classList.add('border-[#34FF7A]', 'bg-[#34FF7A]', 'text-black');
+      document.getElementById('continue-pay-btn').disabled = false;
+    }
+
+    function renderYardSizeOptions() {
+      const container = document.getElementById('yard-size-options');
+      container.innerHTML = `
+        <button onclick="selectYardSize(this, 'Small')" class="yard-btn bg-[#111111] border border-[#222222] rounded-3xl p-4 text-center text-sm">Small<br><span class="text-xs text-white/70">&lt; 5,000 sq ft</span></button>
+        <button onclick="selectYardSize(this, 'Medium')" class="yard-btn bg-[#111111] border border-[#222222] rounded-3xl p-4 text-center text-sm">Medium<br><span class="text-xs text-white/70">5,000–10,000 sq ft</span></button>
+        <button onclick="selectYardSize(this, 'Large')" class="yard-btn bg-[#111111] border border-[#222222] rounded-3xl p-4 text-center text-sm">Large<br><span class="text-xs text-white/70">10,000+ sq ft</span></button>`;
+    }
+
+    function selectYardSize(btn, size) {
+      selectedYardSize = size;
+      document.querySelectorAll('.yard-btn').forEach(b => b.classList.remove('border-[#34FF7A]', 'bg-[#34FF7A]', 'text-black'));
+      btn.classList.add('border-[#34FF7A]', 'bg-[#34FF7A]', 'text-black');
+      document.getElementById('continue-pay-btn').disabled = false;
+    }
+
+    function goToPay() {
+      const prices = db.landscaperPrices[selectedLandscaper] || {};
+      const basePrice = prices[selectedService] ? prices[selectedService][selectedYardSize] || 45 : 45;
+      currentTip = 0;
+
+      document.getElementById('service-name-display').textContent = selectedService;
+      if (isRecurring) {
+        document.getElementById('recurring-badge').classList.remove('hidden');
+        document.getElementById('recurring-note').classList.remove('hidden');
+      }
+
+      document.getElementById('subtotal-display').textContent = `$${basePrice}.00`;
+      document.getElementById('tip-display').textContent = `$0.00`;
+      document.getElementById('total-display').textContent = `$${basePrice}.00`;
+      document.getElementById('final-total').textContent = `$${basePrice}.00`;
+
+      db.jobs.push({
+        id: Date.now(),
+        customer: "Zamire Smith",
+        service: selectedService,
+        yardSize: selectedYardSize,
+        price: basePrice,
+        status: "Scheduled",
+        address: document.getElementById('service-address').value || "8910 45th Ave E, Ellenton, FL",
+        recurring: isRecurring,
+        startDate: isRecurring ? document.getElementById('recurring-start').value : null,
+        endDate: isRecurring ? document.getElementById('recurring-end').value : null,
+        frequency: isRecurring ? document.getElementById('recurring-frequency').value : null
+      });
+      saveDB();
+
+      document.getElementById('job-details-screen').classList.add('hidden');
+      document.getElementById('pay-screen').classList.remove('hidden');
+    }
+
+    function selectTip(el) {
+      document.querySelectorAll('#pay-screen button:not([onclick^="selectNoTip"])').forEach(b => b.classList.remove('bg-[#34FF7A]', 'text-black'));
+      el.classList.add('bg-[#34FF7A]', 'text-black');
+      const percent = parseFloat(el.textContent);
+      const subtotal = parseFloat(document.getElementById('subtotal-display').textContent.replace('$',''));
+      currentTip = Math.round(subtotal * (percent / 100) * 100) / 100;
+      updateTotal();
+    }
+
+    function showCustomTip() {
+      document.getElementById('custom-tip-input').classList.remove('hidden');
+    }
+
+    function applyCustomTip() {
+      const amount = parseFloat(document.getElementById('custom-tip-amount').value) || 0;
+      currentTip = Math.round(amount * 100) / 100;
+      updateTotal();
+      document.getElementById('custom-tip-input').classList.add('hidden');
+    }
+
+    function selectNoTip() {
+      currentTip = 0;
+      updateTotal();
+    }
+
+    function updateTotal() {
+      const subtotal = parseFloat(document.getElementById('subtotal-display').textContent.replace('$',''));
+      const tipDisplay = currentTip > 0 ? `$${currentTip.toFixed(2)}` : '$0.00';
+      const total = subtotal + currentTip;
+      const fee = Math.round(subtotal * 0.03 * 100) / 100;
+      document.getElementById('tip-display').textContent = tipDisplay;
+      document.getElementById('fee-amount').textContent = `$${fee.toFixed(2)}`;
+      document.getElementById('total-display').textContent = `$${(total + fee).toFixed(2)}`;
+      document.getElementById('final-total').textContent = `$${(total + fee).toFixed(2)}`;
+    }
+
+    function authorizeEscrowHold() {
+      const validation = validatePayment();
+      if (validation !== true) {
+        alert("❌ " + validation);
+        return;
+      }
+      const btn = document.getElementById('authorize-btn');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="inline-block animate-spin mr-2">⟳</span> Processing...`;
+      setTimeout(() => {
+        btn.innerHTML = `✅ Payment Authorized!`;
+        setTimeout(() => {
+          alert("✅ Payment successfully held in escrow via secure gateway.\n\nBoth parties must confirm completion before funds are released.");
+          if (db.jobs.length) db.jobs[db.jobs.length - 1].status = "Completed";
+          saveDB();
+          pushNotification("Payment Authorized", "Your escrow payment for " + selectedService + " has been secured.");
+          switchTab(3);
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+        }, 800);
+      }, 2200);
+    }
+
+    function validatePayment() {
+      const method = document.getElementById('payment-method').value;
+      if (method === 'applepay') return true;
+      if (method === 'debit') {
+        const card = (document.getElementById('card-number')?.value || '').replace(/\s/g,'');
+        const expiry = document.getElementById('expiry')?.value || '';
+        const cvv = document.getElementById('cvv')?.value || '';
+        if (!/^\d{16}$/.test(card)) return "Invalid card number";
+        if (!/^\d{2}\/\d{2}$/.test(expiry)) return "Invalid expiry (MM/YY)";
+        if (!/^\d{3,4}$/.test(cvv)) return "Invalid CVV";
+        return true;
+      }
+      if (method === 'venmo') {
+        const username = document.getElementById('venmo-username')?.value || '';
+        if (!username || !username.startsWith('@')) return "Invalid Venmo username";
+        return true;
+      }
+      if (method === 'paypal') {
+        const email = document.getElementById('paypal-email')?.value || '';
+        if (!email.includes('@')) return "Invalid PayPal email";
+        return true;
+      }
+      if (method === 'cashapp') {
+        const tag = document.getElementById('cashapp-tag')?.value || '';
+        if (!tag || !tag.startsWith('$')) return "Invalid Cash App $tag";
+        return true;
+      }
+      return true;
+    }
+
+    function toggleRecurring() {
+      isRecurring = document.getElementById('recurring-toggle').checked;
+      document.getElementById('recurring-options').classList.toggle('hidden', !isRecurring);
+    }
+
+    function renderJobStatusTracking() {
+      const container = document.getElementById('job-status-list');
+      container.innerHTML = db.jobs.map(job => `
+        <div class="card rounded-3xl p-6">
+          <div class="flex justify-between items-center">
+            <p class="font-semibold text-white">${job.service} – ${job.customer}</p>
+            <span class="status-pill ${job.status === 'Completed' ? 'bg-[#34FF7A] text-black' : 'bg-[#FF9500] text-white'}">${job.status}</span>
+          </div>
+          <p class="text-xs text-white/70 mt-1">${job.address} • ${job.yardSize} yard</p>
+          ${job.recurring ? `<p class="text-xs text-[#34FF7A]">Recurring until ${job.endDate}</p>` : ''}
+          <p class="text-xs text-white/70">$${job.price}</p>
+        </div>`).join('');
+    }
+
+    function startBooking() {
+      selectedService = ''; selectedYardSize = ''; currentTip = 0; isRecurring = false;
+      document.getElementById('home-screen').classList.add('hidden');
+      document.getElementById('availability-screen').classList.remove('hidden');
+      renderServiceTypeButtons();
+      document.getElementById('recurring-toggle').checked = false;
+      document.getElementById('recurring-options').classList.add('hidden');
+    }
+
+    function goBack() {
+      const current = document.querySelector('#screen > div:not(.hidden)');
+      if (current.id === 'pay-screen') {
+        document.getElementById('pay-screen').classList.add('hidden');
+        document.getElementById('job-details-screen').classList.remove('hidden');
+      } else if (current.id === 'job-details-screen') {
+        document.getElementById('job-details-screen').classList.add('hidden');
+        document.getElementById('availability-screen').classList.remove('hidden');
+      } else {
+        switchTab(0);
+      }
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('#screen > div').forEach(d => d.classList.add('hidden'));
+      const screens = ['home-screen','search-screen','appointments-screen','myjobs-screen','profile-screen'];
+      document.getElementById(screens[tab]).classList.remove('hidden');
+      document.querySelectorAll('.nav-item').forEach((item,i) => i === tab ? item.classList.add('active','text-[#34FF7A]') : item.classList.remove('active','text-[#34FF7A]'));
+    }
+
+    function toggleProfileMode() {
+      const isLandscaper = document.getElementById('profile-mode-label').textContent.includes('Landscaper');
+      document.getElementById('landscaper-profile').classList.toggle('hidden', !isLandscaper);
+      document.getElementById('customer-profile').classList.toggle('hidden', isLandscaper);
+      document.getElementById('profile-mode-label').textContent = isLandscaper ? "Customer View" : "Landscaper View";
+      if (!isLandscaper) renderCustomerPriceView();
+    }
+
+    function renderCustomerPriceView() {
+      const container = document.getElementById('customer-price-view');
+      container.innerHTML = `
+        <div class="bg-[#111111] rounded-3xl p-6">
+          <p class="font-semibold text-white mb-4">Lawn Mowing</p>
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div><p class="text-xs text-white/70">Small</p><p class="text-[#34FF7A]">$45</p></div>
+            <div><p class="text-xs text-white/70">Medium</p><p class="text-[#34FF7A]">$65</p></div>
+            <div><p class="text-xs text-white/70">Large</p><p class="text-[#34FF7A]">$120</p></div>
+          </div>
+        </div>
+        <div class="bg-[#111111] rounded-3xl p-6">
+          <p class="font-semibold text-white mb-4">Hedge Trimming</p>
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div><p class="text-xs text-white/70">Small</p><p class="text-[#34FF7A]">$55</p></div>
+            <div><p class="text-xs text-white/70">Medium</p><p class="text-[#34FF7A]">$75</p></div>
+            <div><p class="text-xs text-white/70">Large</p><p class="text-[#34FF7A]">$95</p></div>
+          </div>
+        </div>
+        <div class="bg-[#111111] rounded-3xl p-6">
+          <p class="font-semibold text-white mb-4">Mulching</p>
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div><p class="text-xs text-white/70">Small</p><p class="text-[#34FF7A]">$110</p></div>
+            <div><p class="text-xs text-white/70">Medium</p><p class="text-[#34FF7A]">$140</p></div>
+            <div><p class="text-xs text-white/70">Large</p><p class="text-[#34FF7A]">$180</p></div>
+          </div>
+        </div>
+        <div class="bg-[#111111] rounded-3xl p-6">
+          <p class="font-semibold text-white mb-4">Clean Up</p>
+          <div class="grid grid-cols-3 gap-4 text-center">
+            <div><p class="text-xs text-white/70">Small</p><p class="text-[#34FF7A]">$30</p></div>
+            <div><p class="text-xs text-white/70">Medium</p><p class="text-[#34FF7A]">$40</p></div>
+            <div><p class="text-xs text-white/70">Large</p><p class="text-[#34FF7A]">$55</p></div>
+          </div>
+        </div>`;
+    }
+
+    window.onload = () => {
+      loadDB();
+      console.log("%c✅ COMPLETE The Lawn App – Refined Price Inputs + Service Types moved to Job Details + Customer Price View 🌱", "color:#34FF7A;font-weight:bold");
+      updateNotificationBadge();
+      renderJobStatusTracking();
+    };
+  </script>
+</body>
+</html>

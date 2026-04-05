@@ -55,6 +55,13 @@ export default function ProfileScreen() {
   );
 }
 
+const PRICE_MATRIX: Record<string, Record<string, number>> = {
+  "Lawn Mowing":    { Small: 45,  Medium: 65,  Large: 120 },
+  "Hedge Trimming": { Small: 55,  Medium: 75,  Large: 95  },
+  "Mulching":       { Small: 110, Medium: 140, Large: 180 },
+  "Clean Up":       { Small: 30,  Medium: 40,  Large: 55  },
+};
+
 const PRICE_SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up"];
 const YARD_COLS = [
   { key: "Small",  label: "Small",  sub: "< 5k sq ft" },
@@ -366,6 +373,31 @@ function CustomerProfile() {
         )}
       </View>
 
+      {/* Landscaper Price View */}
+      <Text style={[styles.sectionLabelSmall, { fontFamily: "Inter_600SemiBold", marginBottom: 12 }]}>
+        LANDSCAPER PRICES BY YARD SIZE
+      </Text>
+      {PRICE_SERVICES.map((service) => (
+        <View key={service} style={[styles.card, { marginBottom: 12 }]}>
+          <Text style={[styles.priceServiceName, { fontFamily: "Inter_600SemiBold" }]}>{service}</Text>
+          <View style={styles.priceRow}>
+            {[
+              { label: "Small", sub: "< 5k sq ft" },
+              { label: "Medium", sub: "5–10k sq ft" },
+              { label: "Large", sub: "10k+ sq ft" },
+            ].map((col) => (
+              <View key={col.label} style={styles.priceCol}>
+                <Text style={[styles.priceColLabel, { fontFamily: "Inter_400Regular" }]}>{col.label}</Text>
+                <Text style={[styles.priceColSub, { fontFamily: "Inter_400Regular" }]}>{col.sub}</Text>
+                <Text style={[styles.priceColValue, { fontFamily: "Inter_700Bold" }]}>
+                  ${PRICE_MATRIX[service][col.label]}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ))}
+
       <TouchableOpacity
         style={styles.editBtn}
         onPress={() => Alert.alert("Edit Profile", "Profile editor would open here")}
@@ -588,4 +620,17 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   apptNoteText: { fontSize: 11, color: "#34FF7A" },
+  sectionLabelSmall: {
+    fontSize: 11,
+    color: "#AAAAAA",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginTop: 28,
+  },
+  priceServiceName: { fontSize: 15, color: "#FFFFFF", marginBottom: 14 },
+  priceRow: { flexDirection: "row", gap: 8 },
+  priceCol: { flex: 1, alignItems: "center", gap: 3 },
+  priceColLabel: { fontSize: 12, color: "#AAAAAA" },
+  priceColSub: { fontSize: 10, color: "#555555" },
+  priceColValue: { fontSize: 18, color: "#34FF7A", marginTop: 4 },
 });

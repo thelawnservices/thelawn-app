@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
-type PayState = "service-select" | "availability" | "details" | "review" | "processing" | "success";
+type PayState = "availability" | "details" | "review" | "processing" | "success";
 
 const TIP_OPTIONS = [
   { label: "10%", value: 0.1 },
@@ -73,7 +73,7 @@ export default function PayScreen() {
   const proInitials = params.proInitials || "JR";
   const proColor = params.proColor || "#34FF7A";
 
-  const [payState, setPayState] = useState<PayState>("service-select");
+  const [payState, setPayState] = useState<PayState>("availability");
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedYardSize, setSelectedYardSize] = useState<string | null>(null);
   const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
@@ -122,7 +122,7 @@ export default function PayScreen() {
   const total = (basePrice + tip + fee).toFixed(2);
 
   const canContinueFromAvailability = selectedDateIdx !== null && selectedTime !== null;
-  const canContinueFromDetails = serviceAddress.trim().length > 0 && selectedYardSize !== null;
+  const canContinueFromDetails = selectedService !== null && serviceAddress.trim().length > 0 && selectedYardSize !== null;
 
   useEffect(() => {
     if (payState === "processing") {
@@ -275,55 +275,13 @@ export default function PayScreen() {
     );
   }
 
-  // ─── Service Select ───────────────────────────────────────────
-  if (payState === "service-select") {
-    return (
-      <View style={styles.container}>
-        <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
-          <TouchableOpacity onPress={() => router.dismiss()} style={styles.backBtn}>
-            <Ionicons name="chevron-down" size={24} color="#34FF7A" />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Choose Service Type</Text>
-          <View style={{ width: 36 }} />
-        </View>
-
-        <View style={styles.serviceGrid}>
-          {SERVICE_OPTIONS.map((svc) => (
-            <TouchableOpacity
-              key={svc.label}
-              style={[
-                styles.serviceTile,
-                selectedService === svc.label && styles.serviceTileActive,
-              ]}
-              onPress={() => {
-                setSelectedService(svc.label);
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setTimeout(() => setPayState("availability"), 180);
-              }}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.serviceEmoji}>{svc.emoji}</Text>
-              <Text style={[
-                styles.serviceLabel,
-                { fontFamily: "Inter_600SemiBold" },
-                selectedService === svc.label && styles.serviceLabelActive,
-              ]}>
-                {svc.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-    );
-  }
-
   // ─── Availability ─────────────────────────────────────────────
   if (payState === "availability") {
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
-          <TouchableOpacity onPress={() => setPayState("service-select")} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color="#34FF7A" />
+          <TouchableOpacity onPress={() => router.dismiss()} style={styles.backBtn}>
+            <Ionicons name="chevron-down" size={24} color="#34FF7A" />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Select Date & Time</Text>
           <View style={{ width: 36 }} />
@@ -570,8 +528,36 @@ export default function PayScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ padding: 20, paddingBottom: bottomPadding + 100 }}
         >
-          {/* Service Address */}
+          {/* Service Type */}
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold" }]}>
+            Service Type{" "}
+            <Text style={{ color: "#ef4444" }}>*</Text>
+          </Text>
+          <View style={styles.serviceGrid}>
+            {SERVICE_OPTIONS.map((svc) => (
+              <TouchableOpacity
+                key={svc.label}
+                style={[styles.serviceTile, selectedService === svc.label && styles.serviceTileActive]}
+                onPress={() => {
+                  setSelectedService(svc.label);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.serviceEmoji}>{svc.emoji}</Text>
+                <Text style={[
+                  styles.serviceLabel,
+                  { fontFamily: "Inter_600SemiBold" },
+                  selectedService === svc.label && styles.serviceLabelActive,
+                ]}>
+                  {svc.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Service Address */}
+          <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 8 }]}>
             Service Address{" "}
             <Text style={{ color: "#ef4444" }}>*</Text>
           </Text>
