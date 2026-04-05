@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -35,6 +35,25 @@ function AnimatedStatCard({ stat, delay }: { stat: typeof QUICK_STATS[0]; delay:
       <Text style={[styles.statValue, { fontFamily: "Inter_700Bold" }]}>{stat.value}</Text>
       <Text style={[styles.statLabel, { fontFamily: "Inter_400Regular" }]}>{stat.label}</Text>
     </Animated.View>
+  );
+}
+
+function SkeletonCard() {
+  const shimmer = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, { toValue: 1, duration: 600, useNativeDriver: false }),
+        Animated.timing(shimmer, { toValue: 0, duration: 600, useNativeDriver: false }),
+      ])
+    ).start();
+  }, []);
+
+  const bg = shimmer.interpolate({ inputRange: [0, 1], outputRange: ["#222222", "#333333"] });
+
+  return (
+    <Animated.View style={[styles.skeletonCard, { backgroundColor: bg }]} />
   );
 }
 
@@ -77,6 +96,12 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
+  const [prosLoaded, setProsLoaded] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setProsLoaded(true), 900);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -169,32 +194,39 @@ export default function HomeScreen() {
         <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 28 }]}>
           🔥 Trusted Landscapers on TheLawn
         </Text>
-        {TRUSTED_PROS.map((pro) => (
-          <TouchableOpacity
-            key={pro.name}
-            style={styles.proCard}
-            onPress={() => router.navigate("/pay")}
-            activeOpacity={0.8}
-          >
-            <View style={styles.proIconWrap}>
-              <Ionicons name={pro.icon} size={28} color="#34FF7A" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={styles.proTopRow}>
-                <Text style={[styles.proName, { fontFamily: "Inter_600SemiBold" }]}>{pro.name}</Text>
-                <Text style={[styles.proRating, { fontFamily: "Inter_500Medium" }]}>{pro.rating} ★</Text>
+        {!prosLoaded ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          TRUSTED_PROS.map((pro) => (
+            <TouchableOpacity
+              key={pro.name}
+              style={styles.proCard}
+              onPress={() => router.navigate("/pay")}
+              activeOpacity={0.8}
+            >
+              <View style={styles.proIconWrap}>
+                <Ionicons name={pro.icon} size={28} color="#34FF7A" />
               </View>
-              <Text style={[styles.proMeta, { fontFamily: "Inter_400Regular" }]}>{pro.meta}</Text>
-              <TouchableOpacity
-                style={styles.bookNowBtn}
-                onPress={() => router.navigate("/pay")}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.bookNowText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        ))}
+              <View style={{ flex: 1 }}>
+                <View style={styles.proTopRow}>
+                  <Text style={[styles.proName, { fontFamily: "Inter_600SemiBold" }]}>{pro.name}</Text>
+                  <Text style={[styles.proRating, { fontFamily: "Inter_500Medium" }]}>{pro.rating} ★</Text>
+                </View>
+                <Text style={[styles.proMeta, { fontFamily: "Inter_400Regular" }]}>{pro.meta}</Text>
+                <TouchableOpacity
+                  style={styles.bookNowBtn}
+                  onPress={() => router.navigate("/pay")}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.bookNowText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -213,6 +245,8 @@ const styles = StyleSheet.create({
     paddingBottom: 18,
     overflow: "hidden",
     position: "relative",
+    borderBottomWidth: 2,
+    borderBottomColor: "#34FF7A",
   },
   grassBg: {
     position: "absolute",
@@ -349,4 +383,11 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   bookNowText: { color: "#000", fontSize: 13 },
+  skeletonCard: {
+    height: 96,
+    borderRadius: 20,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
 });
