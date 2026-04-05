@@ -105,6 +105,37 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* Popular Services */}
+        <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
+          Popular Services
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.servicesRow}
+        >
+          {[
+            { name: "Lawn Mowing", icon: "leaf" as const },
+            { name: "Hedge Trimming", icon: "cut" as const },
+            { name: "Mulching", icon: "flower" as const },
+            { name: "Cleanup", icon: "trash" as const },
+          ].map((svc) => (
+            <TouchableOpacity
+              key={svc.name}
+              style={styles.svcChip}
+              onPress={() => router.navigate("/(tabs)/search")}
+              activeOpacity={0.8}
+            >
+              <View style={styles.svcChipIcon}>
+                <Ionicons name={svc.icon} size={20} color="#34FF7A" />
+              </View>
+              <Text style={[styles.svcChipText, { fontFamily: "Inter_500Medium" }]}>
+                {svc.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
         {/* Horizontal Trusted Landscapers */}
         <ScrollView
           horizontal
@@ -180,36 +211,6 @@ export default function HomeScreen() {
           <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
         </TouchableOpacity>
 
-        {/* Popular Services */}
-        <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-          Popular Services
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.servicesRow}
-        >
-          {[
-            { name: "Lawn Mowing", icon: "leaf" as const },
-            { name: "Hedge Trimming", icon: "cut" as const },
-            { name: "Mulching", icon: "flower" as const },
-            { name: "Cleanup", icon: "trash" as const },
-          ].map((svc) => (
-            <TouchableOpacity
-              key={svc.name}
-              style={styles.svcChip}
-              onPress={() => router.navigate("/(tabs)/search")}
-              activeOpacity={0.8}
-            >
-              <View style={styles.svcChipIcon}>
-                <Ionicons name={svc.icon} size={20} color="#34FF7A" />
-              </View>
-              <Text style={[styles.svcChipText, { fontFamily: "Inter_500Medium" }]}>
-                {svc.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
 
       </ScrollView>
     </View>
