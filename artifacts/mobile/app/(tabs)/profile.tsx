@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Platform,
   Alert,
 } from "react-native";
@@ -13,175 +12,159 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
-type ProfileType = "customer" | "landscaper";
-const SERVICES_LIST = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Cleanup", "Full Service"];
-
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
+  const [isLandscaper, setIsLandscaper] = useState(true);
 
-  const [profileType, setProfileType] = useState<ProfileType>("customer");
-  const [email, setEmail] = useState("zamire@example.com");
-  const [address, setAddress] = useState("123 Main St, Ellenton, FL");
-  const [yearEst, setYearEst] = useState("2018");
-  const [selectedService, setSelectedService] = useState("Lawn Mowing");
-
-  const switchType = (t: ProfileType) => { setProfileType(t); Haptics.selectionAsync(); };
+  const toggle = () => {
+    Haptics.selectionAsync();
+    setIsLandscaper((v) => !v);
+  };
 
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Profile</Text>
+        <TouchableOpacity style={styles.togglePill} onPress={toggle} activeOpacity={0.8}>
+          <Text style={[styles.togglePillText, { fontFamily: "Inter_500Medium" }]}>
+            {isLandscaper ? "Landscaper View" : "Customer View"}
+          </Text>
+          <Text style={styles.toggleIcon}>🔄</Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Toggle */}
-        <View style={styles.toggle}>
-          <TouchableOpacity
-            style={[styles.toggleBtn, profileType === "customer" && styles.toggleBtnActive]}
-            onPress={() => switchType("customer")}
-          >
-            <Text style={[styles.toggleBtnText, { fontFamily: "Inter_500Medium" }, profileType === "customer" && styles.toggleBtnTextActive]}>
-              Customer
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.toggleBtn, profileType === "landscaper" && styles.toggleBtnActive]}
-            onPress={() => switchType("landscaper")}
-          >
-            <Text style={[styles.toggleBtnText, { fontFamily: "Inter_500Medium" }, profileType === "landscaper" && styles.toggleBtnTextActive]}>
-              Landscaper
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Avatar */}
-        <View style={styles.avatarSection}>
-          <View style={styles.avatarBox}>
-            <Ionicons name={profileType === "customer" ? "person" : "construct"} size={44} color="#34FF7A" />
-          </View>
-          <TouchableOpacity
-            style={styles.uploadBtn}
-            onPress={() => Alert.alert("Upload Photo", "Photo picker would open here")}
-          >
-            <Ionicons name="camera" size={14} color="#34FF7A" />
-            <Text style={[styles.uploadText, { fontFamily: "Inter_500Medium" }]}>Change Photo</Text>
-          </TouchableOpacity>
-        </View>
-
-        {profileType === "customer" ? (
-          <>
-            <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Email</Text>
-              <TextInput
-                style={[styles.field, { fontFamily: "Inter_400Regular" }]}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholder="Email"
-                placeholderTextColor="#444"
-              />
-            </View>
-            <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Date of Birth</Text>
-              <View style={[styles.field, styles.fieldRow]}>
-                <Ionicons name="calendar-outline" size={16} color="#555" />
-                <Text style={{ fontFamily: "Inter_400Regular", color: "#34FF7A", fontSize: 15 }}>
-                  June 15, 1995
-                </Text>
-              </View>
-            </View>
-            <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Address</Text>
-              <TextInput
-                style={[styles.field, { fontFamily: "Inter_400Regular" }]}
-                value={address}
-                onChangeText={setAddress}
-                placeholder="Address"
-                placeholderTextColor="#444"
-              />
-            </View>
-            <TouchableOpacity
-              style={styles.outlineBtn}
-              onPress={() => Alert.alert("Change Password", "Password reset flow would open here")}
-            >
-              <Ionicons name="lock-closed-outline" size={18} color="#34FF7A" />
-              <Text style={[styles.outlineBtnText, { fontFamily: "Inter_500Medium" }]}>Change Password</Text>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Business Name</Text>
-              <TextInput
-                style={[styles.field, { fontFamily: "Inter_400Regular" }]}
-                value="Rivera Lawn Services"
-                placeholder="Business Name"
-                placeholderTextColor="#444"
-              />
-            </View>
-            <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Year Established</Text>
-              <TextInput
-                style={[styles.field, { fontFamily: "Inter_400Regular" }]}
-                value={yearEst}
-                onChangeText={setYearEst}
-                keyboardType="numeric"
-                placeholder="Year"
-                placeholderTextColor="#444"
-              />
-            </View>
-            <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Primary Service</Text>
-              <View style={styles.serviceOptions}>
-                {SERVICES_LIST.map((s) => (
-                  <TouchableOpacity
-                    key={s}
-                    style={[styles.serviceOption, selectedService === s && styles.serviceOptionActive]}
-                    onPress={() => { setSelectedService(s); Haptics.selectionAsync(); }}
-                  >
-                    <Text style={[styles.serviceOptionText, { fontFamily: "Inter_400Regular" }, selectedService === s && { color: "#34FF7A", fontFamily: "Inter_600SemiBold" }]}>
-                      {s}
-                    </Text>
-                    {selectedService === s && <Ionicons name="checkmark-circle" size={16} color="#34FF7A" />}
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-            <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Hourly Rate</Text>
-              <View style={[styles.field, styles.fieldRow]}>
-                <Text style={{ fontFamily: "Inter_400Regular", color: "#555", fontSize: 15 }}>$</Text>
-                <TextInput
-                  style={{ flex: 1, fontFamily: "Inter_400Regular", fontSize: 15, color: "#34FF7A" }}
-                  defaultValue="45"
-                  keyboardType="numeric"
-                />
-                <Text style={{ fontFamily: "Inter_400Regular", color: "#555", fontSize: 13 }}>/hr</Text>
-              </View>
-            </View>
-          </>
-        )}
-
-        <TouchableOpacity
-          style={styles.saveBtn}
-          onPress={() => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert("Saved", "Your profile has been updated.");
-          }}
-          activeOpacity={0.85}
-        >
-          <Text style={[styles.saveBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Changes</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.logoutBtn}>
-          <Ionicons name="log-out-outline" size={18} color="#ef4444" />
-          <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Sign Out</Text>
-        </TouchableOpacity>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        {isLandscaper ? <LandscaperProfile /> : <CustomerProfile />}
       </ScrollView>
     </View>
+  );
+}
+
+function LandscaperProfile() {
+  return (
+    <>
+      {/* Avatar + Name */}
+      <View style={styles.avatarRow}>
+        <View style={styles.avatarBox}>
+          <Ionicons name="leaf" size={40} color="#34FF7A" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>
+            John Rivera Landscaping
+          </Text>
+          <Text style={[styles.proSub, { fontFamily: "Inter_400Regular" }]}>
+            Established 2019 • Ellenton, FL
+          </Text>
+          <View style={styles.starsRow}>
+            <Text style={styles.stars}>★★★★☆</Text>
+            <Text style={[styles.proRating, { fontFamily: "Inter_500Medium" }]}>
+              4.9 · Trusted Pro
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Stats card */}
+      <View style={styles.card}>
+        <View style={styles.statRow}>
+          <Text style={[styles.statLabel, { fontFamily: "Inter_500Medium" }]}>Primary Services</Text>
+          <Text style={[styles.statValue, { fontFamily: "Inter_400Regular" }]}>
+            Lawn Mowing · Hedge Trimming · Mulching · Clean Up
+          </Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.statRow}>
+          <Text style={[styles.statLabel, { fontFamily: "Inter_500Medium" }]}>Jobs Completed</Text>
+          <Text style={[styles.statBig, { fontFamily: "Inter_700Bold" }]}>142</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.statRow}>
+          <Text style={[styles.statLabel, { fontFamily: "Inter_500Medium" }]}>Availability</Text>
+          <Text style={[styles.statValue, { fontFamily: "Inter_400Regular" }]}>
+            Mon–Sat · 7:00 AM – 6:00 PM
+          </Text>
+        </View>
+      </View>
+
+      {/* Reviews */}
+      <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
+        Customer Reviews
+      </Text>
+      <View style={styles.card}>
+        <Text style={[styles.reviewText, { fontFamily: "Inter_400Regular" }]}>
+          "John did an amazing job on our yard – very professional!"
+        </Text>
+        <Text style={[styles.reviewAuthor, { fontFamily: "Inter_400Regular" }]}>
+          — Sarah M. · 4 days ago
+        </Text>
+      </View>
+      <View style={[styles.card, { marginTop: 12 }]}>
+        <Text style={[styles.reviewText, { fontFamily: "Inter_400Regular" }]}>
+          "Reliable, on time, and the yard looks fantastic every time."
+        </Text>
+        <Text style={[styles.reviewAuthor, { fontFamily: "Inter_400Regular" }]}>
+          — Marcus T. · 2 weeks ago
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        style={styles.editBtn}
+        onPress={() => Alert.alert("Edit Profile", "Profile editor would open here")}
+        activeOpacity={0.85}
+      >
+        <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile</Text>
+      </TouchableOpacity>
+    </>
+  );
+}
+
+function CustomerProfile() {
+  return (
+    <>
+      {/* Avatar + Name */}
+      <View style={styles.avatarRow}>
+        <View style={styles.avatarBox}>
+          <Ionicons name="person" size={40} color="#34FF7A" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>Zamire Smith</Text>
+          <Text style={[styles.proSub, { fontFamily: "Inter_400Regular" }]}>Ellenton, FL</Text>
+        </View>
+      </View>
+
+      {/* Info rows */}
+      <View style={styles.card}>
+        <View style={styles.infoRow}>
+          <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Email</Text>
+          <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>zamire@example.com</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.infoRow}>
+          <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Birthday</Text>
+          <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>March 15, 1995</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.infoRow}>
+          <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Preferred Payment</Text>
+          <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>Apple Pay</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        style={styles.editBtn}
+        onPress={() => Alert.alert("Edit Profile", "Profile editor would open here")}
+        activeOpacity={0.85}
+      >
+        <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.logoutBtn}>
+        <Ionicons name="log-out-outline" size={18} color="#ef4444" />
+        <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Sign Out</Text>
+      </TouchableOpacity>
+    </>
   );
 }
 
@@ -193,89 +176,79 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#222222",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   headerTitle: { fontSize: 22, color: "#34FF7A" },
-  scrollContent: { padding: 16, paddingBottom: 48 },
-  toggle: {
+  togglePill: {
     flexDirection: "row",
-    backgroundColor: "#111111",
-    borderRadius: 28,
-    padding: 4,
-    marginBottom: 24,
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#1a1a1a",
     borderWidth: 1,
-    borderColor: "#222",
+    borderColor: "#333",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
-  toggleBtn: { flex: 1, paddingVertical: 12, borderRadius: 24, alignItems: "center" },
-  toggleBtnActive: { backgroundColor: "#0d2e18" },
-  toggleBtnText: { fontSize: 14, color: "#555" },
-  toggleBtnTextActive: { color: "#34FF7A" },
-  avatarSection: { alignItems: "center", gap: 10, marginBottom: 24 },
+  togglePillText: { fontSize: 12, color: "#34FF7A" },
+  toggleIcon: { fontSize: 14 },
+  scroll: { padding: 20, paddingBottom: 48 },
+  avatarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginBottom: 24,
+  },
   avatarBox: {
-    width: 90,
-    height: 90,
+    width: 80,
+    height: 80,
     backgroundColor: "#111111",
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: "#34FF7A",
   },
-  uploadBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
-  uploadText: { fontSize: 13, color: "#34FF7A" },
-  fieldGroup: { marginBottom: 16 },
-  fieldLabel: { fontSize: 13, color: "#555", marginBottom: 6 },
-  field: {
+  proName: { fontSize: 18, color: "#34FF7A", marginBottom: 2 },
+  proSub: { fontSize: 12, color: "#34FF7A", marginBottom: 6 },
+  starsRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  stars: { color: "#f59e0b", fontSize: 14 },
+  proRating: { fontSize: 12, color: "#34FF7A" },
+  card: {
     backgroundColor: "#111111",
+    borderRadius: 20,
+    padding: 20,
     borderWidth: 1,
     borderColor: "#222222",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: "#34FF7A",
+    marginBottom: 12,
   },
-  fieldRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  serviceOptions: { gap: 8 },
-  serviceOption: {
+  statRow: { paddingVertical: 6 },
+  statLabel: { fontSize: 11, color: "#555", marginBottom: 4 },
+  statValue: { fontSize: 14, color: "#34FF7A" },
+  statBig: { fontSize: 32, color: "#34FF7A" },
+  divider: { height: 1, backgroundColor: "#222222", marginVertical: 10 },
+  sectionTitle: { fontSize: 15, color: "#34FF7A", marginBottom: 10, marginTop: 8 },
+  reviewText: { fontSize: 14, color: "#34FF7A", lineHeight: 22 },
+  reviewAuthor: { fontSize: 12, color: "#555", marginTop: 8 },
+  infoRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#111111",
-    borderWidth: 1,
-    borderColor: "#222222",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  serviceOptionActive: { borderColor: "#34C759", backgroundColor: "#0d2e18" },
-  serviceOptionText: { fontSize: 14, color: "#555" },
-  outlineBtn: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#111111",
-    borderWidth: 1,
-    borderColor: "#333",
-    borderRadius: 22,
-    paddingVertical: 14,
-    marginBottom: 8,
+    paddingVertical: 4,
   },
-  outlineBtnText: { fontSize: 15, color: "#34FF7A" },
-  saveBtn: {
+  infoKey: { fontSize: 13, color: "#555" },
+  infoVal: { fontSize: 14, color: "#34FF7A" },
+  editBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 16,
-    borderRadius: 22,
+    borderRadius: 24,
     alignItems: "center",
     marginTop: 8,
     marginBottom: 12,
-    shadowColor: "#34C759",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
   },
-  saveBtnText: { color: "#000", fontSize: 16 },
+  editBtnText: { color: "#000", fontSize: 16 },
   logoutBtn: {
     flexDirection: "row",
     alignItems: "center",
