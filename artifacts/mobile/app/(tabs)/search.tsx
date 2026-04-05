@@ -26,7 +26,7 @@ const PROS = [
     distance: "0.8 mi",
     tags: ["Lawn Mowing"],
     initials: "JR",
-    color: "#34FF7A",
+    color: "#FFFFFF",
     trusted: true,
   },
   {
@@ -181,7 +181,7 @@ export default function SearchScreen() {
                   style={[
                     styles.sortOptionText,
                     { fontFamily: "Inter_400Regular" },
-                    i === sortIdx && { color: "#34FF7A", fontFamily: "Inter_600SemiBold" },
+                    i === sortIdx && { color: "#FFFFFF", fontFamily: "Inter_600SemiBold" },
                   ]}
                 >
                   {opt}
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#34FF7A", marginBottom: 12 },
+  headerTitle: { fontSize: 22, color: "#FFFFFF", marginBottom: 12 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#222",
   },
-  searchInput: { flex: 1, fontSize: 14, color: "#34FF7A" },
+  searchInput: { flex: 1, fontSize: 14, color: "#FFFFFF" },
   filtersRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 8 },
   filterChip: {
     paddingHorizontal: 18,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     borderColor: "#333",
   },
   filterChipActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
-  filterChipText: { fontSize: 13, color: "#34FF7A" },
+  filterChipText: { fontSize: 13, color: "#FFFFFF" },
   filterChipTextActive: { color: "#000" },
   sortRow: {
     flexDirection: "row",
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  sortBtnText: { fontSize: 13, color: "#34FF7A" },
+  sortBtnText: { fontSize: 13, color: "#FFFFFF" },
   sortDropdown: {
     marginHorizontal: 16,
     marginTop: 4,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#222",
   },
   sortOptionActive: { backgroundColor: "#0d2e18" },
-  sortOptionText: { fontSize: 14, color: "#34FF7A" },
+  sortOptionText: { fontSize: 14, color: "#FFFFFF" },
   results: { padding: 16, gap: 12 },
   emptyState: { paddingVertical: 60, alignItems: "center", gap: 10 },
   emptyText: { fontSize: 16, color: "#555" },
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   proInitials: { color: "#fff", fontSize: 18, fontWeight: "700" },
   proNameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 },
-  proName: { fontSize: 15, color: "#34FF7A" },
+  proName: { fontSize: 15, color: "#FFFFFF" },
   trustedBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -381,14 +381,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
   },
-  trustedText: { fontSize: 11, color: "#34FF7A" },
+  trustedText: { fontSize: 11, color: "#FFFFFF" },
   proSpec: { fontSize: 13, color: "#555", marginBottom: 5 },
   proMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
-  proRating: { fontSize: 12, color: "#34FF7A" },
+  proRating: { fontSize: 12, color: "#FFFFFF" },
   proReviews: { fontSize: 12, color: "#555" },
   metaDot: { color: "#333", fontSize: 12 },
   proDist: { fontSize: 12, color: "#555" },
-  proPrice: { fontSize: 20, color: "#34FF7A" },
+  proPrice: { fontSize: 20, color: "#FFFFFF" },
   pricePer: { fontSize: 12, color: "#555" },
   tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 },
   tag: {
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
   },
-  tagText: { fontSize: 11, color: "#34FF7A" },
+  tagText: { fontSize: 11, color: "#FFFFFF" },
   bookBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 13,

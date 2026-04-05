@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     borderTopColor: "transparent",
     marginBottom: 8,
   },
-  processingText: { fontSize: 17, color: "#34FF7A" },
+  processingText: { fontSize: 17, color: "#FFFFFF" },
   lockIconBox: {
     width: 96,
     height: 96,
@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-  successTitle: { fontSize: 26, color: "#34FF7A", textAlign: "center" },
+  successTitle: { fontSize: 26, color: "#FFFFFF", textAlign: "center" },
   successSub: { fontSize: 14, color: "#555", textAlign: "center", lineHeight: 22 },
   escrowInfoBox: {
     width: "100%",
@@ -607,8 +607,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  escrowStepNumText: { fontSize: 14, color: "#34FF7A" },
-  escrowStepText: { fontSize: 14, color: "#34FF7A", flex: 1 },
+  escrowStepNumText: { fontSize: 14, color: "#FFFFFF" },
+  escrowStepText: { fontSize: 14, color: "#FFFFFF", flex: 1 },
   successBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 16,
@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#111111",
   },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 17, color: "#34FF7A" },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 17, color: "#FFFFFF" },
   selectedSlotPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  selectedSlotText: { fontSize: 13, color: "#34FF7A" },
+  selectedSlotText: { fontSize: 13, color: "#FFFFFF" },
   proSummary: {
     flexDirection: "row",
     alignItems: "center",
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   proAvatarText: { color: "#fff", fontWeight: "700", fontSize: 18 },
-  proSummaryName: { fontSize: 15, color: "#34FF7A", marginBottom: 2 },
+  proSummaryName: { fontSize: 15, color: "#FFFFFF", marginBottom: 2 },
   proSummaryService: { fontSize: 13, color: "#555" },
   sectionLabel: { fontSize: 13, color: "#555", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 12 },
   dateTile: {
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
   },
   dateTileActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
   dateTileDay: { fontSize: 11, color: "#555" },
-  dateTileDate: { fontSize: 20, color: "#34FF7A" },
+  dateTileDate: { fontSize: 20, color: "#FFFFFF" },
   dateTileMonth: { fontSize: 11, color: "#555" },
   timeGrid: {
     flexDirection: "row",
@@ -699,9 +699,9 @@ const styles = StyleSheet.create({
   },
   timeTileActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
   timeTileDisabled: { backgroundColor: "#0d0d0d", borderColor: "#1a1a1a" },
-  timeTileText: { fontSize: 14, color: "#34FF7A" },
+  timeTileText: { fontSize: 14, color: "#FFFFFF" },
   hintText: { fontSize: 13, color: "#555", textAlign: "center", marginTop: 8 },
-  fieldLabel: { fontSize: 15, color: "#34FF7A", marginBottom: 4 },
+  fieldLabel: { fontSize: 15, color: "#FFFFFF", marginBottom: 4 },
   fieldHint: { fontSize: 13, color: "#555", marginBottom: 12 },
   textArea: {
     backgroundColor: "#111111",
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     fontSize: 14,
-    color: "#34FF7A",
+    color: "#FFFFFF",
     minHeight: 120,
     marginBottom: 24,
   },
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     marginBottom: 8,
   },
-  addPhotoBtnText: { fontSize: 15, color: "#34FF7A" },
+  addPhotoBtnText: { fontSize: 15, color: "#FFFFFF" },
   bottomBar: {
     paddingHorizontal: 20,
     paddingTop: 12,
@@ -784,7 +784,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   summaryAvatarText: { color: "#fff", fontWeight: "700", fontSize: 20 },
-  summaryService: { fontSize: 15, color: "#34FF7A", marginBottom: 3 },
+  summaryService: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
   summaryDate: { fontSize: 13, color: "#555", marginBottom: 2 },
   summaryPro: { fontSize: 13, color: "#555" },
   instructionsPreview: {
@@ -798,7 +798,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#1a3a1a",
   },
-  instructionsPreviewText: { flex: 1, fontSize: 13, color: "#34FF7A" },
+  instructionsPreviewText: { flex: 1, fontSize: 13, color: "#FFFFFF" },
   tipLabel: {
     fontSize: 13,
     color: "#555",
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
     borderColor: "#222",
   },
   tipBtnActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
-  tipBtnLabel: { fontSize: 16, color: "#34FF7A" },
+  tipBtnLabel: { fontSize: 16, color: "#FFFFFF" },
   tipBtnAmount: { fontSize: 12, color: "#555", marginTop: 2 },
   breakdown: {
     backgroundColor: "#111111",
@@ -830,10 +830,10 @@ const styles = StyleSheet.create({
   },
   lineItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   lineLabel: { fontSize: 14, color: "#555" },
-  lineValue: { fontSize: 14, color: "#34FF7A" },
+  lineValue: { fontSize: 14, color: "#FFFFFF" },
   totalRow: { borderTopWidth: 1, borderTopColor: "#333", paddingTop: 12, marginTop: 4 },
-  totalLabel: { fontSize: 17, color: "#34FF7A" },
-  totalValue: { fontSize: 26, color: "#34FF7A" },
+  totalLabel: { fontSize: 17, color: "#FFFFFF" },
+  totalValue: { fontSize: 26, color: "#FFFFFF" },
   escrowNotice: {
     backgroundColor: "#0d1a2e",
     borderWidth: 1,
@@ -865,7 +865,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  cardLabel: { fontSize: 14, color: "#34FF7A", letterSpacing: 1 },
+  cardLabel: { fontSize: 14, color: "#FFFFFF", letterSpacing: 1 },
   cardSub: { fontSize: 12, color: "#555" },
   authorizeBtn: {
     backgroundColor: "#34C759",

@@ -12,6 +12,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
+const PAYMENT_METHODS = ["Apple Pay", "Venmo", "PayPal", "Debit Card", "Cash App"];
+
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
@@ -45,7 +47,6 @@ export default function ProfileScreen() {
 function LandscaperProfile() {
   return (
     <>
-      {/* Avatar + Name */}
       <View style={styles.avatarRow}>
         <View style={styles.avatarBox}>
           <Ionicons name="leaf" size={40} color="#34FF7A" />
@@ -66,7 +67,6 @@ function LandscaperProfile() {
         </View>
       </View>
 
-      {/* Stats card */}
       <View style={styles.card}>
         <View style={styles.statRow}>
           <Text style={[styles.statLabel, { fontFamily: "Inter_500Medium" }]}>Primary Services</Text>
@@ -88,7 +88,6 @@ function LandscaperProfile() {
         </View>
       </View>
 
-      {/* Reviews */}
       <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
         Customer Reviews
       </Text>
@@ -121,9 +120,18 @@ function LandscaperProfile() {
 }
 
 function CustomerProfile() {
+  const [selectedPayment, setSelectedPayment] = useState("Apple Pay");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const savePayment = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  };
+
   return (
     <>
-      {/* Avatar + Name */}
       <View style={styles.avatarRow}>
         <View style={styles.avatarBox}>
           <Ionicons name="person" size={40} color="#34FF7A" />
@@ -134,7 +142,6 @@ function CustomerProfile() {
         </View>
       </View>
 
-      {/* Info rows */}
       <View style={styles.card}>
         <View style={styles.infoRow}>
           <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Email</Text>
@@ -145,11 +152,77 @@ function CustomerProfile() {
           <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Birthday</Text>
           <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>March 15, 1995</Text>
         </View>
-        <View style={styles.divider} />
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Preferred Payment</Text>
-          <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>Apple Pay</Text>
-        </View>
+      </View>
+
+      {/* Payment Method Picker */}
+      <View style={styles.paymentCard}>
+        <Text style={[styles.paymentLabel, { fontFamily: "Inter_500Medium" }]}>
+          Your Preferred Payment Method
+        </Text>
+        <TouchableOpacity
+          style={styles.paymentSelector}
+          onPress={() => { setPickerOpen((v) => !v); Haptics.selectionAsync(); }}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.paymentSelected, { fontFamily: "Inter_500Medium" }]}>
+            {selectedPayment}
+          </Text>
+          <Ionicons
+            name={pickerOpen ? "chevron-up" : "chevron-down"}
+            size={18}
+            color="#FFFFFF"
+          />
+        </TouchableOpacity>
+
+        {pickerOpen && (
+          <View style={styles.paymentDropdown}>
+            {PAYMENT_METHODS.map((method) => (
+              <TouchableOpacity
+                key={method}
+                style={[
+                  styles.paymentOption,
+                  selectedPayment === method && styles.paymentOptionActive,
+                ]}
+                onPress={() => {
+                  setSelectedPayment(method);
+                  setPickerOpen(false);
+                  setSaved(false);
+                  Haptics.selectionAsync();
+                }}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.paymentOptionText,
+                    { fontFamily: selectedPayment === method ? "Inter_600SemiBold" : "Inter_400Regular" },
+                    selectedPayment === method && styles.paymentOptionTextActive,
+                  ]}
+                >
+                  {method}
+                </Text>
+                {selectedPayment === method && (
+                  <Ionicons name="checkmark-circle" size={18} color="#34FF7A" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={styles.savePaymentBtn}
+          onPress={savePayment}
+          activeOpacity={0.85}
+        >
+          <Text style={[styles.savePaymentText, { fontFamily: "Inter_600SemiBold" }]}>
+            Save Preferred Payment Method
+          </Text>
+        </TouchableOpacity>
+
+        {saved && (
+          <Text style={[styles.savedMsg, { fontFamily: "Inter_500Medium" }]}>
+            ✅ Payment method updated!
+          </Text>
+        )}
       </View>
 
       <TouchableOpacity
@@ -180,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerTitle: { fontSize: 22, color: "#34FF7A" },
+  headerTitle: { fontSize: 22, color: "#FFFFFF" },
   togglePill: {
     flexDirection: "row",
     alignItems: "center",
@@ -211,8 +284,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#34FF7A",
   },
-  proName: { fontSize: 18, color: "#34FF7A", marginBottom: 2 },
-  proSub: { fontSize: 12, color: "#34FF7A", marginBottom: 6 },
+  proName: { fontSize: 18, color: "#FFFFFF", marginBottom: 2 },
+  proSub: { fontSize: 12, color: "#FFFFFF", marginBottom: 6 },
   starsRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   stars: { color: "#f59e0b", fontSize: 14 },
   proRating: { fontSize: 12, color: "#34FF7A" },
@@ -226,11 +299,11 @@ const styles = StyleSheet.create({
   },
   statRow: { paddingVertical: 6 },
   statLabel: { fontSize: 11, color: "#555", marginBottom: 4 },
-  statValue: { fontSize: 14, color: "#34FF7A" },
-  statBig: { fontSize: 32, color: "#34FF7A" },
+  statValue: { fontSize: 14, color: "#FFFFFF" },
+  statBig: { fontSize: 32, color: "#FFFFFF" },
   divider: { height: 1, backgroundColor: "#222222", marginVertical: 10 },
-  sectionTitle: { fontSize: 15, color: "#34FF7A", marginBottom: 10, marginTop: 8 },
-  reviewText: { fontSize: 14, color: "#34FF7A", lineHeight: 22 },
+  sectionTitle: { fontSize: 15, color: "#FFFFFF", marginBottom: 10, marginTop: 8 },
+  reviewText: { fontSize: 14, color: "#FFFFFF", lineHeight: 22 },
   reviewAuthor: { fontSize: 12, color: "#555", marginTop: 8 },
   infoRow: {
     flexDirection: "row",
@@ -239,7 +312,58 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   infoKey: { fontSize: 13, color: "#555" },
-  infoVal: { fontSize: 14, color: "#34FF7A" },
+  infoVal: { fontSize: 14, color: "#FFFFFF" },
+  paymentCard: {
+    backgroundColor: "#111111",
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    marginBottom: 12,
+  },
+  paymentLabel: { fontSize: 11, color: "#555", marginBottom: 12 },
+  paymentSelector: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#1a1a1a",
+    borderWidth: 1,
+    borderColor: "#333",
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 4,
+  },
+  paymentSelected: { fontSize: 15, color: "#FFFFFF" },
+  paymentDropdown: {
+    backgroundColor: "#1a1a1a",
+    borderWidth: 1,
+    borderColor: "#333",
+    borderRadius: 14,
+    marginBottom: 4,
+    overflow: "hidden",
+  },
+  paymentOption: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#222",
+  },
+  paymentOptionActive: { backgroundColor: "#0d2e18" },
+  paymentOptionText: { fontSize: 15, color: "#FFFFFF" },
+  paymentOptionTextActive: { color: "#34FF7A" },
+  savePaymentBtn: {
+    backgroundColor: "#34C759",
+    paddingVertical: 13,
+    borderRadius: 20,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  savePaymentText: { color: "#000", fontSize: 14 },
+  savedMsg: { fontSize: 12, color: "#34FF7A", textAlign: "center", marginTop: 10 },
   editBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 16,

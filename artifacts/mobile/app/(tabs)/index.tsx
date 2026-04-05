@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scrollContent: { padding: 20, paddingBottom: 40 },
-  greeting: { fontSize: 26, color: "#34FF7A", marginBottom: 20 },
+  greeting: { fontSize: 26, color: "#FFFFFF", marginBottom: 20 },
   ctaBtn: {
     backgroundColor: "#34C759",
     flexDirection: "row",
@@ -211,9 +211,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#222222",
   },
-  statValue: { fontSize: 20, color: "#34FF7A" },
-  statLabel: { fontSize: 11, color: "#34FF7A" },
-  sectionTitle: { fontSize: 17, color: "#34FF7A", marginBottom: 12 },
+  statValue: { fontSize: 20, color: "#FFFFFF" },
+  statLabel: { fontSize: 11, color: "#FFFFFF" },
+  sectionTitle: { fontSize: 17, color: "#FFFFFF", marginBottom: 12 },
   appointmentCard: {
     backgroundColor: "#111111",
     borderRadius: 20,
@@ -233,8 +233,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  apptTitle: { fontSize: 15, color: "#34FF7A", marginBottom: 3 },
-  apptSub: { fontSize: 12, color: "#34FF7A" },
+  apptTitle: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
+  apptSub: { fontSize: 12, color: "#FFFFFF" },
   servicesRow: { gap: 10, paddingRight: 4 },
   svcChip: {
     backgroundColor: "#111111",
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  svcChipText: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
+  svcChipText: { fontSize: 11, color: "#FFFFFF", textAlign: "center" },
   proCard: {
     backgroundColor: "#111111",
     borderRadius: 20,
@@ -280,9 +280,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 4,
   },
-  proName: { fontSize: 14, color: "#34FF7A", flex: 1, marginRight: 8 },
+  proName: { fontSize: 14, color: "#FFFFFF", flex: 1, marginRight: 8 },
   proRating: { fontSize: 13, color: "#34FF7A" },
-  proMeta: { fontSize: 12, color: "#34FF7A", marginBottom: 10 },
+  proMeta: { fontSize: 12, color: "#FFFFFF", marginBottom: 10 },
   bookNowBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 8,

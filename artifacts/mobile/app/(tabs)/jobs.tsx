@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#34FF7A" },
+  headerTitle: { fontSize: 22, color: "#FFFFFF" },
   emptyContainer: {
     flex: 1,
     alignItems: "center",
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 8,
   },
-  emptyTitle: { fontSize: 20, color: "#34FF7A" },
+  emptyTitle: { fontSize: 20, color: "#FFFFFF" },
   emptySub: {
     fontSize: 14,
     color: "#555",
