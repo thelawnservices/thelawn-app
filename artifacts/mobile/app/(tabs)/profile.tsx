@@ -55,11 +55,18 @@ export default function ProfileScreen() {
   );
 }
 
-const YARD_SIZES = [
-  { label: "Small Yard",  sub: "Under 5,000 sq ft",   defaultPrice: "45" },
-  { label: "Medium Yard", sub: "5,000–10,000 sq ft",  defaultPrice: "65" },
-  { label: "Large Yard",  sub: "10,000+ sq ft",        defaultPrice: "120" },
+const PRICE_SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up"];
+const YARD_COLS = [
+  { key: "Small",  label: "Small",  sub: "< 5k sq ft" },
+  { key: "Medium", label: "Medium", sub: "5–10k sq ft" },
+  { key: "Large",  label: "Large",  sub: "10k+ sq ft" },
 ];
+const DEFAULT_PRICE_MATRIX: Record<string, Record<string, string>> = {
+  "Lawn Mowing":    { Small: "45",  Medium: "65",  Large: "120" },
+  "Hedge Trimming": { Small: "45",  Medium: "65",  Large: "120" },
+  "Mulching":       { Small: "45",  Medium: "65",  Large: "120" },
+  "Clean Up":       { Small: "45",  Medium: "65",  Large: "120" },
+};
 
 const LANDSCAPER_APPOINTMENTS = [
   {
@@ -83,8 +90,8 @@ const LANDSCAPER_APPOINTMENTS = [
 ];
 
 function LandscaperProfile() {
-  const [prices, setPrices] = useState<Record<string, string>>(
-    Object.fromEntries(YARD_SIZES.map((s) => [s.label, s.defaultPrice]))
+  const [matrix, setMatrix] = useState<Record<string, Record<string, string>>>(
+    JSON.parse(JSON.stringify(DEFAULT_PRICE_MATRIX))
   );
   const [saveState, setSaveState] = useState<"idle" | "loading" | "success">("idle");
   const successOpacity = useRef(new Animated.Value(0)).current;
@@ -151,35 +158,44 @@ function LandscaperProfile() {
         </View>
       </View>
 
-      {/* Price Editor – Yard Size Tiers */}
+      {/* Price Matrix – Service × Yard Size */}
       <View style={styles.priceCard}>
         <Text style={[styles.priceCardTitle, { fontFamily: "Inter_600SemiBold" }]}>
           Service Prices by Yard Size
         </Text>
-        {YARD_SIZES.map((s, i) => (
-          <View key={s.label}>
-            {i > 0 && <View style={styles.divider} />}
-            <View style={styles.priceRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.priceServiceLabel, { fontFamily: "Inter_500Medium" }]}>
-                  {s.label}
-                </Text>
-                <Text style={[styles.priceServiceSub, { fontFamily: "Inter_400Regular" }]}>
-                  {s.sub}
-                </Text>
-              </View>
-              <View style={styles.priceInputWrapper}>
-                <Text style={styles.priceDollar}>$</Text>
-                <TextInput
-                  style={[styles.priceInput, { fontFamily: "Inter_500Medium" }]}
-                  value={prices[s.label]}
-                  onChangeText={(t) => setPrices((p) => ({ ...p, [s.label]: t.replace(/[^0-9]/g, "") }))}
-                  keyboardType="numeric"
-                  maxLength={5}
-                  selectTextOnFocus
-                  placeholderTextColor="#555"
-                />
-              </View>
+        {PRICE_SERVICES.map((svc, si) => (
+          <View key={svc} style={[styles.priceMatrixCard, si > 0 && { marginTop: 12 }]}>
+            <Text style={[styles.priceServiceLabel, { fontFamily: "Inter_500Medium" }]}>
+              {svc}
+            </Text>
+            <View style={styles.priceMatrixRow}>
+              {YARD_COLS.map((col) => (
+                <View key={col.key} style={styles.priceMatrixCell}>
+                  <Text style={[styles.priceMatrixColLabel, { fontFamily: "Inter_400Regular" }]}>
+                    {col.label}
+                  </Text>
+                  <Text style={[styles.priceMatrixColSub, { fontFamily: "Inter_400Regular" }]}>
+                    {col.sub}
+                  </Text>
+                  <View style={styles.priceInputWrapper}>
+                    <Text style={styles.priceDollar}>$</Text>
+                    <TextInput
+                      style={[styles.priceInput, { fontFamily: "Inter_500Medium" }]}
+                      value={matrix[svc][col.key]}
+                      onChangeText={(t) =>
+                        setMatrix((m) => ({
+                          ...m,
+                          [svc]: { ...m[svc], [col.key]: t.replace(/[^0-9]/g, "") },
+                        }))
+                      }
+                      keyboardType="numeric"
+                      maxLength={5}
+                      selectTextOnFocus
+                      placeholderTextColor="#555"
+                    />
+                  </View>
+                </View>
+              ))}
             </View>
           </View>
         ))}
@@ -533,15 +549,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#333333",
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 8,
-    minWidth: 80,
+    alignSelf: "stretch",
   },
-  priceDollar: { fontSize: 14, color: "#34FF7A", marginRight: 2 },
+  priceDollar: { fontSize: 13, color: "#34FF7A", marginRight: 1 },
   priceInput: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#FFFFFF",
-    minWidth: 48,
+    flex: 1,
     textAlign: "right",
   },
   savePricesBtn: {
@@ -582,6 +598,25 @@ const styles = StyleSheet.create({
   },
   logoutText: { fontSize: 15, color: "#ef4444" },
   priceServiceSub: { fontSize: 11, color: "#666666", marginTop: 2 },
+  priceMatrixCard: {
+    backgroundColor: "#0a0a0a",
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  priceMatrixRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 10,
+  },
+  priceMatrixCell: {
+    flex: 1,
+    alignItems: "center",
+    gap: 3,
+  },
+  priceMatrixColLabel: { fontSize: 11, color: "#AAAAAA" },
+  priceMatrixColSub: { fontSize: 9, color: "#555555", marginBottom: 2 },
   apptCustomer: { fontSize: 14, color: "#FFFFFF", marginBottom: 4 },
   apptMeta: { fontSize: 12, color: "#888888" },
   apptNotePill: {
