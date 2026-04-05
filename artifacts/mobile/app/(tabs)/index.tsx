@@ -38,6 +38,41 @@ function AnimatedStatCard({ stat, delay }: { stat: typeof QUICK_STATS[0]; delay:
   );
 }
 
+function GrassHeader({ topPadding }: { topPadding: number }) {
+  const sway = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(sway, { toValue: 1, duration: 4000, useNativeDriver: false }),
+        Animated.timing(sway, { toValue: -1, duration: 4000, useNativeDriver: false }),
+        Animated.timing(sway, { toValue: 0, duration: 4000, useNativeDriver: false }),
+      ])
+    ).start();
+  }, []);
+
+  const rotate = sway.interpolate({ inputRange: [-1, 0, 1], outputRange: ["-2deg", "0deg", "2deg"] });
+
+  return (
+    <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
+      {/* Animated grass background */}
+      <Animated.Text style={[styles.grassBg, { transform: [{ rotate }] }]}>
+        🌿 🌿 🌿 🌿 🌿 🌿 🌿 🌿 🌿 🌿
+      </Animated.Text>
+      {/* Header row on top */}
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1 }} />
+        <Text style={[styles.logo, { fontFamily: "Inter_700Bold" }]}>theLawn</Text>
+        <View style={[{ flex: 1 }, styles.headerRight]}>
+          <TouchableOpacity style={styles.notifBtn} onPress={() => {}}>
+            <Ionicons name="notifications-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
@@ -45,15 +80,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Green gradient header */}
-      <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.logo, { fontFamily: "Inter_700Bold" }]}>theLawn</Text>
-          <TouchableOpacity style={styles.notifBtn} onPress={() => {}}>
-            <Ionicons name="notifications-outline" size={22} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <GrassHeader topPadding={topPadding} />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -181,20 +208,34 @@ const TRUSTED_PROS = [
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#000000" },
   header: {
-    backgroundColor: "#34C759",
+    backgroundColor: "#000000",
     paddingHorizontal: 20,
     paddingBottom: 18,
+    overflow: "hidden",
+    position: "relative",
+  },
+  grassBg: {
+    position: "absolute",
+    fontSize: 26,
+    opacity: 0.2,
+    color: "#34FF7A",
+    alignSelf: "center",
+    top: "50%",
+    letterSpacing: 6,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+  headerRight: {
+    alignItems: "flex-end",
+  },
   logo: { fontSize: 26, color: "#fff", letterSpacing: -1 },
   notifBtn: {
     width: 36,
     height: 36,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",

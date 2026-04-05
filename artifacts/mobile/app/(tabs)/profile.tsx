@@ -17,7 +17,7 @@ import * as Haptics from "expo-haptics";
 const PAYMENT_METHODS = [
   { label: "🍎  Apple Pay", value: "Apple Pay" },
   { label: "💸  Venmo",     value: "Venmo" },
-  { label: "💰  PayPal",    value: "PayPal" },
+  { label: "🅿️  PayPal",   value: "PayPal" },
   { label: "💳  Debit Card",value: "Debit Card" },
   { label: "📱  Cash App",  value: "Cash App" },
 ];
