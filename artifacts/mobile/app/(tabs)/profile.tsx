@@ -63,31 +63,11 @@ const YARD_COLS = [
 ];
 const DEFAULT_PRICE_MATRIX: Record<string, Record<string, string>> = {
   "Lawn Mowing":    { Small: "45",  Medium: "65",  Large: "120" },
-  "Hedge Trimming": { Small: "45",  Medium: "65",  Large: "120" },
-  "Mulching":       { Small: "45",  Medium: "65",  Large: "120" },
-  "Clean Up":       { Small: "45",  Medium: "65",  Large: "120" },
+  "Hedge Trimming": { Small: "55",  Medium: "75",  Large: "95"  },
+  "Mulching":       { Small: "110", Medium: "140", Large: "180" },
+  "Clean Up":       { Small: "30",  Medium: "40",  Large: "55"  },
 };
 
-const LANDSCAPER_APPOINTMENTS = [
-  {
-    id: "1",
-    customer: "Zamire Smith",
-    address: "123 Main St, Ellenton, FL",
-    phone: "(555) 123-4567",
-    date: "Apr 9",
-    time: "10:30 AM",
-    note: "Screenshots attached",
-  },
-  {
-    id: "2",
-    customer: "Marcus T.",
-    address: "88 Palmetto Ave, Ellenton, FL",
-    phone: "(555) 987-6543",
-    date: "Apr 12",
-    time: "9:00 AM",
-    note: null,
-  },
-];
 
 function LandscaperProfile() {
   const [matrix, setMatrix] = useState<Record<string, Record<string, string>>>(
@@ -224,29 +204,6 @@ function LandscaperProfile() {
           </Animated.View>
         )}
       </View>
-
-      {/* Active & Future Appointments */}
-      <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-        Active & Future Appointments
-      </Text>
-      {LANDSCAPER_APPOINTMENTS.map((appt) => (
-        <View key={appt.id} style={[styles.card, { marginBottom: 10 }]}>
-          <Text style={[styles.apptCustomer, { fontFamily: "Inter_600SemiBold" }]}>
-            {appt.customer} · {appt.address}
-          </Text>
-          <Text style={[styles.apptMeta, { fontFamily: "Inter_400Regular" }]}>
-            Phone: {appt.phone} · {appt.date} · {appt.time}
-          </Text>
-          {appt.note && (
-            <View style={styles.apptNotePill}>
-              <Ionicons name="image-outline" size={12} color="#34FF7A" />
-              <Text style={[styles.apptNoteText, { fontFamily: "Inter_400Regular" }]}>
-                {appt.note}
-              </Text>
-            </View>
-          )}
-        </View>
-      ))}
 
       <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }, { marginTop: 8 }]}>
         Customer Reviews
