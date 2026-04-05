@@ -150,13 +150,52 @@ export default function PayScreen() {
     setPhotos((prev) => [...prev, PHOTO_EMOJIS[prev.length % PHOTO_EMOJIS.length]]);
   };
 
+  const validatePayment = (): string | true => {
+    if (paymentMethod === "applepay") return true;
+    if (paymentMethod === "debit") {
+      const raw = cardNumber.replace(/\s/g, "");
+      if (!/^\d{16}$/.test(raw)) return "Please enter a valid 16-digit card number.";
+      if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) return "Please enter a valid expiry date (MM/YY).";
+      if (!/^\d{3,4}$/.test(cardCvv)) return "Please enter a valid CVV (3–4 digits).";
+      return true;
+    }
+    if (paymentMethod === "venmo") {
+      if (!venmoUser.trim() || !venmoUser.trim().startsWith("@"))
+        return "Venmo username must start with @";
+      return true;
+    }
+    if (paymentMethod === "paypal") {
+      if (!paypalEmail.includes("@")) return "Please enter a valid PayPal email address.";
+      return true;
+    }
+    if (paymentMethod === "cashapp") {
+      if (!cashTag.trim() || !cashTag.trim().startsWith("$"))
+        return "Cash App $cashtag must start with $";
+      return true;
+    }
+    return true;
+  };
+
+  const PAY_METHOD_LABELS: Record<string, string> = {
+    applepay: "Apple Pay",
+    debit: "Debit Card",
+    venmo: "Venmo",
+    paypal: "PayPal",
+    cashapp: "Cash App",
+  };
+
   const handleAuthorize = () => {
+    const valid = validatePayment();
+    if (valid !== true) {
+      Alert.alert("Payment Error", valid);
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setPayState("processing");
     setTimeout(() => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setPayState("success");
-    }, 1800);
+    }, 2200);
   };
 
   const selectedDateLabel =
@@ -170,7 +209,7 @@ export default function PayScreen() {
       <View style={[styles.fullCenter, { backgroundColor: "#000000" }]}>
         <Animated.View style={[styles.spinner, { transform: [{ rotate: spin }] }]} />
         <Text style={[styles.processingText, { fontFamily: "Inter_500Medium" }]}>
-          Authorizing Escrow Hold...
+          Processing with {PAY_METHOD_LABELS[paymentMethod]}...
         </Text>
       </View>
     );

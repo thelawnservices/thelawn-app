@@ -187,11 +187,15 @@ function AppHeader({
   onBellPress,
   isOffline,
   onToggleOffline,
+  notifEnabled,
+  missedCount,
 }: {
   topPadding: number;
   onBellPress: () => void;
   isOffline: boolean;
   onToggleOffline: () => void;
+  notifEnabled: boolean;
+  missedCount: number;
 }) {
   return (
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
@@ -211,7 +215,18 @@ function AppHeader({
         <Text style={[styles.logo, { fontFamily: "GreatVibes_400Regular" }]}>theLawn</Text>
         <View style={[{ flex: 1 }, styles.headerRight]}>
           <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
-            <Ionicons name="notifications-outline" size={22} color="#fff" />
+            <Ionicons
+              name={notifEnabled ? "notifications-outline" : "notifications-off-outline"}
+              size={22}
+              color={notifEnabled ? "#fff" : "#666666"}
+            />
+            {!notifEnabled && missedCount > 0 && (
+              <View style={styles.notifBadge}>
+                <Text style={[styles.notifBadgeText, { fontFamily: "Inter_700Bold" }]}>
+                  {missedCount > 9 ? "9+" : String(missedCount)}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -231,6 +246,7 @@ export default function HomeScreen() {
   notifEnabledRef.current = notifEnabled;
 
   const [notifItems, setNotifItems] = useState(NOTIFICATIONS);
+  const [missedCount, setMissedCount] = useState(0);
 
   useEffect(() => {
     const t = setTimeout(() => setProsLoaded(true), 900);
@@ -247,7 +263,11 @@ export default function HomeScreen() {
       const msg = MOCK_MESSAGES[idx % MOCK_MESSAGES.length];
       const item = { ...msg, id: String(Date.now()) };
       setNotifItems((prev) => [item, ...prev]);
-      if (notifEnabledRef.current) setNotifVisible(true);
+      if (notifEnabledRef.current) {
+        setNotifVisible(true);
+      } else {
+        setMissedCount((c) => c + 1);
+      }
       idx++;
     }, 6500);
     return () => { clearTimeout(t); clearTimeout(n); clearInterval(ws); };
@@ -265,9 +285,11 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <AppHeader
         topPadding={topPadding}
-        onBellPress={() => setNotifVisible(true)}
+        onBellPress={() => { setNotifVisible(true); setMissedCount(0); }}
         isOffline={isOffline}
         onToggleOffline={() => setIsOffline((v) => !v)}
+        notifEnabled={notifEnabled}
+        missedCount={missedCount}
       />
       <OfflineBanner visible={isOffline} />
       <NotificationsPanel
@@ -275,7 +297,12 @@ export default function HomeScreen() {
         onClose={() => setNotifVisible(false)}
         items={notifItems}
         notifEnabled={notifEnabled}
-        onToggleEnabled={() => setNotifEnabled((v) => !v)}
+        onToggleEnabled={() => {
+          setNotifEnabled((v) => {
+            if (!v) setMissedCount(0);
+            return !v;
+          });
+        }}
       />
 
       <ScrollView
@@ -600,6 +627,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  notifBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#FF3B30",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
+  },
+  notifBadgeText: { fontSize: 10, color: "#fff" },
   notifTogglePill: {
     paddingHorizontal: 12,
     paddingVertical: 5,
