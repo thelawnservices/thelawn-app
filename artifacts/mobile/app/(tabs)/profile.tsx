@@ -9,6 +9,7 @@ import {
   Alert,
   Animated,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -52,7 +53,39 @@ export default function ProfileScreen() {
   );
 }
 
+const SERVICES = [
+  { label: "Lawn Mowing",    defaultPrice: "45" },
+  { label: "Hedge Trimming", defaultPrice: "65" },
+  { label: "Mulching",       defaultPrice: "120" },
+  { label: "Clean Up",       defaultPrice: "35" },
+];
+
 function LandscaperProfile() {
+  const [prices, setPrices] = useState<Record<string, string>>(
+    Object.fromEntries(SERVICES.map((s) => [s.label, s.defaultPrice]))
+  );
+  const [saveState, setSaveState] = useState<"idle" | "loading" | "success">("idle");
+  const successOpacity = useRef(new Animated.Value(0)).current;
+  const successScale = useRef(new Animated.Value(0.8)).current;
+
+  const savePrices = () => {
+    Haptics.selectionAsync();
+    setSaveState("loading");
+    setTimeout(() => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setSaveState("success");
+      Animated.parallel([
+        Animated.timing(successOpacity, { toValue: 1, duration: 400, useNativeDriver: false }),
+        Animated.spring(successScale, { toValue: 1, useNativeDriver: false }),
+      ]).start();
+      setTimeout(() => {
+        setSaveState("idle");
+        successOpacity.setValue(0);
+        successScale.setValue(0.8);
+      }, 2500);
+    }, 1200);
+  };
+
   return (
     <>
       <View style={styles.avatarRow}>
@@ -94,6 +127,59 @@ function LandscaperProfile() {
             Mon–Sat · 7:00 AM – 6:00 PM
           </Text>
         </View>
+      </View>
+
+      {/* Price Editor */}
+      <View style={styles.priceCard}>
+        <Text style={[styles.priceCardTitle, { fontFamily: "Inter_600SemiBold" }]}>
+          Set Your Service Prices
+        </Text>
+        {SERVICES.map((s, i) => (
+          <View key={s.label}>
+            {i > 0 && <View style={styles.divider} />}
+            <View style={styles.priceRow}>
+              <Text style={[styles.priceServiceLabel, { fontFamily: "Inter_500Medium" }]}>
+                {s.label}
+              </Text>
+              <View style={styles.priceInputWrapper}>
+                <Text style={styles.priceDollar}>$</Text>
+                <TextInput
+                  style={[styles.priceInput, { fontFamily: "Inter_500Medium" }]}
+                  value={prices[s.label]}
+                  onChangeText={(t) => setPrices((p) => ({ ...p, [s.label]: t.replace(/[^0-9]/g, "") }))}
+                  keyboardType="numeric"
+                  maxLength={5}
+                  selectTextOnFocus
+                  placeholderTextColor="#555"
+                />
+              </View>
+            </View>
+          </View>
+        ))}
+
+        {saveState !== "success" ? (
+          <TouchableOpacity
+            style={[styles.savePricesBtn, saveState === "loading" && styles.savePricesBtnLoading]}
+            onPress={saveState === "idle" ? savePrices : undefined}
+            activeOpacity={0.85}
+          >
+            {saveState === "loading" ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <ActivityIndicator size="small" color="#000" />
+                <Text style={[styles.savePricesBtnText, { fontFamily: "Inter_600SemiBold" }]}>Saving...</Text>
+              </View>
+            ) : (
+              <Text style={[styles.savePricesBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Prices</Text>
+            )}
+          </TouchableOpacity>
+        ) : (
+          <Animated.View style={[styles.successBox, { opacity: successOpacity, transform: [{ scale: successScale }] }]}>
+            <Ionicons name="checkmark-circle" size={32} color="#34FF7A" />
+            <Text style={[styles.savedMsg, { fontFamily: "Inter_600SemiBold" }]}>
+              Prices saved!
+            </Text>
+          </Animated.View>
+        )}
       </View>
 
       <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
@@ -373,8 +459,51 @@ const styles = StyleSheet.create({
   paymentTileLabelActive: { color: "#34FF7A" },
   paymentCardError: { borderColor: "#ef4444" },
   errorMsg: { fontSize: 12, color: "#ef4444", marginTop: 6, marginBottom: 2 },
+  priceCard: {
+    backgroundColor: "#111111",
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    marginBottom: 12,
+  },
+  priceCardTitle: { fontSize: 13, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 16 },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+  },
+  priceServiceLabel: { fontSize: 15, color: "#FFFFFF" },
+  priceInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1a1a1a",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#333333",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minWidth: 80,
+  },
+  priceDollar: { fontSize: 14, color: "#34FF7A", marginRight: 2 },
+  priceInput: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    minWidth: 48,
+    textAlign: "right",
+  },
+  savePricesBtn: {
+    backgroundColor: "#34FF7A",
+    paddingVertical: 15,
+    borderRadius: 20,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  savePricesBtnLoading: { opacity: 0.8 },
+  savePricesBtnText: { color: "#000", fontSize: 15 },
   savePaymentBtn: {
-    backgroundColor: "#34C759",
+    backgroundColor: "#34FF7A",
     paddingVertical: 13,
     borderRadius: 20,
     alignItems: "center",
@@ -385,7 +514,7 @@ const styles = StyleSheet.create({
   successBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 14, paddingVertical: 6 },
   savedMsg: { fontSize: 14, color: "#34FF7A" },
   editBtn: {
-    backgroundColor: "#34C759",
+    backgroundColor: "#34FF7A",
     paddingVertical: 16,
     borderRadius: 24,
     alignItems: "center",
