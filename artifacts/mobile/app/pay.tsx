@@ -17,6 +17,14 @@ import * as Haptics from "expo-haptics";
 
 type PayState = "availability" | "details" | "review" | "processing" | "success";
 
+const PAY_METHODS = [
+  { value: "Apple Pay",  emoji: "🍎", label: "Apple Pay" },
+  { value: "Venmo",      emoji: "💸", label: "Venmo" },
+  { value: "PayPal",     emoji: "🅿️", label: "PayPal" },
+  { value: "Debit Card", emoji: "💳", label: "Debit" },
+  { value: "Cash App",   emoji: "📱", label: "Cash App" },
+];
+
 const TIP_OPTIONS = [
   { label: "10%", value: 0.1 },
   { label: "15%", value: 0.15 },
@@ -60,6 +68,7 @@ export default function PayScreen() {
   const [recurring, setRecurring] = useState(false);
   const [recurringFreq, setRecurringFreq] = useState<"Weekly" | "Bi-weekly" | "Monthly">("Weekly");
   const [tipIdx, setTipIdx] = useState(1);
+  const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const spinValue = useRef(new Animated.Value(0)).current;
@@ -577,20 +586,31 @@ export default function PayScreen() {
         </View>
 
         {/* Payment Method */}
-        <View style={styles.paymentMethod}>
-          <View style={styles.paymentMethodLeft}>
-            <View style={styles.cardIconBox}>
-              <Ionicons name="card" size={20} color="#34FF7A" />
-            </View>
-            <View>
-              <Text style={[styles.cardLabel, { fontFamily: "Inter_400Regular" }]}>
-                •••• •••• •••• 4242
-              </Text>
-              <Text style={[styles.cardSub, { fontFamily: "Inter_400Regular" }]}>Visa · Expires 12/27</Text>
-            </View>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
-        </View>
+        <Text style={[styles.payMethodLabel, { fontFamily: "Inter_600SemiBold" }]}>
+          Choose Payment Method
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.payTilesRow}
+        >
+          {PAY_METHODS.map((m) => {
+            const active = selectedPayment === m.value;
+            return (
+              <TouchableOpacity
+                key={m.value}
+                style={[styles.payTile, active && styles.payTileActive]}
+                onPress={() => { setSelectedPayment(m.value); Haptics.selectionAsync(); }}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.payTileEmoji}>{m.emoji}</Text>
+                <Text style={[styles.payTileText, { fontFamily: active ? "Inter_600SemiBold" : "Inter_400Regular" }, active && styles.payTileTextActive]}>
+                  {m.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </ScrollView>
 
       <View style={[styles.bottomBar, { paddingBottom: bottomPadding + 12 }]}>
@@ -878,7 +898,7 @@ const styles = StyleSheet.create({
   lineValue: { fontSize: 14, color: "#FFFFFF" },
   totalRow: { borderTopWidth: 1, borderTopColor: "#333", paddingTop: 12, marginTop: 4 },
   totalLabel: { fontSize: 17, color: "#FFFFFF" },
-  totalValue: { fontSize: 26, color: "#FFFFFF" },
+  totalValue: { fontSize: 26, color: "#34FF7A" },
   escrowNotice: {
     backgroundColor: "#0d1a2e",
     borderWidth: 1,
@@ -891,27 +911,22 @@ const styles = StyleSheet.create({
   escrowNoticeTop: { flexDirection: "row", alignItems: "center", gap: 8 },
   escrowNoticeTitle: { fontSize: 14, color: "#60a5fa" },
   escrowNoticeText: { fontSize: 13, color: "#93c5fd", lineHeight: 20 },
-  paymentMethod: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  payMethodLabel: { fontSize: 14, color: "#FFFFFF", marginBottom: 12 },
+  payTilesRow: { gap: 10, paddingBottom: 4 },
+  payTile: {
+    width: 80,
     backgroundColor: "#111111",
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#222222",
-  },
-  paymentMethodLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  cardIconBox: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#0d2e18",
-    borderRadius: 12,
+    borderRadius: 16,
+    padding: 12,
     alignItems: "center",
-    justifyContent: "center",
+    gap: 6,
+    borderWidth: 2,
+    borderColor: "transparent",
   },
-  cardLabel: { fontSize: 14, color: "#FFFFFF", letterSpacing: 1 },
-  cardSub: { fontSize: 12, color: "#555" },
+  payTileActive: { borderColor: "#34FF7A", backgroundColor: "#0d2e18" },
+  payTileEmoji: { fontSize: 24 },
+  payTileText: { fontSize: 10, color: "#FFFFFF", textAlign: "center" },
+  payTileTextActive: { color: "#34FF7A" },
   authorizeBtn: {
     backgroundColor: "#34C759",
     flexDirection: "row",
