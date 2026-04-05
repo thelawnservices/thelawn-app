@@ -106,25 +106,24 @@ export default function SearchScreen() {
   };
 
   return (
-    <View style={[styles.container]}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>
           Find Landscapers
         </Text>
-        {/* Search Bar */}
         <View style={styles.searchBar}>
-          <Feather name="search" size={16} color="#9ca3af" />
+          <Feather name="search" size={16} color="#555" />
           <TextInput
             style={[styles.searchInput, { fontFamily: "Inter_400Regular" }]}
             placeholder="Search by name, service, or location..."
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor="#555"
             value={query}
             onChangeText={setQuery}
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery("")}>
-              <Ionicons name="close-circle" size={18} color="#9ca3af" />
+              <Ionicons name="close-circle" size={18} color="#555" />
             </TouchableOpacity>
           )}
         </View>
@@ -140,14 +139,8 @@ export default function SearchScreen() {
           {FILTERS.map((f) => (
             <TouchableOpacity
               key={f}
-              style={[
-                styles.filterChip,
-                activeFilter === f && styles.filterChipActive,
-              ]}
-              onPress={() => {
-                setActiveFilter(f);
-                Haptics.selectionAsync();
-              }}
+              style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
+              onPress={() => { setActiveFilter(f); Haptics.selectionAsync(); }}
             >
               <Text
                 style={[
@@ -167,11 +160,8 @@ export default function SearchScreen() {
           <Text style={[styles.resultCount, { fontFamily: "Inter_400Regular" }]}>
             {sorted.length} result{sorted.length !== 1 ? "s" : ""}
           </Text>
-          <TouchableOpacity
-            style={styles.sortBtn}
-            onPress={() => setShowSort(!showSort)}
-          >
-            <Ionicons name="options-outline" size={16} color="#374151" />
+          <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSort(!showSort)}>
+            <Ionicons name="options-outline" size={16} color="#34C759" />
             <Text style={[styles.sortBtnText, { fontFamily: "Inter_500Medium" }]}>
               Sort: {SORT_OPTIONS[sortIdx]}
             </Text>
@@ -185,11 +175,7 @@ export default function SearchScreen() {
               <TouchableOpacity
                 key={opt}
                 style={[styles.sortOption, i === sortIdx && styles.sortOptionActive]}
-                onPress={() => {
-                  setSortIdx(i);
-                  setShowSort(false);
-                  Haptics.selectionAsync();
-                }}
+                onPress={() => { setSortIdx(i); setShowSort(false); Haptics.selectionAsync(); }}
               >
                 <Text
                   style={[
@@ -200,9 +186,7 @@ export default function SearchScreen() {
                 >
                   {opt}
                 </Text>
-                {i === sortIdx && (
-                  <Ionicons name="checkmark" size={16} color="#34C759" />
-                )}
+                {i === sortIdx && <Ionicons name="checkmark" size={16} color="#34C759" />}
               </TouchableOpacity>
             ))}
           </View>
@@ -212,7 +196,7 @@ export default function SearchScreen() {
         <View style={styles.results}>
           {sorted.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="search" size={40} color="#d1d5db" />
+              <Ionicons name="search" size={40} color="#333" />
               <Text style={[styles.emptyText, { fontFamily: "Inter_500Medium" }]}>
                 No landscapers found
               </Text>
@@ -253,7 +237,7 @@ export default function SearchScreen() {
                         ({pro.reviews})
                       </Text>
                       <Text style={styles.metaDot}>·</Text>
-                      <Ionicons name="location-outline" size={12} color="#9ca3af" />
+                      <Ionicons name="location-outline" size={12} color="#555" />
                       <Text style={[styles.proDist, { fontFamily: "Inter_400Regular" }]}>
                         {pro.distance}
                       </Text>
@@ -261,19 +245,14 @@ export default function SearchScreen() {
                   </View>
                   <Text style={[styles.proPrice, { fontFamily: "Inter_700Bold" }]}>
                     ${pro.price}
-                    <Text style={[styles.pricePer, { fontFamily: "Inter_400Regular" }]}>
-                      /hr
-                    </Text>
+                    <Text style={[styles.pricePer, { fontFamily: "Inter_400Regular" }]}>/hr</Text>
                   </Text>
                 </View>
 
-                {/* Tags */}
                 <View style={styles.tagsRow}>
                   {pro.tags.map((tag) => (
                     <View key={tag} style={styles.tag}>
-                      <Text style={[styles.tagText, { fontFamily: "Inter_400Regular" }]}>
-                        {tag}
-                      </Text>
+                      <Text style={[styles.tagText, { fontFamily: "Inter_400Regular" }]}>{tag}</Text>
                     </View>
                   ))}
                 </View>
@@ -297,40 +276,39 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9F7" },
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
   header: {
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#111827", marginBottom: 12 },
+  headerTitle: { fontSize: 22, color: "#34C759", marginBottom: 12 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#1a1a1a",
     borderRadius: 28,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "#222",
   },
-  searchInput: { flex: 1, fontSize: 14, color: "#111827" },
+  searchInput: { flex: 1, fontSize: 14, color: "#34C759" },
   filtersRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 8 },
   filterChip: {
     paddingHorizontal: 18,
     paddingVertical: 8,
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#333",
   },
-  filterChipActive: {
-    backgroundColor: "#34C759",
-    borderColor: "#34C759",
-  },
-  filterChipText: { fontSize: 13, color: "#374151" },
-  filterChipTextActive: { color: "#fff" },
+  filterChipActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
+  filterChipText: { fontSize: 13, color: "#34C759" },
+  filterChipTextActive: { color: "#000" },
   sortRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -338,33 +316,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 4,
   },
-  resultCount: { fontSize: 13, color: "#6b7280" },
+  resultCount: { fontSize: 13, color: "#555" },
   sortBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#333",
   },
-  sortBtnText: { fontSize: 13, color: "#374151" },
+  sortBtnText: { fontSize: 13, color: "#34C759" },
   sortDropdown: {
     marginHorizontal: 16,
     marginTop: 4,
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#333",
     overflow: "hidden",
     marginBottom: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
   },
   sortOption: {
     flexDirection: "row",
@@ -373,29 +346,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: "#f5f5f5",
+    borderBottomColor: "#222",
   },
-  sortOptionActive: { backgroundColor: "#f0fdf4" },
-  sortOptionText: { fontSize: 14, color: "#374151" },
+  sortOptionActive: { backgroundColor: "#1a3a1a" },
+  sortOptionText: { fontSize: 14, color: "#34C759" },
   results: { padding: 16, gap: 12 },
-  emptyState: {
-    paddingVertical: 60,
-    alignItems: "center",
-    gap: 10,
-  },
-  emptyText: { fontSize: 16, color: "#6b7280" },
-  emptySubText: { fontSize: 13, color: "#9ca3af" },
+  emptyState: { paddingVertical: 60, alignItems: "center", gap: 10 },
+  emptyText: { fontSize: 16, color: "#555" },
+  emptySubText: { fontSize: 13, color: "#444" },
   proCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderRadius: 22,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderColor: "#222222",
   },
   proCardTop: { flexDirection: "row", gap: 12, marginBottom: 12 },
   proAvatar: {
@@ -407,38 +371,38 @@ const styles = StyleSheet.create({
   },
   proInitials: { color: "#fff", fontSize: 18, fontWeight: "700" },
   proNameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 },
-  proName: { fontSize: 15, color: "#111827" },
+  proName: { fontSize: 15, color: "#34C759" },
   trustedBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#E8F5E8",
+    backgroundColor: "#1a3a1a",
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 8,
   },
-  trustedText: { fontSize: 11, color: "#166D42" },
-  proSpec: { fontSize: 13, color: "#6b7280", marginBottom: 5 },
+  trustedText: { fontSize: 11, color: "#34C759" },
+  proSpec: { fontSize: 13, color: "#555", marginBottom: 5 },
   proMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
-  proRating: { fontSize: 12, color: "#111827" },
-  proReviews: { fontSize: 12, color: "#9ca3af" },
-  metaDot: { color: "#d1d5db", fontSize: 12 },
-  proDist: { fontSize: 12, color: "#6b7280" },
-  proPrice: { fontSize: 20, color: "#111827" },
-  pricePer: { fontSize: 12, color: "#9ca3af" },
+  proRating: { fontSize: 12, color: "#34C759" },
+  proReviews: { fontSize: 12, color: "#555" },
+  metaDot: { color: "#333", fontSize: 12 },
+  proDist: { fontSize: 12, color: "#555" },
+  proPrice: { fontSize: 20, color: "#34C759" },
+  pricePer: { fontSize: 12, color: "#555" },
   tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 },
   tag: {
-    backgroundColor: "#F0FDF4",
+    backgroundColor: "#1a3a1a",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  tagText: { fontSize: 11, color: "#166D42" },
+  tagText: { fontSize: 11, color: "#34C759" },
   bookBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 13,
     borderRadius: 22,
     alignItems: "center",
   },
-  bookBtnText: { color: "#fff", fontSize: 15 },
+  bookBtnText: { color: "#000", fontSize: 15 },
 });

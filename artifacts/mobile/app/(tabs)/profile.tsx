@@ -14,7 +14,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
 type ProfileType = "customer" | "landscaper";
-
 const SERVICES_LIST = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Cleanup", "Full Service"];
 
 export default function ProfileScreen() {
@@ -28,10 +27,7 @@ export default function ProfileScreen() {
   const [yearEst, setYearEst] = useState("2018");
   const [selectedService, setSelectedService] = useState("Lawn Mowing");
 
-  const switchType = (t: ProfileType) => {
-    setProfileType(t);
-    Haptics.selectionAsync();
-  };
+  const switchType = (t: ProfileType) => { setProfileType(t); Haptics.selectionAsync(); };
 
   return (
     <View style={styles.container}>
@@ -39,23 +35,14 @@ export default function ProfileScreen() {
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Profile</Text>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Toggle */}
         <View style={styles.toggle}>
           <TouchableOpacity
             style={[styles.toggleBtn, profileType === "customer" && styles.toggleBtnActive]}
             onPress={() => switchType("customer")}
           >
-            <Text
-              style={[
-                styles.toggleBtnText,
-                { fontFamily: "Inter_500Medium" },
-                profileType === "customer" && styles.toggleBtnTextActive,
-              ]}
-            >
+            <Text style={[styles.toggleBtnText, { fontFamily: "Inter_500Medium" }, profileType === "customer" && styles.toggleBtnTextActive]}>
               Customer
             </Text>
           </TouchableOpacity>
@@ -63,13 +50,7 @@ export default function ProfileScreen() {
             style={[styles.toggleBtn, profileType === "landscaper" && styles.toggleBtnActive]}
             onPress={() => switchType("landscaper")}
           >
-            <Text
-              style={[
-                styles.toggleBtnText,
-                { fontFamily: "Inter_500Medium" },
-                profileType === "landscaper" && styles.toggleBtnTextActive,
-              ]}
-            >
+            <Text style={[styles.toggleBtnText, { fontFamily: "Inter_500Medium" }, profileType === "landscaper" && styles.toggleBtnTextActive]}>
               Landscaper
             </Text>
           </TouchableOpacity>
@@ -78,20 +59,14 @@ export default function ProfileScreen() {
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarBox}>
-            <Ionicons
-              name={profileType === "customer" ? "person" : "construct"}
-              size={44}
-              color="#9ca3af"
-            />
+            <Ionicons name={profileType === "customer" ? "person" : "construct"} size={44} color="#34C759" />
           </View>
           <TouchableOpacity
             style={styles.uploadBtn}
             onPress={() => Alert.alert("Upload Photo", "Photo picker would open here")}
           >
             <Ionicons name="camera" size={14} color="#34C759" />
-            <Text style={[styles.uploadText, { fontFamily: "Inter_500Medium" }]}>
-              Change Photo
-            </Text>
+            <Text style={[styles.uploadText, { fontFamily: "Inter_500Medium" }]}>Change Photo</Text>
           </TouchableOpacity>
         </View>
 
@@ -106,20 +81,18 @@ export default function ProfileScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 placeholder="Email"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#444"
               />
             </View>
-
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Date of Birth</Text>
               <View style={[styles.field, styles.fieldRow]}>
-                <Ionicons name="calendar-outline" size={16} color="#9ca3af" />
-                <Text style={[{ fontFamily: "Inter_400Regular", color: "#374151", fontSize: 15 }]}>
+                <Ionicons name="calendar-outline" size={16} color="#555" />
+                <Text style={{ fontFamily: "Inter_400Regular", color: "#34C759", fontSize: 15 }}>
                   June 15, 1995
                 </Text>
               </View>
             </View>
-
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Address</Text>
               <TextInput
@@ -127,18 +100,15 @@ export default function ProfileScreen() {
                 value={address}
                 onChangeText={setAddress}
                 placeholder="Address"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#444"
               />
             </View>
-
             <TouchableOpacity
               style={styles.outlineBtn}
               onPress={() => Alert.alert("Change Password", "Password reset flow would open here")}
             >
-              <Ionicons name="lock-closed-outline" size={18} color="#374151" />
-              <Text style={[styles.outlineBtnText, { fontFamily: "Inter_500Medium" }]}>
-                Change Password
-              </Text>
+              <Ionicons name="lock-closed-outline" size={18} color="#34C759" />
+              <Text style={[styles.outlineBtnText, { fontFamily: "Inter_500Medium" }]}>Change Password</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -149,10 +119,9 @@ export default function ProfileScreen() {
                 style={[styles.field, { fontFamily: "Inter_400Regular" }]}
                 value="Rivera Lawn Services"
                 placeholder="Business Name"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#444"
               />
             </View>
-
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Year Established</Text>
               <TextInput
@@ -161,49 +130,36 @@ export default function ProfileScreen() {
                 onChangeText={setYearEst}
                 keyboardType="numeric"
                 placeholder="Year"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor="#444"
               />
             </View>
-
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Primary Service</Text>
               <View style={styles.serviceOptions}>
                 {SERVICES_LIST.map((s) => (
                   <TouchableOpacity
                     key={s}
-                    style={[
-                      styles.serviceOption,
-                      selectedService === s && styles.serviceOptionActive,
-                    ]}
+                    style={[styles.serviceOption, selectedService === s && styles.serviceOptionActive]}
                     onPress={() => { setSelectedService(s); Haptics.selectionAsync(); }}
                   >
-                    <Text
-                      style={[
-                        styles.serviceOptionText,
-                        { fontFamily: "Inter_400Regular" },
-                        selectedService === s && { color: "#34C759", fontFamily: "Inter_600SemiBold" },
-                      ]}
-                    >
+                    <Text style={[styles.serviceOptionText, { fontFamily: "Inter_400Regular" }, selectedService === s && { color: "#34C759", fontFamily: "Inter_600SemiBold" }]}>
                       {s}
                     </Text>
-                    {selectedService === s && (
-                      <Ionicons name="checkmark-circle" size={16} color="#34C759" />
-                    )}
+                    {selectedService === s && <Ionicons name="checkmark-circle" size={16} color="#34C759" />}
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
-
             <View style={styles.fieldGroup}>
               <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Hourly Rate</Text>
               <View style={[styles.field, styles.fieldRow]}>
-                <Text style={[{ fontFamily: "Inter_400Regular", color: "#9ca3af", fontSize: 15 }]}>$</Text>
+                <Text style={{ fontFamily: "Inter_400Regular", color: "#555", fontSize: 15 }}>$</Text>
                 <TextInput
-                  style={[{ flex: 1, fontFamily: "Inter_400Regular", fontSize: 15, color: "#374151" }]}
+                  style={{ flex: 1, fontFamily: "Inter_400Regular", fontSize: 15, color: "#34C759" }}
                   defaultValue="45"
                   keyboardType="numeric"
                 />
-                <Text style={[{ fontFamily: "Inter_400Regular", color: "#9ca3af", fontSize: 13 }]}>/hr</Text>
+                <Text style={{ fontFamily: "Inter_400Regular", color: "#555", fontSize: 13 }}>/hr</Text>
               </View>
             </View>
           </>
@@ -230,54 +186,53 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9F7" },
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
   header: {
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#111827" },
+  headerTitle: { fontSize: 22, color: "#34C759" },
   scrollContent: { padding: 16, paddingBottom: 48 },
   toggle: {
     flexDirection: "row",
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#111111",
     borderRadius: 28,
     padding: 4,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#222",
   },
-  toggleBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 24,
-    alignItems: "center",
-  },
-  toggleBtnActive: { backgroundColor: "#fff", shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 },
-  toggleBtnText: { fontSize: 14, color: "#6b7280" },
-  toggleBtnTextActive: { color: "#111827" },
+  toggleBtn: { flex: 1, paddingVertical: 12, borderRadius: 24, alignItems: "center" },
+  toggleBtnActive: { backgroundColor: "#1a3a1a" },
+  toggleBtnText: { fontSize: 14, color: "#555" },
+  toggleBtnTextActive: { color: "#34C759" },
   avatarSection: { alignItems: "center", gap: 10, marginBottom: 24 },
   avatarBox: {
     width: 90,
     height: 90,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#111111",
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#333",
   },
   uploadBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
   uploadText: { fontSize: 13, color: "#34C759" },
   fieldGroup: { marginBottom: 16 },
-  fieldLabel: { fontSize: 13, color: "#6b7280", marginBottom: 6 },
+  fieldLabel: { fontSize: 13, color: "#555", marginBottom: 6 },
   field: {
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#222222",
     borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    color: "#374151",
+    color: "#34C759",
   },
   fieldRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   serviceOptions: { gap: 8 },
@@ -285,28 +240,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#222222",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  serviceOptionActive: { borderColor: "#34C759", backgroundColor: "#f0fdf4" },
-  serviceOptionText: { fontSize: 14, color: "#374151" },
+  serviceOptionActive: { borderColor: "#34C759", backgroundColor: "#1a3a1a" },
+  serviceOptionText: { fontSize: 14, color: "#555" },
   outlineBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#333",
     borderRadius: 22,
     paddingVertical: 14,
     marginBottom: 8,
   },
-  outlineBtnText: { fontSize: 15, color: "#374151" },
+  outlineBtnText: { fontSize: 15, color: "#34C759" },
   saveBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 16,
@@ -320,7 +275,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
-  saveBtnText: { color: "#fff", fontSize: 16 },
+  saveBtnText: { color: "#000", fontSize: 16 },
   logoutBtn: {
     flexDirection: "row",
     alignItems: "center",

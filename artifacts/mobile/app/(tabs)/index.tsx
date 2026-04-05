@@ -10,23 +10,21 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useColors } from "@/hooks/useColors";
 
 const QUICK_STATS = [
-  { label: "Jobs Done", value: "3", icon: "checkmark-circle" as const },
-  { label: "Avg Rating", value: "4.9", icon: "star" as const },
-  { label: "Saved Pros", value: "2", icon: "heart" as const },
+  { label: "Jobs Done", value: "3", icon: "checkmark-circle" as const, iconColor: "#34C759" },
+  { label: "Avg Rating", value: "4.9", icon: "star" as const, iconColor: "#f59e0b" },
+  { label: "Saved Pros", value: "2", icon: "heart" as const, iconColor: "#f87171" },
 ];
 
 export default function HomeScreen() {
-  const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
 
   return (
-    <View style={[styles.container, { backgroundColor: "#F8F9F7" }]}>
-      {/* Gradient Header */}
+    <View style={styles.container}>
+      {/* Green gradient header */}
       <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
         <View style={styles.headerRow}>
           <Text style={[styles.logo, { fontFamily: "Inter_700Bold" }]}>theLawn</Text>
@@ -52,7 +50,7 @@ export default function HomeScreen() {
           onPress={() => router.navigate("/(tabs)/search")}
           activeOpacity={0.85}
         >
-          <Ionicons name="search" size={20} color="#fff" />
+          <Ionicons name="search" size={20} color="#000" />
           <Text style={[styles.ctaBtnText, { fontFamily: "Inter_600SemiBold" }]}>
             Find a Landscaper Near You
           </Text>
@@ -62,11 +60,7 @@ export default function HomeScreen() {
         <View style={styles.statsRow}>
           {QUICK_STATS.map((s) => (
             <View key={s.label} style={styles.statCard}>
-              <Ionicons
-                name={s.icon}
-                size={22}
-                color={s.icon === "star" ? "#f59e0b" : "#34C759"}
-              />
+              <Ionicons name={s.icon} size={22} color={s.iconColor} />
               <Text style={[styles.statValue, { fontFamily: "Inter_700Bold" }]}>{s.value}</Text>
               <Text style={[styles.statLabel, { fontFamily: "Inter_400Regular" }]}>{s.label}</Text>
             </View>
@@ -93,7 +87,7 @@ export default function HomeScreen() {
               April 12 • 10:30 AM • John Rivera
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#9ca3af" />
+          <Ionicons name="chevron-forward" size={18} color="#34C759" />
         </TouchableOpacity>
 
         {/* Popular Services */}
@@ -106,10 +100,10 @@ export default function HomeScreen() {
           contentContainerStyle={styles.servicesRow}
         >
           {[
-            { name: "Lawn Mowing", icon: "leaf" as const, color: "#34C759" },
-            { name: "Hedge Trimming", icon: "cut" as const, color: "#166D42" },
-            { name: "Mulching", icon: "flower" as const, color: "#4CAF50" },
-            { name: "Cleanup", icon: "trash" as const, color: "#2E7D32" },
+            { name: "Lawn Mowing", icon: "leaf" as const },
+            { name: "Hedge Trimming", icon: "cut" as const },
+            { name: "Mulching", icon: "flower" as const },
+            { name: "Cleanup", icon: "trash" as const },
           ].map((svc) => (
             <TouchableOpacity
               key={svc.name}
@@ -117,8 +111,8 @@ export default function HomeScreen() {
               onPress={() => router.navigate("/(tabs)/search")}
               activeOpacity={0.8}
             >
-              <View style={[styles.svcChipIcon, { backgroundColor: svc.color + "20" }]}>
-                <Ionicons name={svc.icon} size={20} color={svc.color} />
+              <View style={styles.svcChipIcon}>
+                <Ionicons name={svc.icon} size={20} color="#34C759" />
               </View>
               <Text style={[styles.svcChipText, { fontFamily: "Inter_500Medium" }]}>
                 {svc.name}
@@ -132,9 +126,8 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
   header: {
-    background: "linear-gradient(to right, #34C759, #166D42)" as any,
     backgroundColor: "#34C759",
     paddingHorizontal: 20,
     paddingBottom: 18,
@@ -154,7 +147,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scrollContent: { padding: 20, paddingBottom: 40 },
-  greeting: { fontSize: 26, color: "#111827", marginBottom: 20 },
+  greeting: { fontSize: 26, color: "#34C759", marginBottom: 20 },
   ctaBtn: {
     backgroundColor: "#34C759",
     flexDirection: "row",
@@ -170,26 +163,23 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  ctaBtnText: { color: "#fff", fontSize: 16 },
+  ctaBtnText: { color: "#000", fontSize: 16 },
   statsRow: { flexDirection: "row", gap: 10, marginBottom: 28 },
   statCard: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderRadius: 18,
     padding: 14,
     alignItems: "center",
     gap: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#222222",
   },
-  statValue: { fontSize: 20, color: "#111827" },
-  statLabel: { fontSize: 11, color: "#6b7280" },
-  sectionTitle: { fontSize: 17, color: "#111827", marginBottom: 12 },
+  statValue: { fontSize: 20, color: "#34C759" },
+  statLabel: { fontSize: 11, color: "#34C759" },
+  sectionTitle: { fontSize: 17, color: "#34C759", marginBottom: 12 },
   appointmentCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderRadius: 20,
     padding: 16,
     flexDirection: "row",
@@ -197,45 +187,36 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 28,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    borderColor: "#222222",
   },
   apptIcon: {
     width: 44,
     height: 44,
-    backgroundColor: "#E8F5E8",
+    backgroundColor: "#1a3a1a",
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  apptTitle: { fontSize: 15, color: "#111827", marginBottom: 3 },
-  apptSub: { fontSize: 12, color: "#6b7280" },
+  apptTitle: { fontSize: 15, color: "#34C759", marginBottom: 3 },
+  apptSub: { fontSize: 12, color: "#34C759" },
   servicesRow: { gap: 10, paddingRight: 4 },
   svcChip: {
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderRadius: 18,
     padding: 14,
     alignItems: "center",
     gap: 8,
     width: 100,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    borderColor: "#222222",
   },
   svcChipIcon: {
     width: 40,
     height: 40,
     borderRadius: 12,
+    backgroundColor: "#1a3a1a",
     alignItems: "center",
     justifyContent: "center",
   },
-  svcChipText: { fontSize: 11, color: "#374151", textAlign: "center" },
+  svcChipText: { fontSize: 11, color: "#34C759", textAlign: "center" },
 });

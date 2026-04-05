@@ -58,25 +58,16 @@ export default function AppointmentsScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
-        <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>
-          Appointments
-        </Text>
+        <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Appointments</Text>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>
-          Upcoming
-        </Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Upcoming</Text>
 
         {APPOINTMENTS.map((appt) => (
           <TouchableOpacity key={appt.id} style={styles.card} activeOpacity={0.8}>
-            <View style={styles.cardLeft}>
-              <View style={[styles.avatar, { backgroundColor: appt.color }]}>
-                <Text style={styles.avatarText}>{appt.initials}</Text>
-              </View>
+            <View style={[styles.avatar, { backgroundColor: appt.color }]}>
+              <Text style={styles.avatarText}>{appt.initials}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <View style={styles.cardTopRow}>
@@ -98,27 +89,25 @@ export default function AppointmentsScreen() {
           </TouchableOpacity>
         ))}
 
-        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>
+        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 20 }]}>
           Past
         </Text>
 
         {PAST.map((appt) => (
           <TouchableOpacity key={appt.id} style={[styles.card, styles.pastCard]} activeOpacity={0.8}>
-            <View style={styles.cardLeft}>
-              <View style={[styles.avatar, { backgroundColor: appt.color + "80" }]}>
-                <Text style={styles.avatarText}>{appt.initials}</Text>
-              </View>
+            <View style={[styles.avatar, { backgroundColor: appt.color + "60" }]}>
+              <Text style={styles.avatarText}>{appt.initials}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <View style={styles.cardTopRow}>
-                <Text style={[styles.serviceText, { fontFamily: "Inter_600SemiBold", color: "#6b7280" }]}>
+                <Text style={[styles.serviceText, { fontFamily: "Inter_600SemiBold", color: "#555" }]}>
                   {appt.service}
                 </Text>
-                <Text style={[styles.priceText, { fontFamily: "Inter_700Bold", color: "#9ca3af" }]}>
+                <Text style={[styles.priceText, { fontFamily: "Inter_700Bold", color: "#555" }]}>
                   {appt.price}
                 </Text>
               </View>
-              <Text style={[styles.subText, { fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.subText, { fontFamily: "Inter_400Regular", color: "#444" }]}>
                 {appt.date} · {appt.time}
               </Text>
               <View style={styles.ratingRow}>
@@ -132,9 +121,7 @@ export default function AppointmentsScreen() {
                 ))}
               </View>
             </View>
-            <View style={styles.completedBadge}>
-              <Ionicons name="checkmark-circle" size={18} color="#34C759" />
-            </View>
+            <Ionicons name="checkmark-circle" size={20} color="#34C759" />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -143,26 +130,25 @@ export default function AppointmentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9F7" },
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
   header: {
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#111827" },
+  headerTitle: { fontSize: 22, color: "#34C759" },
   scrollContent: { padding: 16, paddingBottom: 40 },
   sectionLabel: {
     fontSize: 13,
-    color: "#6b7280",
+    color: "#34C759",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 12,
-    marginTop: 8,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     borderRadius: 22,
     padding: 16,
     flexDirection: "row",
@@ -170,15 +156,9 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#f0f0f0",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    borderColor: "#222222",
   },
-  pastCard: { opacity: 0.75 },
-  cardLeft: {},
+  pastCard: { opacity: 0.7 },
   avatar: {
     width: 48,
     height: 48,
@@ -193,16 +173,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 3,
   },
-  serviceText: { fontSize: 15, color: "#111827" },
-  priceText: { fontSize: 15, color: "#111827" },
-  subText: { fontSize: 12, color: "#6b7280", marginBottom: 3 },
-  proText: { fontSize: 12, color: "#9ca3af" },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#34C759",
-  },
+  serviceText: { fontSize: 15, color: "#34C759" },
+  priceText: { fontSize: 15, color: "#34C759" },
+  subText: { fontSize: 12, color: "#555", marginBottom: 3 },
+  proText: { fontSize: 12, color: "#555" },
+  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#34C759" },
   ratingRow: { flexDirection: "row", gap: 2 },
-  completedBadge: {},
 });

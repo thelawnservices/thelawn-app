@@ -25,12 +25,9 @@ export default function JobsScreen() {
           Live tracking will appear here once you have a job in progress.
         </Text>
 
-        {/* Map placeholder */}
         <View style={styles.mapPlaceholder}>
-          <Ionicons name="map-outline" size={32} color="#d1d5db" />
-          <Text style={[styles.mapText, { fontFamily: "Inter_400Regular" }]}>
-            Map view
-          </Text>
+          <Ionicons name="map-outline" size={32} color="#333" />
+          <Text style={[styles.mapText, { fontFamily: "Inter_400Regular" }]}>Map view</Text>
         </View>
       </View>
     </View>
@@ -38,15 +35,15 @@ export default function JobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9F7" },
+  container: { flex: 1, backgroundColor: "#0a0a0a" },
   header: {
-    backgroundColor: "#fff",
+    backgroundColor: "#111111",
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#111827" },
+  headerTitle: { fontSize: 22, color: "#34C759" },
   emptyContainer: {
     flex: 1,
     alignItems: "center",
@@ -58,30 +55,30 @@ const styles = StyleSheet.create({
   emptyIconBox: {
     width: 80,
     height: 80,
-    backgroundColor: "#E8F5E8",
+    backgroundColor: "#1a3a1a",
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
   },
-  emptyTitle: { fontSize: 20, color: "#111827" },
+  emptyTitle: { fontSize: 20, color: "#34C759" },
   emptySub: {
     fontSize: 14,
-    color: "#6b7280",
+    color: "#555",
     textAlign: "center",
     lineHeight: 22,
   },
   mapPlaceholder: {
     width: "100%",
     height: 160,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#111111",
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     marginTop: 20,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: "#222222",
   },
-  mapText: { fontSize: 14, color: "#9ca3af" },
+  mapText: { fontSize: 14, color: "#555" },
 });
