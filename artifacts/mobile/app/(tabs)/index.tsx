@@ -168,7 +168,7 @@ export default function HomeScreen() {
 
         {/* Trusted Landscapers */}
         <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 28 }]}>
-          🔥 Top 7 Trusted Landscapers on TheLawn
+          🔥 Trusted Landscapers on The Lawn
         </Text>
         {!prosLoaded ? (
           <>
@@ -176,32 +176,45 @@ export default function HomeScreen() {
             <SkeletonCard />
           </>
         ) : (
-          TRUSTED_PROS.map((pro) => (
-            <TouchableOpacity
-              key={pro.name}
-              style={styles.proCard}
-              onPress={() => router.navigate("/pay")}
-              activeOpacity={0.8}
-            >
-              <View style={styles.proIconWrap}>
-                <Ionicons name={pro.icon} size={28} color="#34FF7A" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={styles.proTopRow}>
-                  <Text style={[styles.proName, { fontFamily: "Inter_600SemiBold" }]}>{pro.name}</Text>
-                  <Text style={[styles.proRating, { fontFamily: "Inter_500Medium" }]}>{pro.rating} ★</Text>
+          TRUSTED_PROS.map((pro) => {
+            const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
+            return (
+              <TouchableOpacity
+                key={pro.name}
+                style={styles.proCard}
+                onPress={() => router.navigate("/pay")}
+                activeOpacity={0.8}
+              >
+                <View style={styles.proIconWrap}>
+                  <Ionicons name={pro.icon} size={28} color="#34FF7A" />
                 </View>
-                <Text style={[styles.proMeta, { fontFamily: "Inter_400Regular" }]}>{pro.meta}</Text>
-                <TouchableOpacity
-                  style={styles.bookNowBtn}
-                  onPress={() => router.navigate("/pay")}
-                  activeOpacity={0.85}
-                >
-                  <Text style={[styles.bookNowText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))
+                <View style={{ flex: 1 }}>
+                  <View style={styles.proTopRow}>
+                    <Text style={[styles.proName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={1}>
+                      {pro.name}
+                    </Text>
+                    {isTrustedPro && (
+                      <View style={styles.trustedBadge}>
+                        <Text style={[styles.trustedBadgeText, { fontFamily: "Inter_500Medium" }]}>
+                          Trusted Pro
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[styles.proMeta, { fontFamily: "Inter_400Regular" }]}>
+                    {pro.rating} ★ • {pro.meta}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.bookNowBtn}
+                    onPress={() => router.navigate("/pay")}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.bookNowText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
     </View>
@@ -209,13 +222,13 @@ export default function HomeScreen() {
 }
 
 const TRUSTED_PROS = [
-  { name: "John Rivera Landscaping", rating: "4.9", meta: "2.3 mi • 142 jobs completed", icon: "leaf" as const },
-  { name: "Sarah's Lawn Care",        rating: "5.0", meta: "1.8 mi • 98 jobs completed",  icon: "grid" as const },
-  { name: "GreenScape Pros",          rating: "4.8", meta: "3.1 mi • 87 jobs completed",  icon: "flower" as const },
-  { name: "Elite Lawn Services",      rating: "4.9", meta: "2.9 mi • 65 jobs completed",  icon: "star" as const },
-  { name: "FreshCut Landscaping",     rating: "5.0", meta: "1.4 mi • 112 jobs completed", icon: "cut" as const },
-  { name: "Premier Turf Care",        rating: "4.7", meta: "4.2 mi • 79 jobs completed",  icon: "options" as const },
-  { name: "Nature's Edge Lawn",       rating: "4.9", meta: "2.7 mi • 53 jobs completed",  icon: "earth" as const },
+  { name: "John Rivera Landscaping", rating: 4.9, jobs: 142, meta: "2.3 mi • 142 jobs completed", icon: "leaf" as const },
+  { name: "Sarah's Lawn Care",        rating: 5.0, jobs: 98,  meta: "1.8 mi • 98 jobs completed",  icon: "grid" as const },
+  { name: "GreenScape Pros",          rating: 4.8, jobs: 87,  meta: "3.1 mi • 87 jobs completed",  icon: "flower" as const },
+  { name: "Elite Lawn Services",      rating: 4.9, jobs: 65,  meta: "2.9 mi • 65 jobs completed",  icon: "star" as const },
+  { name: "FreshCut Landscaping",     rating: 5.0, jobs: 112, meta: "1.4 mi • 112 jobs completed", icon: "cut" as const },
+  { name: "Premier Turf Care",        rating: 4.7, jobs: 79,  meta: "4.2 mi • 79 jobs completed",  icon: "options" as const },
+  { name: "Nature's Edge Lawn",       rating: 4.9, jobs: 53,  meta: "2.7 mi • 53 jobs completed",  icon: "earth" as const },
 ];
 
 const styles = StyleSheet.create({
@@ -226,8 +239,6 @@ const styles = StyleSheet.create({
     paddingBottom: 18,
     overflow: "hidden",
     position: "relative",
-    borderBottomWidth: 2,
-    borderBottomColor: "#34FF7A",
   },
   headerRow: {
     flexDirection: "row",
@@ -359,6 +370,17 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   bookNowText: { color: "#000", fontSize: 13 },
+  trustedBadge: {
+    backgroundColor: "#0d2e18",
+    borderWidth: 1,
+    borderColor: "#34FF7A",
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginLeft: 6,
+    flexShrink: 0,
+  },
+  trustedBadgeText: { fontSize: 10, color: "#34FF7A" },
   skeletonCard: {
     height: 96,
     borderRadius: 20,
