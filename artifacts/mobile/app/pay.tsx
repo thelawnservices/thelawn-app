@@ -576,6 +576,22 @@ export default function PayScreen() {
           </Text>
         </View>
 
+        {/* Saved Card */}
+        <View style={styles.savedCardRow}>
+          <View style={styles.savedCardIcon}>
+            <Ionicons name="card" size={20} color="#000" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.savedCardNumber, { fontFamily: "Inter_500Medium" }]}>
+              •••• •••• •••• 4242
+            </Text>
+            <Text style={[styles.savedCardSub, { fontFamily: "Inter_400Regular" }]}>
+              Visa · Expires 12/27
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#666" />
+        </View>
+
       </ScrollView>
 
       <View style={[styles.bottomBar, { paddingBottom: bottomPadding + 12 }]}>
@@ -938,4 +954,25 @@ const styles = StyleSheet.create({
   freqChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   freqChipText: { fontSize: 13, color: "#FFFFFF" },
   freqChipTextActive: { color: "#000" },
+  savedCardRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#111111",
+    borderRadius: 22,
+    padding: 16,
+    marginTop: 16,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  savedCardIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: "#34FF7A",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  savedCardNumber: { fontSize: 15, color: "#FFFFFF" },
+  savedCardSub: { fontSize: 12, color: "#888888", marginTop: 2 },
 });
