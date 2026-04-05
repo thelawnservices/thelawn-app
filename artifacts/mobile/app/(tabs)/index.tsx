@@ -115,10 +115,10 @@ export default function HomeScreen() {
           contentContainerStyle={styles.servicesRow}
         >
           {[
-            { name: "Lawn Mowing", icon: "leaf" as const },
-            { name: "Hedge Trimming", icon: "cut" as const },
-            { name: "Mulching", icon: "flower" as const },
-            { name: "Cleanup", icon: "trash" as const },
+            { name: "Lawn Mowing",   icon: "leaf" as const,   price: "$45" },
+            { name: "Hedge Trimming",icon: "cut" as const,    price: "$65" },
+            { name: "Mulching",      icon: "flower" as const, price: "$120" },
+            { name: "Cleanup",       icon: "trash" as const,  price: "$35" },
           ].map((svc) => (
             <TouchableOpacity
               key={svc.name}
@@ -132,9 +132,42 @@ export default function HomeScreen() {
               <Text style={[styles.svcChipText, { fontFamily: "Inter_500Medium" }]}>
                 {svc.name}
               </Text>
+              <Text style={[styles.svcChipPrice, { fontFamily: "Inter_600SemiBold" }]}>
+                {svc.price}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* Upcoming */}
+        <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
+          Upcoming Appointment
+        </Text>
+        <TouchableOpacity
+          style={styles.appointmentCard}
+          onPress={() => router.navigate("/(tabs)/appointments")}
+          activeOpacity={0.8}
+        >
+          <View style={styles.apptIcon}>
+            <Ionicons name="leaf" size={22} color="#34FF7A" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
+              Lawn Mowing
+            </Text>
+            <Text style={[styles.apptSub, { fontFamily: "Inter_400Regular" }]}>
+              April 12 • 10:30 AM • John Rivera
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
+        </TouchableOpacity>
+
+        {/* Quick Stats — staggered entrance */}
+        <View style={styles.statsRow}>
+          {QUICK_STATS.map((s, i) => (
+            <AnimatedStatCard key={s.label} stat={s} delay={i * 120} />
+          ))}
+        </View>
 
         {/* Horizontal Trusted Landscapers */}
         <ScrollView
@@ -180,36 +213,6 @@ export default function HomeScreen() {
             })
           )}
         </ScrollView>
-
-        {/* Quick Stats — staggered entrance */}
-        <View style={styles.statsRow}>
-          {QUICK_STATS.map((s, i) => (
-            <AnimatedStatCard key={s.label} stat={s} delay={i * 120} />
-          ))}
-        </View>
-
-        {/* Upcoming */}
-        <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-          Upcoming Appointment
-        </Text>
-        <TouchableOpacity
-          style={styles.appointmentCard}
-          onPress={() => router.navigate("/(tabs)/appointments")}
-          activeOpacity={0.8}
-        >
-          <View style={styles.apptIcon}>
-            <Ionicons name="leaf" size={22} color="#34FF7A" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
-              Lawn Mowing
-            </Text>
-            <Text style={[styles.apptSub, { fontFamily: "Inter_400Regular" }]}>
-              April 12 • 10:30 AM • John Rivera
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
-        </TouchableOpacity>
 
 
       </ScrollView>
@@ -330,6 +333,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   svcChipText: { fontSize: 11, color: "#FFFFFF", textAlign: "center" },
+  svcChipPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
   proRow: { marginTop: 20, marginBottom: 24, marginHorizontal: -20 },
   proRowContent: { paddingHorizontal: 20, gap: 12 },
   proHCard: {
