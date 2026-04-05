@@ -57,6 +57,8 @@ export default function PayScreen() {
   const [payState, setPayState] = useState<PayState>("availability");
   const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [recurring, setRecurring] = useState(false);
+  const [recurringFreq, setRecurringFreq] = useState<"Weekly" | "Bi-weekly" | "Monthly">("Weekly");
   const [tipIdx, setTipIdx] = useState(1);
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
@@ -302,6 +304,49 @@ export default function PayScreen() {
             <Text style={[styles.hintText, { fontFamily: "Inter_400Regular" }]}>
               Select a date above to see available times
             </Text>
+          )}
+
+          {/* Recurring Appointment */}
+          <View style={styles.recurringRow}>
+            <Text style={[styles.recurringLabel, { fontFamily: "Inter_500Medium" }]}>
+              Recurring Appointment
+            </Text>
+            <TouchableOpacity
+              style={[styles.toggleTrack, recurring && styles.toggleTrackOn]}
+              onPress={() => {
+                setRecurring((v) => !v);
+                Haptics.selectionAsync();
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.toggleThumb, recurring && styles.toggleThumbOn]} />
+            </TouchableOpacity>
+          </View>
+
+          {recurring && (
+            <View style={styles.freqRow}>
+              {(["Weekly", "Bi-weekly", "Monthly"] as const).map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  style={[styles.freqChip, recurringFreq === f && styles.freqChipActive]}
+                  onPress={() => {
+                    setRecurringFreq(f);
+                    Haptics.selectionAsync();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.freqChipText,
+                      { fontFamily: "Inter_500Medium" },
+                      recurringFreq === f && styles.freqChipTextActive,
+                    ]}
+                  >
+                    {f}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
         </ScrollView>
 
@@ -882,4 +927,51 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   authorizeBtnText: { color: "#000", fontSize: 16 },
+  recurringRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#f9fafb",
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  recurringLabel: { fontSize: 15, color: "#111827" },
+  toggleTrack: {
+    width: 46,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#d1d5db",
+    padding: 3,
+    justifyContent: "center",
+  },
+  toggleTrackOn: { backgroundColor: "#34C759" },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    alignSelf: "flex-start",
+  },
+  toggleThumbOn: { alignSelf: "flex-end" },
+  freqRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  freqChip: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: "#f3f4f6",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  freqChipActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
+  freqChipText: { fontSize: 13, color: "#374151" },
+  freqChipTextActive: { color: "#000" },
 });

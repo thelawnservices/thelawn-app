@@ -57,43 +57,19 @@ function SkeletonCard() {
   );
 }
 
-function AppHeader({ topPadding, scrollY }: { topPadding: number; scrollY: Animated.Value }) {
-  const sweep = useRef(new Animated.Value(-1)).current;
-  const breath = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(sweep, { toValue: 2, duration: 8000, useNativeDriver: false })
-    ).start();
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(breath, { toValue: 1.03, duration: 2500, useNativeDriver: false }),
-        Animated.timing(breath, { toValue: 1, duration: 2500, useNativeDriver: false }),
-      ])
-    ).start();
-  }, []);
-
-  const sweepLeft = sweep.interpolate({ inputRange: [-1, 2], outputRange: ["-100%", "200%"] });
-  const headerShift = scrollY.interpolate({ inputRange: [0, 200], outputRange: [0, 16], extrapolate: "clamp" });
-  const logoShift = scrollY.interpolate({ inputRange: [0, 200], outputRange: [0, 30], extrapolate: "clamp" });
-
+function AppHeader({ topPadding }: { topPadding: number }) {
   return (
-    <Animated.View style={[styles.header, { paddingTop: topPadding + 10, transform: [{ translateY: headerShift }] }]}>
-      <Animated.View style={[styles.sweepBar, { left: sweepLeft }]} pointerEvents="none" />
+    <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }} />
-        <Animated.Text
-          style={[styles.logo, { fontFamily: "GreatVibes_400Regular", transform: [{ translateY: logoShift }, { scale: breath }] }]}
-        >
-          theLawn
-        </Animated.Text>
+        <Text style={[styles.logo, { fontFamily: "GreatVibes_400Regular" }]}>theLawn</Text>
         <View style={[{ flex: 1 }, styles.headerRight]}>
           <TouchableOpacity style={styles.notifBtn} onPress={() => {}}>
             <Ionicons name="notifications-outline" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -102,7 +78,6 @@ export default function HomeScreen() {
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
   const [prosLoaded, setProsLoaded] = useState(false);
-  const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const t = setTimeout(() => setProsLoaded(true), 900);
@@ -111,17 +86,12 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <AppHeader topPadding={topPadding} scrollY={scrollY} />
+      <AppHeader topPadding={topPadding} />
 
-      <Animated.ScrollView
+      <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )}
       >
         {/* CTA Button */}
         <TouchableOpacity
@@ -198,7 +168,7 @@ export default function HomeScreen() {
 
         {/* Trusted Landscapers */}
         <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 28 }]}>
-          🔥 Trusted Landscapers on TheLawn
+          🔥 Top 7 Trusted Landscapers on TheLawn
         </Text>
         {!prosLoaded ? (
           <>
@@ -233,14 +203,19 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))
         )}
-      </Animated.ScrollView>
+      </ScrollView>
     </View>
   );
 }
 
 const TRUSTED_PROS = [
-  { name: "John Rivera Landscaping", rating: "4.9", meta: "2.3 mi • 87 jobs completed", icon: "leaf" as const },
-  { name: "Sarah's Lawn Care", rating: "5.0", meta: "1.8 mi • 142 jobs completed", icon: "grid" as const },
+  { name: "John Rivera Landscaping", rating: "4.9", meta: "2.3 mi • 142 jobs completed", icon: "leaf" as const },
+  { name: "Sarah's Lawn Care",        rating: "5.0", meta: "1.8 mi • 98 jobs completed",  icon: "grid" as const },
+  { name: "GreenScape Pros",          rating: "4.8", meta: "3.1 mi • 87 jobs completed",  icon: "flower" as const },
+  { name: "Elite Lawn Services",      rating: "4.9", meta: "2.9 mi • 65 jobs completed",  icon: "star" as const },
+  { name: "FreshCut Landscaping",     rating: "5.0", meta: "1.4 mi • 112 jobs completed", icon: "cut" as const },
+  { name: "Premier Turf Care",        rating: "4.7", meta: "4.2 mi • 79 jobs completed",  icon: "options" as const },
+  { name: "Nature's Edge Lawn",       rating: "4.9", meta: "2.7 mi • 53 jobs completed",  icon: "earth" as const },
 ];
 
 const styles = StyleSheet.create({
@@ -253,13 +228,6 @@ const styles = StyleSheet.create({
     position: "relative",
     borderBottomWidth: 2,
     borderBottomColor: "#34FF7A",
-  },
-  sweepBar: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    width: "40%",
-    backgroundColor: "rgba(255,255,255,0.1)",
   },
   headerRow: {
     flexDirection: "row",
