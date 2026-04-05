@@ -17,14 +17,6 @@ import * as Haptics from "expo-haptics";
 
 type PayState = "availability" | "details" | "review" | "processing" | "success";
 
-const PAY_METHODS = [
-  { value: "Apple Pay",  emoji: "🍎", label: "Apple Pay" },
-  { value: "Venmo",      emoji: "💸", label: "Venmo" },
-  { value: "PayPal",     emoji: "🅿️", label: "PayPal" },
-  { value: "Debit Card", emoji: "💳", label: "Debit" },
-  { value: "Cash App",   emoji: "📱", label: "Cash App" },
-];
-
 const TIP_OPTIONS = [
   { label: "10%", value: 0.1 },
   { label: "15%", value: 0.15 },
@@ -68,7 +60,6 @@ export default function PayScreen() {
   const [recurring, setRecurring] = useState(false);
   const [recurringFreq, setRecurringFreq] = useState<"Weekly" | "Bi-weekly" | "Monthly">("Weekly");
   const [tipIdx, setTipIdx] = useState(1);
-  const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const spinValue = useRef(new Animated.Value(0)).current;
@@ -194,10 +185,10 @@ export default function PayScreen() {
   // ─── Availability ─────────────────────────────────────────────
   if (payState === "availability") {
     return (
-      <View style={[styles.container, { backgroundColor: "#fff" }]}>
+      <View style={styles.container}>
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
           <TouchableOpacity onPress={() => router.dismiss()} style={styles.backBtn}>
-            <Ionicons name="chevron-down" size={24} color="#374151" />
+            <Ionicons name="chevron-down" size={24} color="#34FF7A" />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Select Date & Time</Text>
           <View style={{ width: 36 }} />
@@ -389,10 +380,10 @@ export default function PayScreen() {
   // ─── Job Details ──────────────────────────────────────────────
   if (payState === "details") {
     return (
-      <View style={[styles.container, { backgroundColor: "#fff" }]}>
+      <View style={styles.container}>
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
           <TouchableOpacity onPress={() => setPayState("availability")} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color="#374151" />
+            <Ionicons name="chevron-back" size={24} color="#34FF7A" />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Job Details</Text>
           <View style={{ width: 36 }} />
@@ -479,7 +470,7 @@ export default function PayScreen() {
     <View style={[styles.container, { backgroundColor: "#fff" }]}>
       <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
         <TouchableOpacity onPress={() => setPayState("details")} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#374151" />
+          <Ionicons name="chevron-back" size={24} color="#34FF7A" />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Review & Pay</Text>
         <View style={{ width: 36 }} />
@@ -573,7 +564,7 @@ export default function PayScreen() {
         {/* Escrow Notice */}
         <View style={styles.escrowNotice}>
           <View style={styles.escrowNoticeTop}>
-            <Ionicons name="lock-closed" size={16} color="#1d4ed8" />
+            <Ionicons name="lock-closed" size={16} color="#34FF7A" />
             <Text style={[styles.escrowNoticeTitle, { fontFamily: "Inter_600SemiBold" }]}>
               Secure Escrow Payment
             </Text>
@@ -585,32 +576,6 @@ export default function PayScreen() {
           </Text>
         </View>
 
-        {/* Payment Method */}
-        <Text style={[styles.payMethodLabel, { fontFamily: "Inter_600SemiBold" }]}>
-          Choose Payment Method
-        </Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.payTilesRow}
-        >
-          {PAY_METHODS.map((m) => {
-            const active = selectedPayment === m.value;
-            return (
-              <TouchableOpacity
-                key={m.value}
-                style={[styles.payTile, active && styles.payTileActive]}
-                onPress={() => { setSelectedPayment(m.value); Haptics.selectionAsync(); }}
-                activeOpacity={0.75}
-              >
-                <Text style={styles.payTileEmoji}>{m.emoji}</Text>
-                <Text style={[styles.payTileText, { fontFamily: active ? "Inter_600SemiBold" : "Inter_400Regular" }, active && styles.payTileTextActive]}>
-                  {m.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
       </ScrollView>
 
       <View style={[styles.bottomBar, { paddingBottom: bottomPadding + 12 }]}>
@@ -911,22 +876,6 @@ const styles = StyleSheet.create({
   escrowNoticeTop: { flexDirection: "row", alignItems: "center", gap: 8 },
   escrowNoticeTitle: { fontSize: 14, color: "#34FF7A" },
   escrowNoticeText: { fontSize: 13, color: "#A8FFD1", lineHeight: 20 },
-  payMethodLabel: { fontSize: 14, color: "#FFFFFF", marginBottom: 12 },
-  payTilesRow: { gap: 10, paddingBottom: 4 },
-  payTile: {
-    width: 80,
-    backgroundColor: "#111111",
-    borderRadius: 16,
-    padding: 12,
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 2,
-    borderColor: "transparent",
-  },
-  payTileActive: { borderColor: "#34FF7A", backgroundColor: "#0d2e18" },
-  payTileEmoji: { fontSize: 24 },
-  payTileText: { fontSize: 10, color: "#FFFFFF", textAlign: "center" },
-  payTileTextActive: { color: "#34FF7A" },
   authorizeBtn: {
     backgroundColor: "#34FF7A",
     flexDirection: "row",
