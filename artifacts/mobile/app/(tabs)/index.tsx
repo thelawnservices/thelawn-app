@@ -105,6 +105,51 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* Horizontal Trusted Landscapers */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.proRowContent}
+          style={styles.proRow}
+        >
+          {!prosLoaded ? (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          ) : (
+            TRUSTED_PROS.map((pro) => {
+              const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
+              return (
+                <TouchableOpacity
+                  key={pro.name}
+                  style={styles.proHCard}
+                  onPress={() => router.navigate("/pay")}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.proHIconWrap}>
+                    <Ionicons name={pro.icon} size={26} color="#34FF7A" />
+                  </View>
+                  <Text style={[styles.proHName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
+                    {pro.name}
+                  </Text>
+                  <Text style={[styles.proHMeta, { fontFamily: "Inter_400Regular" }]}>
+                    {pro.rating} ★ • {pro.jobs} jobs
+                  </Text>
+                  {isTrustedPro && (
+                    <View style={styles.trustedBadge}>
+                      <Text style={[styles.trustedBadgeText, { fontFamily: "Inter_500Medium" }]}>
+                        Trusted Pro
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </ScrollView>
+
         {/* Quick Stats — staggered entrance */}
         <View style={styles.statsRow}>
           {QUICK_STATS.map((s, i) => (
@@ -166,56 +211,6 @@ export default function HomeScreen() {
           ))}
         </ScrollView>
 
-        {/* Trusted Landscapers */}
-        <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 28 }]}>
-          🔥 Trusted Landscapers on The Lawn
-        </Text>
-        {!prosLoaded ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
-        ) : (
-          TRUSTED_PROS.map((pro) => {
-            const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
-            return (
-              <TouchableOpacity
-                key={pro.name}
-                style={styles.proCard}
-                onPress={() => router.navigate("/pay")}
-                activeOpacity={0.8}
-              >
-                <View style={styles.proIconWrap}>
-                  <Ionicons name={pro.icon} size={28} color="#34FF7A" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={styles.proTopRow}>
-                    <Text style={[styles.proName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={1}>
-                      {pro.name}
-                    </Text>
-                    {isTrustedPro && (
-                      <View style={styles.trustedBadge}>
-                        <Text style={[styles.trustedBadgeText, { fontFamily: "Inter_500Medium" }]}>
-                          Trusted Pro
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={[styles.proMeta, { fontFamily: "Inter_400Regular" }]}>
-                    {pro.rating} ★ • {pro.meta}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.bookNowBtn}
-                    onPress={() => router.navigate("/pay")}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={[styles.bookNowText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            );
-          })
-        )}
       </ScrollView>
     </View>
   );
@@ -334,57 +329,42 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   svcChipText: { fontSize: 11, color: "#FFFFFF", textAlign: "center" },
-  proCard: {
+  proRow: { marginTop: 20, marginBottom: 24, marginHorizontal: -20 },
+  proRowContent: { paddingHorizontal: 20, gap: 12 },
+  proHCard: {
     backgroundColor: "#111111",
     borderRadius: 20,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
-    marginBottom: 14,
+    padding: 14,
+    width: 160,
     borderWidth: 1,
     borderColor: "#222222",
+    gap: 6,
   },
-  proIconWrap: {
-    width: 52,
-    height: 52,
+  proHIconWrap: {
+    width: 44,
+    height: 44,
     backgroundColor: "#0d2e18",
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-  },
-  proTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: 4,
   },
-  proName: { fontSize: 14, color: "#FFFFFF", flex: 1, marginRight: 8 },
-  proRating: { fontSize: 13, color: "#34FF7A" },
-  proMeta: { fontSize: 12, color: "#FFFFFF", marginBottom: 10 },
-  bookNowBtn: {
-    backgroundColor: "#34C759",
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-  },
-  bookNowText: { color: "#000", fontSize: 13 },
+  proHName: { fontSize: 13, color: "#FFFFFF", lineHeight: 18 },
+  proHMeta: { fontSize: 11, color: "#888888" },
   trustedBadge: {
     backgroundColor: "#0d2e18",
     borderWidth: 1,
     borderColor: "#34FF7A",
     borderRadius: 20,
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 3,
-    marginLeft: 6,
-    flexShrink: 0,
+    alignSelf: "flex-start",
   },
   trustedBadgeText: { fontSize: 10, color: "#34FF7A" },
   skeletonCard: {
-    height: 96,
+    width: 160,
+    height: 160,
     borderRadius: 20,
-    marginBottom: 14,
     borderWidth: 1,
     borderColor: "#222222",
   },

@@ -15,11 +15,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
 const PAYMENT_METHODS = [
-  { label: "🍎  Apple Pay", value: "Apple Pay" },
-  { label: "💸  Venmo",     value: "Venmo" },
-  { label: "🅿️  PayPal",   value: "PayPal" },
-  { label: "💳  Debit Card",value: "Debit Card" },
-  { label: "📱  Cash App",  value: "Cash App" },
+  { label: "🍎  Apple Pay", value: "Apple Pay",  emoji: "🍎", shortLabel: "Apple Pay" },
+  { label: "💸  Venmo",     value: "Venmo",       emoji: "💸", shortLabel: "Venmo" },
+  { label: "🅿️  PayPal",   value: "PayPal",      emoji: "🅿️", shortLabel: "PayPal" },
+  { label: "💳  Debit Card",value: "Debit Card",  emoji: "💳", shortLabel: "Debit" },
+  { label: "📱  Cash App",  value: "Cash App",    emoji: "📱", shortLabel: "Cash App" },
 ];
 
 export default function ProfileScreen() {
@@ -129,7 +129,6 @@ function LandscaperProfile() {
 
 function CustomerProfile() {
   const [selectedPayment, setSelectedPayment] = useState("");
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
   const [error, setError] = useState(false);
   const successOpacity = useRef(new Animated.Value(0)).current;
@@ -189,58 +188,45 @@ function CustomerProfile() {
       {/* Payment Method Picker */}
       <View style={[styles.paymentCard, error && styles.paymentCardError]}>
         <Text style={[styles.paymentLabel, { fontFamily: "Inter_500Medium" }]}>
-          Your Preferred Payment Method
+          Choose Payment Method
         </Text>
-        <TouchableOpacity
-          style={styles.paymentSelector}
-          onPress={() => { setPickerOpen((v) => !v); setError(false); Haptics.selectionAsync(); }}
-          activeOpacity={0.8}
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.paymentTilesRow}
+          style={{ marginHorizontal: -6 }}
         >
-          <Text style={[
-            styles.paymentSelected,
-            { fontFamily: "Inter_500Medium", color: selectedPayment ? "#FFFFFF" : "#555" }
-          ]}>
-            {selectedPayment || "Select a payment method..."}
-          </Text>
-          <Ionicons name={pickerOpen ? "chevron-up" : "chevron-down"} size={18} color="#FFFFFF" />
-        </TouchableOpacity>
+          {PAYMENT_METHODS.map((method) => {
+            const isSelected = selectedPayment === method.value;
+            return (
+              <TouchableOpacity
+                key={method.value}
+                style={[styles.paymentTile, isSelected && styles.paymentTileActive]}
+                onPress={() => {
+                  setSelectedPayment(method.value);
+                  setError(false);
+                  Haptics.selectionAsync();
+                }}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.paymentTileEmoji}>{method.emoji}</Text>
+                <Text style={[
+                  styles.paymentTileLabel,
+                  { fontFamily: isSelected ? "Inter_600SemiBold" : "Inter_400Regular" },
+                  isSelected && styles.paymentTileLabelActive,
+                ]}>
+                  {method.shortLabel}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
 
         {error && (
           <Text style={[styles.errorMsg, { fontFamily: "Inter_400Regular" }]}>
             ⚠️ Please select a payment method
           </Text>
-        )}
-
-        {pickerOpen && (
-          <View style={styles.paymentDropdown}>
-            {PAYMENT_METHODS.map((method) => (
-              <TouchableOpacity
-                key={method.value}
-                style={[
-                  styles.paymentOption,
-                  selectedPayment === method.value && styles.paymentOptionActive,
-                ]}
-                onPress={() => {
-                  setSelectedPayment(method.value);
-                  setPickerOpen(false);
-                  setError(false);
-                  Haptics.selectionAsync();
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.paymentOptionText,
-                  { fontFamily: selectedPayment === method.value ? "Inter_600SemiBold" : "Inter_400Regular" },
-                  selectedPayment === method.value && styles.paymentOptionTextActive,
-                ]}>
-                  {method.label}
-                </Text>
-                {selectedPayment === method.value && (
-                  <Ionicons name="checkmark-circle" size={18} color="#34FF7A" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
         )}
 
         {paymentState !== "success" ? (
@@ -366,40 +352,25 @@ const styles = StyleSheet.create({
     borderColor: "#222222",
     marginBottom: 12,
   },
-  paymentLabel: { fontSize: 11, color: "#555", marginBottom: 12 },
-  paymentSelector: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  paymentLabel: { fontSize: 13, color: "#FFFFFF", marginBottom: 14, fontWeight: "500" },
+  paymentTilesRow: { paddingHorizontal: 6, gap: 10, paddingBottom: 4 },
+  paymentTile: {
+    width: 82,
     backgroundColor: "#1a1a1a",
-    borderWidth: 1,
-    borderColor: "#333",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 4,
-  },
-  paymentSelected: { fontSize: 15, color: "#FFFFFF" },
-  paymentDropdown: {
-    backgroundColor: "#1a1a1a",
-    borderWidth: 1,
-    borderColor: "#333",
-    borderRadius: 14,
-    marginBottom: 4,
-    overflow: "hidden",
-  },
-  paymentOption: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    borderRadius: 16,
+    padding: 12,
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#222",
+    gap: 6,
+    borderWidth: 2,
+    borderColor: "transparent",
   },
-  paymentOptionActive: { backgroundColor: "#0d2e18" },
-  paymentOptionText: { fontSize: 15, color: "#FFFFFF" },
-  paymentOptionTextActive: { color: "#34FF7A" },
+  paymentTileActive: {
+    borderColor: "#34FF7A",
+    backgroundColor: "#0d2e18",
+  },
+  paymentTileEmoji: { fontSize: 26 },
+  paymentTileLabel: { fontSize: 11, color: "#FFFFFF", textAlign: "center" },
+  paymentTileLabelActive: { color: "#34FF7A" },
   paymentCardError: { borderColor: "#ef4444" },
   errorMsg: { fontSize: 12, color: "#ef4444", marginTop: 6, marginBottom: 2 },
   savePaymentBtn: {
