@@ -57,31 +57,39 @@ function SkeletonCard() {
   );
 }
 
-function GrassHeader({ topPadding }: { topPadding: number }) {
-  const sway = useRef(new Animated.Value(0)).current;
+function AppHeader({ topPadding }: { topPadding: number }) {
+  const sweep = useRef(new Animated.Value(-1)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.loop(
+      Animated.timing(sweep, { toValue: 2, duration: 6000, useNativeDriver: false })
+    ).start();
+
+    Animated.loop(
       Animated.sequence([
-        Animated.timing(sway, { toValue: 1, duration: 4000, useNativeDriver: false }),
-        Animated.timing(sway, { toValue: -1, duration: 4000, useNativeDriver: false }),
-        Animated.timing(sway, { toValue: 0, duration: 4000, useNativeDriver: false }),
+        Animated.timing(pulse, { toValue: 0.7, duration: 2000, useNativeDriver: false }),
+        Animated.timing(pulse, { toValue: 1, duration: 2000, useNativeDriver: false }),
       ])
     ).start();
   }, []);
 
-  const rotate = sway.interpolate({ inputRange: [-1, 0, 1], outputRange: ["-2deg", "0deg", "2deg"] });
+  const sweepLeft = sweep.interpolate({ inputRange: [-1, 2], outputRange: ["-100%", "200%"] });
 
   return (
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
-      {/* Animated grass background */}
-      <Animated.Text style={[styles.grassBg, { transform: [{ rotate }] }]}>
-        🌿 🌿 🌿 🌿 🌿 🌿 🌿 🌿 🌿 🌿
-      </Animated.Text>
-      {/* Header row on top */}
+      {/* Horizontal light sweep */}
+      <Animated.View
+        style={[styles.sweepBar, { left: sweepLeft }]}
+        pointerEvents="none"
+      />
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }} />
-        <Text style={[styles.logo, { fontFamily: "GreatVibes_400Regular" }]}>theLawn</Text>
+        <Animated.Text
+          style={[styles.logo, { fontFamily: "GreatVibes_400Regular", opacity: pulse }]}
+        >
+          theLawn
+        </Animated.Text>
         <View style={[{ flex: 1 }, styles.headerRight]}>
           <TouchableOpacity style={styles.notifBtn} onPress={() => {}}>
             <Ionicons name="notifications-outline" size={22} color="#fff" />
@@ -105,18 +113,13 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <GrassHeader topPadding={topPadding} />
+      <AppHeader topPadding={topPadding} />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Greeting */}
-        <Text style={[styles.greeting, { fontFamily: "Inter_600SemiBold" }]}>
-          Good morning, Zamire 👋
-        </Text>
-
         {/* CTA Button */}
         <TouchableOpacity
           style={styles.ctaBtn}
@@ -248,14 +251,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: "#34FF7A",
   },
-  grassBg: {
+  sweepBar: {
     position: "absolute",
-    fontSize: 26,
-    opacity: 0.2,
-    color: "#34FF7A",
-    alignSelf: "center",
-    top: "50%",
-    letterSpacing: 6,
+    top: 0,
+    bottom: 0,
+    width: "40%",
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   headerRow: {
     flexDirection: "row",
@@ -265,7 +266,12 @@ const styles = StyleSheet.create({
   headerRight: {
     alignItems: "flex-end",
   },
-  logo: { fontSize: 34, color: "#fff", letterSpacing: -1 },
+  logo: {
+    fontSize: 34,
+    color: "#fff",
+    letterSpacing: -1,
+    textShadow: "0 0 14px rgba(52, 255, 122, 0.7)",
+  } as any,
   notifBtn: {
     width: 36,
     height: 36,
@@ -275,7 +281,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scrollContent: { padding: 20, paddingBottom: 40 },
-  greeting: { fontSize: 26, color: "#FFFFFF", marginBottom: 20 },
   ctaBtn: {
     backgroundColor: "#34C759",
     flexDirection: "row",
