@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   Platform,
   Animated,
+  Modal,
+  Pressable,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -57,14 +59,97 @@ function SkeletonCard() {
   );
 }
 
-function AppHeader({ topPadding }: { topPadding: number }) {
+const NOTIFICATIONS = [
+  {
+    id: "1",
+    icon: "🚚",
+    title: "John Rivera is on the way!",
+    sub: "ETA: 8 minutes",
+  },
+  {
+    id: "2",
+    icon: "📅",
+    title: "Your recurring appointment is confirmed",
+    sub: "Next: April 19 • 10:30 AM",
+  },
+];
+
+function NotificationsPanel({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const slideY = useRef(new Animated.Value(400)).current;
+  const overlayOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, { toValue: 1, duration: 260, useNativeDriver: false }),
+        Animated.spring(slideY, { toValue: 0, useNativeDriver: false, bounciness: 4 }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(overlayOpacity, { toValue: 0, duration: 200, useNativeDriver: false }),
+        Animated.timing(slideY, { toValue: 400, duration: 220, useNativeDriver: false }),
+      ]).start();
+    }
+  }, [visible]);
+
+  return (
+    <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
+      <Pressable style={styles.notifOverlay} onPress={onClose}>
+        <Animated.View style={[styles.notifOverlayBg, { opacity: overlayOpacity }]} />
+        <Animated.View
+          style={[styles.notifSheet, { transform: [{ translateY: slideY }] }]}
+        >
+          <Pressable>
+            <View style={styles.notifSheetHeader}>
+              <Text style={[styles.notifSheetTitle, { fontFamily: "Inter_700Bold" }]}>
+                Notifications
+              </Text>
+              <TouchableOpacity onPress={onClose} style={styles.notifCloseBtn} activeOpacity={0.7}>
+                <Ionicons name="close" size={22} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.notifList}>
+              {NOTIFICATIONS.map((n) => (
+                <View key={n.id} style={styles.notifItem}>
+                  <Text style={styles.notifItemIcon}>{n.icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.notifItemTitle, { fontFamily: "Inter_500Medium" }]}>
+                      {n.title}
+                    </Text>
+                    <Text style={[styles.notifItemSub, { fontFamily: "Inter_400Regular" }]}>
+                      {n.sub}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </Pressable>
+        </Animated.View>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function AppHeader({
+  topPadding,
+  onBellPress,
+}: {
+  topPadding: number;
+  onBellPress: () => void;
+}) {
   return (
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }} />
         <Text style={[styles.logo, { fontFamily: "GreatVibes_400Regular" }]}>theLawn</Text>
         <View style={[{ flex: 1 }, styles.headerRight]}>
-          <TouchableOpacity style={styles.notifBtn} onPress={() => {}}>
+          <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
             <Ionicons name="notifications-outline" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -78,6 +163,7 @@ export default function HomeScreen() {
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
   const [prosLoaded, setProsLoaded] = useState(false);
+  const [notifVisible, setNotifVisible] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setProsLoaded(true), 900);
@@ -86,7 +172,8 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <AppHeader topPadding={topPadding} />
+      <AppHeader topPadding={topPadding} onBellPress={() => setNotifVisible(true)} />
+      <NotificationsPanel visible={notifVisible} onClose={() => setNotifVisible(false)} />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -373,4 +460,49 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#222222",
   },
+  notifOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  notifOverlayBg: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.75)",
+  },
+  notifSheet: {
+    backgroundColor: "#111111",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    paddingTop: 20,
+  },
+  notifSheetHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  notifSheetTitle: { fontSize: 20, color: "#FFFFFF" },
+  notifCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#222222",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notifList: { gap: 12 },
+  notifItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+    backgroundColor: "#1a1a1a",
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  notifItemIcon: { fontSize: 32 },
+  notifItemTitle: { fontSize: 14, color: "#FFFFFF", marginBottom: 4 },
+  notifItemSub: { fontSize: 12, color: "#888888" },
 });
