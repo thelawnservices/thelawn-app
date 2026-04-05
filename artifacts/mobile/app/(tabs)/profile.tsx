@@ -55,16 +55,36 @@ export default function ProfileScreen() {
   );
 }
 
-const SERVICES = [
-  { label: "Lawn Mowing",    defaultPrice: "45" },
-  { label: "Hedge Trimming", defaultPrice: "65" },
-  { label: "Mulching",       defaultPrice: "120" },
-  { label: "Clean Up",       defaultPrice: "35" },
+const YARD_SIZES = [
+  { label: "Small Yard",  sub: "Under 5,000 sq ft",   defaultPrice: "45" },
+  { label: "Medium Yard", sub: "5,000–10,000 sq ft",  defaultPrice: "65" },
+  { label: "Large Yard",  sub: "10,000+ sq ft",        defaultPrice: "120" },
+];
+
+const LANDSCAPER_APPOINTMENTS = [
+  {
+    id: "1",
+    customer: "Zamire Smith",
+    address: "123 Main St, Ellenton, FL",
+    phone: "(555) 123-4567",
+    date: "Apr 9",
+    time: "10:30 AM",
+    note: "Screenshots attached",
+  },
+  {
+    id: "2",
+    customer: "Marcus T.",
+    address: "88 Palmetto Ave, Ellenton, FL",
+    phone: "(555) 987-6543",
+    date: "Apr 12",
+    time: "9:00 AM",
+    note: null,
+  },
 ];
 
 function LandscaperProfile() {
   const [prices, setPrices] = useState<Record<string, string>>(
-    Object.fromEntries(SERVICES.map((s) => [s.label, s.defaultPrice]))
+    Object.fromEntries(YARD_SIZES.map((s) => [s.label, s.defaultPrice]))
   );
   const [saveState, setSaveState] = useState<"idle" | "loading" | "success">("idle");
   const successOpacity = useRef(new Animated.Value(0)).current;
@@ -131,18 +151,23 @@ function LandscaperProfile() {
         </View>
       </View>
 
-      {/* Price Editor */}
+      {/* Price Editor – Yard Size Tiers */}
       <View style={styles.priceCard}>
         <Text style={[styles.priceCardTitle, { fontFamily: "Inter_600SemiBold" }]}>
-          Set Your Service Prices
+          Service Prices by Yard Size
         </Text>
-        {SERVICES.map((s, i) => (
+        {YARD_SIZES.map((s, i) => (
           <View key={s.label}>
             {i > 0 && <View style={styles.divider} />}
             <View style={styles.priceRow}>
-              <Text style={[styles.priceServiceLabel, { fontFamily: "Inter_500Medium" }]}>
-                {s.label}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.priceServiceLabel, { fontFamily: "Inter_500Medium" }]}>
+                  {s.label}
+                </Text>
+                <Text style={[styles.priceServiceSub, { fontFamily: "Inter_400Regular" }]}>
+                  {s.sub}
+                </Text>
+              </View>
               <View style={styles.priceInputWrapper}>
                 <Text style={styles.priceDollar}>$</Text>
                 <TextInput
@@ -184,7 +209,30 @@ function LandscaperProfile() {
         )}
       </View>
 
+      {/* Active & Future Appointments */}
       <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
+        Active & Future Appointments
+      </Text>
+      {LANDSCAPER_APPOINTMENTS.map((appt) => (
+        <View key={appt.id} style={[styles.card, { marginBottom: 10 }]}>
+          <Text style={[styles.apptCustomer, { fontFamily: "Inter_600SemiBold" }]}>
+            {appt.customer} · {appt.address}
+          </Text>
+          <Text style={[styles.apptMeta, { fontFamily: "Inter_400Regular" }]}>
+            Phone: {appt.phone} · {appt.date} · {appt.time}
+          </Text>
+          {appt.note && (
+            <View style={styles.apptNotePill}>
+              <Ionicons name="image-outline" size={12} color="#34FF7A" />
+              <Text style={[styles.apptNoteText, { fontFamily: "Inter_400Regular" }]}>
+                {appt.note}
+              </Text>
+            </View>
+          )}
+        </View>
+      ))}
+
+      <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }, { marginTop: 8 }]}>
         Customer Reviews
       </Text>
       <View style={styles.card}>
@@ -533,4 +581,19 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   logoutText: { fontSize: 15, color: "#ef4444" },
+  priceServiceSub: { fontSize: 11, color: "#666666", marginTop: 2 },
+  apptCustomer: { fontSize: 14, color: "#FFFFFF", marginBottom: 4 },
+  apptMeta: { fontSize: 12, color: "#888888" },
+  apptNotePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    marginTop: 8,
+    backgroundColor: "#0d2e18",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    alignSelf: "flex-start",
+  },
+  apptNoteText: { fontSize: 11, color: "#34FF7A" },
 });
