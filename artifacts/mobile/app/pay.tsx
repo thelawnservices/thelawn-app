@@ -80,7 +80,9 @@ export default function PayScreen() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [recurring, setRecurring] = useState(false);
   const [recurringFreq, setRecurringFreq] = useState<"Weekly" | "Bi-weekly" | "Monthly">("Weekly");
-  const [tipIdx, setTipIdx] = useState(1);
+  const [tipPresetIdx, setTipPresetIdx] = useState<number | null>(1);
+  const [tipMode, setTipMode] = useState<"preset" | "custom" | "none">("preset");
+  const [customTipAmount, setCustomTipAmount] = useState("");
   const [serviceAddress, setServiceAddress] = useState("");
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
@@ -91,7 +93,22 @@ export default function PayScreen() {
       ? (PRICE_MATRIX[selectedService]?.[selectedYardSize] ?? 45)
       : 45;
 
-  const tip = Math.round(basePrice * TIP_OPTIONS[tipIdx].value * 100) / 100;
+  const tip =
+    tipMode === "none"
+      ? 0
+      : tipMode === "custom"
+      ? Math.max(0, parseFloat(customTipAmount) || 0)
+      : tipPresetIdx !== null
+      ? Math.round(basePrice * TIP_OPTIONS[tipPresetIdx].value * 100) / 100
+      : 0;
+  const tipLabel =
+    tipMode === "none"
+      ? "No tip"
+      : tipMode === "custom"
+      ? "Custom"
+      : tipPresetIdx !== null
+      ? TIP_OPTIONS[tipPresetIdx].label
+      : "–";
   const fee = Math.round(basePrice * 0.03 * 100) / 100;
   const total = (basePrice + tip + fee).toFixed(2);
 
@@ -153,7 +170,7 @@ export default function PayScreen() {
   // ─── Success ──────────────────────────────────────────────────
   if (payState === "success") {
     return (
-      <View style={[styles.fullCenter, { backgroundColor: "#fff", paddingBottom: bottomPadding + 20 }]}>
+      <View style={[styles.fullCenter, { backgroundColor: "#000000", paddingBottom: bottomPadding + 20 }]}>
         <View style={styles.lockIconBox}>
           <Ionicons name="lock-closed" size={52} color="#34FF7A" />
         </View>
@@ -603,7 +620,7 @@ export default function PayScreen() {
 
   // ─── Review & Pay ─────────────────────────────────────────────
   return (
-    <View style={[styles.container, { backgroundColor: "#fff" }]}>
+    <View style={styles.container}>
       <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
         <TouchableOpacity onPress={() => setPayState("details")} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color="#34FF7A" />
@@ -654,20 +671,20 @@ export default function PayScreen() {
 
         {/* Tip */}
         <Text style={[styles.tipLabel, { fontFamily: "Inter_600SemiBold" }]}>
-          Add a tip for {proName.split(" ")[0]}
+          Add a tip for {proName.split(" ")[0].toUpperCase()}
         </Text>
         <View style={styles.tipRow}>
           {TIP_OPTIONS.map((t, i) => (
             <TouchableOpacity
               key={t.label}
-              style={[styles.tipBtn, tipIdx === i && styles.tipBtnActive]}
-              onPress={() => { setTipIdx(i); Haptics.selectionAsync(); }}
+              style={[styles.tipBtn, tipMode === "preset" && tipPresetIdx === i && styles.tipBtnActive]}
+              onPress={() => { setTipMode("preset"); setTipPresetIdx(i); Haptics.selectionAsync(); }}
             >
               <Text
                 style={[
                   styles.tipBtnLabel,
                   { fontFamily: "Inter_600SemiBold" },
-                  tipIdx === i && { color: "#fff" },
+                  tipMode === "preset" && tipPresetIdx === i && { color: "#fff" },
                 ]}
               >
                 {t.label}
@@ -676,7 +693,7 @@ export default function PayScreen() {
                 style={[
                   styles.tipBtnAmount,
                   { fontFamily: "Inter_400Regular" },
-                  tipIdx === i && { color: "rgba(255,255,255,0.8)" },
+                  tipMode === "preset" && tipPresetIdx === i && { color: "rgba(255,255,255,0.8)" },
                 ]}
               >
                 ${(basePrice * t.value).toFixed(2)}
@@ -684,6 +701,50 @@ export default function PayScreen() {
             </TouchableOpacity>
           ))}
         </View>
+        <View style={styles.tipExtraRow}>
+          <TouchableOpacity
+            style={[styles.tipExtraBtn, styles.tipExtraBtnCustom, tipMode === "custom" && styles.tipBtnActive]}
+            onPress={() => { setTipMode("custom"); Haptics.selectionAsync(); }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="pencil-outline" size={14} color={tipMode === "custom" ? "#fff" : "#AAAAAA"} />
+            <Text style={[styles.tipExtraLabel, { fontFamily: "Inter_500Medium" }, tipMode === "custom" && { color: "#fff" }]}>
+              Custom Tip
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tipExtraBtn, styles.tipExtraBtnNone, tipMode === "none" && styles.tipBtnActive]}
+            onPress={() => { setTipMode("none"); setCustomTipAmount(""); Haptics.selectionAsync(); }}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tipExtraLabel, { fontFamily: "Inter_500Medium" }, tipMode === "none" && { color: "#fff" }]}>
+              No Tip
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {tipMode === "custom" && (
+          <View style={styles.customTipBox}>
+            <View style={styles.customTipInputRow}>
+              <Text style={[styles.customTipDollar, { fontFamily: "Inter_600SemiBold" }]}>$</Text>
+              <TextInput
+                style={[styles.customTipInput, { fontFamily: "Inter_400Regular" }]}
+                placeholder="0.00"
+                placeholderTextColor="#555"
+                keyboardType="decimal-pad"
+                value={customTipAmount}
+                onChangeText={setCustomTipAmount}
+                returnKeyType="done"
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.customTipApplyBtn}
+              onPress={() => { Haptics.selectionAsync(); }}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.customTipApplyText, { fontFamily: "Inter_600SemiBold" }]}>Apply</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Breakdown */}
         <View style={styles.breakdown}>
@@ -692,7 +753,7 @@ export default function PayScreen() {
             <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${basePrice.toFixed(2)}</Text>
           </View>
           <View style={styles.lineItem}>
-            <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>Tip ({TIP_OPTIONS[tipIdx].label})</Text>
+            <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>Tip ({tipLabel})</Text>
             <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${tip.toFixed(2)}</Text>
           </View>
           <View style={styles.lineItem}>
@@ -1179,4 +1240,53 @@ const styles = StyleSheet.create({
   yardChipSub: { fontSize: 9, color: "#666666", textAlign: "center" },
   yardChipSubActive: { color: "#34FF7A" },
   yardChipPrice: { fontSize: 16, color: "#34FF7A", marginTop: 4 },
+
+  tipExtraRow: { flexDirection: "row", gap: 10, marginTop: 10, marginBottom: 4 },
+  tipExtraBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#222222",
+    backgroundColor: "#111111",
+  },
+  tipExtraBtnCustom: {},
+  tipExtraBtnNone: { flex: 0.55 },
+  tipExtraLabel: { fontSize: 13, color: "#AAAAAA" },
+
+  customTipBox: {
+    backgroundColor: "#111111",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    padding: 16,
+    marginTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  customTipInputRow: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  customTipDollar: { fontSize: 20, color: "#34FF7A" },
+  customTipInput: {
+    flex: 1,
+    fontSize: 20,
+    color: "#FFFFFF",
+    paddingVertical: 4,
+  },
+  customTipApplyBtn: {
+    backgroundColor: "#34FF7A",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  customTipApplyText: { fontSize: 13, color: "#000" },
 });

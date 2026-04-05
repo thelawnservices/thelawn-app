@@ -61,6 +61,12 @@ function SkeletonCard() {
 
 const NOTIFICATIONS = [
   {
+    id: "0",
+    icon: "🔒",
+    title: "Payment held in escrow",
+    sub: "Lawn Mowing · $48.35 secured — releases on completion",
+  },
+  {
     id: "1",
     icon: "🚚",
     title: "John Rivera is on the way!",
@@ -69,8 +75,8 @@ const NOTIFICATIONS = [
   {
     id: "2",
     icon: "📅",
-    title: "Your recurring appointment is confirmed",
-    sub: "Next: April 19 • 10:30 AM",
+    title: "Recurring appointment confirmed",
+    sub: "Next: April 19 · 10:30 AM",
   },
 ];
 
@@ -206,7 +212,8 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const t = setTimeout(() => setProsLoaded(true), 900);
-    return () => clearTimeout(t);
+    const n = setTimeout(() => setNotifVisible(true), 4000);
+    return () => { clearTimeout(t); clearTimeout(n); };
   }, []);
 
   function handleBooking(action: () => void) {
