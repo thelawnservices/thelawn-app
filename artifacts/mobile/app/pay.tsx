@@ -88,6 +88,13 @@ export default function PayScreen() {
   const [serviceAddress, setServiceAddress] = useState("");
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<"applepay" | "debit" | "venmo" | "paypal" | "cashapp">("applepay");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [venmoUser, setVenmoUser] = useState("");
+  const [paypalEmail, setPaypalEmail] = useState("");
+  const [cashTag, setCashTag] = useState("");
   const spinValue = useRef(new Animated.Value(0)).current;
 
   const basePrice =
@@ -831,21 +838,107 @@ export default function PayScreen() {
           </Text>
         </View>
 
-        {/* Saved Card */}
-        <View style={styles.savedCardRow}>
-          <View style={styles.savedCardIcon}>
-            <Ionicons name="card" size={20} color="#000" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.savedCardNumber, { fontFamily: "Inter_500Medium" }]}>
-              •••• •••• •••• 4242
-            </Text>
-            <Text style={[styles.savedCardSub, { fontFamily: "Inter_400Regular" }]}>
-              Visa · Expires 12/27
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#666" />
+        {/* Payment Method */}
+        <Text style={[styles.payMethodLabel, { fontFamily: "Inter_600SemiBold" }]}>
+          Payment Method
+        </Text>
+        <View style={styles.payMethodRow}>
+          {(
+            [
+              { key: "applepay", icon: "logo-apple", label: "Apple Pay" },
+              { key: "debit",    icon: "card",       label: "Debit" },
+              { key: "venmo",    icon: "phone-portrait", label: "Venmo" },
+              { key: "paypal",   icon: "globe",      label: "PayPal" },
+              { key: "cashapp",  icon: "cash",       label: "Cash App" },
+            ] as const
+          ).map((m) => (
+            <TouchableOpacity
+              key={m.key}
+              style={[styles.payMethodChip, paymentMethod === m.key && styles.payMethodChipActive]}
+              onPress={() => { setPaymentMethod(m.key); Haptics.selectionAsync(); }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name={m.icon} size={16} color={paymentMethod === m.key ? "#000" : "#AAAAAA"} />
+              <Text style={[styles.payMethodChipText, { fontFamily: "Inter_500Medium" }, paymentMethod === m.key && styles.payMethodChipTextActive]}>
+                {m.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
+
+        {paymentMethod === "applepay" && (
+          <View style={styles.payFieldReady}>
+            <Ionicons name="checkmark-circle" size={20} color="#34FF7A" />
+            <Text style={[styles.payFieldReadyText, { fontFamily: "Inter_500Medium" }]}>
+              Apple Pay ready — tap Authorize to confirm
+            </Text>
+          </View>
+        )}
+        {paymentMethod === "debit" && (
+          <View style={styles.payFieldBox}>
+            <TextInput
+              style={[styles.payFieldInput, { fontFamily: "Inter_400Regular" }]}
+              placeholder="Card Number"
+              placeholderTextColor="#555"
+              keyboardType="number-pad"
+              value={cardNumber}
+              onChangeText={setCardNumber}
+              maxLength={19}
+            />
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TextInput
+                style={[styles.payFieldInput, { flex: 1, fontFamily: "Inter_400Regular" }]}
+                placeholder="MM / YY"
+                placeholderTextColor="#555"
+                keyboardType="number-pad"
+                value={cardExpiry}
+                onChangeText={setCardExpiry}
+                maxLength={5}
+              />
+              <TextInput
+                style={[styles.payFieldInput, { flex: 1, fontFamily: "Inter_400Regular" }]}
+                placeholder="CVV"
+                placeholderTextColor="#555"
+                keyboardType="number-pad"
+                secureTextEntry
+                value={cardCvv}
+                onChangeText={setCardCvv}
+                maxLength={4}
+              />
+            </View>
+          </View>
+        )}
+        {paymentMethod === "venmo" && (
+          <TextInput
+            style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
+            placeholder="Venmo Username"
+            placeholderTextColor="#555"
+            value={venmoUser}
+            onChangeText={setVenmoUser}
+            autoCapitalize="none"
+          />
+        )}
+        {paymentMethod === "paypal" && (
+          <TextInput
+            style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
+            placeholder="PayPal Email"
+            placeholderTextColor="#555"
+            keyboardType="email-address"
+            value={paypalEmail}
+            onChangeText={setPaypalEmail}
+            autoCapitalize="none"
+          />
+        )}
+        {paymentMethod === "cashapp" && (
+          <TextInput
+            style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
+            placeholder="$Cashtag"
+            placeholderTextColor="#555"
+            value={cashTag}
+            onChangeText={setCashTag}
+            autoCapitalize="none"
+          />
+        )}
 
       </ScrollView>
 
@@ -1275,6 +1368,58 @@ const styles = StyleSheet.create({
   },
   savedCardNumber: { fontSize: 15, color: "#FFFFFF" },
   savedCardSub: { fontSize: 12, color: "#888888", marginTop: 2 },
+
+  payMethodLabel: { fontSize: 11, color: "#AAAAAA", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10 },
+  payMethodRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  payMethodChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    backgroundColor: "#111111",
+  },
+  payMethodChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  payMethodChipText: { fontSize: 12, color: "#AAAAAA" },
+  payMethodChipTextActive: { color: "#000" },
+  payFieldReady: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#0d2e18",
+    borderRadius: 18,
+    padding: 14,
+  },
+  payFieldReadyText: { fontSize: 13, color: "#34FF7A", flex: 1 },
+  payFieldBox: {
+    backgroundColor: "#111111",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    padding: 14,
+    gap: 10,
+  },
+  payFieldInput: {
+    backgroundColor: "#0a0a0a",
+    borderWidth: 1,
+    borderColor: "#222222",
+    borderRadius: 14,
+    padding: 12,
+    fontSize: 14,
+    color: "#FFFFFF",
+  },
+  payFieldInputStandalone: {
+    backgroundColor: "#111111",
+    borderWidth: 1,
+    borderColor: "#222222",
+    borderRadius: 20,
+    padding: 14,
+    fontSize: 14,
+    color: "#FFFFFF",
+  },
 
   serviceGrid: {
     flex: 1,

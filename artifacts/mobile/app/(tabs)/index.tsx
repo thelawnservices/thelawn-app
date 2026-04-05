@@ -84,10 +84,14 @@ function NotificationsPanel({
   visible,
   onClose,
   items,
+  notifEnabled,
+  onToggleEnabled,
 }: {
   visible: boolean;
   onClose: () => void;
   items: typeof NOTIFICATIONS;
+  notifEnabled: boolean;
+  onToggleEnabled: () => void;
 }) {
   const slideY = useRef(new Animated.Value(400)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -118,9 +122,20 @@ function NotificationsPanel({
               <Text style={[styles.notifSheetTitle, { fontFamily: "Inter_700Bold" }]}>
                 Notifications
               </Text>
-              <TouchableOpacity onPress={onClose} style={styles.notifCloseBtn} activeOpacity={0.7}>
-                <Ionicons name="close" size={22} color="#fff" />
-              </TouchableOpacity>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <TouchableOpacity
+                  style={[styles.notifTogglePill, notifEnabled && styles.notifTogglePillOn]}
+                  onPress={onToggleEnabled}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.notifToggleText, { fontFamily: "Inter_600SemiBold" }, notifEnabled && styles.notifToggleTextOn]}>
+                    {notifEnabled ? "ON" : "OFF"}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={onClose} style={styles.notifCloseBtn} activeOpacity={0.7}>
+                  <Ionicons name="close" size={22} color="#fff" />
+                </TouchableOpacity>
+              </View>
             </View>
             <View style={styles.notifList}>
               {items.map((n) => (
@@ -210,13 +225,18 @@ export default function HomeScreen() {
   const topPadding = isWeb ? 67 : insets.top;
   const [prosLoaded, setProsLoaded] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
+  const notifEnabledRef = React.useRef(notifEnabled);
+  notifEnabledRef.current = notifEnabled;
 
   const [notifItems, setNotifItems] = useState(NOTIFICATIONS);
 
   useEffect(() => {
     const t = setTimeout(() => setProsLoaded(true), 900);
-    const n = setTimeout(() => setNotifVisible(true), 4000);
+    const n = setTimeout(() => {
+      if (notifEnabledRef.current) setNotifVisible(true);
+    }, 4000);
     const MOCK_MESSAGES = [
       { id: "", icon: "🚚", title: "Landscaper Arrived", sub: "John Rivera has arrived at your location" },
       { id: "", icon: "🌿", title: "Job In Progress", sub: "Your Lawn Mowing appointment has started" },
@@ -227,7 +247,7 @@ export default function HomeScreen() {
       const msg = MOCK_MESSAGES[idx % MOCK_MESSAGES.length];
       const item = { ...msg, id: String(Date.now()) };
       setNotifItems((prev) => [item, ...prev]);
-      setNotifVisible(true);
+      if (notifEnabledRef.current) setNotifVisible(true);
       idx++;
     }, 6500);
     return () => { clearTimeout(t); clearTimeout(n); clearInterval(ws); };
@@ -250,7 +270,13 @@ export default function HomeScreen() {
         onToggleOffline={() => setIsOffline((v) => !v)}
       />
       <OfflineBanner visible={isOffline} />
-      <NotificationsPanel visible={notifVisible} onClose={() => setNotifVisible(false)} items={notifItems} />
+      <NotificationsPanel
+        visible={notifVisible}
+        onClose={() => setNotifVisible(false)}
+        items={notifItems}
+        notifEnabled={notifEnabled}
+        onToggleEnabled={() => setNotifEnabled((v) => !v)}
+      />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -574,6 +600,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  notifTogglePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#333333",
+    backgroundColor: "#1a1a1a",
+  },
+  notifTogglePillOn: { backgroundColor: "#0d2e18", borderColor: "#34FF7A" },
+  notifToggleText: { fontSize: 11, color: "#666666" },
+  notifToggleTextOn: { color: "#34FF7A" },
   notifList: { gap: 12 },
   notifItem: {
     flexDirection: "row",
