@@ -20,7 +20,7 @@ const APPOINTMENTS = [
     price: "$45",
     status: "upcoming",
     initials: "JR",
-    color: "#34C759",
+    color: "#34FF7A",
   },
   {
     id: "2",
@@ -45,7 +45,7 @@ const PAST = [
     price: "$45",
     status: "completed",
     initials: "JR",
-    color: "#34C759",
+    color: "#34FF7A",
     rating: 5,
   },
 ];
@@ -121,7 +121,7 @@ export default function AppointmentsScreen() {
                 ))}
               </View>
             </View>
-            <Ionicons name="checkmark-circle" size={20} color="#34C759" />
+            <Ionicons name="checkmark-circle" size={20} color="#34FF7A" />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -130,7 +130,7 @@ export default function AppointmentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  container: { flex: 1, backgroundColor: "#000000" },
   header: {
     backgroundColor: "#111111",
     paddingHorizontal: 20,
@@ -138,11 +138,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#34C759" },
+  headerTitle: { fontSize: 22, color: "#34FF7A" },
   scrollContent: { padding: 16, paddingBottom: 40 },
   sectionLabel: {
     fontSize: 13,
-    color: "#34C759",
+    color: "#34FF7A",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 12,
@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 3,
   },
-  serviceText: { fontSize: 15, color: "#34C759" },
-  priceText: { fontSize: 15, color: "#34C759" },
+  serviceText: { fontSize: 15, color: "#34FF7A" },
+  priceText: { fontSize: 15, color: "#34FF7A" },
   subText: { fontSize: 12, color: "#555", marginBottom: 3 },
   proText: { fontSize: 12, color: "#555" },
   statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#34C759" },

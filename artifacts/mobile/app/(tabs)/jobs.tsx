@@ -16,7 +16,7 @@ export default function JobsScreen() {
 
       <View style={styles.emptyContainer}>
         <View style={styles.emptyIconBox}>
-          <Ionicons name="location-outline" size={44} color="#34C759" />
+          <Ionicons name="location-outline" size={44} color="#34FF7A" />
         </View>
         <Text style={[styles.emptyTitle, { fontFamily: "Inter_600SemiBold" }]}>
           No active jobs yet
@@ -35,7 +35,7 @@ export default function JobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  container: { flex: 1, backgroundColor: "#000000" },
   header: {
     backgroundColor: "#111111",
     paddingHorizontal: 20,
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#34C759" },
+  headerTitle: { fontSize: 22, color: "#34FF7A" },
   emptyContainer: {
     flex: 1,
     alignItems: "center",
@@ -55,13 +55,13 @@ const styles = StyleSheet.create({
   emptyIconBox: {
     width: 80,
     height: 80,
-    backgroundColor: "#1a3a1a",
+    backgroundColor: "#0d2e18",
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
   },
-  emptyTitle: { fontSize: 20, color: "#34C759" },
+  emptyTitle: { fontSize: 20, color: "#34FF7A" },
   emptySub: {
     fontSize: 14,
     color: "#555",

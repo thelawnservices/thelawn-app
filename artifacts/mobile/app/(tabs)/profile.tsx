@@ -59,13 +59,13 @@ export default function ProfileScreen() {
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <View style={styles.avatarBox}>
-            <Ionicons name={profileType === "customer" ? "person" : "construct"} size={44} color="#34C759" />
+            <Ionicons name={profileType === "customer" ? "person" : "construct"} size={44} color="#34FF7A" />
           </View>
           <TouchableOpacity
             style={styles.uploadBtn}
             onPress={() => Alert.alert("Upload Photo", "Photo picker would open here")}
           >
-            <Ionicons name="camera" size={14} color="#34C759" />
+            <Ionicons name="camera" size={14} color="#34FF7A" />
             <Text style={[styles.uploadText, { fontFamily: "Inter_500Medium" }]}>Change Photo</Text>
           </TouchableOpacity>
         </View>
@@ -88,7 +88,7 @@ export default function ProfileScreen() {
               <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Date of Birth</Text>
               <View style={[styles.field, styles.fieldRow]}>
                 <Ionicons name="calendar-outline" size={16} color="#555" />
-                <Text style={{ fontFamily: "Inter_400Regular", color: "#34C759", fontSize: 15 }}>
+                <Text style={{ fontFamily: "Inter_400Regular", color: "#34FF7A", fontSize: 15 }}>
                   June 15, 1995
                 </Text>
               </View>
@@ -107,7 +107,7 @@ export default function ProfileScreen() {
               style={styles.outlineBtn}
               onPress={() => Alert.alert("Change Password", "Password reset flow would open here")}
             >
-              <Ionicons name="lock-closed-outline" size={18} color="#34C759" />
+              <Ionicons name="lock-closed-outline" size={18} color="#34FF7A" />
               <Text style={[styles.outlineBtnText, { fontFamily: "Inter_500Medium" }]}>Change Password</Text>
             </TouchableOpacity>
           </>
@@ -142,10 +142,10 @@ export default function ProfileScreen() {
                     style={[styles.serviceOption, selectedService === s && styles.serviceOptionActive]}
                     onPress={() => { setSelectedService(s); Haptics.selectionAsync(); }}
                   >
-                    <Text style={[styles.serviceOptionText, { fontFamily: "Inter_400Regular" }, selectedService === s && { color: "#34C759", fontFamily: "Inter_600SemiBold" }]}>
+                    <Text style={[styles.serviceOptionText, { fontFamily: "Inter_400Regular" }, selectedService === s && { color: "#34FF7A", fontFamily: "Inter_600SemiBold" }]}>
                       {s}
                     </Text>
-                    {selectedService === s && <Ionicons name="checkmark-circle" size={16} color="#34C759" />}
+                    {selectedService === s && <Ionicons name="checkmark-circle" size={16} color="#34FF7A" />}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -155,7 +155,7 @@ export default function ProfileScreen() {
               <View style={[styles.field, styles.fieldRow]}>
                 <Text style={{ fontFamily: "Inter_400Regular", color: "#555", fontSize: 15 }}>$</Text>
                 <TextInput
-                  style={{ flex: 1, fontFamily: "Inter_400Regular", fontSize: 15, color: "#34C759" }}
+                  style={{ flex: 1, fontFamily: "Inter_400Regular", fontSize: 15, color: "#34FF7A" }}
                   defaultValue="45"
                   keyboardType="numeric"
                 />
@@ -186,7 +186,7 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  container: { flex: 1, backgroundColor: "#000000" },
   header: {
     backgroundColor: "#111111",
     paddingHorizontal: 20,
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#34C759" },
+  headerTitle: { fontSize: 22, color: "#34FF7A" },
   scrollContent: { padding: 16, paddingBottom: 48 },
   toggle: {
     flexDirection: "row",
@@ -206,9 +206,9 @@ const styles = StyleSheet.create({
     borderColor: "#222",
   },
   toggleBtn: { flex: 1, paddingVertical: 12, borderRadius: 24, alignItems: "center" },
-  toggleBtnActive: { backgroundColor: "#1a3a1a" },
+  toggleBtnActive: { backgroundColor: "#0d2e18" },
   toggleBtnText: { fontSize: 14, color: "#555" },
-  toggleBtnTextActive: { color: "#34C759" },
+  toggleBtnTextActive: { color: "#34FF7A" },
   avatarSection: { alignItems: "center", gap: 10, marginBottom: 24 },
   avatarBox: {
     width: 90,
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
     borderColor: "#333",
   },
   uploadBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
-  uploadText: { fontSize: 13, color: "#34C759" },
+  uploadText: { fontSize: 13, color: "#34FF7A" },
   fieldGroup: { marginBottom: 16 },
   fieldLabel: { fontSize: 13, color: "#555", marginBottom: 6 },
   field: {
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 15,
-    color: "#34C759",
+    color: "#34FF7A",
   },
   fieldRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   serviceOptions: { gap: 8 },
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  serviceOptionActive: { borderColor: "#34C759", backgroundColor: "#1a3a1a" },
+  serviceOptionActive: { borderColor: "#34C759", backgroundColor: "#0d2e18" },
   serviceOptionText: { fontSize: 14, color: "#555" },
   outlineBtn: {
     flexDirection: "row",
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: 8,
   },
-  outlineBtnText: { fontSize: 15, color: "#34C759" },
+  outlineBtnText: { fontSize: 15, color: "#34FF7A" },
   saveBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 16,

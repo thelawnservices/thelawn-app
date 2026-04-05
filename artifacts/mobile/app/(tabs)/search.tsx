@@ -26,7 +26,7 @@ const PROS = [
     distance: "0.8 mi",
     tags: ["Lawn Mowing"],
     initials: "JR",
-    color: "#34C759",
+    color: "#34FF7A",
     trusted: true,
   },
   {
@@ -161,7 +161,7 @@ export default function SearchScreen() {
             {sorted.length} result{sorted.length !== 1 ? "s" : ""}
           </Text>
           <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSort(!showSort)}>
-            <Ionicons name="options-outline" size={16} color="#34C759" />
+            <Ionicons name="options-outline" size={16} color="#34FF7A" />
             <Text style={[styles.sortBtnText, { fontFamily: "Inter_500Medium" }]}>
               Sort: {SORT_OPTIONS[sortIdx]}
             </Text>
@@ -181,12 +181,12 @@ export default function SearchScreen() {
                   style={[
                     styles.sortOptionText,
                     { fontFamily: "Inter_400Regular" },
-                    i === sortIdx && { color: "#34C759", fontFamily: "Inter_600SemiBold" },
+                    i === sortIdx && { color: "#34FF7A", fontFamily: "Inter_600SemiBold" },
                   ]}
                 >
                   {opt}
                 </Text>
-                {i === sortIdx && <Ionicons name="checkmark" size={16} color="#34C759" />}
+                {i === sortIdx && <Ionicons name="checkmark" size={16} color="#34FF7A" />}
               </TouchableOpacity>
             ))}
           </View>
@@ -218,7 +218,7 @@ export default function SearchScreen() {
                       </Text>
                       {pro.trusted && (
                         <View style={styles.trustedBadge}>
-                          <Ionicons name="checkmark-circle" size={12} color="#34C759" />
+                          <Ionicons name="checkmark-circle" size={12} color="#34FF7A" />
                           <Text style={[styles.trustedText, { fontFamily: "Inter_500Medium" }]}>
                             Trusted
                           </Text>
@@ -276,7 +276,7 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  container: { flex: 1, backgroundColor: "#000000" },
   header: {
     backgroundColor: "#111111",
     paddingHorizontal: 20,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#222222",
   },
-  headerTitle: { fontSize: 22, color: "#34C759", marginBottom: 12 },
+  headerTitle: { fontSize: 22, color: "#34FF7A", marginBottom: 12 },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#222",
   },
-  searchInput: { flex: 1, fontSize: 14, color: "#34C759" },
+  searchInput: { flex: 1, fontSize: 14, color: "#34FF7A" },
   filtersRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 8 },
   filterChip: {
     paddingHorizontal: 18,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     borderColor: "#333",
   },
   filterChipActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
-  filterChipText: { fontSize: 13, color: "#34C759" },
+  filterChipText: { fontSize: 13, color: "#34FF7A" },
   filterChipTextActive: { color: "#000" },
   sortRow: {
     flexDirection: "row",
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  sortBtnText: { fontSize: 13, color: "#34C759" },
+  sortBtnText: { fontSize: 13, color: "#34FF7A" },
   sortDropdown: {
     marginHorizontal: 16,
     marginTop: 4,
@@ -348,8 +348,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#222",
   },
-  sortOptionActive: { backgroundColor: "#1a3a1a" },
-  sortOptionText: { fontSize: 14, color: "#34C759" },
+  sortOptionActive: { backgroundColor: "#0d2e18" },
+  sortOptionText: { fontSize: 14, color: "#34FF7A" },
   results: { padding: 16, gap: 12 },
   emptyState: { paddingVertical: 60, alignItems: "center", gap: 10 },
   emptyText: { fontSize: 16, color: "#555" },
@@ -371,33 +371,33 @@ const styles = StyleSheet.create({
   },
   proInitials: { color: "#fff", fontSize: 18, fontWeight: "700" },
   proNameRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 },
-  proName: { fontSize: 15, color: "#34C759" },
+  proName: { fontSize: 15, color: "#34FF7A" },
   trustedBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#1a3a1a",
+    backgroundColor: "#0d2e18",
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 8,
   },
-  trustedText: { fontSize: 11, color: "#34C759" },
+  trustedText: { fontSize: 11, color: "#34FF7A" },
   proSpec: { fontSize: 13, color: "#555", marginBottom: 5 },
   proMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
-  proRating: { fontSize: 12, color: "#34C759" },
+  proRating: { fontSize: 12, color: "#34FF7A" },
   proReviews: { fontSize: 12, color: "#555" },
   metaDot: { color: "#333", fontSize: 12 },
   proDist: { fontSize: 12, color: "#555" },
-  proPrice: { fontSize: 20, color: "#34C759" },
+  proPrice: { fontSize: 20, color: "#34FF7A" },
   pricePer: { fontSize: 12, color: "#555" },
   tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 },
   tag: {
-    backgroundColor: "#1a3a1a",
+    backgroundColor: "#0d2e18",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  tagText: { fontSize: 11, color: "#34C759" },
+  tagText: { fontSize: 11, color: "#34FF7A" },
   bookBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 13,

@@ -111,7 +111,7 @@ export default function PayScreen() {
   // ─── Processing ───────────────────────────────────────────────
   if (payState === "processing") {
     return (
-      <View style={[styles.fullCenter, { backgroundColor: "#0a0a0a" }]}>
+      <View style={[styles.fullCenter, { backgroundColor: "#000000" }]}>
         <Animated.View style={[styles.spinner, { transform: [{ rotate: spin }] }]} />
         <Text style={[styles.processingText, { fontFamily: "Inter_500Medium" }]}>
           Authorizing Escrow Hold...
@@ -125,7 +125,7 @@ export default function PayScreen() {
     return (
       <View style={[styles.fullCenter, { backgroundColor: "#fff", paddingBottom: bottomPadding + 20 }]}>
         <View style={styles.lockIconBox}>
-          <Ionicons name="lock-closed" size={52} color="#34C759" />
+          <Ionicons name="lock-closed" size={52} color="#34FF7A" />
         </View>
         <Text style={[styles.successTitle, { fontFamily: "Inter_700Bold" }]}>
           Payment Held in Escrow
@@ -346,7 +346,7 @@ export default function PayScreen() {
 
         {/* Date/time pill */}
         <View style={styles.selectedSlotPill}>
-          <Ionicons name="calendar-outline" size={14} color="#34C759" />
+          <Ionicons name="calendar-outline" size={14} color="#34FF7A" />
           <Text style={[styles.selectedSlotText, { fontFamily: "Inter_500Medium" }]}>
             {selectedDateLabel} at {selectedTime}
           </Text>
@@ -394,7 +394,7 @@ export default function PayScreen() {
           )}
 
           <TouchableOpacity style={styles.addPhotoBtn} onPress={addPhoto}>
-            <Ionicons name="camera-outline" size={22} color="#34C759" />
+            <Ionicons name="camera-outline" size={22} color="#34FF7A" />
             <Text style={[styles.addPhotoBtnText, { fontFamily: "Inter_500Medium" }]}>
               + Add Photo
             </Text>
@@ -456,7 +456,7 @@ export default function PayScreen() {
         {/* Job Instructions preview */}
         {instructions.trim().length > 0 && (
           <View style={styles.instructionsPreview}>
-            <Ionicons name="document-text-outline" size={16} color="#34C759" />
+            <Ionicons name="document-text-outline" size={16} color="#34FF7A" />
             <Text style={[styles.instructionsPreviewText, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
               {instructions}
             </Text>
@@ -535,7 +535,7 @@ export default function PayScreen() {
         <View style={styles.paymentMethod}>
           <View style={styles.paymentMethodLeft}>
             <View style={styles.cardIconBox}>
-              <Ionicons name="card" size={20} color="#34C759" />
+              <Ionicons name="card" size={20} color="#34FF7A" />
             </View>
             <View>
               <Text style={[styles.cardLabel, { fontFamily: "Inter_400Regular" }]}>
@@ -561,7 +561,7 @@ export default function PayScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0a0a0a" },
+  container: { flex: 1, backgroundColor: "#000000" },
   fullCenter: {
     flex: 1,
     alignItems: "center",
@@ -578,17 +578,17 @@ const styles = StyleSheet.create({
     borderTopColor: "transparent",
     marginBottom: 8,
   },
-  processingText: { fontSize: 17, color: "#34C759" },
+  processingText: { fontSize: 17, color: "#34FF7A" },
   lockIconBox: {
     width: 96,
     height: 96,
-    backgroundColor: "#1a3a1a",
+    backgroundColor: "#0d2e18",
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
   },
-  successTitle: { fontSize: 26, color: "#34C759", textAlign: "center" },
+  successTitle: { fontSize: 26, color: "#34FF7A", textAlign: "center" },
   successSub: { fontSize: 14, color: "#555", textAlign: "center", lineHeight: 22 },
   escrowInfoBox: {
     width: "100%",
@@ -607,8 +607,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  escrowStepNumText: { fontSize: 14, color: "#34C759" },
-  escrowStepText: { fontSize: 14, color: "#34C759", flex: 1 },
+  escrowStepNumText: { fontSize: 14, color: "#34FF7A" },
+  escrowStepText: { fontSize: 14, color: "#34FF7A", flex: 1 },
   successBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 16,
@@ -633,18 +633,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#111111",
   },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 17, color: "#34C759" },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 17, color: "#34FF7A" },
   selectedSlotPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#1a3a1a",
+    backgroundColor: "#0d2e18",
     borderBottomWidth: 1,
     borderBottomColor: "#222",
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  selectedSlotText: { fontSize: 13, color: "#34C759" },
+  selectedSlotText: { fontSize: 13, color: "#34FF7A" },
   proSummary: {
     flexDirection: "row",
     alignItems: "center",
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   proAvatarText: { color: "#fff", fontWeight: "700", fontSize: 18 },
-  proSummaryName: { fontSize: 15, color: "#34C759", marginBottom: 2 },
+  proSummaryName: { fontSize: 15, color: "#34FF7A", marginBottom: 2 },
   proSummaryService: { fontSize: 13, color: "#555" },
   sectionLabel: { fontSize: 13, color: "#555", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 12 },
   dateTile: {
@@ -679,7 +679,7 @@ const styles = StyleSheet.create({
   },
   dateTileActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
   dateTileDay: { fontSize: 11, color: "#555" },
-  dateTileDate: { fontSize: 20, color: "#34C759" },
+  dateTileDate: { fontSize: 20, color: "#34FF7A" },
   dateTileMonth: { fontSize: 11, color: "#555" },
   timeGrid: {
     flexDirection: "row",
@@ -699,9 +699,9 @@ const styles = StyleSheet.create({
   },
   timeTileActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
   timeTileDisabled: { backgroundColor: "#0d0d0d", borderColor: "#1a1a1a" },
-  timeTileText: { fontSize: 14, color: "#34C759" },
+  timeTileText: { fontSize: 14, color: "#34FF7A" },
   hintText: { fontSize: 13, color: "#555", textAlign: "center", marginTop: 8 },
-  fieldLabel: { fontSize: 15, color: "#34C759", marginBottom: 4 },
+  fieldLabel: { fontSize: 15, color: "#34FF7A", marginBottom: 4 },
   fieldHint: { fontSize: 13, color: "#555", marginBottom: 12 },
   textArea: {
     backgroundColor: "#111111",
@@ -710,7 +710,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     fontSize: 14,
-    color: "#34C759",
+    color: "#34FF7A",
     minHeight: 120,
     marginBottom: 24,
   },
@@ -718,12 +718,12 @@ const styles = StyleSheet.create({
   photoTile: {
     width: 90,
     height: 90,
-    backgroundColor: "#1a3a1a",
+    backgroundColor: "#0d2e18",
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#2a4a2a",
+    borderColor: "#1a3a1a",
   },
   addPhotoBtn: {
     flexDirection: "row",
@@ -737,7 +737,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     marginBottom: 8,
   },
-  addPhotoBtnText: { fontSize: 15, color: "#34C759" },
+  addPhotoBtnText: { fontSize: 15, color: "#34FF7A" },
   bottomBar: {
     paddingHorizontal: 20,
     paddingTop: 12,
@@ -784,21 +784,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   summaryAvatarText: { color: "#fff", fontWeight: "700", fontSize: 20 },
-  summaryService: { fontSize: 15, color: "#34C759", marginBottom: 3 },
+  summaryService: { fontSize: 15, color: "#34FF7A", marginBottom: 3 },
   summaryDate: { fontSize: 13, color: "#555", marginBottom: 2 },
   summaryPro: { fontSize: 13, color: "#555" },
   instructionsPreview: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 8,
-    backgroundColor: "#1a3a1a",
+    backgroundColor: "#0d2e18",
     borderRadius: 14,
     padding: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#2a4a2a",
+    borderColor: "#1a3a1a",
   },
-  instructionsPreviewText: { flex: 1, fontSize: 13, color: "#34C759" },
+  instructionsPreviewText: { flex: 1, fontSize: 13, color: "#34FF7A" },
   tipLabel: {
     fontSize: 13,
     color: "#555",
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
     borderColor: "#222",
   },
   tipBtnActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
-  tipBtnLabel: { fontSize: 16, color: "#34C759" },
+  tipBtnLabel: { fontSize: 16, color: "#34FF7A" },
   tipBtnAmount: { fontSize: 12, color: "#555", marginTop: 2 },
   breakdown: {
     backgroundColor: "#111111",
@@ -830,10 +830,10 @@ const styles = StyleSheet.create({
   },
   lineItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   lineLabel: { fontSize: 14, color: "#555" },
-  lineValue: { fontSize: 14, color: "#34C759" },
+  lineValue: { fontSize: 14, color: "#34FF7A" },
   totalRow: { borderTopWidth: 1, borderTopColor: "#333", paddingTop: 12, marginTop: 4 },
-  totalLabel: { fontSize: 17, color: "#34C759" },
-  totalValue: { fontSize: 26, color: "#34C759" },
+  totalLabel: { fontSize: 17, color: "#34FF7A" },
+  totalValue: { fontSize: 26, color: "#34FF7A" },
   escrowNotice: {
     backgroundColor: "#0d1a2e",
     borderWidth: 1,
@@ -860,12 +860,12 @@ const styles = StyleSheet.create({
   cardIconBox: {
     width: 40,
     height: 40,
-    backgroundColor: "#1a3a1a",
+    backgroundColor: "#0d2e18",
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  cardLabel: { fontSize: 14, color: "#34C759", letterSpacing: 1 },
+  cardLabel: { fontSize: 14, color: "#34FF7A", letterSpacing: 1 },
   cardSub: { fontSize: 12, color: "#555" },
   authorizeBtn: {
     backgroundColor: "#34C759",
