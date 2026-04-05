@@ -157,7 +157,7 @@ function CustomerProfile() {
         onPress={() => Alert.alert("Edit Profile", "Profile editor would open here")}
         activeOpacity={0.85}
       >
-        <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile</Text>
+        <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile Settings</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutBtn}>
