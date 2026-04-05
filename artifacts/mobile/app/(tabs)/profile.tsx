@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,20 @@ import {
   TouchableOpacity,
   Platform,
   Alert,
+  Animated,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
-const PAYMENT_METHODS = ["Apple Pay", "Venmo", "PayPal", "Debit Card", "Cash App"];
+const PAYMENT_METHODS = [
+  { label: "🍎  Apple Pay", value: "Apple Pay" },
+  { label: "💸  Venmo",     value: "Venmo" },
+  { label: "💰  PayPal",    value: "PayPal" },
+  { label: "💳  Debit Card",value: "Debit Card" },
+  { label: "📱  Cash App",  value: "Cash App" },
+];
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -120,14 +128,38 @@ function LandscaperProfile() {
 }
 
 function CustomerProfile() {
-  const [selectedPayment, setSelectedPayment] = useState("Apple Pay");
+  const [selectedPayment, setSelectedPayment] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
+  const [error, setError] = useState(false);
+  const successOpacity = useRef(new Animated.Value(0)).current;
+  const successScale = useRef(new Animated.Value(0.8)).current;
+
+  const showSuccess = () => {
+    Animated.parallel([
+      Animated.timing(successOpacity, { toValue: 1, duration: 400, useNativeDriver: false }),
+      Animated.spring(successScale, { toValue: 1, useNativeDriver: false }),
+    ]).start();
+  };
 
   const savePayment = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    if (!selectedPayment) {
+      setError(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    setError(false);
+    setPaymentState("loading");
+    setTimeout(() => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setPaymentState("success");
+      showSuccess();
+      setTimeout(() => {
+        setPaymentState("idle");
+        successOpacity.setValue(0);
+        successScale.setValue(0.8);
+      }, 2500);
+    }, 1400);
   };
 
   return (
@@ -155,52 +187,55 @@ function CustomerProfile() {
       </View>
 
       {/* Payment Method Picker */}
-      <View style={styles.paymentCard}>
+      <View style={[styles.paymentCard, error && styles.paymentCardError]}>
         <Text style={[styles.paymentLabel, { fontFamily: "Inter_500Medium" }]}>
           Your Preferred Payment Method
         </Text>
         <TouchableOpacity
           style={styles.paymentSelector}
-          onPress={() => { setPickerOpen((v) => !v); Haptics.selectionAsync(); }}
+          onPress={() => { setPickerOpen((v) => !v); setError(false); Haptics.selectionAsync(); }}
           activeOpacity={0.8}
         >
-          <Text style={[styles.paymentSelected, { fontFamily: "Inter_500Medium" }]}>
-            {selectedPayment}
+          <Text style={[
+            styles.paymentSelected,
+            { fontFamily: "Inter_500Medium", color: selectedPayment ? "#FFFFFF" : "#555" }
+          ]}>
+            {selectedPayment || "Select a payment method..."}
           </Text>
-          <Ionicons
-            name={pickerOpen ? "chevron-up" : "chevron-down"}
-            size={18}
-            color="#FFFFFF"
-          />
+          <Ionicons name={pickerOpen ? "chevron-up" : "chevron-down"} size={18} color="#FFFFFF" />
         </TouchableOpacity>
+
+        {error && (
+          <Text style={[styles.errorMsg, { fontFamily: "Inter_400Regular" }]}>
+            ⚠️ Please select a payment method
+          </Text>
+        )}
 
         {pickerOpen && (
           <View style={styles.paymentDropdown}>
             {PAYMENT_METHODS.map((method) => (
               <TouchableOpacity
-                key={method}
+                key={method.value}
                 style={[
                   styles.paymentOption,
-                  selectedPayment === method && styles.paymentOptionActive,
+                  selectedPayment === method.value && styles.paymentOptionActive,
                 ]}
                 onPress={() => {
-                  setSelectedPayment(method);
+                  setSelectedPayment(method.value);
                   setPickerOpen(false);
-                  setSaved(false);
+                  setError(false);
                   Haptics.selectionAsync();
                 }}
                 activeOpacity={0.7}
               >
-                <Text
-                  style={[
-                    styles.paymentOptionText,
-                    { fontFamily: selectedPayment === method ? "Inter_600SemiBold" : "Inter_400Regular" },
-                    selectedPayment === method && styles.paymentOptionTextActive,
-                  ]}
-                >
-                  {method}
+                <Text style={[
+                  styles.paymentOptionText,
+                  { fontFamily: selectedPayment === method.value ? "Inter_600SemiBold" : "Inter_400Regular" },
+                  selectedPayment === method.value && styles.paymentOptionTextActive,
+                ]}>
+                  {method.label}
                 </Text>
-                {selectedPayment === method && (
+                {selectedPayment === method.value && (
                   <Ionicons name="checkmark-circle" size={18} color="#34FF7A" />
                 )}
               </TouchableOpacity>
@@ -208,20 +243,30 @@ function CustomerProfile() {
           </View>
         )}
 
-        <TouchableOpacity
-          style={styles.savePaymentBtn}
-          onPress={savePayment}
-          activeOpacity={0.85}
-        >
-          <Text style={[styles.savePaymentText, { fontFamily: "Inter_600SemiBold" }]}>
-            Save Preferred Payment Method
-          </Text>
-        </TouchableOpacity>
-
-        {saved && (
-          <Text style={[styles.savedMsg, { fontFamily: "Inter_500Medium" }]}>
-            ✅ Payment method updated!
-          </Text>
+        {paymentState !== "success" ? (
+          <TouchableOpacity
+            style={[styles.savePaymentBtn, paymentState === "loading" && styles.savePaymentBtnLoading]}
+            onPress={paymentState === "idle" ? savePayment : undefined}
+            activeOpacity={0.85}
+          >
+            {paymentState === "loading" ? (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <ActivityIndicator size="small" color="#000" />
+                <Text style={[styles.savePaymentText, { fontFamily: "Inter_600SemiBold" }]}>Saving...</Text>
+              </View>
+            ) : (
+              <Text style={[styles.savePaymentText, { fontFamily: "Inter_600SemiBold" }]}>
+                Save Preferred Payment Method
+              </Text>
+            )}
+          </TouchableOpacity>
+        ) : (
+          <Animated.View style={[styles.successBox, { opacity: successOpacity, transform: [{ scale: successScale }] }]}>
+            <Ionicons name="checkmark-circle" size={32} color="#34FF7A" />
+            <Text style={[styles.savedMsg, { fontFamily: "Inter_600SemiBold" }]}>
+              Payment method saved successfully!
+            </Text>
+          </Animated.View>
         )}
       </View>
 
@@ -355,6 +400,8 @@ const styles = StyleSheet.create({
   paymentOptionActive: { backgroundColor: "#0d2e18" },
   paymentOptionText: { fontSize: 15, color: "#FFFFFF" },
   paymentOptionTextActive: { color: "#34FF7A" },
+  paymentCardError: { borderColor: "#ef4444" },
+  errorMsg: { fontSize: 12, color: "#ef4444", marginTop: 6, marginBottom: 2 },
   savePaymentBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 13,
@@ -362,8 +409,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 12,
   },
+  savePaymentBtnLoading: { opacity: 0.8 },
   savePaymentText: { color: "#000", fontSize: 14 },
-  savedMsg: { fontSize: 12, color: "#34FF7A", textAlign: "center", marginTop: 10 },
+  successBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 14, paddingVertical: 6 },
+  savedMsg: { fontSize: 14, color: "#34FF7A" },
   editBtn: {
     backgroundColor: "#34C759",
     paddingVertical: 16,

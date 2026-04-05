@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Animated,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,6 +17,26 @@ const QUICK_STATS = [
   { label: "Avg Rating", value: "4.9", icon: "star" as const, iconColor: "#f59e0b" },
   { label: "Saved Pros", value: "2", icon: "heart" as const, iconColor: "#f87171" },
 ];
+
+function AnimatedStatCard({ stat, delay }: { stat: typeof QUICK_STATS[0]; delay: number }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(16)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, { toValue: 1, duration: 500, delay, useNativeDriver: false }),
+      Animated.timing(translateY, { toValue: 0, duration: 500, delay, useNativeDriver: false }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.View style={[styles.statCard, { opacity, transform: [{ translateY }] }]}>
+      <Ionicons name={stat.icon} size={22} color={stat.iconColor} />
+      <Text style={[styles.statValue, { fontFamily: "Inter_700Bold" }]}>{stat.value}</Text>
+      <Text style={[styles.statLabel, { fontFamily: "Inter_400Regular" }]}>{stat.label}</Text>
+    </Animated.View>
+  );
+}
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -56,14 +77,10 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Quick Stats */}
+        {/* Quick Stats — staggered entrance */}
         <View style={styles.statsRow}>
-          {QUICK_STATS.map((s) => (
-            <View key={s.label} style={styles.statCard}>
-              <Ionicons name={s.icon} size={22} color={s.iconColor} />
-              <Text style={[styles.statValue, { fontFamily: "Inter_700Bold" }]}>{s.value}</Text>
-              <Text style={[styles.statLabel, { fontFamily: "Inter_400Regular" }]}>{s.label}</Text>
-            </View>
+          {QUICK_STATS.map((s, i) => (
+            <AnimatedStatCard key={s.label} stat={s} delay={i * 120} />
           ))}
         </View>
 
