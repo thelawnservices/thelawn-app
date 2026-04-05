@@ -81,7 +81,7 @@ function GrassHeader({ topPadding }: { topPadding: number }) {
       {/* Header row on top */}
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }} />
-        <Text style={[styles.logo, { fontFamily: "Inter_700Bold" }]}>theLawn</Text>
+        <Text style={[styles.logo, { fontFamily: "GreatVibes_400Regular" }]}>theLawn</Text>
         <View style={[{ flex: 1 }, styles.headerRight]}>
           <TouchableOpacity style={styles.notifBtn} onPress={() => {}}>
             <Ionicons name="notifications-outline" size={22} color="#fff" />
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   headerRight: {
     alignItems: "flex-end",
   },
-  logo: { fontSize: 26, color: "#fff", letterSpacing: -1 },
+  logo: { fontSize: 34, color: "#fff", letterSpacing: -1 },
   notifBtn: {
     width: 36,
     height: 36,
