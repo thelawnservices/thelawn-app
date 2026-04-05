@@ -83,9 +83,11 @@ const NOTIFICATIONS = [
 function NotificationsPanel({
   visible,
   onClose,
+  items,
 }: {
   visible: boolean;
   onClose: () => void;
+  items: typeof NOTIFICATIONS;
 }) {
   const slideY = useRef(new Animated.Value(400)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -121,7 +123,7 @@ function NotificationsPanel({
               </TouchableOpacity>
             </View>
             <View style={styles.notifList}>
-              {NOTIFICATIONS.map((n) => (
+              {items.map((n) => (
                 <View key={n.id} style={styles.notifItem}>
                   <Text style={styles.notifItemIcon}>{n.icon}</Text>
                   <View style={{ flex: 1 }}>
@@ -210,10 +212,25 @@ export default function HomeScreen() {
   const [notifVisible, setNotifVisible] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
 
+  const [notifItems, setNotifItems] = useState(NOTIFICATIONS);
+
   useEffect(() => {
     const t = setTimeout(() => setProsLoaded(true), 900);
     const n = setTimeout(() => setNotifVisible(true), 4000);
-    return () => { clearTimeout(t); clearTimeout(n); };
+    const MOCK_MESSAGES = [
+      { id: "", icon: "🚚", title: "Landscaper Arrived", sub: "John Rivera has arrived at your location" },
+      { id: "", icon: "🌿", title: "Job In Progress", sub: "Your Lawn Mowing appointment has started" },
+      { id: "", icon: "✅", title: "Payment Confirmed", sub: "Escrow released for today's service" },
+    ];
+    let idx = 0;
+    const ws = setInterval(() => {
+      const msg = MOCK_MESSAGES[idx % MOCK_MESSAGES.length];
+      const item = { ...msg, id: String(Date.now()) };
+      setNotifItems((prev) => [item, ...prev]);
+      setNotifVisible(true);
+      idx++;
+    }, 6500);
+    return () => { clearTimeout(t); clearTimeout(n); clearInterval(ws); };
   }, []);
 
   function handleBooking(action: () => void) {
@@ -233,7 +250,7 @@ export default function HomeScreen() {
         onToggleOffline={() => setIsOffline((v) => !v)}
       />
       <OfflineBanner visible={isOffline} />
-      <NotificationsPanel visible={notifVisible} onClose={() => setNotifVisible(false)} />
+      <NotificationsPanel visible={notifVisible} onClose={() => setNotifVisible(false)} items={notifItems} />
 
       <ScrollView
         style={{ flex: 1 }}
@@ -258,10 +275,10 @@ export default function HomeScreen() {
         </Text>
         <View style={styles.servicesGrid}>
           {[
-            { name: "Lawn\nMowing",    icon: "leaf" as const,   price: "$45" },
-            { name: "Hedge\nTrimming", icon: "cut" as const,    price: "$65" },
-            { name: "Mulching",        icon: "flower" as const, price: "$120" },
-            { name: "Clean Up",        icon: "trash" as const,  price: "$35" },
+            { name: "Lawn\nMowing",    icon: "leaf" as const,   avg: "Avg $52" },
+            { name: "Hedge\nTrimming", icon: "cut" as const,    avg: "Avg $68" },
+            { name: "Mulching",        icon: "flower" as const, avg: "Avg $135" },
+            { name: "Clean Up",        icon: "trash" as const,  avg: "Avg $38" },
           ].map((svc) => (
             <TouchableOpacity
               key={svc.name}
@@ -276,7 +293,10 @@ export default function HomeScreen() {
                 {svc.name}
               </Text>
               <Text style={[styles.svcGridPrice, { fontFamily: "Inter_600SemiBold" }]}>
-                {svc.price}
+                {svc.avg}
+              </Text>
+              <Text style={[styles.svcGridUpdated, { fontFamily: "Inter_400Regular" }]}>
+                Updated daily
               </Text>
             </TouchableOpacity>
           ))}
@@ -483,6 +503,7 @@ const styles = StyleSheet.create({
   },
   svcGridName: { fontSize: 10, color: "#FFFFFF", textAlign: "center", lineHeight: 14 },
   svcGridPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
+  svcGridUpdated: { fontSize: 9, color: "#555555", textAlign: "center", marginTop: 1 },
   proRow: { marginTop: 20, marginBottom: 24, marginHorizontal: -20 },
   proRowContent: { paddingHorizontal: 20, gap: 12 },
   proHCard: {

@@ -80,6 +80,8 @@ export default function PayScreen() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [recurring, setRecurring] = useState(false);
   const [recurringFreq, setRecurringFreq] = useState<"Weekly" | "Bi-weekly" | "Monthly">("Weekly");
+  const [recurringStart, setRecurringStart] = useState("Apr 7, 2026");
+  const [recurringEnd, setRecurringEnd] = useState("Apr 7, 2027");
   const [tipPresetIdx, setTipPresetIdx] = useState<number | null>(1);
   const [tipMode, setTipMode] = useState<"preset" | "custom" | "none">("preset");
   const [customTipAmount, setCustomTipAmount] = useState("");
@@ -411,28 +413,62 @@ export default function PayScreen() {
           </View>
 
           {recurring && (
-            <View style={styles.freqRow}>
-              {(["Weekly", "Bi-weekly", "Monthly"] as const).map((f) => (
-                <TouchableOpacity
-                  key={f}
-                  style={[styles.freqChip, recurringFreq === f && styles.freqChipActive]}
-                  onPress={() => {
-                    setRecurringFreq(f);
-                    Haptics.selectionAsync();
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.freqChipText,
-                      { fontFamily: "Inter_500Medium" },
-                      recurringFreq === f && styles.freqChipTextActive,
-                    ]}
+            <View style={styles.recurringExpandBox}>
+              <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginBottom: 10 }]}>
+                Frequency
+              </Text>
+              <View style={styles.freqRow}>
+                {(["Weekly", "Bi-weekly", "Monthly"] as const).map((f) => (
+                  <TouchableOpacity
+                    key={f}
+                    style={[styles.freqChip, recurringFreq === f && styles.freqChipActive]}
+                    onPress={() => {
+                      setRecurringFreq(f);
+                      Haptics.selectionAsync();
+                    }}
+                    activeOpacity={0.8}
                   >
-                    {f}
+                    <Text
+                      style={[
+                        styles.freqChipText,
+                        { fontFamily: "Inter_500Medium" },
+                        recurringFreq === f && styles.freqChipTextActive,
+                      ]}
+                    >
+                      {f}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.recurringDateRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.recurringDateLabel, { fontFamily: "Inter_400Regular" }]}>
+                    Start Date
                   </Text>
-                </TouchableOpacity>
-              ))}
+                  <TextInput
+                    style={[styles.recurringDateInput, { fontFamily: "Inter_400Regular" }]}
+                    value={recurringStart}
+                    onChangeText={setRecurringStart}
+                    placeholder="Apr 7, 2026"
+                    placeholderTextColor="#555"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.recurringDateLabel, { fontFamily: "Inter_400Regular" }]}>
+                    End Date
+                  </Text>
+                  <TextInput
+                    style={[styles.recurringDateInput, { fontFamily: "Inter_400Regular" }]}
+                    value={recurringEnd}
+                    onChangeText={setRecurringEnd}
+                    placeholder="Apr 7, 2027"
+                    placeholderTextColor="#555"
+                  />
+                </View>
+              </View>
+              <Text style={[styles.recurringNote, { fontFamily: "Inter_400Regular" }]}>
+                Each appointment is charged separately after dual confirmation.
+              </Text>
             </View>
           )}
         </ScrollView>
@@ -642,6 +678,14 @@ export default function PayScreen() {
             <Text style={[styles.summaryService, { fontFamily: "Inter_600SemiBold" }]}>
               {selectedService ?? "Lawn Mowing"}{selectedYardSize ? ` · ${selectedYardSize} yard` : ""}
             </Text>
+            {recurring && (
+              <View style={styles.recurringBadge}>
+                <Ionicons name="repeat" size={11} color="#34FF7A" />
+                <Text style={[styles.recurringBadgeText, { fontFamily: "Inter_500Medium" }]}>
+                  {recurringFreq} · Charged per appointment
+                </Text>
+              </View>
+            )}
             <Text style={[styles.summaryDate, { fontFamily: "Inter_400Regular" }]}>
               {selectedDateLabel} · {selectedTime}
             </Text>
@@ -774,6 +818,12 @@ export default function PayScreen() {
               Secure Escrow Payment
             </Text>
           </View>
+          {recurring && (
+            <Text style={[styles.escrowNoticeText, { fontFamily: "Inter_400Regular", marginBottom: 6 }]}>
+              Each recurring appointment requires{" "}
+              <Text style={{ fontFamily: "Inter_600SemiBold" }}>dual confirmation</Text> before payment release.
+            </Text>
+          )}
           <Text style={[styles.escrowNoticeText, { fontFamily: "Inter_400Regular" }]}>
             Your payment will be held securely and{" "}
             <Text style={{ fontFamily: "Inter_600SemiBold" }}>not charged</Text> until both you and
@@ -1174,6 +1224,36 @@ const styles = StyleSheet.create({
   freqChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   freqChipText: { fontSize: 13, color: "#FFFFFF" },
   freqChipTextActive: { color: "#000" },
+
+  recurringExpandBox: {
+    backgroundColor: "#0d0d0d",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    padding: 16,
+    gap: 12,
+  },
+  recurringDateRow: { flexDirection: "row", gap: 12 },
+  recurringDateLabel: { fontSize: 11, color: "#AAAAAA", marginBottom: 6 },
+  recurringDateInput: {
+    backgroundColor: "#111111",
+    borderWidth: 1,
+    borderColor: "#222222",
+    borderRadius: 14,
+    padding: 12,
+    fontSize: 13,
+    color: "#FFFFFF",
+  },
+  recurringNote: { fontSize: 11, color: "#666666", lineHeight: 16 },
+
+  recurringBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 3,
+    marginBottom: 2,
+  },
+  recurringBadgeText: { fontSize: 11, color: "#34FF7A" },
   savedCardRow: {
     flexDirection: "row",
     alignItems: "center",
