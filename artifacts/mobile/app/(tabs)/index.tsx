@@ -136,17 +136,55 @@ function NotificationsPanel({
   );
 }
 
+function OfflineBanner({ visible }: { visible: boolean }) {
+  const translateY = useRef(new Animated.Value(-40)).current;
+
+  useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: visible ? 0 : -40,
+      duration: 280,
+      useNativeDriver: false,
+    }).start();
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <Animated.View style={[styles.offlineBanner, { transform: [{ translateY }] }]}>
+      <Ionicons name="cloud-offline-outline" size={15} color="#fff" />
+      <Text style={[styles.offlineBannerText, { fontFamily: "Inter_500Medium" }]}>
+        You're offline · Booking is disabled
+      </Text>
+    </Animated.View>
+  );
+}
+
 function AppHeader({
   topPadding,
   onBellPress,
+  isOffline,
+  onToggleOffline,
 }: {
   topPadding: number;
   onBellPress: () => void;
+  isOffline: boolean;
+  onToggleOffline: () => void;
 }) {
   return (
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
       <View style={styles.headerRow}>
-        <View style={{ flex: 1 }} />
+        <View style={{ flex: 1 }}>
+          <TouchableOpacity
+            style={[styles.onlinePill, isOffline && styles.offlinePill]}
+            onPress={onToggleOffline}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.onlineDot, isOffline && styles.offlineDot]} />
+            <Text style={[styles.onlinePillText, { fontFamily: "Inter_500Medium" }, isOffline && styles.offlinePillText]}>
+              {isOffline ? "Offline" : "Online"}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <Text style={[styles.logo, { fontFamily: "GreatVibes_400Regular" }]}>theLawn</Text>
         <View style={[{ flex: 1 }, styles.headerRight]}>
           <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
@@ -164,15 +202,30 @@ export default function HomeScreen() {
   const topPadding = isWeb ? 67 : insets.top;
   const [prosLoaded, setProsLoaded] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setProsLoaded(true), 900);
     return () => clearTimeout(t);
   }, []);
 
+  function handleBooking(action: () => void) {
+    if (isOffline) {
+      // silently blocked — banner is already visible
+      return;
+    }
+    action();
+  }
+
   return (
     <View style={styles.container}>
-      <AppHeader topPadding={topPadding} onBellPress={() => setNotifVisible(true)} />
+      <AppHeader
+        topPadding={topPadding}
+        onBellPress={() => setNotifVisible(true)}
+        isOffline={isOffline}
+        onToggleOffline={() => setIsOffline((v) => !v)}
+      />
+      <OfflineBanner visible={isOffline} />
       <NotificationsPanel visible={notifVisible} onClose={() => setNotifVisible(false)} />
 
       <ScrollView
@@ -182,8 +235,8 @@ export default function HomeScreen() {
       >
         {/* CTA Button */}
         <TouchableOpacity
-          style={styles.ctaBtn}
-          onPress={() => router.navigate("/(tabs)/search")}
+          style={[styles.ctaBtn, isOffline && styles.ctaBtnDisabled]}
+          onPress={() => handleBooking(() => router.navigate("/(tabs)/search"))}
           activeOpacity={0.85}
         >
           <Ionicons name="search" size={20} color="#000" />
@@ -275,8 +328,8 @@ export default function HomeScreen() {
               return (
                 <TouchableOpacity
                   key={pro.name}
-                  style={styles.proHCard}
-                  onPress={() => router.navigate("/pay")}
+                  style={[styles.proHCard, isOffline && styles.proHCardDisabled]}
+                  onPress={() => handleBooking(() => router.navigate("/pay"))}
                   activeOpacity={0.8}
                 >
                   <View style={styles.proHIconWrap}>
@@ -505,4 +558,38 @@ const styles = StyleSheet.create({
   notifItemIcon: { fontSize: 32 },
   notifItemTitle: { fontSize: 14, color: "#FFFFFF", marginBottom: 4 },
   notifItemSub: { fontSize: 12, color: "#888888" },
+  offlineBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#FF3B30",
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+  },
+  offlineBannerText: { color: "#fff", fontSize: 13 },
+  onlinePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#111111",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  offlinePill: { borderColor: "#FF3B30" },
+  onlineDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "#34FF7A",
+  },
+  offlineDot: { backgroundColor: "#FF3B30" },
+  onlinePillText: { color: "#FFFFFF", fontSize: 11 },
+  offlinePillText: { color: "#FF3B30" },
+  ctaBtnDisabled: { backgroundColor: "#2a2a2a", shadowOpacity: 0 },
+  proHCardDisabled: { opacity: 0.4 },
 });
