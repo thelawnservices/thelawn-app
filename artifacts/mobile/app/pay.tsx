@@ -15,13 +15,33 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
-type PayState = "availability" | "details" | "review" | "processing" | "success";
+type PayState = "service-select" | "availability" | "details" | "review" | "processing" | "success";
 
 const TIP_OPTIONS = [
   { label: "10%", value: 0.1 },
   { label: "15%", value: 0.15 },
   { label: "20%", value: 0.2 },
 ];
+
+const SERVICE_OPTIONS = [
+  { label: "Lawn Mowing",    emoji: "🌿" },
+  { label: "Hedge Trimming", emoji: "✂️" },
+  { label: "Mulching",       emoji: "🪴" },
+  { label: "Clean Up",       emoji: "🗑️" },
+];
+
+const YARD_SIZE_OPTIONS = [
+  { key: "Small",  label: "Small",  sub: "< 5,000 sq ft" },
+  { key: "Medium", label: "Medium", sub: "5,000–10,000 sq ft" },
+  { key: "Large",  label: "Large",  sub: "10,000+ sq ft" },
+];
+
+const PRICE_MATRIX: Record<string, Record<string, number>> = {
+  "Lawn Mowing":    { Small: 45,  Medium: 65,  Large: 120 },
+  "Hedge Trimming": { Small: 55,  Medium: 75,  Large: 95  },
+  "Mulching":       { Small: 110, Medium: 140, Large: 180 },
+  "Clean Up":       { Small: 30,  Medium: 40,  Large: 55  },
+};
 
 const PHOTO_EMOJIS = ["🌳", "📸", "🏡", "🪴", "🌿", "🍃"];
 
@@ -52,9 +72,10 @@ export default function PayScreen() {
   const proName = params.proName || "John Rivera";
   const proInitials = params.proInitials || "JR";
   const proColor = params.proColor || "#34FF7A";
-  const basePrice = parseFloat(params.price || "45");
 
-  const [payState, setPayState] = useState<PayState>("availability");
+  const [payState, setPayState] = useState<PayState>("service-select");
+  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [selectedYardSize, setSelectedYardSize] = useState<string | null>(null);
   const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [recurring, setRecurring] = useState(false);
@@ -65,12 +86,17 @@ export default function PayScreen() {
   const [photos, setPhotos] = useState<string[]>([]);
   const spinValue = useRef(new Animated.Value(0)).current;
 
+  const basePrice =
+    selectedService && selectedYardSize
+      ? (PRICE_MATRIX[selectedService]?.[selectedYardSize] ?? 45)
+      : 45;
+
   const tip = Math.round(basePrice * TIP_OPTIONS[tipIdx].value * 100) / 100;
   const fee = Math.round(basePrice * 0.03 * 100) / 100;
   const total = (basePrice + tip + fee).toFixed(2);
 
   const canContinueFromAvailability = selectedDateIdx !== null && selectedTime !== null;
-  const canContinueFromDetails = serviceAddress.trim().length > 0;
+  const canContinueFromDetails = serviceAddress.trim().length > 0 && selectedYardSize !== null;
 
   useEffect(() => {
     if (payState === "processing") {
@@ -184,13 +210,55 @@ export default function PayScreen() {
     );
   }
 
-  // ─── Availability ─────────────────────────────────────────────
-  if (payState === "availability") {
+  // ─── Service Select ───────────────────────────────────────────
+  if (payState === "service-select") {
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
           <TouchableOpacity onPress={() => router.dismiss()} style={styles.backBtn}>
             <Ionicons name="chevron-down" size={24} color="#34FF7A" />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Choose Service Type</Text>
+          <View style={{ width: 36 }} />
+        </View>
+
+        <View style={styles.serviceGrid}>
+          {SERVICE_OPTIONS.map((svc) => (
+            <TouchableOpacity
+              key={svc.label}
+              style={[
+                styles.serviceTile,
+                selectedService === svc.label && styles.serviceTileActive,
+              ]}
+              onPress={() => {
+                setSelectedService(svc.label);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setTimeout(() => setPayState("availability"), 180);
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.serviceEmoji}>{svc.emoji}</Text>
+              <Text style={[
+                styles.serviceLabel,
+                { fontFamily: "Inter_600SemiBold" },
+                selectedService === svc.label && styles.serviceLabelActive,
+              ]}>
+                {svc.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
+  }
+
+  // ─── Availability ─────────────────────────────────────────────
+  if (payState === "availability") {
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
+          <TouchableOpacity onPress={() => setPayState("service-select")} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color="#34FF7A" />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Select Date & Time</Text>
           <View style={{ width: 36 }} />
@@ -425,6 +493,40 @@ export default function PayScreen() {
             autoCorrect={false}
           />
 
+          {/* Yard Size */}
+          <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
+            What size is your yard?{" "}
+            <Text style={{ color: "#ef4444" }}>*</Text>
+          </Text>
+          <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+            This determines your price
+          </Text>
+          <View style={styles.yardSizeRow}>
+            {YARD_SIZE_OPTIONS.map((ys) => (
+              <TouchableOpacity
+                key={ys.key}
+                style={[styles.yardChip, selectedYardSize === ys.key && styles.yardChipActive]}
+                onPress={() => {
+                  setSelectedYardSize(ys.key);
+                  Haptics.selectionAsync();
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.yardChipLabel, { fontFamily: "Inter_600SemiBold" }, selectedYardSize === ys.key && styles.yardChipLabelActive]}>
+                  {ys.label}
+                </Text>
+                <Text style={[styles.yardChipSub, { fontFamily: "Inter_400Regular" }, selectedYardSize === ys.key && styles.yardChipSubActive]}>
+                  {ys.sub}
+                </Text>
+                {selectedYardSize === ys.key && selectedService && (
+                  <Text style={[styles.yardChipPrice, { fontFamily: "Inter_700Bold" }]}>
+                    ${PRICE_MATRIX[selectedService]?.[ys.key] ?? "–"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
             Special Instructions
           </Text>
@@ -484,7 +586,11 @@ export default function PayScreen() {
             activeOpacity={canContinueFromDetails ? 0.85 : 1}
           >
             <Text style={[styles.continueBtnText, { fontFamily: "Inter_700Bold" }]}>
-              {canContinueFromDetails ? "Continue to Review & Pay" : "Enter a service address"}
+              {!serviceAddress.trim()
+                ? "Enter a service address"
+                : !selectedYardSize
+                ? "Select your yard size"
+                : "Continue to Review & Pay"}
             </Text>
             {canContinueFromDetails && (
               <Ionicons name="arrow-forward" size={18} color="#fff" />
@@ -517,7 +623,7 @@ export default function PayScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.summaryService, { fontFamily: "Inter_600SemiBold" }]}>
-              Lawn Mowing · Standard cut
+              {selectedService ?? "Lawn Mowing"}{selectedYardSize ? ` · ${selectedYardSize} yard` : ""}
             </Text>
             <Text style={[styles.summaryDate, { fontFamily: "Inter_400Regular" }]}>
               {selectedDateLabel} · {selectedTime}
@@ -1028,4 +1134,49 @@ const styles = StyleSheet.create({
   },
   savedCardNumber: { fontSize: 15, color: "#FFFFFF" },
   savedCardSub: { fontSize: 12, color: "#888888", marginTop: 2 },
+
+  serviceGrid: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    padding: 20,
+    gap: 14,
+    alignContent: "flex-start",
+  },
+  serviceTile: {
+    width: "46%",
+    backgroundColor: "#111111",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#222222",
+    padding: 24,
+    alignItems: "center",
+    gap: 10,
+  },
+  serviceTileActive: {
+    backgroundColor: "#0d2e18",
+    borderColor: "#34FF7A",
+  },
+  serviceEmoji: { fontSize: 44 },
+  serviceLabel: { fontSize: 14, color: "#FFFFFF", textAlign: "center" },
+  serviceLabelActive: { color: "#34FF7A" },
+
+  yardSizeRow: { flexDirection: "row", gap: 10, marginBottom: 4 },
+  yardChip: {
+    flex: 1,
+    backgroundColor: "#111111",
+    borderWidth: 1,
+    borderColor: "#222222",
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    gap: 4,
+  },
+  yardChipActive: { backgroundColor: "#0d2e18", borderColor: "#34FF7A" },
+  yardChipLabel: { fontSize: 14, color: "#FFFFFF" },
+  yardChipLabelActive: { color: "#34FF7A" },
+  yardChipSub: { fontSize: 9, color: "#666666", textAlign: "center" },
+  yardChipSubActive: { color: "#34FF7A" },
+  yardChipPrice: { fontSize: 16, color: "#34FF7A", marginTop: 4 },
 });
