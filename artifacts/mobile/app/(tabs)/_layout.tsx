@@ -1,5 +1,84 @@
-import { Slot } from "expo-router";
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabLayout() {
-  return <Slot />;
+  const insets = useSafeAreaInsets();
+  const isWeb = Platform.OS === "web";
+  const bottomInset = isWeb ? 0 : insets.bottom;
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: "#34C759",
+        tabBarInactiveTintColor: "#9ca3af",
+        tabBarStyle: {
+          backgroundColor: "#ffffff",
+          borderTopColor: "#e5e5e5",
+          borderTopWidth: 1,
+          height: 60 + bottomInset,
+          paddingBottom: bottomInset + 6,
+          paddingTop: 6,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          elevation: 10,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontFamily: "Inter_500Medium",
+          marginTop: 2,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="leaf" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: "Search",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="search" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="appointments"
+        options={{
+          title: "Appointments",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="jobs"
+        options={{
+          title: "My Jobs",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="location-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tabs>
+  );
 }

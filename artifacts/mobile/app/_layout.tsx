@@ -23,10 +23,7 @@ function RootLayoutNav() {
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="booking" options={{ headerShown: false, animation: "slide_from_right" }} />
-      <Stack.Screen name="review" options={{ headerShown: false, animation: "slide_from_right" }} />
-      <Stack.Screen name="timer" options={{ headerShown: false, animation: "slide_from_right" }} />
-      <Stack.Screen name="feedback" options={{ headerShown: false, animation: "slide_from_right" }} />
+      <Stack.Screen name="pay" options={{ headerShown: false, animation: "slide_from_bottom", presentation: "modal" }} />
     </Stack>
   );
 }

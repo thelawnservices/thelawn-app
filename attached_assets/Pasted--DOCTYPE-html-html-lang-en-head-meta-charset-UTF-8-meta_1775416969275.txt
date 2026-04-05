@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Lawn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .logo-font { font-family: 'Playfair Display', cursive; letter-spacing: -2px; }
+    .iphone { max-width: 390px; transition: all 0.4s ease; }
+    .tablet { max-width: 768px; }
+    .header { background: linear-gradient(to right, #34C759, #166D42); }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e5e5; max-width: 390px; margin: 0 auto; box-shadow: 0 -2px 10px rgba(0,0,0,0.08); }
+    .nav-item { transition: all 0.2s; }
+    .nav-item.active { color: #34C759; }
+    .payment-card { transition: all 0.2s; }
+    .payment-card.selected { border-color: #34C759; box-shadow: 0 0 0 3px rgba(52,199,89,0.3); }
+    .spinner { animation: spin 1.2s linear infinite; }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-[#F8F9F7] to-[#E8F5E8] min-h-screen flex items-center justify-center p-4">
+
+  <div id="preview-container" class="iphone bg-white shadow-2xl relative">
+
+    <!-- Header -->
+    <div class="header h-14 flex items-center px-5 text-white">
+      <span class="logo-font text-3xl text-white tracking-tighter">theLawn</span>
+      <div class="flex-1"></div>
+      <span onclick="toggleNotifications()" class="text-3xl cursor-pointer relative">🛎️</span>
+      <span onclick="toggleDeviceMode()" id="mode-badge" class="ml-4 bg-white/20 px-3 py-1 rounded-3xl text-xs cursor-pointer">PHONE</span>
+    </div>
+
+    <div id="screen" class="h-[calc(100vh-56px-64px)] overflow-auto p-5 bg-white pb-20">
+
+      <!-- HOME -->
+      <div id="home-screen" class="space-y-8">
+        <h1 class="text-3xl font-semibold text-gray-900">Good morning, Zamire 👋</h1>
+        <button onclick="switchTab(1)" class="w-full bg-[#34C759] text-white py-5 rounded-3xl font-semibold text-lg">Find a Landscaper Near You</button>
+      </div>
+
+      <!-- SEARCH -->
+      <div id="search-screen" class="hidden space-y-6">
+        <h2 class="text-2xl font-semibold">Find Landscapers & Businesses</h2>
+        <input type="text" placeholder="Search by name, service, or location..." class="w-full border border-gray-200 rounded-3xl px-5 py-4 text-sm">
+        <div class="flex gap-2 overflow-x-auto">
+          <div onclick="toggleFilter(this)" class="filter-chip px-5 py-2 bg-white border border-gray-200 rounded-3xl text-sm font-medium whitespace-nowrap active">All</div>
+          <div onclick="toggleFilter(this)" class="filter-chip px-5 py-2 bg-white border border-gray-200 rounded-3xl text-sm font-medium whitespace-nowrap">Lawn Mowing</div>
+          <div onclick="toggleFilter(this)" class="filter-chip px-5 py-2 bg-white border border-gray-200 rounded-3xl text-sm font-medium whitespace-nowrap">Hedge Trimming</div>
+          <div onclick="toggleFilter(this)" class="filter-chip px-5 py-2 bg-white border border-gray-200 rounded-3xl text-sm font-medium whitespace-nowrap">Mulching</div>
+        </div>
+        <select onchange="filterResults()" class="w-full border border-gray-200 rounded-2xl px-4 py-3">
+          <option>Sort by Recommended</option>
+          <option>Sort by Closest</option>
+          <option>Sort by Highest Rated</option>
+        </select>
+        <div id="search-results" class="space-y-4"></div>
+      </div>
+
+      <!-- APPOINTMENTS -->
+      <div id="appointments-screen" class="hidden space-y-6">
+        <h2 class="text-2xl font-semibold">Upcoming Appointments</h2>
+        <div class="bg-white border border-gray-200 rounded-3xl p-5">Lawn Mowing • April 12 • 10:30 AM • John Rivera</div>
+        <div class="bg-white border border-gray-200 rounded-3xl p-5">Hedge Trimming • April 18 • 9:00 AM • GreenScape Pros</div>
+      </div>
+
+      <!-- MY JOBS -->
+      <div id="myjobs-screen" class="hidden space-y-6">
+        <h2 class="text-2xl font-semibold">My Jobs</h2>
+        <div class="text-center py-12 text-gray-400">No active jobs yet.<br>Live tracking will appear here.</div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="profile-screen" class="hidden space-y-8">
+        <div class="flex bg-gray-100 rounded-3xl p-1">
+          <button onclick="setProfileType('customer')" id="customer-tab" class="flex-1 py-3 rounded-3xl font-medium">Customer</button>
+          <button onclick="setProfileType('landscaper')" id="landscaper-tab" class="flex-1 py-3 rounded-3xl font-medium">Landscaper</button>
+        </div>
+        <!-- Customer Profile -->
+        <div id="customer-profile" class="space-y-6">
+          <div class="flex flex-col items-center">
+            <div onclick="simulateProfilePicUpload()" class="w-24 h-24 bg-gray-200 rounded-2xl flex items-center justify-center text-5xl cursor-pointer">👤</div>
+          </div>
+          <div class="space-y-4">
+            <input value="zamire@example.com" class="w-full border border-gray-200 rounded-2xl p-4" placeholder="Email">
+            <input type="date" value="1995-06-15" class="w-full border border-gray-200 rounded-2xl p-4">
+            <button onclick="changePassword()" class="w-full border border-gray-300 py-4 rounded-3xl">Change Password</button>
+            <input value="123 Main St, Ellenton, FL" class="w-full border border-gray-200 rounded-2xl p-4" placeholder="Address">
+          </div>
+        </div>
+        <!-- Landscaper Profile -->
+        <div id="landscaper-profile" class="hidden space-y-6">
+          <div class="flex flex-col items-center">
+            <div onclick="simulateProfilePicUpload()" class="w-24 h-24 bg-gray-200 rounded-2xl flex items-center justify-center text-5xl cursor-pointer">👷‍♂️</div>
+          </div>
+          <input value="2018" class="w-full border border-gray-200 rounded-2xl p-4" placeholder="Year Established">
+          <select class="w-full border border-gray-200 rounded-2xl p-4">
+            <option>Lawn Mowing</option>
+            <option>Hedge Trimming</option>
+            <option>Mulching</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- REVIEW & PAY -->
+      <div id="pay-screen" class="hidden space-y-8">
+        <div class="flex items-center justify-between"><button onclick="goBack()" class="text-2xl text-gray-400">←</button><h2 class="text-2xl font-semibold">Review & Pay</h2></div>
+        <div class="bg-white border border-gray-100 rounded-3xl p-6">
+          <div class="flex gap-4"><div class="text-5xl">🚜</div><div><p class="font-semibold">Lawn Mowing • Standard cut</p><p class="text-gray-500">April 12, 2026 • 10:30 AM</p></div></div>
+        </div>
+        <div class="bg-white border border-gray-100 rounded-3xl p-6 space-y-3 text-sm">
+          <div class="flex justify-between"><span>Subtotal</span><span id="subtotal-display">$45.00</span></div>
+          <div class="flex justify-between"><span>Tip</span><span id="tip-display">$6.75</span></div>
+          <div class="flex justify-between"><span>TheLawn Platform Fee <span id="fee-percentage">3%</span></span><span id="fee-amount">$1.55</span></div>
+          <div class="border-t pt-4 flex justify-between text-xl font-semibold"><span>Total</span><span id="total-display">$53.30</span></div>
+        </div>
+        <button onclick="processPayment()" class="w-full bg-[#34C759] text-white py-5 rounded-3xl font-semibold text-lg">Pay $53.30</button>
+      </div>
+
+      <!-- Processing & Success screens -->
+      <div id="processing-screen" class="hidden flex flex-col items-center justify-center h-full">
+        <div class="spinner w-16 h-16 border-4 border-[#34C759] border-t-transparent rounded-full"></div>
+        <p class="mt-6 text-lg">Processing Payment...</p>
+      </div>
+      <div id="success-screen" class="hidden flex flex-col items-center justify-center h-full text-center px-8">
+        <div class="text-7xl mb-6">✅</div>
+        <h2 class="text-3xl font-semibold text-green-600">Payment Successful!</h2>
+        <button onclick="goToMyJobs()" class="mt-12 w-full bg-[#34C759] text-white py-5 rounded-3xl">View in My Jobs</button>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav h-16 flex items-center justify-around text-xs font-medium text-gray-500">
+      <div onclick="switchTab(0)" class="nav-item flex flex-col items-center active"><div class="text-3xl">🌿</div><div>Home</div></div>
+      <div onclick="switchTab(1)" class="nav-item flex flex-col items-center"><div class="text-3xl">🔍</div><div>Search</div></div>
+      <div onclick="switchTab(2)" class="nav-item flex flex-col items-center"><div class="text-3xl">📅</div><div>Appointments</div></div>
+      <div onclick="switchTab(3)" class="nav-item flex flex-col items-center"><div class="text-3xl">📌</div><div>My Jobs</div></div>
+      <div onclick="switchTab(4)" class="nav-item flex flex-col items-center"><div class="text-3xl">👤</div><div>Profile</div></div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('#screen > div').forEach(d => d.classList.add('hidden'));
+      const ids = ['home-screen','search-screen','appointments-screen','myjobs-screen','profile-screen'];
+      document.getElementById(ids[tab]).classList.remove('hidden');
+      document.querySelectorAll('.nav-item').forEach((item,i) => i === tab ? item.classList.add('active','text-[#34C759]') : item.classList.remove('active','text-[#34C759]'));
+    }
+
+    function toggleDeviceMode() {
+      const c = document.getElementById('preview-container');
+      c.classList.toggle('tablet');
+      document.getElementById('mode-badge').textContent = c.classList.contains('tablet') ? 'TABLET' : 'PHONE';
+    }
+
+    function processPayment() {
+      document.getElementById('pay-screen').classList.add('hidden');
+      document.getElementById('processing-screen').classList.remove('hidden');
+      setTimeout(() => {
+        document.getElementById('processing-screen').classList.add('hidden');
+        document.getElementById('success-screen').classList.remove('hidden');
+      }, 1800);
+    }
+
+    function goToMyJobs() {
+      document.getElementById('success-screen').classList.add('hidden');
+      switchTab(3);
+    }
+
+    function toggleNotifications() {
+      alert("🛎️ Notifications panel would open here (appointment reminders, on-the-way alerts, etc.)");
+    }
+
+    window.onload = () => {
+      console.log("%c✅ COMPLETE The Lawn App Ready! All features included 🌱", "color:#34C759;font-weight:bold");
+      switchTab(0);
+    };
+  </script>
+</body>
+</html>
