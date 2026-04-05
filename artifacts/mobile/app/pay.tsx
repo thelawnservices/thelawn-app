@@ -15,7 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
-type PayState = "details" | "review" | "processing" | "success";
+type PayState = "availability" | "details" | "review" | "processing" | "success";
 
 const TIP_OPTIONS = [
   { label: "10%", value: 0.1 },
@@ -24,6 +24,17 @@ const TIP_OPTIONS = [
 ];
 
 const PHOTO_EMOJIS = ["🌳", "📸", "🏡", "🪴", "🌿", "🍃"];
+
+const DATES = [
+  { label: "Mon", date: "Apr 7" },
+  { label: "Tue", date: "Apr 8" },
+  { label: "Wed", date: "Apr 9" },
+  { label: "Thu", date: "Apr 10" },
+  { label: "Fri", date: "Apr 11" },
+  { label: "Sat", date: "Apr 12" },
+];
+
+const TIME_SLOTS = ["9:00 AM", "10:30 AM", "1:00 PM", "2:30 PM", "4:00 PM", "5:30 PM"];
 
 export default function PayScreen() {
   const insets = useSafeAreaInsets();
@@ -43,7 +54,9 @@ export default function PayScreen() {
   const proColor = params.proColor || "#34C759";
   const basePrice = parseFloat(params.price || "45");
 
-  const [payState, setPayState] = useState<PayState>("details");
+  const [payState, setPayState] = useState<PayState>("availability");
+  const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [tipIdx, setTipIdx] = useState(1);
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
@@ -52,6 +65,8 @@ export default function PayScreen() {
   const tip = Math.round(basePrice * TIP_OPTIONS[tipIdx].value * 100) / 100;
   const fee = Math.round(basePrice * 0.03 * 100) / 100;
   const total = (basePrice + tip + fee).toFixed(2);
+
+  const canContinueFromAvailability = selectedDateIdx !== null && selectedTime !== null;
 
   useEffect(() => {
     if (payState === "processing") {
@@ -87,6 +102,11 @@ export default function PayScreen() {
       setPayState("success");
     }, 1800);
   };
+
+  const selectedDateLabel =
+    selectedDateIdx !== null
+      ? `${DATES[selectedDateIdx].date}, 2026`
+      : null;
 
   // ─── Processing ───────────────────────────────────────────────
   if (payState === "processing") {
@@ -160,15 +180,15 @@ export default function PayScreen() {
     );
   }
 
-  // ─── Job Details ──────────────────────────────────────────────
-  if (payState === "details") {
+  // ─── Availability ─────────────────────────────────────────────
+  if (payState === "availability") {
     return (
       <View style={[styles.container, { backgroundColor: "#fff" }]}>
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
           <TouchableOpacity onPress={() => router.dismiss()} style={styles.backBtn}>
             <Ionicons name="chevron-down" size={24} color="#374151" />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Job Details</Text>
+          <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Select Date & Time</Text>
           <View style={{ width: 36 }} />
         </View>
 
@@ -191,6 +211,151 @@ export default function PayScreen() {
             </View>
           </View>
 
+          {/* Date row */}
+          <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>
+            Choose a Date
+          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24 }}>
+            <View style={{ flexDirection: "row", gap: 10, paddingRight: 4 }}>
+              {DATES.map((d, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[
+                    styles.dateTile,
+                    selectedDateIdx === i && styles.dateTileActive,
+                  ]}
+                  onPress={() => {
+                    setSelectedDateIdx(i);
+                    setSelectedTime(null);
+                    Haptics.selectionAsync();
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dateTileDay,
+                      { fontFamily: "Inter_400Regular" },
+                      selectedDateIdx === i && { color: "rgba(255,255,255,0.8)" },
+                    ]}
+                  >
+                    {d.label}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dateTileDate,
+                      { fontFamily: "Inter_700Bold" },
+                      selectedDateIdx === i && { color: "#fff" },
+                    ]}
+                  >
+                    {d.date.split(" ")[1]}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dateTileMonth,
+                      { fontFamily: "Inter_400Regular" },
+                      selectedDateIdx === i && { color: "rgba(255,255,255,0.8)" },
+                    ]}
+                  >
+                    {d.date.split(" ")[0]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* Time slots */}
+          <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>
+            {selectedDateIdx !== null
+              ? `Available Times — ${DATES[selectedDateIdx].date}`
+              : "Available Times"}
+          </Text>
+          <View style={styles.timeGrid}>
+            {TIME_SLOTS.map((t) => (
+              <TouchableOpacity
+                key={t}
+                style={[
+                  styles.timeTile,
+                  selectedTime === t && styles.timeTileActive,
+                  selectedDateIdx === null && styles.timeTileDisabled,
+                ]}
+                onPress={() => {
+                  if (selectedDateIdx === null) return;
+                  setSelectedTime(t);
+                  Haptics.selectionAsync();
+                }}
+                disabled={selectedDateIdx === null}
+              >
+                <Text
+                  style={[
+                    styles.timeTileText,
+                    { fontFamily: "Inter_500Medium" },
+                    selectedTime === t && { color: "#fff" },
+                    selectedDateIdx === null && { color: "#d1d5db" },
+                  ]}
+                >
+                  {t}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {selectedDateIdx === null && (
+            <Text style={[styles.hintText, { fontFamily: "Inter_400Regular" }]}>
+              Select a date above to see available times
+            </Text>
+          )}
+        </ScrollView>
+
+        <View style={[styles.bottomBar, { paddingBottom: bottomPadding + 12 }]}>
+          <TouchableOpacity
+            style={[
+              styles.continueBtn,
+              !canContinueFromAvailability && styles.continueBtnDisabled,
+            ]}
+            onPress={() => {
+              if (!canContinueFromAvailability) return;
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setPayState("details");
+            }}
+            activeOpacity={canContinueFromAvailability ? 0.85 : 1}
+          >
+            <Text style={[styles.continueBtnText, { fontFamily: "Inter_700Bold" }]}>
+              {canContinueFromAvailability
+                ? `Continue · ${selectedDateLabel} at ${selectedTime}`
+                : "Select a date & time"}
+            </Text>
+            {canContinueFromAvailability && (
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // ─── Job Details ──────────────────────────────────────────────
+  if (payState === "details") {
+    return (
+      <View style={[styles.container, { backgroundColor: "#fff" }]}>
+        <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
+          <TouchableOpacity onPress={() => setPayState("availability")} style={styles.backBtn}>
+            <Ionicons name="chevron-back" size={24} color="#374151" />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Job Details</Text>
+          <View style={{ width: 36 }} />
+        </View>
+
+        {/* Date/time pill */}
+        <View style={styles.selectedSlotPill}>
+          <Ionicons name="calendar-outline" size={14} color="#34C759" />
+          <Text style={[styles.selectedSlotText, { fontFamily: "Inter_500Medium" }]}>
+            {selectedDateLabel} at {selectedTime}
+          </Text>
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ padding: 20, paddingBottom: bottomPadding + 100 }}
+        >
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold" }]}>
             Special Instructions
           </Text>
@@ -259,10 +424,7 @@ export default function PayScreen() {
   return (
     <View style={[styles.container, { backgroundColor: "#fff" }]}>
       <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
-        <TouchableOpacity
-          onPress={() => setPayState("details")}
-          style={styles.backBtn}
-        >
+        <TouchableOpacity onPress={() => setPayState("details")} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color="#374151" />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Review & Pay</Text>
@@ -278,12 +440,12 @@ export default function PayScreen() {
           <View style={[styles.summaryAvatarBox, { backgroundColor: proColor }]}>
             <Text style={styles.summaryAvatarText}>{proInitials}</Text>
           </View>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.summaryService, { fontFamily: "Inter_600SemiBold" }]}>
               Lawn Mowing · Standard cut
             </Text>
             <Text style={[styles.summaryDate, { fontFamily: "Inter_400Regular" }]}>
-              April 12, 2026 · 10:30 AM
+              {selectedDateLabel} · {selectedTime}
             </Text>
             <Text style={[styles.summaryPro, { fontFamily: "Inter_400Regular" }]}>
               with {proName}
@@ -471,6 +633,17 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   headerTitle: { flex: 1, textAlign: "center", fontSize: 17, color: "#111827" },
+  selectedSlotPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#f0fdf4",
+    borderBottomWidth: 1,
+    borderBottomColor: "#dcfce7",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  selectedSlotText: { fontSize: 13, color: "#166D42" },
   proSummary: {
     flexDirection: "row",
     alignItems: "center",
@@ -492,6 +665,41 @@ const styles = StyleSheet.create({
   proAvatarText: { color: "#fff", fontWeight: "700", fontSize: 18 },
   proSummaryName: { fontSize: 15, color: "#111827", marginBottom: 2 },
   proSummaryService: { fontSize: 13, color: "#6b7280" },
+  sectionLabel: { fontSize: 13, color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 12 },
+  dateTile: {
+    width: 62,
+    paddingVertical: 14,
+    borderRadius: 18,
+    backgroundColor: "#f9fafb",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    gap: 2,
+  },
+  dateTileActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
+  dateTileDay: { fontSize: 11, color: "#9ca3af" },
+  dateTileDate: { fontSize: 20, color: "#111827" },
+  dateTileMonth: { fontSize: 11, color: "#9ca3af" },
+  timeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 12,
+  },
+  timeTile: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: "#f9fafb",
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    minWidth: "30%",
+    alignItems: "center",
+  },
+  timeTileActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
+  timeTileDisabled: { backgroundColor: "#fafafa", borderColor: "#f0f0f0" },
+  timeTileText: { fontSize: 14, color: "#374151" },
+  hintText: { fontSize: 13, color: "#9ca3af", textAlign: "center", marginTop: 8 },
   fieldLabel: { fontSize: 15, color: "#111827", marginBottom: 4 },
   fieldHint: { fontSize: 13, color: "#9ca3af", marginBottom: 12 },
   textArea: {
@@ -505,12 +713,7 @@ const styles = StyleSheet.create({
     minHeight: 120,
     marginBottom: 24,
   },
-  photoGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 12,
-  },
+  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 12 },
   photoTile: {
     width: 90,
     height: 90,
@@ -555,7 +758,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  continueBtnText: { color: "#fff", fontSize: 16 },
+  continueBtnDisabled: {
+    backgroundColor: "#e5e7eb",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  continueBtnText: { color: "#fff", fontSize: 15 },
   summaryCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -620,12 +828,7 @@ const styles = StyleSheet.create({
   lineItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   lineLabel: { fontSize: 14, color: "#6b7280" },
   lineValue: { fontSize: 14, color: "#374151" },
-  totalRow: {
-    borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-    paddingTop: 12,
-    marginTop: 4,
-  },
+  totalRow: { borderTopWidth: 1, borderTopColor: "#e5e7eb", paddingTop: 12, marginTop: 4 },
   totalLabel: { fontSize: 17, color: "#111827" },
   totalValue: { fontSize: 26, color: "#34C759" },
   escrowNotice: {
