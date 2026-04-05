@@ -141,10 +141,10 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, color: "#FFFFFF" },
   scrollContent: { padding: 16, paddingBottom: 40 },
   sectionLabel: {
-    fontSize: 13,
-    color: "#FFFFFF",
+    fontSize: 11,
+    color: "#AAAAAA",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
     marginBottom: 12,
   },
   card: {

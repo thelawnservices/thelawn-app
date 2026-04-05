@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  filterChipActive: { backgroundColor: "#34C759", borderColor: "#34C759" },
+  filterChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   filterChipText: { fontSize: 13, color: "#FFFFFF" },
   filterChipTextActive: { color: "#000" },
   sortRow: {
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
   },
-  trustedText: { fontSize: 11, color: "#FFFFFF" },
+  trustedText: { fontSize: 11, color: "#34FF7A" },
   proSpec: { fontSize: 13, color: "#555", marginBottom: 5 },
   proMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
   proRating: { fontSize: 12, color: "#FFFFFF" },
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   },
   tagText: { fontSize: 11, color: "#FFFFFF" },
   bookBtn: {
-    backgroundColor: "#34C759",
+    backgroundColor: "#34FF7A",
     paddingVertical: 13,
     borderRadius: 22,
     alignItems: "center",
