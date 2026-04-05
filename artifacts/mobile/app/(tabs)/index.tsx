@@ -57,36 +57,33 @@ function SkeletonCard() {
   );
 }
 
-function AppHeader({ topPadding }: { topPadding: number }) {
+function AppHeader({ topPadding, scrollY }: { topPadding: number; scrollY: Animated.Value }) {
   const sweep = useRef(new Animated.Value(-1)).current;
-  const pulse = useRef(new Animated.Value(1)).current;
+  const breath = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.loop(
-      Animated.timing(sweep, { toValue: 2, duration: 6000, useNativeDriver: false })
+      Animated.timing(sweep, { toValue: 2, duration: 8000, useNativeDriver: false })
     ).start();
-
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.7, duration: 2000, useNativeDriver: false }),
-        Animated.timing(pulse, { toValue: 1, duration: 2000, useNativeDriver: false }),
+        Animated.timing(breath, { toValue: 1.03, duration: 2500, useNativeDriver: false }),
+        Animated.timing(breath, { toValue: 1, duration: 2500, useNativeDriver: false }),
       ])
     ).start();
   }, []);
 
   const sweepLeft = sweep.interpolate({ inputRange: [-1, 2], outputRange: ["-100%", "200%"] });
+  const headerShift = scrollY.interpolate({ inputRange: [0, 200], outputRange: [0, 16], extrapolate: "clamp" });
+  const logoShift = scrollY.interpolate({ inputRange: [0, 200], outputRange: [0, 30], extrapolate: "clamp" });
 
   return (
-    <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
-      {/* Horizontal light sweep */}
-      <Animated.View
-        style={[styles.sweepBar, { left: sweepLeft }]}
-        pointerEvents="none"
-      />
+    <Animated.View style={[styles.header, { paddingTop: topPadding + 10, transform: [{ translateY: headerShift }] }]}>
+      <Animated.View style={[styles.sweepBar, { left: sweepLeft }]} pointerEvents="none" />
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }} />
         <Animated.Text
-          style={[styles.logo, { fontFamily: "GreatVibes_400Regular", opacity: pulse }]}
+          style={[styles.logo, { fontFamily: "GreatVibes_400Regular", transform: [{ translateY: logoShift }, { scale: breath }] }]}
         >
           theLawn
         </Animated.Text>
@@ -96,7 +93,7 @@ function AppHeader({ topPadding }: { topPadding: number }) {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -105,6 +102,7 @@ export default function HomeScreen() {
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
   const [prosLoaded, setProsLoaded] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const t = setTimeout(() => setProsLoaded(true), 900);
@@ -113,12 +111,17 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <AppHeader topPadding={topPadding} />
+      <AppHeader topPadding={topPadding} scrollY={scrollY} />
 
-      <ScrollView
+      <Animated.ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
       >
         {/* CTA Button */}
         <TouchableOpacity
@@ -230,7 +233,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
