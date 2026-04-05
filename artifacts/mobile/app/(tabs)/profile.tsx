@@ -14,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { useAuth } from "@/contexts/auth";
 
 const PAYMENT_METHODS = [
   { label: "🍎  Apple Pay", value: "Apple Pay",  emoji: "🍎", shortLabel: "Apple Pay" },
@@ -27,7 +28,8 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
-  const [isLandscaper, setIsLandscaper] = useState(true);
+  const { role, logout } = useAuth();
+  const [isLandscaper, setIsLandscaper] = useState(role === "landscaper");
 
   const toggle = () => {
     Haptics.selectionAsync();
@@ -214,6 +216,7 @@ function LandscaperProfile() {
 }
 
 function CustomerProfile() {
+  const { logout } = useAuth();
   const [selectedPayment, setSelectedPayment] = useState("");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
   const [error, setError] = useState(false);
@@ -350,7 +353,7 @@ function CustomerProfile() {
         <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile Settings</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.logoutBtn}>
+      <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.75}>
         <Ionicons name="log-out-outline" size={18} color="#ef4444" />
         <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Sign Out</Text>
       </TouchableOpacity>
