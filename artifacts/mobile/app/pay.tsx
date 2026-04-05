@@ -60,6 +60,7 @@ export default function PayScreen() {
   const [recurring, setRecurring] = useState(false);
   const [recurringFreq, setRecurringFreq] = useState<"Weekly" | "Bi-weekly" | "Monthly">("Weekly");
   const [tipIdx, setTipIdx] = useState(1);
+  const [serviceAddress, setServiceAddress] = useState("");
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
   const spinValue = useRef(new Animated.Value(0)).current;
@@ -69,6 +70,7 @@ export default function PayScreen() {
   const total = (basePrice + tip + fee).toFixed(2);
 
   const canContinueFromAvailability = selectedDateIdx !== null && selectedTime !== null;
+  const canContinueFromDetails = serviceAddress.trim().length > 0;
 
   useEffect(() => {
     if (payState === "processing") {
@@ -401,7 +403,29 @@ export default function PayScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ padding: 20, paddingBottom: bottomPadding + 100 }}
         >
+          {/* Service Address */}
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold" }]}>
+            Service Address{" "}
+            <Text style={{ color: "#ef4444" }}>*</Text>
+          </Text>
+          <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+            Where should the landscaper go?
+          </Text>
+          <TextInput
+            style={[
+              styles.addressInput,
+              { fontFamily: "Inter_400Regular" },
+              serviceAddress.length > 0 && styles.addressInputFilled,
+            ]}
+            placeholder="e.g. 8910 45th Ave E, Ellenton, FL"
+            placeholderTextColor="#9ca3af"
+            value={serviceAddress}
+            onChangeText={setServiceAddress}
+            returnKeyType="done"
+            autoCorrect={false}
+          />
+
+          <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
             Special Instructions
           </Text>
           <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
@@ -448,17 +472,23 @@ export default function PayScreen() {
 
         <View style={[styles.bottomBar, { paddingBottom: bottomPadding + 12 }]}>
           <TouchableOpacity
-            style={styles.continueBtn}
+            style={[
+              styles.continueBtn,
+              !canContinueFromDetails && styles.continueBtnDisabled,
+            ]}
             onPress={() => {
+              if (!canContinueFromDetails) return;
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setPayState("review");
             }}
-            activeOpacity={0.85}
+            activeOpacity={canContinueFromDetails ? 0.85 : 1}
           >
             <Text style={[styles.continueBtnText, { fontFamily: "Inter_700Bold" }]}>
-              Continue to Review & Pay
+              {canContinueFromDetails ? "Continue to Review & Pay" : "Enter a service address"}
             </Text>
-            <Ionicons name="arrow-forward" size={18} color="#fff" />
+            {canContinueFromDetails && (
+              <Ionicons name="arrow-forward" size={18} color="#fff" />
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -495,6 +525,14 @@ export default function PayScreen() {
             <Text style={[styles.summaryPro, { fontFamily: "Inter_400Regular" }]}>
               with {proName}
             </Text>
+            {serviceAddress.trim().length > 0 && (
+              <View style={styles.summaryAddressRow}>
+                <Ionicons name="location-outline" size={12} color="#9ca3af" />
+                <Text style={[styles.summaryAddress, { fontFamily: "Inter_400Regular" }]} numberOfLines={1}>
+                  {serviceAddress}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -749,6 +787,19 @@ const styles = StyleSheet.create({
   hintText: { fontSize: 13, color: "#888888", textAlign: "center", marginTop: 8 },
   fieldLabel: { fontSize: 15, color: "#34FF7A", marginBottom: 4 },
   fieldHint: { fontSize: 13, color: "#888888", marginBottom: 12 },
+  addressInput: {
+    backgroundColor: "#111111",
+    borderWidth: 1,
+    borderColor: "#222222",
+    borderRadius: 18,
+    padding: 16,
+    fontSize: 15,
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  addressInputFilled: {
+    borderColor: "#34FF7A",
+  },
   textArea: {
     backgroundColor: "#111111",
     borderWidth: 1,
@@ -833,6 +884,8 @@ const styles = StyleSheet.create({
   summaryService: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
   summaryDate: { fontSize: 13, color: "#888888", marginBottom: 2 },
   summaryPro: { fontSize: 13, color: "#888888" },
+  summaryAddressRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
+  summaryAddress: { fontSize: 12, color: "#888888", flex: 1 },
   instructionsPreview: {
     flexDirection: "row",
     alignItems: "flex-start",
