@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Lawn - Test App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .iphone { max-width: 390px; margin: 40px auto; border: 12px solid #111; border-radius: 48px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+    .logo { font-family: 'Brush Script MT', cursive; color: #34C759; }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-[#F8F9F7] to-[#E8F5E8] min-h-screen flex items-center justify-center p-4">
+
+  <!-- iPhone Frame -->
+  <div class="iphone bg-white">
+    <div class="h-12 bg-gradient-to-r from-[#34C759] to-[#166D42] flex items-center px-4 text-white text-xs font-medium">
+      <div class="flex-1 flex items-center gap-2">
+        <img src="https://i.imgur.com/7vL2k9P.png" alt="theLawn" class="h-7 w-auto"> <!-- Your exact logo embedded -->
+        <span class="text-white font-semibold tracking-tight">theLawn</span>
+      </div>
+      <div>10:15</div>
+    </div>
+
+    <!-- Screen Content (changes via JS) -->
+    <div id="screen" class="h-[calc(100vh-48px)] overflow-auto p-4">
+
+      <!-- HOME FEED -->
+      <div id="home" class="space-y-6">
+        <h1 class="text-3xl font-semibold">Good morning, Zamire 👋</h1>
+        <div class="bg-white rounded-3xl p-4 shadow-sm flex items-center gap-3">
+          <input type="text" placeholder="Search pros, services, or locations" class="flex-1 bg-transparent outline-none text-sm">
+        </div>
+        <div>
+          <p class="text-sm font-medium text-gray-500 mb-3">Trusted Pros</p>
+          <div class="flex gap-4 overflow-x-auto">
+            <div class="text-center">
+              <div class="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center text-2xl">🌱</div>
+              <p class="text-xs mt-1">John Rivera</p>
+              <span class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Trusted</span>
+            </div>
+          </div>
+        </div>
+        <button onclick="goToBooking()" class="w-full bg-[#34C759] text-white py-4 rounded-3xl font-semibold text-lg">Find a Landscaper Near You</button>
+      </div>
+
+      <!-- BOOKING -->
+      <div id="booking" class="hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <button onclick="goBack()" class="text-gray-500">←</button>
+          <h2 class="text-xl font-semibold">Book with John Rivera</h2>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div onclick="selectService(this)" class="bg-white border-2 border-[#34C759] rounded-3xl p-4 text-center cursor-pointer">
+            <div class="text-4xl mb-2">🚜</div>
+            <p class="font-medium">Lawn Mowing</p>
+            <p class="text-xs text-green-600">Standard cut</p>
+          </div>
+          <!-- More cards would go here - same style -->
+        </div>
+        <button onclick="goToPay()" class="w-full bg-[#34C759] text-white py-4 rounded-3xl font-semibold">Continue</button>
+      </div>
+
+      <!-- REVIEW & PAY -->
+      <div id="pay" class="hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <button onclick="goBack()" class="text-gray-500">←</button>
+          <h2 class="text-xl font-semibold">Review & Pay</h2>
+        </div>
+        <div class="bg-white rounded-3xl p-6 shadow-sm">
+          <div class="flex items-center gap-4">
+            <div class="text-4xl">🚜</div>
+            <div>
+              <p class="font-semibold">Lawn Mowing</p>
+              <p class="text-sm text-gray-500">Standard cut • $45.00</p>
+            </div>
+          </div>
+          <div class="mt-6 space-y-4 text-sm">
+            <div class="flex justify-between"><span>Subtotal</span><span>$45.00</span></div>
+            <div class="flex justify-between"><span>Tip</span><span>$6.75</span></div>
+            <div class="flex justify-between"><span>The Lawn Fee (3%)</span><span>$1.55</span></div>
+            <div class="border-t pt-4 flex justify-between font-semibold"><span>Total</span><span class="text-xl">$53.30</span></div>
+          </div>
+        </div>
+        <button onclick="goToTimer()" class="w-full bg-[#34C759] text-white py-4 rounded-3xl font-semibold">Pay $53.30</button>
+      </div>
+
+      <!-- ACTIVE JOB TIMER -->
+      <div id="timer" class="hidden space-y-6">
+        <div class="flex justify-between items-center">
+          <button onclick="goBack()" class="text-gray-500">←</button>
+          <h2 class="text-xl font-semibold">Active Job Timer</h2>
+        </div>
+        <div class="bg-white rounded-3xl p-8 text-center shadow-sm">
+          <div class="text-6xl font-mono font-semibold mb-8">00:45:12</div>
+          <p class="text-lg font-medium">John Rivera</p>
+          <p class="text-green-600 bg-green-100 px-4 py-1 rounded-full inline-block text-sm">Arrived & Working</p>
+        </div>
+        <button onclick="goToFeedback()" class="w-full bg-[#34C759] text-white py-4 rounded-3xl font-semibold">Mark Complete</button>
+      </div>
+
+      <!-- FEEDBACK -->
+      <div id="feedback" class="hidden space-y-6">
+        <h2 class="text-2xl font-semibold text-center">How was your service?</h2>
+        <div class="text-center">
+          <div class="text-6xl mb-4">🚜</div>
+          <p class="font-medium">Lawn Mowing • Standard cut</p>
+        </div>
+        <div class="flex justify-center gap-2 text-5xl">⭐⭐⭐⭐⭐</div>
+        <textarea class="w-full h-32 bg-white rounded-3xl p-4 border border-gray-200" placeholder="Leave a review..."></textarea>
+        <button onclick="alert('✅ Feedback submitted! Thank you!')" class="w-full bg-[#34C759] text-white py-4 rounded-3xl font-semibold">Submit Feedback</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function goToBooking() { document.getElementById('home').classList.add('hidden'); document.getElementById('booking').classList.remove('hidden'); }
+    function goToPay() { document.getElementById('booking').classList.add('hidden'); document.getElementById('pay').classList.remove('hidden'); }
+    function goToTimer() { document.getElementById('pay').classList.add('hidden'); document.getElementById('timer').classList.remove('hidden'); }
+    function goToFeedback() { document.getElementById('timer').classList.add('hidden'); document.getElementById('feedback').classList.remove('hidden'); }
+    function goBack() {
+      const screens = ['home','booking','pay','timer','feedback'];
+      for (let s of screens) document.getElementById(s).classList.add('hidden');
+      document.getElementById('home').classList.remove('hidden');
+    }
+    function selectService(el) {
+      document.querySelectorAll('#booking > div.grid > div').forEach(d => d.classList.remove('border-[#34C759]'));
+      el.classList.add('border-[#34C759]');
+    }
+  </script>
+</body>
+</html>
