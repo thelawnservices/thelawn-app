@@ -349,6 +349,7 @@ function SettingsModal({
   const [enteredCode, setEnteredCode] = useState("");
   const [sendingCode, setSendingCode] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [newAddress, setNewAddress] = useState("");
   const demoCode = useRef("");
 
   function handleSendCode() {
@@ -389,6 +390,7 @@ function SettingsModal({
     setNewPassword("");
     setEnteredCode("");
     setCodeSent(false);
+    setNewAddress("");
     demoCode.current = "";
     onClose();
   }
@@ -458,6 +460,37 @@ function SettingsModal({
               </TouchableOpacity>
             </View>
           )}
+
+          <View style={settStyles.divider} />
+
+          <Text style={[settStyles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 4 }]}>Change Service Address</Text>
+          <Text style={[settStyles.codeHint, { fontFamily: "Inter_400Regular", marginBottom: 14 }]}>
+            Recently Moved? Change service address here
+          </Text>
+          <TextInput
+            style={[settStyles.input, { fontFamily: "Inter_400Regular" }]}
+            value={newAddress}
+            onChangeText={setNewAddress}
+            placeholder="New service address"
+            placeholderTextColor="#555"
+          />
+          <TouchableOpacity
+            style={settStyles.primaryBtn}
+            onPress={() => {
+              if (!newAddress.trim()) {
+                Alert.alert("Missing field", "Please enter a new service address.");
+                return;
+              }
+              Alert.alert("Address Saved", "Your service address has been updated.");
+              setNewAddress("");
+              onClose();
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={[settStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+              Save New Address
+            </Text>
+          </TouchableOpacity>
         </Pressable>
       </Pressable>
     </Modal>
@@ -517,6 +550,7 @@ const settStyles = StyleSheet.create({
   },
   primaryBtnLoading: { opacity: 0.7 },
   primaryBtnText: { color: "#000000", fontSize: 15 },
+  divider: { height: 1, backgroundColor: "#222222", marginVertical: 24 },
   codeSection: { marginTop: 20, gap: 12 },
   codeHint: { fontSize: 12, color: "rgba(255,255,255,0.55)" },
   codeInput: {
