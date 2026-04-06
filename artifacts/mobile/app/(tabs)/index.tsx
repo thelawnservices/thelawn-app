@@ -252,6 +252,8 @@ function ProfileDropdownModal({
   onPaymentMethod,
   onVouchers,
   onHelp,
+  onAvailability,
+  isLandscaper,
   onSignOut,
 }: {
   visible: boolean;
@@ -262,6 +264,8 @@ function ProfileDropdownModal({
   onPaymentMethod: () => void;
   onVouchers: () => void;
   onHelp: () => void;
+  onAvailability: () => void;
+  isLandscaper: boolean;
   onSignOut: () => void;
 }) {
   return (
@@ -292,6 +296,12 @@ function ProfileDropdownModal({
             <Text style={dropStyles.itemIcon}>❔</Text>
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Help and Resources</Text>
           </TouchableOpacity>
+          {isLandscaper && (
+            <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
+              <Text style={dropStyles.itemIcon}>🗓️</Text>
+              <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
+            </TouchableOpacity>
+          )}
           <View style={dropStyles.divider} />
           <TouchableOpacity style={dropStyles.item} onPress={onSignOut} activeOpacity={0.7}>
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_400Regular" }, dropStyles.signOutText]}>Sign out</Text>
@@ -697,11 +707,148 @@ const helpStyles = StyleSheet.create({
   rowText: { fontSize: 15, color: "#FFFFFF" },
 });
 
+const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const AVAIL_SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up"];
+
+type ServiceAvail = { days: string[]; startTime: string; endTime: string };
+type AvailState = Record<string, ServiceAvail>;
+
+const DEFAULT_AVAIL: AvailState = {
+  "Lawn Mowing": { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "08:00", endTime: "18:00" },
+  "Hedge Trimming": { days: ["Tue", "Thu"], startTime: "09:00", endTime: "17:00" },
+  "Mulching": { days: ["Mon", "Wed", "Fri"], startTime: "08:00", endTime: "16:00" },
+  "Clean Up": { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "07:00", endTime: "17:00" },
+};
+
+function ServiceAvailabilityModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const [avail, setAvail] = useState<AvailState>(() => JSON.parse(JSON.stringify(DEFAULT_AVAIL)));
+
+  function toggleDay(service: string, day: string) {
+    setAvail((prev) => {
+      const days = prev[service].days.includes(day)
+        ? prev[service].days.filter((d) => d !== day)
+        : [...prev[service].days, day];
+      return { ...prev, [service]: { ...prev[service], days } };
+    });
+  }
+
+  function setTime(service: string, field: "startTime" | "endTime", val: string) {
+    setAvail((prev) => ({ ...prev, [service]: { ...prev[service], [field]: val } }));
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={settStyles.overlay} onPress={onClose}>
+        <Pressable
+          style={[settStyles.sheet, { maxHeight: "85%", paddingBottom: 0 }]}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <View style={settStyles.header}>
+            <Text style={[settStyles.title, { fontFamily: "Inter_700Bold" }]}>Service Availability</Text>
+            <TouchableOpacity onPress={onClose} style={settStyles.closeBtn} activeOpacity={0.7}>
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+            {AVAIL_SERVICES.map((service, si) => (
+              <View key={service} style={si > 0 ? { marginTop: 28 } : undefined}>
+                <Text style={[avStyles.serviceLabel, { fontFamily: "Inter_600SemiBold" }]}>{service}</Text>
+
+                <View style={avStyles.daysRow}>
+                  {ALL_DAYS.map((day) => {
+                    const active = avail[service].days.includes(day);
+                    return (
+                      <TouchableOpacity
+                        key={day}
+                        onPress={() => toggleDay(service, day)}
+                        activeOpacity={0.75}
+                        style={[avStyles.dayChip, active && avStyles.dayChipActive]}
+                      >
+                        <Text style={[avStyles.dayChipText, active && avStyles.dayChipTextActive, { fontFamily: "Inter_500Medium" }]}>
+                          {day}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <View style={avStyles.timesRow}>
+                  <View style={avStyles.timeCol}>
+                    <Text style={[avStyles.timeLabel, { fontFamily: "Inter_400Regular" }]}>Start Time</Text>
+                    <TextInput
+                      style={[avStyles.timeInput, { fontFamily: "Inter_400Regular" }]}
+                      value={avail[service].startTime}
+                      onChangeText={(v) => setTime(service, "startTime", v)}
+                      placeholder="08:00"
+                      placeholderTextColor="#555"
+                    />
+                  </View>
+                  <View style={avStyles.timeCol}>
+                    <Text style={[avStyles.timeLabel, { fontFamily: "Inter_400Regular" }]}>End Time</Text>
+                    <TextInput
+                      style={[avStyles.timeInput, { fontFamily: "Inter_400Regular" }]}
+                      value={avail[service].endTime}
+                      onChangeText={(v) => setTime(service, "endTime", v)}
+                      placeholder="17:00"
+                      placeholderTextColor="#555"
+                    />
+                  </View>
+                </View>
+              </View>
+            ))}
+
+            <TouchableOpacity
+              style={[settStyles.primaryBtn, { marginTop: 32 }]}
+              activeOpacity={0.85}
+              onPress={() => {
+                Alert.alert("Availability Saved", "Customers will now see your available times.");
+                onClose();
+              }}
+            >
+              <Text style={[settStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Availability</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const avStyles = StyleSheet.create({
+  serviceLabel: { fontSize: 15, color: "#FFFFFF", marginBottom: 12 },
+  daysRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
+  dayChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "#222222",
+    borderWidth: 1,
+    borderColor: "#333333",
+  },
+  dayChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  dayChipText: { fontSize: 13, color: "#AAAAAA" },
+  dayChipTextActive: { color: "#000000" },
+  timesRow: { flexDirection: "row", gap: 12 },
+  timeCol: { flex: 1 },
+  timeLabel: { fontSize: 11, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 },
+  timeInput: {
+    backgroundColor: "#222222",
+    borderWidth: 1,
+    borderColor: "#333333",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+});
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
-  const { logout } = useAuth();
+  const { logout, role } = useAuth();
   const [prosLoaded, setProsLoaded] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(true);
@@ -711,6 +858,7 @@ export default function HomeScreen() {
   const [paymentVisible, setPaymentVisible] = useState(false);
   const [vouchersVisible, setVouchersVisible] = useState(false);
   const [helpVisible, setHelpVisible] = useState(false);
+  const [availabilityVisible, setAvailabilityVisible] = useState(false);
   const notifEnabledRef = React.useRef(notifEnabled);
   notifEnabledRef.current = notifEnabled;
 
@@ -770,6 +918,8 @@ export default function HomeScreen() {
         onPaymentMethod={() => { setDropdownVisible(false); setPaymentVisible(true); }}
         onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
+        onAvailability={() => { setDropdownVisible(false); setAvailabilityVisible(true); }}
+        isLandscaper={role === "landscaper"}
         onSignOut={() => { setDropdownVisible(false); logout(); }}
       />
       <SettingsModal
@@ -787,6 +937,10 @@ export default function HomeScreen() {
       <HelpResourcesModal
         visible={helpVisible}
         onClose={() => setHelpVisible(false)}
+      />
+      <ServiceAvailabilityModal
+        visible={availabilityVisible}
+        onClose={() => setAvailabilityVisible(false)}
       />
       <OfflineBanner visible={isOffline} />
       <NotificationsPanel
