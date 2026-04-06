@@ -56,7 +56,7 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {isLandscaper
           ? <LandscaperProfile matrix={matrix} setMatrix={setMatrix} />
-          : <CustomerProfile matrix={matrix} />}
+          : <CustomerProfile />}
       </ScrollView>
     </View>
   );
@@ -262,7 +262,7 @@ function LandscaperProfile({
   );
 }
 
-function CustomerProfile({ matrix }: { matrix: PriceMatrix }) {
+function CustomerProfile() {
   const { logout } = useAuth();
   const [selectedPayment, setSelectedPayment] = useState("");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
@@ -392,30 +392,12 @@ function CustomerProfile({ matrix }: { matrix: PriceMatrix }) {
         )}
       </View>
 
-      {/* Landscaper Price View */}
-      <Text style={[styles.sectionLabelSmall, { fontFamily: "Inter_600SemiBold", marginBottom: 12 }]}>
-        LANDSCAPER PRICES BY YARD SIZE
-      </Text>
-      {PRICE_SERVICES.map((service) => (
-        <View key={service} style={[styles.card, { marginBottom: 12 }]}>
-          <Text style={[styles.priceServiceName, { fontFamily: "Inter_600SemiBold" }]}>{service}</Text>
-          <View style={styles.priceRow}>
-            {[
-              { label: "Small", sub: "< 5k sq ft" },
-              { label: "Medium", sub: "5–10k sq ft" },
-              { label: "Large", sub: "10k+ sq ft" },
-            ].map((col) => (
-              <View key={col.label} style={styles.priceCol}>
-                <Text style={[styles.priceColLabel, { fontFamily: "Inter_400Regular" }]}>{col.label}</Text>
-                <Text style={[styles.priceColSub, { fontFamily: "Inter_400Regular" }]}>{col.sub}</Text>
-                <Text style={[styles.priceColValue, { fontFamily: "Inter_700Bold" }]}>
-                  ${matrix[service]?.[col.label] ?? "–"}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      ))}
+      {/* Booking info message */}
+      <View style={styles.bookingInfoBox}>
+        <Text style={[styles.bookingInfoText, { fontFamily: "Inter_400Regular" }]}>
+          You are viewing this landscaper as a customer.{"\n"}Prices are calculated automatically during booking based on your yard size.
+        </Text>
+      </View>
 
       <TouchableOpacity
         style={styles.editBtn}
@@ -660,4 +642,16 @@ const styles = StyleSheet.create({
   priceColLabel: { fontSize: 12, color: "#AAAAAA" },
   priceColSub: { fontSize: 10, color: "#555555" },
   priceColValue: { fontSize: 18, color: "#34FF7A", marginTop: 4 },
+  bookingInfoBox: {
+    marginBottom: 24,
+    alignItems: "center",
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+  },
+  bookingInfoText: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.55)",
+    textAlign: "center",
+    lineHeight: 22,
+  },
 });
