@@ -42,6 +42,7 @@ export default function LoginScreen() {
   const [address, setAddress] = useState("");
 
   // Landscaper reg
+  const [businessName, setBusinessName] = useState("");
   const [lEmail, setLEmail] = useState("");
   const [lPassword, setLPassword] = useState("");
   const [lPhone, setLPhone] = useState("");
@@ -49,8 +50,7 @@ export default function LoginScreen() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [years, setYears] = useState("");
-  const [routing, setRouting] = useState("");
-  const [account, setAccount] = useState("");
+  const [paymentPref, setPaymentPref] = useState("");
 
   const topPad = isWeb ? 60 : insets.top + 20;
   const botPad = isWeb ? 40 : insets.bottom + 20;
@@ -91,8 +91,8 @@ export default function LoginScreen() {
   }
 
   function handleLandscaperRegister() {
-    if (!lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !specialty || !city.trim() || !state.trim() || !years.trim() || !routing.trim() || !account.trim()) {
-      setErrors("Please fill in all fields including banking information");
+    if (!businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !city.trim() || !state.trim() || !paymentPref) {
+      setErrors("Please fill all required fields: Business Name, Email, Password, Phone, City, State, and Payment Preference.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
@@ -253,6 +253,9 @@ export default function LoginScreen() {
           <View style={{ width: 26 }} />
         </View>
         {errors && <ErrorBanner message={errors} />}
+        <Field label="Landscaping or Business Name">
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={businessName} onChangeText={setBusinessName} placeholder="Rivera Landscaping" placeholderTextColor="#555" autoCapitalize="words" />
+        </Field>
         <Field label="Email">
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lEmail} onChangeText={setLEmail} placeholder="your@email.com" placeholderTextColor="#555" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
         </Field>
@@ -287,18 +290,16 @@ export default function LoginScreen() {
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={setYears} placeholder="e.g. 5" placeholderTextColor="#555" keyboardType="numeric" maxLength={2} />
         </Field>
 
-        <Text style={[styles.bankingHeader, { fontFamily: "Inter_600SemiBold" }]}>Banking Information</Text>
-        <Text style={[styles.bankingSubtitle, { fontFamily: "Inter_400Regular" }]}>For receiving payments securely</Text>
-        <Field label="Routing Number">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={routing} onChangeText={setRouting} placeholder="9-digit routing number" placeholderTextColor="#555" keyboardType="numeric" maxLength={9} secureTextEntry />
+        <Field label="Receive Payment Preference">
+          <View style={styles.specialtyGrid}>
+            {(["Apple Pay", "Cash App", "Venmo", "Debit Card"] as const).map((opt) => (
+              <TouchableOpacity key={opt} style={[styles.specialtyChip, paymentPref === opt && styles.specialtyChipActive]} onPress={() => setPaymentPref(opt)} activeOpacity={0.8}>
+                <Text style={[styles.specialtyChipText, { fontFamily: "Inter_500Medium" }, paymentPref === opt && styles.specialtyChipTextActive]}>{opt}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </Field>
-        <Field label="Account Number">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={account} onChangeText={setAccount} placeholder="Account number" placeholderTextColor="#555" keyboardType="numeric" maxLength={17} secureTextEntry />
-        </Field>
-        <View style={styles.bankingNotice}>
-          <Ionicons name="lock-closed-outline" size={14} color="#34FF7A" />
-          <Text style={[styles.bankingNoticeText, { fontFamily: "Inter_400Regular" }]}>Encrypted and stored securely</Text>
-        </View>
+
         <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleLandscaperRegister} activeOpacity={0.88}>
           <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Landscaper Account</Text>
         </TouchableOpacity>
@@ -393,16 +394,4 @@ const styles = StyleSheet.create({
   specialtyChipText: { fontSize: 13, color: "#FFFFFF" },
   specialtyChipTextActive: { color: "#34FF7A" },
 
-  bankingHeader: { fontSize: 15, color: "#FFFFFF", marginTop: 12, marginBottom: 4 },
-  bankingSubtitle: { fontSize: 12, color: "#888888", marginBottom: 16 },
-  bankingNotice: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#0d2e18",
-    borderRadius: 12,
-    padding: 10,
-    marginBottom: 16,
-  },
-  bankingNoticeText: { fontSize: 12, color: "#34FF7A" },
 });
