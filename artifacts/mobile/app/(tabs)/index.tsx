@@ -16,6 +16,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "@/contexts/auth";
 
 const QUICK_STATS = [
@@ -853,6 +854,7 @@ export default function HomeScreen() {
   const [notifVisible, setNotifVisible] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
+  const [pushModalVisible, setPushModalVisible] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [paymentVisible, setPaymentVisible] = useState(false);
@@ -888,6 +890,19 @@ export default function HomeScreen() {
       idx++;
     }, 6500);
     return () => { clearTimeout(t); clearTimeout(n); clearInterval(ws); };
+  }, []);
+
+  useEffect(() => {
+    const checkPushAsked = async () => {
+      try {
+        const asked = await AsyncStorage.getItem("pushAsked");
+        if (!asked) {
+          const delay = setTimeout(() => setPushModalVisible(true), 1800);
+          return () => clearTimeout(delay);
+        }
+      } catch (_) {}
+    };
+    checkPushAsked();
   }, []);
 
   function handleBooking(action: () => void) {
@@ -942,6 +957,61 @@ export default function HomeScreen() {
         visible={availabilityVisible}
         onClose={() => setAvailabilityVisible(false)}
       />
+
+      {/* Push Notification Permission Modal – shown once after first login */}
+      <Modal
+        visible={pushModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          AsyncStorage.setItem("pushAsked", "true").catch(() => {});
+          setPushModalVisible(false);
+        }}
+      >
+        <Pressable
+          style={pushStyles.overlay}
+          onPress={() => {
+            AsyncStorage.setItem("pushAsked", "true").catch(() => {});
+            setPushModalVisible(false);
+          }}
+        >
+          <Pressable style={pushStyles.sheet} onPress={(e) => e.stopPropagation()}>
+            <Text style={pushStyles.bell}>🛎️</Text>
+            <Text style={[pushStyles.title, { fontFamily: "Inter_600SemiBold" }]}>
+              Enable Notifications?
+            </Text>
+            <Text style={[pushStyles.body, { fontFamily: "Inter_400Regular" }]}>
+              We'd like to send you updates about service requests, appointment confirmations, and job status changes.
+            </Text>
+            <TouchableOpacity
+              style={pushStyles.allowBtn}
+              activeOpacity={0.88}
+              onPress={() => {
+                AsyncStorage.setItem("pushAsked", "true").catch(() => {});
+                setPushModalVisible(false);
+                Alert.alert("Notifications Enabled", "You'll receive real-time alerts for requests, appointments, and job updates.");
+              }}
+            >
+              <Text style={[pushStyles.allowBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+                Allow Notifications
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={pushStyles.notNowBtn}
+              activeOpacity={0.85}
+              onPress={() => {
+                AsyncStorage.setItem("pushAsked", "true").catch(() => {});
+                setPushModalVisible(false);
+              }}
+            >
+              <Text style={[pushStyles.notNowText, { fontFamily: "Inter_500Medium" }]}>
+                Not Now
+              </Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <OfflineBanner visible={isOffline} />
       <NotificationsPanel
         visible={notifVisible}
@@ -1373,4 +1443,57 @@ const styles = StyleSheet.create({
   offlinePillText: { color: "#FF3B30" },
   ctaBtnDisabled: { backgroundColor: "#2a2a2a", shadowOpacity: 0 },
   proHCardDisabled: { opacity: 0.4 },
+});
+
+const pushStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 28,
+  },
+  sheet: {
+    backgroundColor: "#161616",
+    borderRadius: 28,
+    padding: 28,
+    width: "100%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.5,
+    shadowRadius: 32,
+    elevation: 20,
+  },
+  bell: { fontSize: 52, marginBottom: 16 },
+  title: { fontSize: 22, color: "#FFFFFF", textAlign: "center", marginBottom: 12 },
+  body: {
+    fontSize: 15,
+    color: "rgba(255,255,255,0.65)",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 28,
+  },
+  allowBtn: {
+    backgroundColor: "#22C55E",
+    width: "100%",
+    paddingVertical: 20,
+    borderRadius: 28,
+    alignItems: "center",
+    marginBottom: 12,
+    shadowColor: "#22C55E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  allowBtnText: { color: "#000000", fontSize: 17 },
+  notNowBtn: {
+    backgroundColor: "#222222",
+    width: "100%",
+    paddingVertical: 20,
+    borderRadius: 28,
+    alignItems: "center",
+  },
+  notNowText: { color: "#FFFFFF", fontSize: 17 },
 });

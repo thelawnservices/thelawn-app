@@ -63,7 +63,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         <View style={picStyles.nameCol}>
           <Text style={[picStyles.displayName, { fontFamily: "Inter_600SemiBold" }]}>
-            {isLandscaper ? "Your Business" : "Your Name"}
+            {isLandscaper ? "Your Business" : "Your Account"}
           </Text>
           <TouchableOpacity
             activeOpacity={0.7}
