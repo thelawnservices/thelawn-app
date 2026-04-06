@@ -9,10 +9,14 @@ import {
   Animated,
   Modal,
   Pressable,
+  TextInput,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "@/contexts/auth";
 
 const QUICK_STATS = [
   { label: "Jobs Done", value: "3", icon: "checkmark-circle" as const, iconColor: "#34C759" },
@@ -189,6 +193,7 @@ function AppHeader({
   onToggleOffline,
   notifEnabled,
   missedCount,
+  onProfilePress,
 }: {
   topPadding: number;
   onBellPress: () => void;
@@ -196,6 +201,7 @@ function AppHeader({
   onToggleOffline: () => void;
   notifEnabled: boolean;
   missedCount: number;
+  onProfilePress: () => void;
 }) {
   return (
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
@@ -228,20 +234,292 @@ function AppHeader({
               </View>
             )}
           </TouchableOpacity>
+          <TouchableOpacity style={styles.avatarBtn} onPress={onProfilePress} activeOpacity={0.8}>
+            <Ionicons name="person" size={16} color="#000" />
+          </TouchableOpacity>
         </View>
       </View>
     </View>
   );
 }
 
+function ProfileDropdownModal({
+  visible,
+  onClose,
+  onAppointments,
+  onSettings,
+  onSignOut,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onAppointments: () => void;
+  onSettings: () => void;
+  onSignOut: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={dropStyles.overlay} onPress={onClose}>
+        <Pressable style={dropStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <TouchableOpacity style={dropStyles.item} onPress={onAppointments} activeOpacity={0.7}>
+            <Text style={dropStyles.itemIcon}>📅</Text>
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Appointments</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={dropStyles.item} onPress={onSettings} activeOpacity={0.7}>
+            <Text style={dropStyles.itemIcon}>⚙️</Text>
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Settings</Text>
+          </TouchableOpacity>
+          <View style={dropStyles.divider} />
+          <TouchableOpacity style={dropStyles.item} onPress={onSignOut} activeOpacity={0.7}>
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_400Regular" }, dropStyles.signOutText]}>Sign out</Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const dropStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+    paddingTop: 90,
+    paddingRight: 16,
+  },
+  sheet: {
+    backgroundColor: "#111111",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    width: 220,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  itemIcon: { fontSize: 20 },
+  itemText: { fontSize: 15, color: "#FFFFFF" },
+  divider: { height: 1, backgroundColor: "#222222", marginHorizontal: 16 },
+  signOutText: { color: "rgba(255,255,255,0.55)", fontSize: 14 },
+});
+
+function SettingsModal({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const [newPassword, setNewPassword] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [enteredCode, setEnteredCode] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const demoCode = useRef("");
+
+  function handleSendCode() {
+    if (!newPassword.trim()) {
+      Alert.alert("Missing field", "Please enter a new password first.");
+      return;
+    }
+    setSendingCode(true);
+    demoCode.current = Math.floor(100000 + Math.random() * 900000).toString();
+    setTimeout(() => {
+      setSendingCode(false);
+      setCodeSent(true);
+      Alert.alert(
+        "Verification Code Sent",
+        `A 6-digit code has been sent to your registered email.\n\nDemo code: ${demoCode.current}`
+      );
+    }, 1200);
+  }
+
+  function handleVerify() {
+    if (enteredCode.trim() === demoCode.current) {
+      setVerifying(true);
+      setTimeout(() => {
+        setVerifying(false);
+        Alert.alert("Password Updated", "Your password has been changed successfully.");
+        setNewPassword("");
+        setEnteredCode("");
+        setCodeSent(false);
+        demoCode.current = "";
+        onClose();
+      }, 1000);
+    } else {
+      Alert.alert("Incorrect Code", "The verification code you entered is incorrect.");
+    }
+  }
+
+  function handleClose() {
+    setNewPassword("");
+    setEnteredCode("");
+    setCodeSent(false);
+    demoCode.current = "";
+    onClose();
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+      <Pressable style={settStyles.overlay} onPress={handleClose}>
+        <Pressable style={settStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <View style={settStyles.header}>
+            <Text style={[settStyles.title, { fontFamily: "Inter_700Bold" }]}>Settings</Text>
+            <TouchableOpacity onPress={handleClose} style={settStyles.closeBtn} activeOpacity={0.7}>
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[settStyles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>Change Password</Text>
+
+          <TextInput
+            style={[settStyles.input, { fontFamily: "Inter_400Regular" }]}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholder="New Password"
+            placeholderTextColor="#555"
+            secureTextEntry
+          />
+
+          <TouchableOpacity
+            style={[settStyles.primaryBtn, sendingCode && settStyles.primaryBtnLoading]}
+            onPress={sendingCode ? undefined : handleSendCode}
+            activeOpacity={0.85}
+          >
+            {sendingCode ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <Text style={[settStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+                Send Verification Code to Email
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          {codeSent && (
+            <View style={settStyles.codeSection}>
+              <Text style={[settStyles.codeHint, { fontFamily: "Inter_400Regular" }]}>
+                We sent a 6-digit code to your registered email.
+              </Text>
+              <TextInput
+                style={[settStyles.codeInput, { fontFamily: "Inter_600SemiBold" }]}
+                value={enteredCode}
+                onChangeText={setEnteredCode}
+                placeholder="Enter 6-digit code"
+                placeholderTextColor="#555"
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              <TouchableOpacity
+                style={[settStyles.primaryBtn, verifying && settStyles.primaryBtnLoading]}
+                onPress={verifying ? undefined : handleVerify}
+                activeOpacity={0.85}
+              >
+                {verifying ? (
+                  <ActivityIndicator size="small" color="#000" />
+                ) : (
+                  <Text style={[settStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+                    Verify & Update Password
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const settStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  sheet: {
+    backgroundColor: "#111111",
+    borderRadius: 28,
+    padding: 24,
+    width: "100%",
+    maxWidth: 380,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+  title: { fontSize: 20, color: "#FFFFFF" },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#222222",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionTitle: { fontSize: 15, color: "#FFFFFF", marginBottom: 16 },
+  input: {
+    backgroundColor: "#222222",
+    borderWidth: 1,
+    borderColor: "#333333",
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    fontSize: 15,
+    color: "#FFFFFF",
+    marginBottom: 14,
+  },
+  primaryBtn: {
+    backgroundColor: "#34FF7A",
+    paddingVertical: 16,
+    borderRadius: 28,
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  primaryBtnLoading: { opacity: 0.7 },
+  primaryBtnText: { color: "#000000", fontSize: 15 },
+  codeSection: { marginTop: 20, gap: 12 },
+  codeHint: { fontSize: 12, color: "rgba(255,255,255,0.55)" },
+  codeInput: {
+    backgroundColor: "#222222",
+    borderWidth: 1,
+    borderColor: "#333333",
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    fontSize: 24,
+    color: "#FFFFFF",
+    textAlign: "center",
+    letterSpacing: 8,
+  },
+});
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
+  const { logout } = useAuth();
   const [prosLoaded, setProsLoaded] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
+  const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
   const notifEnabledRef = React.useRef(notifEnabled);
   notifEnabledRef.current = notifEnabled;
 
@@ -290,6 +568,18 @@ export default function HomeScreen() {
         onToggleOffline={() => setIsOffline((v) => !v)}
         notifEnabled={notifEnabled}
         missedCount={missedCount}
+        onProfilePress={() => setDropdownVisible(true)}
+      />
+      <ProfileDropdownModal
+        visible={dropdownVisible}
+        onClose={() => setDropdownVisible(false)}
+        onAppointments={() => { setDropdownVisible(false); router.navigate("/(tabs)/appointments"); }}
+        onSettings={() => { setDropdownVisible(false); setSettingsVisible(true); }}
+        onSignOut={() => { setDropdownVisible(false); logout(); }}
+      />
+      <SettingsModal
+        visible={settingsVisible}
+        onClose={() => setSettingsVisible(false)}
       />
       <OfflineBanner visible={isOffline} />
       <NotificationsPanel
@@ -461,7 +751,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   headerRight: {
-    alignItems: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 4,
   },
   logo: {
     fontSize: 34,
@@ -626,6 +919,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#222222",
     alignItems: "center",
     justifyContent: "center",
+  },
+  avatarBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: "#34FF7A",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
   },
   notifBadge: {
     position: "absolute",
