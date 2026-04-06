@@ -142,11 +142,11 @@ export default function LoginScreen() {
   // ── Customer Login ─────────────────────────────────────────────
   if (step === "customer-login") {
     return (
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#000000" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#050505" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.formHeader}>
             <TouchableOpacity onPress={() => navBack("welcome")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="chevron-back" size={26} color="#34FF7A" />
+              <Ionicons name="chevron-back" size={26} color="#22C55E" />
             </TouchableOpacity>
             <Text style={[styles.formTitle, { fontFamily: "Inter_700Bold" }]}>Sign in as Customer</Text>
             <View style={{ width: 26 }} />
@@ -172,11 +172,11 @@ export default function LoginScreen() {
   // ── Landscaper Login ───────────────────────────────────────────
   if (step === "landscaper-login") {
     return (
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#000000" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#050505" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.formHeader}>
             <TouchableOpacity onPress={() => navBack("welcome")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="chevron-back" size={26} color="#34FF7A" />
+              <Ionicons name="chevron-back" size={26} color="#22C55E" />
             </TouchableOpacity>
             <Text style={[styles.formTitle, { fontFamily: "Inter_700Bold" }]}>Sign in as Landscaper</Text>
             <View style={{ width: 26 }} />
@@ -199,11 +199,11 @@ export default function LoginScreen() {
   // ── Customer Registration ──────────────────────────────────────
   if (step === "customer-register") {
     return (
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#000000" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#050505" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.formHeader}>
             <TouchableOpacity onPress={() => navBack("welcome")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="chevron-back" size={26} color="#34FF7A" />
+              <Ionicons name="chevron-back" size={26} color="#22C55E" />
             </TouchableOpacity>
             <Text style={[styles.formTitle, { fontFamily: "Inter_700Bold" }]}>Customer Registration</Text>
             <View style={{ width: 26 }} />
@@ -243,11 +243,11 @@ export default function LoginScreen() {
 
   // ── Landscaper Registration ────────────────────────────────────
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#000000" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#050505" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.formHeader}>
           <TouchableOpacity onPress={() => navBack("welcome")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="chevron-back" size={26} color="#34FF7A" />
+            <Ionicons name="chevron-back" size={26} color="#22C55E" />
           </TouchableOpacity>
           <Text style={[styles.formTitle, { fontFamily: "Inter_700Bold" }]}>Landscaper Registration</Text>
           <View style={{ width: 26 }} />
@@ -337,17 +337,17 @@ const errStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000", justifyContent: "center", paddingHorizontal: 28 },
+  container: { flex: 1, backgroundColor: "#050505", justifyContent: "center", paddingHorizontal: 28 },
   logoSection: { alignItems: "center", marginBottom: 56 },
-  logo: { fontSize: 72, color: "#34FF7A", letterSpacing: -4 },
+  logo: { fontSize: 72, color: "#22C55E", letterSpacing: -4 },
   buttonsSection: { gap: 10, marginBottom: 40 },
   dividerGap: { height: 10 },
   primaryBtn: {
-    backgroundColor: "#34FF7A",
+    backgroundColor: "#22C55E",
     paddingVertical: 20,
     borderRadius: 28,
     alignItems: "center",
-    shadowColor: "#34FF7A",
+    shadowColor: "#22C55E",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -355,22 +355,22 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: "#000000", fontSize: 17 },
   outlineBtn: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     paddingVertical: 20,
     borderRadius: 28,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#34FF7A",
+    borderColor: "#22C55E",
   },
   outlineBtnText: { color: "#FFFFFF", fontSize: 17 },
-  registerLink: { textAlign: "center", fontSize: 12, color: "#34FF7A", textDecorationLine: "underline" },
+  registerLink: { textAlign: "center", fontSize: 12, color: "#22C55E", textDecorationLine: "underline" },
   demoNote: { textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.4)" },
 
   formScroll: { paddingHorizontal: 24 },
   formHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 28 },
   formTitle: { fontSize: 20, color: "#FFFFFF" },
   input: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderWidth: 1,
     borderColor: "#222222",
     borderRadius: 18,
@@ -383,15 +383,15 @@ const styles = StyleSheet.create({
 
   specialtyGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   specialtyChip: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderWidth: 1,
     borderColor: "#222222",
     borderRadius: 20,
     paddingVertical: 10,
     paddingHorizontal: 16,
   },
-  specialtyChipActive: { backgroundColor: "#0d2e18", borderColor: "#34FF7A" },
+  specialtyChipActive: { backgroundColor: "#0d2e18", borderColor: "#22C55E" },
   specialtyChipText: { fontSize: 13, color: "#FFFFFF" },
-  specialtyChipTextActive: { color: "#34FF7A" },
+  specialtyChipTextActive: { color: "#22C55E" },
 
 });

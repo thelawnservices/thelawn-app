@@ -117,7 +117,7 @@ function LandscaperProfile({
     <>
       <View style={styles.avatarRow}>
         <View style={styles.avatarBox}>
-          <Ionicons name="leaf" size={40} color="#34FF7A" />
+          <Ionicons name="leaf" size={40} color="#22C55E" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>
@@ -180,9 +180,9 @@ function LandscaperProfile({
                     const isFocused = focusedCell === cellKey;
                     return (
                       <View style={[styles.priceInputWrapper, isFocused && styles.priceInputWrapperFocused]}>
-                        <Text style={[styles.priceDollar, isFocused && { color: "#34FF7A" }]}>$</Text>
+                        <Text style={[styles.priceDollar, isFocused && { color: "#22C55E" }]}>$</Text>
                         <TextInput
-                          style={[styles.priceInput, { fontFamily: "Inter_600SemiBold" }, isFocused && { color: "#34FF7A" }]}
+                          style={[styles.priceInput, { fontFamily: "Inter_600SemiBold" }, isFocused && { color: "#22C55E" }]}
                           value={matrix[svc][col.key]}
                           onChangeText={(t) =>
                             setMatrix((m) => ({
@@ -223,7 +223,7 @@ function LandscaperProfile({
           </TouchableOpacity>
         ) : (
           <Animated.View style={[styles.successBox, { opacity: successOpacity, transform: [{ scale: successScale }] }]}>
-            <Ionicons name="checkmark-circle" size={32} color="#34FF7A" />
+            <Ionicons name="checkmark-circle" size={32} color="#22C55E" />
             <Text style={[styles.savedMsg, { fontFamily: "Inter_600SemiBold" }]}>
               Prices saved!
             </Text>
@@ -301,7 +301,7 @@ function CustomerProfile() {
     <>
       <View style={styles.avatarRow}>
         <View style={styles.avatarBox}>
-          <Ionicons name="person" size={40} color="#34FF7A" />
+          <Ionicons name="person" size={40} color="#22C55E" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>Zamire Smith</Text>
@@ -384,7 +384,7 @@ function CustomerProfile() {
           </TouchableOpacity>
         ) : (
           <Animated.View style={[styles.successBox, { opacity: successOpacity, transform: [{ scale: successScale }] }]}>
-            <Ionicons name="checkmark-circle" size={32} color="#34FF7A" />
+            <Ionicons name="checkmark-circle" size={32} color="#22C55E" />
             <Text style={[styles.savedMsg, { fontFamily: "Inter_600SemiBold" }]}>
               Payment method saved successfully!
             </Text>
@@ -416,9 +416,9 @@ function CustomerProfile() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000" },
+  container: { flex: 1, backgroundColor: "#050505" },
   header: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  togglePillText: { fontSize: 12, color: "#34FF7A" },
+  togglePillText: { fontSize: 12, color: "#22C55E" },
   toggleIcon: { fontSize: 14 },
   scroll: { padding: 20, paddingBottom: 48 },
   avatarRow: {
@@ -451,20 +451,20 @@ const styles = StyleSheet.create({
   avatarBox: {
     width: 80,
     height: 80,
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#34FF7A",
+    borderColor: "#22C55E",
   },
   proName: { fontSize: 18, color: "#FFFFFF", marginBottom: 2 },
   proSub: { fontSize: 12, color: "#FFFFFF", marginBottom: 6 },
   starsRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   stars: { color: "#f59e0b", fontSize: 14 },
-  proRating: { fontSize: 12, color: "#34FF7A" },
+  proRating: { fontSize: 12, color: "#22C55E" },
   card: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
   infoKey: { fontSize: 13, color: "#555" },
   infoVal: { fontSize: 14, color: "#FFFFFF" },
   paymentCard: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
@@ -508,16 +508,16 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   paymentTileActive: {
-    borderColor: "#34FF7A",
+    borderColor: "#22C55E",
     backgroundColor: "#0d2e18",
   },
   paymentTileEmoji: { fontSize: 26 },
   paymentTileLabel: { fontSize: 11, color: "#FFFFFF", textAlign: "center" },
-  paymentTileLabelActive: { color: "#34FF7A" },
+  paymentTileLabelActive: { color: "#22C55E" },
   paymentCardError: { borderColor: "#ef4444" },
   errorMsg: { fontSize: 12, color: "#ef4444", marginTop: 6, marginBottom: 2 },
   priceCard: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
@@ -548,9 +548,9 @@ const styles = StyleSheet.create({
   },
   priceInputWrapperFocused: {
     backgroundColor: "#1a1a1a",
-    borderColor: "#34FF7A",
+    borderColor: "#22C55E",
   },
-  priceDollar: { fontSize: 18, color: "#34FF7A", fontWeight: "600" },
+  priceDollar: { fontSize: 18, color: "#22C55E", fontWeight: "600" },
   priceInput: {
     fontSize: 18,
     color: "#FFFFFF",
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   savePricesBtn: {
-    backgroundColor: "#34FF7A",
+    backgroundColor: "#22C55E",
     paddingVertical: 15,
     borderRadius: 20,
     alignItems: "center",
@@ -568,7 +568,7 @@ const styles = StyleSheet.create({
   savePricesBtnLoading: { opacity: 0.8 },
   savePricesBtnText: { color: "#000", fontSize: 15 },
   savePaymentBtn: {
-    backgroundColor: "#34FF7A",
+    backgroundColor: "#22C55E",
     paddingVertical: 13,
     borderRadius: 20,
     alignItems: "center",
@@ -577,9 +577,9 @@ const styles = StyleSheet.create({
   savePaymentBtnLoading: { opacity: 0.8 },
   savePaymentText: { color: "#000", fontSize: 14 },
   successBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 14, paddingVertical: 6 },
-  savedMsg: { fontSize: 14, color: "#34FF7A" },
+  savedMsg: { fontSize: 14, color: "#22C55E" },
   editBtn: {
-    backgroundColor: "#34FF7A",
+    backgroundColor: "#22C55E",
     paddingVertical: 16,
     borderRadius: 24,
     alignItems: "center",
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     alignSelf: "flex-start",
   },
-  apptNoteText: { fontSize: 11, color: "#34FF7A" },
+  apptNoteText: { fontSize: 11, color: "#22C55E" },
   sectionLabelSmall: {
     fontSize: 11,
     color: "#AAAAAA",
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
   priceCol: { flex: 1, alignItems: "center", gap: 3 },
   priceColLabel: { fontSize: 12, color: "#AAAAAA" },
   priceColSub: { fontSize: 10, color: "#555555" },
-  priceColValue: { fontSize: 18, color: "#34FF7A", marginTop: 4 },
+  priceColValue: { fontSize: 18, color: "#22C55E", marginTop: 4 },
   bookingInfoBox: {
     marginBottom: 24,
     alignItems: "center",

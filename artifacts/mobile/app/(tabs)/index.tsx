@@ -322,7 +322,7 @@ const dropStyles = StyleSheet.create({
     paddingRight: 16,
   },
   sheet: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#222222",
@@ -516,7 +516,7 @@ const settStyles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   sheet: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 28,
     padding: 24,
     width: "100%",
@@ -552,7 +552,7 @@ const settStyles = StyleSheet.create({
     marginBottom: 14,
   },
   primaryBtn: {
-    backgroundColor: "#34FF7A",
+    backgroundColor: "#22C55E",
     paddingVertical: 16,
     borderRadius: 28,
     alignItems: "center",
@@ -608,7 +608,7 @@ function PaymentMethodModal({ visible, onClose }: { visible: boolean; onClose: (
               style={[pmStyles.option, saved === opt.id && pmStyles.optionSelected]}
             >
               <Text style={[pmStyles.optionText, { fontFamily: "Inter_500Medium" }]}>{opt.label}</Text>
-              {saved === opt.id && <Ionicons name="checkmark-circle" size={20} color="#34FF7A" />}
+              {saved === opt.id && <Ionicons name="checkmark-circle" size={20} color="#22C55E" />}
             </TouchableOpacity>
           ))}
         </Pressable>
@@ -622,7 +622,7 @@ const pmStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderWidth: 1,
     borderColor: "#222222",
     borderRadius: 28,
@@ -630,7 +630,7 @@ const pmStyles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 10,
   },
-  optionSelected: { borderColor: "#34FF7A" },
+  optionSelected: { borderColor: "#22C55E" },
   optionText: { fontSize: 15, color: "#FFFFFF" },
 });
 
@@ -826,7 +826,7 @@ const avStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333333",
   },
-  dayChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  dayChipActive: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
   dayChipText: { fontSize: 13, color: "#AAAAAA" },
   dayChipTextActive: { color: "#000000" },
   timesRow: { flexDirection: "row", gap: 12 },
@@ -991,7 +991,7 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <View style={styles.svcGridIconWrap}>
-                <Ionicons name={svc.icon} size={28} color="#34FF7A" />
+                <Ionicons name={svc.icon} size={28} color="#22C55E" />
               </View>
               <Text style={[styles.svcGridName, { fontFamily: "Inter_500Medium" }]}>
                 {svc.name}
@@ -1016,7 +1016,7 @@ export default function HomeScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.apptIcon}>
-            <Ionicons name="leaf" size={22} color="#34FF7A" />
+            <Ionicons name="leaf" size={22} color="#22C55E" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
@@ -1026,7 +1026,7 @@ export default function HomeScreen() {
               April 12 • 10:30 AM • John Rivera
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
+          <Ionicons name="chevron-forward" size={18} color="#22C55E" />
         </TouchableOpacity>
 
         {/* Quick Stats — staggered entrance */}
@@ -1060,7 +1060,7 @@ export default function HomeScreen() {
                   activeOpacity={0.8}
                 >
                   <View style={styles.proHIconWrap}>
-                    <Ionicons name={pro.icon} size={26} color="#34FF7A" />
+                    <Ionicons name={pro.icon} size={26} color="#22C55E" />
                   </View>
                   <Text style={[styles.proHName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
                     {pro.name}
@@ -1098,13 +1098,17 @@ const TRUSTED_PROS = [
 ];
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000" },
+  container: { flex: 1, backgroundColor: "#050505" },
   header: {
-    backgroundColor: "#000000",
+    backgroundColor: "#050505",
     paddingHorizontal: 20,
     paddingBottom: 18,
-    overflow: "hidden",
     position: "relative",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 8,
   },
   headerRow: {
     flexDirection: "row",
@@ -1151,7 +1155,7 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: "row", gap: 10, marginBottom: 28 },
   statCard: {
     flex: 1,
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 18,
     padding: 14,
     alignItems: "center",
@@ -1163,7 +1167,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: "#FFFFFF" },
   sectionTitle: { fontSize: 17, color: "#FFFFFF", marginBottom: 12 },
   appointmentCard: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 20,
     padding: 16,
     flexDirection: "row",
@@ -1190,7 +1194,7 @@ const styles = StyleSheet.create({
   },
   svcGridCard: {
     flex: 1,
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 18,
     paddingVertical: 14,
     paddingHorizontal: 6,
@@ -1209,12 +1213,12 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   svcGridName: { fontSize: 10, color: "#FFFFFF", textAlign: "center", lineHeight: 14 },
-  svcGridPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
+  svcGridPrice: { fontSize: 11, color: "#22C55E", textAlign: "center" },
   svcGridUpdated: { fontSize: 9, color: "#555555", textAlign: "center", marginTop: 1 },
   proRow: { marginTop: 20, marginBottom: 24, marginHorizontal: -20 },
   proRowContent: { paddingHorizontal: 20, gap: 12 },
   proHCard: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 20,
     padding: 14,
     width: 160,
@@ -1236,13 +1240,13 @@ const styles = StyleSheet.create({
   trustedBadge: {
     backgroundColor: "#0d2e18",
     borderWidth: 1,
-    borderColor: "#34FF7A",
+    borderColor: "#22C55E",
     borderRadius: 20,
     paddingHorizontal: 7,
     paddingVertical: 3,
     alignSelf: "flex-start",
   },
-  trustedBadgeText: { fontSize: 10, color: "#34FF7A" },
+  trustedBadgeText: { fontSize: 10, color: "#22C55E" },
   skeletonCard: {
     width: 160,
     height: 160,
@@ -1259,7 +1263,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.75)",
   },
   notifSheet: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
@@ -1282,13 +1286,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatarBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: "#34FF7A",
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    backgroundColor: "#22C55E",
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
+    shadowColor: "#22C55E",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
   notifBadge: {
     position: "absolute",
@@ -1311,9 +1320,9 @@ const styles = StyleSheet.create({
     borderColor: "#333333",
     backgroundColor: "#1a1a1a",
   },
-  notifTogglePillOn: { backgroundColor: "#0d2e18", borderColor: "#34FF7A" },
+  notifTogglePillOn: { backgroundColor: "#0d2e18", borderColor: "#22C55E" },
   notifToggleText: { fontSize: 11, color: "#666666" },
-  notifToggleTextOn: { color: "#34FF7A" },
+  notifToggleTextOn: { color: "#22C55E" },
   notifList: { gap: 12 },
   notifItem: {
     flexDirection: "row",
@@ -1342,7 +1351,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -1355,7 +1364,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: "#34FF7A",
+    backgroundColor: "#22C55E",
   },
   offlineDot: { backgroundColor: "#FF3B30" },
   onlinePillText: { color: "#FFFFFF", fontSize: 11 },

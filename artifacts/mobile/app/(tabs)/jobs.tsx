@@ -155,7 +155,7 @@ export default function JobsScreen() {
               </View>
               {appt.note && (
                 <View style={styles.notePill}>
-                  <Ionicons name="image-outline" size={12} color="#34FF7A" />
+                  <Ionicons name="image-outline" size={12} color="#22C55E" />
                   <Text style={[styles.noteText, { fontFamily: "Inter_400Regular" }]}>{appt.note}</Text>
                 </View>
               )}
@@ -165,7 +165,7 @@ export default function JobsScreen() {
       ) : (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconBox}>
-            <Ionicons name="location-outline" size={44} color="#34FF7A" />
+            <Ionicons name="location-outline" size={44} color="#22C55E" />
           </View>
           <Text style={[styles.emptyTitle, { fontFamily: "Inter_600SemiBold" }]}>No active jobs yet</Text>
           <Text style={[styles.emptySub, { fontFamily: "Inter_400Regular" }]}>
@@ -182,9 +182,9 @@ export default function JobsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000" },
+  container: { flex: 1, backgroundColor: "#050505" },
   header: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   },
 
   trackingCard: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 22,
     borderWidth: 1,
     borderColor: "#222222",
@@ -218,14 +218,14 @@ const styles = StyleSheet.create({
   },
   trackingTitle: { fontSize: 14, color: "#FFFFFF", flex: 1 },
   statusPill: {
-    backgroundColor: "#34FF7A",
+    backgroundColor: "#22C55E",
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 20,
   },
-  statusPillComplete: { backgroundColor: "#0d2e18", borderWidth: 1, borderColor: "#34FF7A" },
+  statusPillComplete: { backgroundColor: "#0d2e18", borderWidth: 1, borderColor: "#22C55E" },
   statusPillText: { fontSize: 11, color: "#000000" },
-  statusPillTextComplete: { color: "#34FF7A" },
+  statusPillTextComplete: { color: "#22C55E" },
   trackingMeta: { fontSize: 12, color: "#888888" },
 
   actionRow: { flexDirection: "row", gap: 8, marginTop: 4 },
@@ -238,17 +238,17 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#34FF7A",
+    borderColor: "#22C55E",
   },
   actionBtnDone: {
-    backgroundColor: "#34FF7A",
-    borderColor: "#34FF7A",
+    backgroundColor: "#22C55E",
+    borderColor: "#22C55E",
   },
-  actionBtnText: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
+  actionBtnText: { fontSize: 11, color: "#22C55E", textAlign: "center" },
   actionBtnTextDone: { color: "#000000" },
 
   apptCard: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#222222",
@@ -271,12 +271,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
   },
-  noteText: { fontSize: 12, color: "#34FF7A" },
+  noteText: { fontSize: 12, color: "#22C55E" },
 
   emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 36, gap: 12, paddingBottom: 60 },
   emptyIconBox: { width: 80, height: 80, backgroundColor: "#0d2e18", borderRadius: 24, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   emptyTitle: { fontSize: 20, color: "#FFFFFF" },
   emptySub: { fontSize: 14, color: "#555", textAlign: "center", lineHeight: 22 },
-  mapPlaceholder: { width: "100%", height: 160, backgroundColor: "#111111", borderRadius: 22, alignItems: "center", justifyContent: "center", gap: 8, marginTop: 20, borderWidth: 1, borderColor: "#222222" },
+  mapPlaceholder: { width: "100%", height: 160, backgroundColor: "#161616", borderRadius: 22, alignItems: "center", justifyContent: "center", gap: 8, marginTop: 20, borderWidth: 1, borderColor: "#222222" },
   mapText: { fontSize: 14, color: "#555" },
 });

@@ -161,7 +161,7 @@ export default function SearchScreen() {
             {sorted.length} result{sorted.length !== 1 ? "s" : ""}
           </Text>
           <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSort(!showSort)}>
-            <Ionicons name="options-outline" size={16} color="#34FF7A" />
+            <Ionicons name="options-outline" size={16} color="#22C55E" />
             <Text style={[styles.sortBtnText, { fontFamily: "Inter_500Medium" }]}>
               Sort: {SORT_OPTIONS[sortIdx]}
             </Text>
@@ -186,7 +186,7 @@ export default function SearchScreen() {
                 >
                   {opt}
                 </Text>
-                {i === sortIdx && <Ionicons name="checkmark" size={16} color="#34FF7A" />}
+                {i === sortIdx && <Ionicons name="checkmark" size={16} color="#22C55E" />}
               </TouchableOpacity>
             ))}
           </View>
@@ -218,7 +218,7 @@ export default function SearchScreen() {
                       </Text>
                       {pro.trusted && (
                         <View style={styles.trustedBadge}>
-                          <Ionicons name="checkmark-circle" size={12} color="#34FF7A" />
+                          <Ionicons name="checkmark-circle" size={12} color="#22C55E" />
                           <Text style={[styles.trustedText, { fontFamily: "Inter_500Medium" }]}>
                             Trusted
                           </Text>
@@ -276,9 +276,9 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#000000" },
+  container: { flex: 1, backgroundColor: "#050505" },
   header: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
@@ -301,12 +301,12 @@ const styles = StyleSheet.create({
   filterChip: {
     paddingHorizontal: 18,
     paddingVertical: 8,
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 28,
     borderWidth: 1,
     borderColor: "#333",
   },
-  filterChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  filterChipActive: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
   filterChipText: { fontSize: 13, color: "#FFFFFF" },
   filterChipTextActive: { color: "#000" },
   sortRow: {
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 20,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   sortDropdown: {
     marginHorizontal: 16,
     marginTop: 4,
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#333",
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 16, color: "#555" },
   emptySubText: { fontSize: 13, color: "#444" },
   proCard: {
-    backgroundColor: "#111111",
+    backgroundColor: "#161616",
     borderRadius: 22,
     padding: 16,
     borderWidth: 1,
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
   },
-  trustedText: { fontSize: 11, color: "#34FF7A" },
+  trustedText: { fontSize: 11, color: "#22C55E" },
   proSpec: { fontSize: 13, color: "#555", marginBottom: 5 },
   proMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
   proRating: { fontSize: 12, color: "#FFFFFF" },
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   },
   tagText: { fontSize: 11, color: "#FFFFFF" },
   bookBtn: {
-    backgroundColor: "#34FF7A",
+    backgroundColor: "#22C55E",
     paddingVertical: 13,
     borderRadius: 22,
     alignItems: "center",
