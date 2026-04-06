@@ -272,6 +272,12 @@ function ProfileDropdownModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={dropStyles.overlay} onPress={onClose}>
         <Pressable style={dropStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          {isLandscaper && (
+            <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
+              <Text style={dropStyles.itemIcon}>🗓️</Text>
+              <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={dropStyles.item} onPress={onAppointments} activeOpacity={0.7}>
             <Text style={dropStyles.itemIcon}>📅</Text>
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Appointments</Text>
@@ -296,12 +302,6 @@ function ProfileDropdownModal({
             <Text style={dropStyles.itemIcon}>❔</Text>
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Help and Resources</Text>
           </TouchableOpacity>
-          {isLandscaper && (
-            <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
-              <Text style={dropStyles.itemIcon}>🗓️</Text>
-              <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
-            </TouchableOpacity>
-          )}
           <View style={dropStyles.divider} />
           <TouchableOpacity style={dropStyles.item} onPress={onSignOut} activeOpacity={0.7}>
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_400Regular" }, dropStyles.signOutText]}>Sign out</Text>
@@ -961,17 +961,19 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* CTA Button */}
-        <TouchableOpacity
-          style={[styles.ctaBtn, isOffline && styles.ctaBtnDisabled]}
-          onPress={() => handleBooking(() => router.navigate("/(tabs)/search"))}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="search" size={20} color="#000" />
-          <Text style={[styles.ctaBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-            Find a Landscaper Near You
-          </Text>
-        </TouchableOpacity>
+        {/* CTA Button – customers only */}
+        {role !== "landscaper" && (
+          <TouchableOpacity
+            style={[styles.ctaBtn, isOffline && styles.ctaBtnDisabled]}
+            onPress={() => handleBooking(() => router.navigate("/(tabs)/search"))}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="search" size={20} color="#000" />
+            <Text style={[styles.ctaBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+              Find a Landscaper Near You
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Popular Services */}
         <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>

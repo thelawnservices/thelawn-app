@@ -53,6 +53,29 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
+      <View style={picStyles.row}>
+        <TouchableOpacity
+          style={picStyles.avatar}
+          activeOpacity={0.8}
+          onPress={() => Alert.alert("Change Profile Picture", "This would open your photo library on a real device.", [{ text: "OK" }])}
+        >
+          <Text style={picStyles.avatarEmoji}>👤</Text>
+        </TouchableOpacity>
+        <View style={picStyles.nameCol}>
+          <Text style={[picStyles.displayName, { fontFamily: "Inter_600SemiBold" }]}>
+            {isLandscaper ? "Your Business" : "Your Name"}
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => Alert.alert("Change Profile Picture", "This would open your photo library on a real device.", [{ text: "OK" }])}
+          >
+            <Text style={[picStyles.changeLink, { fontFamily: "Inter_500Medium" }]}>
+              📸  Change profile picture
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {isLandscaper
           ? <LandscaperProfile matrix={matrix} setMatrix={setMatrix} />
@@ -414,6 +437,33 @@ function CustomerProfile() {
     </>
   );
 }
+
+const picStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1E1E1E",
+  },
+  avatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "#22C55E",
+    borderWidth: 3,
+    borderColor: "#22C55E",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarEmoji: { fontSize: 40 },
+  nameCol: { flex: 1, gap: 6 },
+  displayName: { fontSize: 18, color: "#FFFFFF" },
+  changeLink: { fontSize: 14, color: "#22C55E" },
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#050505" },

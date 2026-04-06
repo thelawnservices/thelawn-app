@@ -8,6 +8,7 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -191,6 +192,17 @@ export default function LoginScreen() {
           <TouchableOpacity style={styles.primaryBtn} onPress={handleLandscaperLogin} activeOpacity={0.88}>
             <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign In</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.passkeyBtn}
+            activeOpacity={0.85}
+            onPress={() => Alert.alert("Passkey / PIN", "iOS would now use your saved biometric login.\n\nDemo: tap OK to sign in.", [
+              { text: "Cancel", style: "cancel" },
+              { text: "Use Passkey", onPress: () => go("landscaper") },
+            ])}
+          >
+            <Text style={{ fontSize: 18, marginRight: 8 }}>🔑</Text>
+            <Text style={[styles.passkeyBtnText, { fontFamily: "Inter_500Medium" }]}>Sign in with saved Passkey / PIN</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     );
@@ -363,6 +375,18 @@ const styles = StyleSheet.create({
     borderColor: "#22C55E",
   },
   outlineBtnText: { color: "#FFFFFF", fontSize: 17 },
+  passkeyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#161616",
+    borderWidth: 1.5,
+    borderColor: "#222222",
+    paddingVertical: 18,
+    borderRadius: 28,
+    marginTop: 12,
+  },
+  passkeyBtnText: { color: "#FFFFFF", fontSize: 15 },
   registerLink: { textAlign: "center", fontSize: 12, color: "#22C55E", textDecorationLine: "underline" },
   demoNote: { textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.4)" },
 
