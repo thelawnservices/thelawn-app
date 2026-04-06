@@ -248,12 +248,20 @@ function ProfileDropdownModal({
   onClose,
   onAppointments,
   onSettings,
+  onShare,
+  onPaymentMethod,
+  onVouchers,
+  onHelp,
   onSignOut,
 }: {
   visible: boolean;
   onClose: () => void;
   onAppointments: () => void;
   onSettings: () => void;
+  onShare: () => void;
+  onPaymentMethod: () => void;
+  onVouchers: () => void;
+  onHelp: () => void;
   onSignOut: () => void;
 }) {
   return (
@@ -267,6 +275,22 @@ function ProfileDropdownModal({
           <TouchableOpacity style={dropStyles.item} onPress={onSettings} activeOpacity={0.7}>
             <Text style={dropStyles.itemIcon}>⚙️</Text>
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Settings</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={dropStyles.item} onPress={onShare} activeOpacity={0.7}>
+            <Text style={dropStyles.itemIcon}>🔗</Text>
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Share with friends</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={dropStyles.item} onPress={onPaymentMethod} activeOpacity={0.7}>
+            <Text style={dropStyles.itemIcon}>💳</Text>
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Payment Method</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={dropStyles.item} onPress={onVouchers} activeOpacity={0.7}>
+            <Text style={dropStyles.itemIcon}>🎟️</Text>
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Vouchers</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={dropStyles.item} onPress={onHelp} activeOpacity={0.7}>
+            <Text style={dropStyles.itemIcon}>❔</Text>
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Help and Resources</Text>
           </TouchableOpacity>
           <View style={dropStyles.divider} />
           <TouchableOpacity style={dropStyles.item} onPress={onSignOut} activeOpacity={0.7}>
@@ -509,6 +533,136 @@ const settStyles = StyleSheet.create({
   },
 });
 
+const PAYMENT_OPTIONS = [
+  { id: "applepay", label: " Apple Pay", icon: "" },
+  { id: "debit", label: "💳 Debit Card", icon: "" },
+  { id: "venmo", label: "Venmo", icon: "" },
+  { id: "paypal", label: "PayPal", icon: "" },
+  { id: "cashapp", label: "Cash App", icon: "" },
+];
+
+function PaymentMethodModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const [saved, setSaved] = useState<string | null>(null);
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={settStyles.overlay} onPress={onClose}>
+        <Pressable style={settStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <View style={settStyles.header}>
+            <Text style={[settStyles.title, { fontFamily: "Inter_700Bold" }]}>Payment Method</Text>
+            <TouchableOpacity onPress={onClose} style={settStyles.closeBtn} activeOpacity={0.7}>
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+          <Text style={[{ fontSize: 15, color: "#AAAAAA", textAlign: "center", marginBottom: 20, fontFamily: "Inter_400Regular" }]}>
+            Add a Payment Method
+          </Text>
+          {PAYMENT_OPTIONS.map((opt) => (
+            <TouchableOpacity
+              key={opt.id}
+              activeOpacity={0.75}
+              onPress={() => { setSaved(opt.id); Alert.alert("Payment Method Saved", `${opt.label.trim()} has been saved.`); onClose(); }}
+              style={[pmStyles.option, saved === opt.id && pmStyles.optionSelected]}
+            >
+              <Text style={[pmStyles.optionText, { fontFamily: "Inter_500Medium" }]}>{opt.label}</Text>
+              {saved === opt.id && <Ionicons name="checkmark-circle" size={20} color="#34FF7A" />}
+            </TouchableOpacity>
+          ))}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const pmStyles = StyleSheet.create({
+  option: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#111111",
+    borderWidth: 1,
+    borderColor: "#222222",
+    borderRadius: 28,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  optionSelected: { borderColor: "#34FF7A" },
+  optionText: { fontSize: 15, color: "#FFFFFF" },
+});
+
+function VouchersModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={settStyles.overlay} onPress={onClose}>
+        <Pressable style={settStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <View style={settStyles.header}>
+            <Text style={[settStyles.title, { fontFamily: "Inter_700Bold" }]}>Vouchers</Text>
+            <TouchableOpacity onPress={onClose} style={settStyles.closeBtn} activeOpacity={0.7}>
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+          <View style={{ alignItems: "center", paddingVertical: 40, gap: 12 }}>
+            <Text style={[{ fontSize: 28, color: "#FFFFFF", fontFamily: "Inter_700Bold", letterSpacing: 1 }]}>
+              NONE AVAILABLE
+            </Text>
+            <Text style={[{ fontSize: 11, color: "rgba(255,255,255,0.45)", textAlign: "center", lineHeight: 18, fontFamily: "Inter_400Regular" }]}>
+              TERMS AND CONDITIONS APPLY{"\n"}VOUCHER MUST BE BOOKED BEFORE THE EXPIRING DATE
+            </Text>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const HELP_ITEMS = [
+  "How to book a service",
+  "Contact support",
+  "FAQs",
+  "Terms of Service",
+  "Privacy Policy",
+];
+
+function HelpResourcesModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={settStyles.overlay} onPress={onClose}>
+        <Pressable style={settStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <View style={settStyles.header}>
+            <Text style={[settStyles.title, { fontFamily: "Inter_700Bold" }]}>Help and Resources</Text>
+            <TouchableOpacity onPress={onClose} style={settStyles.closeBtn} activeOpacity={0.7}>
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+          {HELP_ITEMS.map((item, i) => (
+            <TouchableOpacity
+              key={i}
+              activeOpacity={0.7}
+              onPress={() => Alert.alert(item, "This section is coming soon.")}
+              style={helpStyles.row}
+            >
+              <Text style={[helpStyles.rowText, { fontFamily: "Inter_400Regular" }]}>{item}</Text>
+              <Ionicons name="chevron-forward" size={16} color="#555555" />
+            </TouchableOpacity>
+          ))}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const helpStyles = StyleSheet.create({
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1E1E1E",
+  },
+  rowText: { fontSize: 15, color: "#FFFFFF" },
+});
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
@@ -520,6 +674,9 @@ export default function HomeScreen() {
   const [isOffline, setIsOffline] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [paymentVisible, setPaymentVisible] = useState(false);
+  const [vouchersVisible, setVouchersVisible] = useState(false);
+  const [helpVisible, setHelpVisible] = useState(false);
   const notifEnabledRef = React.useRef(notifEnabled);
   notifEnabledRef.current = notifEnabled;
 
@@ -575,11 +732,27 @@ export default function HomeScreen() {
         onClose={() => setDropdownVisible(false)}
         onAppointments={() => { setDropdownVisible(false); router.navigate("/(tabs)/appointments"); }}
         onSettings={() => { setDropdownVisible(false); setSettingsVisible(true); }}
+        onShare={() => { setDropdownVisible(false); Alert.alert("Share", "Share link copied to clipboard!"); }}
+        onPaymentMethod={() => { setDropdownVisible(false); setPaymentVisible(true); }}
+        onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
+        onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
         onSignOut={() => { setDropdownVisible(false); logout(); }}
       />
       <SettingsModal
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
+      />
+      <PaymentMethodModal
+        visible={paymentVisible}
+        onClose={() => setPaymentVisible(false)}
+      />
+      <VouchersModal
+        visible={vouchersVisible}
+        onClose={() => setVouchersVisible(false)}
+      />
+      <HelpResourcesModal
+        visible={helpVisible}
+        onClose={() => setHelpVisible(false)}
       />
       <OfflineBanner visible={isOffline} />
       <NotificationsPanel
