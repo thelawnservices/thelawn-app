@@ -95,8 +95,8 @@ export default function LoginScreen() {
   }
 
   function handleLandscaperRegister() {
-    if (!businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !city.trim() || !state.trim() || !lZipCode.trim() || !paymentPref) {
-      setErrors("Please fill all required fields: Business Name, Email, Password, Phone, City, State, ZIP Code, and Payment Preference.");
+    if (!businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !state.trim() || !lZipCode.trim() || !paymentPref) {
+      setErrors("Please fill all required fields: Business Name, Email, Password, Phone, State, ZIP Code, and Payment Preference.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
@@ -249,7 +249,7 @@ export default function LoginScreen() {
           <Field label="Phone Number">
             <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={phone} onChangeText={setPhone} placeholder="(555) 000-0000" placeholderTextColor="#555" keyboardType="phone-pad" />
           </Field>
-          <Field label="Service Address">
+          <Field label="Service Address (private)">
             <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={address} onChangeText={setAddress} placeholder="8910 45th Ave E, Ellenton, FL" placeholderTextColor="#555" autoCapitalize="words" />
           </Field>
           <Field label="ZIP Code">
@@ -296,18 +296,9 @@ export default function LoginScreen() {
             ))}
           </View>
         </Field>
-        <View style={styles.rowFields}>
-          <View style={{ flex: 1 }}>
-            <Field label="City">
-              <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={city} onChangeText={setCity} placeholder="Ellenton" placeholderTextColor="#555" autoCapitalize="words" />
-            </Field>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Field label="State">
-              <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={state} onChangeText={setState} placeholder="FL" placeholderTextColor="#555" autoCapitalize="characters" maxLength={2} />
-            </Field>
-          </View>
-        </View>
+        <Field label="State">
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={state} onChangeText={setState} placeholder="FL" placeholderTextColor="#555" autoCapitalize="characters" maxLength={2} />
+        </Field>
         <Field label="ZIP Code">
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lZipCode} onChangeText={setLZipCode} placeholder="34222" placeholderTextColor="#555" keyboardType="numeric" maxLength={5} />
         </Field>
@@ -317,7 +308,7 @@ export default function LoginScreen() {
 
         <Field label="Receive Payment Preference">
           <View style={styles.specialtyGrid}>
-            {(["Apple Pay", "Cash App", "Venmo", "Debit Card"] as const).map((opt) => (
+            {(["Apple Pay", "Venmo", "PayPal", "Cash App", "Debit Card"] as const).map((opt) => (
               <TouchableOpacity key={opt} style={[styles.specialtyChip, paymentPref === opt && styles.specialtyChipActive]} onPress={() => setPaymentPref(opt)} activeOpacity={0.8}>
                 <Text style={[styles.specialtyChipText, { fontFamily: "Inter_500Medium" }, paymentPref === opt && styles.specialtyChipTextActive]}>{opt}</Text>
               </TouchableOpacity>
