@@ -50,9 +50,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="search"
         options={{
-          title: "Search",
+          title: role === "landscaper" ? "Requests" : "Search",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search" size={size} color={color} />
+            <Ionicons
+              name={role === "landscaper" ? "clipboard-outline" : "search"}
+              size={size}
+              color={color}
+            />
           ),
         }}
       />

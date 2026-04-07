@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   TextInput,
   Platform,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { useAuth } from "@/contexts/auth";
 
 const FILTERS = ["All", "Lawn Mowing", "Hedge Trimming", "Mulching", "Cleanup"];
 
@@ -72,14 +74,24 @@ const PROS = [
 
 const SORT_OPTIONS = ["Recommended", "Closest", "Highest Rated"];
 
+const SERVICE_REQUESTS = [
+  { id: "r1", service: "Lawn Mowing", size: "Medium", customer: "Alex T.", distance: "1.2 mi", zip: "34221", date: "Apr 14", time: "9:00 AM", budget: "$65" },
+  { id: "r2", service: "Hedge Trimming", size: "Small", customer: "Maria K.", distance: "2.4 mi", zip: "34222", date: "Apr 15", time: "11:00 AM", budget: "$55" },
+  { id: "r3", service: "Mulching", size: "Large", customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM", budget: "$180" },
+  { id: "r4", service: "Clean Up", size: "Small", customer: "Sarah B.", distance: "0.9 mi", zip: "34219", date: "Apr 17", time: "10:00 AM", budget: "$30" },
+  { id: "r5", service: "Lawn Mowing", size: "Large", customer: "James W.", distance: "4.5 mi", zip: "34211", date: "Apr 18", time: "7:30 AM", budget: "$120" },
+];
+
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
+  const { role } = useAuth();
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [sortIdx, setSortIdx] = useState(0);
   const [showSort, setShowSort] = useState(false);
+  const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
 
   const filtered = PROS.filter((p) => {
     const matchesQuery =
@@ -104,6 +116,68 @@ export default function SearchScreen() {
       params: { proName: pro.name, proInitials: pro.initials, proColor: pro.color, price: pro.price.toString() },
     });
   };
+
+  if (role === "landscaper") {
+    const visibleRequests = SERVICE_REQUESTS.filter((r) => !acceptedIds.includes(r.id));
+    return (
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
+          <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>
+            Service Requests Near You
+          </Text>
+          <Text style={[styles.reqSubtitle, { fontFamily: "Inter_400Regular" }]}>
+            Within 50 mi · ZIP 34222
+          </Text>
+        </View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 12 }}>
+          {visibleRequests.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="clipboard-outline" size={40} color="#333" />
+              <Text style={[styles.emptyText, { fontFamily: "Inter_500Medium" }]}>No pending requests</Text>
+              <Text style={[styles.emptySubText, { fontFamily: "Inter_400Regular" }]}>Check back soon for new jobs</Text>
+            </View>
+          ) : (
+            visibleRequests.map((req) => (
+              <View key={req.id} style={styles.reqCard}>
+                <View style={styles.reqTopRow}>
+                  <View style={styles.reqServiceBadge}>
+                    <Ionicons name="leaf" size={14} color="#34FF7A" />
+                    <Text style={[styles.reqServiceText, { fontFamily: "Inter_600SemiBold" }]}>{req.service}</Text>
+                  </View>
+                  <Text style={[styles.reqBudget, { fontFamily: "Inter_700Bold" }]}>{req.budget}</Text>
+                </View>
+                <View style={styles.reqMeta}>
+                  <Ionicons name="resize-outline" size={13} color="#555" />
+                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.size} yard</Text>
+                  <Text style={styles.metaDot}>·</Text>
+                  <Ionicons name="location-outline" size={13} color="#555" />
+                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.distance} · ZIP {req.zip}</Text>
+                </View>
+                <View style={styles.reqMeta}>
+                  <Ionicons name="calendar-outline" size={13} color="#555" />
+                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.date} at {req.time}</Text>
+                  <Text style={styles.metaDot}>·</Text>
+                  <Ionicons name="person-outline" size={13} color="#555" />
+                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.customer}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.acceptBtn}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    setAcceptedIds((prev) => [...prev, req.id]);
+                    Alert.alert("Request Accepted!", `You accepted ${req.customer}'s ${req.service} job for ${req.date} at ${req.time}.`);
+                  }}
+                >
+                  <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>Accept Job</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -161,7 +235,7 @@ export default function SearchScreen() {
             {sorted.length} result{sorted.length !== 1 ? "s" : ""}
           </Text>
           <TouchableOpacity style={styles.sortBtn} onPress={() => setShowSort(!showSort)}>
-            <Ionicons name="options-outline" size={16} color="#22C55E" />
+            <Ionicons name="options-outline" size={16} color="#34FF7A" />
             <Text style={[styles.sortBtnText, { fontFamily: "Inter_500Medium" }]}>
               Sort: {SORT_OPTIONS[sortIdx]}
             </Text>
@@ -186,7 +260,7 @@ export default function SearchScreen() {
                 >
                   {opt}
                 </Text>
-                {i === sortIdx && <Ionicons name="checkmark" size={16} color="#22C55E" />}
+                {i === sortIdx && <Ionicons name="checkmark" size={16} color="#34FF7A" />}
               </TouchableOpacity>
             ))}
           </View>
@@ -218,7 +292,7 @@ export default function SearchScreen() {
                       </Text>
                       {pro.trusted && (
                         <View style={styles.trustedBadge}>
-                          <Ionicons name="checkmark-circle" size={12} color="#22C55E" />
+                          <Ionicons name="checkmark-circle" size={12} color="#34FF7A" />
                           <Text style={[styles.trustedText, { fontFamily: "Inter_500Medium" }]}>
                             Trusted
                           </Text>
@@ -306,7 +380,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333",
   },
-  filterChipActive: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
+  filterChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   filterChipText: { fontSize: 13, color: "#FFFFFF" },
   filterChipTextActive: { color: "#000" },
   sortRow: {
@@ -381,7 +455,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 8,
   },
-  trustedText: { fontSize: 11, color: "#22C55E" },
+  trustedText: { fontSize: 11, color: "#34FF7A" },
   proSpec: { fontSize: 13, color: "#555", marginBottom: 5 },
   proMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
   proRating: { fontSize: 12, color: "#FFFFFF" },
@@ -399,10 +473,42 @@ const styles = StyleSheet.create({
   },
   tagText: { fontSize: 11, color: "#FFFFFF" },
   bookBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#34FF7A",
     paddingVertical: 13,
     borderRadius: 22,
     alignItems: "center",
   },
   bookBtnText: { color: "#000", fontSize: 15 },
+  reqSubtitle: { fontSize: 13, color: "#AAAAAA", marginTop: 4 },
+  reqCard: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#222222",
+    gap: 10,
+    marginBottom: 12,
+  },
+  reqTopRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  reqServiceBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#0d2e18",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  reqServiceText: { fontSize: 14, color: "#34FF7A" },
+  reqBudget: { fontSize: 20, color: "#FFFFFF" },
+  reqMeta: { flexDirection: "row", alignItems: "center", gap: 5 },
+  reqMetaText: { fontSize: 13, color: "#AAAAAA" },
+  acceptBtn: {
+    backgroundColor: "#34FF7A",
+    paddingVertical: 13,
+    borderRadius: 22,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  acceptBtnText: { color: "#000", fontSize: 15 },
 });
