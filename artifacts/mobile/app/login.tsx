@@ -174,44 +174,44 @@ export default function LoginScreen() {
   if (step === "welcome") {
     return (
       <>
-      <View style={[styles.container, { paddingTop: isWeb ? 60 : insets.top, paddingBottom: isWeb ? 40 : insets.bottom }]}>
-        <View style={styles.logoSection}>
+      <View style={[styles.welcomeContainer, { paddingTop: isWeb ? 60 : insets.top, paddingBottom: isWeb ? 40 : insets.bottom }]}>
+        <View style={styles.welcomeCenter}>
           <Image
             source={require("../assets/images/logo-transparent.png")}
-            style={styles.logoImg}
+            style={styles.logoImgLarge}
             resizeMode="contain"
           />
+
+          <TouchableOpacity style={styles.welcomePrimaryBtn} onPress={() => setStep("customer-login")} activeOpacity={0.88}>
+            <Text style={[styles.welcomePrimaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in as Customer</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.welcomeOutlineBtn} onPress={() => setStep("landscaper-login")} activeOpacity={0.88}>
+            <Text style={[styles.welcomeOutlineBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in as Landscaper</Text>
+          </TouchableOpacity>
+
+          <View style={styles.welcomeRegisterBlock}>
+            <TouchableOpacity onPress={() => setStep("customer-register")} activeOpacity={0.7}>
+              <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? Register here</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setStep("landscaper-register")} activeOpacity={0.7} style={{ marginTop: 20 }}>
+              <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? Register here</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={styles.buttonsSection}>
-          <TouchableOpacity style={styles.primaryBtn} onPress={() => setStep("customer-login")} activeOpacity={0.88}>
-            <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in as Customer</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setStep("customer-register")} activeOpacity={0.7}>
-            <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? Register here</Text>
-          </TouchableOpacity>
-
-          <View style={styles.dividerGap} />
-
-          <TouchableOpacity style={styles.outlineBtn} onPress={() => setStep("landscaper-login")} activeOpacity={0.88}>
-            <Text style={[styles.outlineBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in as Landscaper</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setStep("landscaper-register")} activeOpacity={0.7}>
-            <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? Register here</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={[styles.demoNote, { fontFamily: "Inter_400Regular" }]}>Demo mode – tap to continue</Text>
-
-        <View style={styles.consentRow}>
-          <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}>By continuing you agree to our </Text>
-          <TouchableOpacity onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
-            <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Terms</Text>
-          </TouchableOpacity>
-          <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}> and </Text>
-          <TouchableOpacity onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
-            <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Privacy Policy</Text>
-          </TouchableOpacity>
+        <View style={styles.welcomeFooter}>
+          <Text style={[styles.demoNote, { fontFamily: "Inter_400Regular" }]}>Demo mode – tap to continue</Text>
+          <View style={styles.consentRow}>
+            <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}>By continuing you agree to our </Text>
+            <TouchableOpacity onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
+              <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Terms</Text>
+            </TouchableOpacity>
+            <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}> and </Text>
+            <TouchableOpacity onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
+              <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Privacy Policy</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -642,6 +642,54 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 28,
   },
+  welcomeContainer: {
+    flex: 1,
+    backgroundColor: "#0A0A0A",
+    justifyContent: "space-between",
+    paddingHorizontal: 28,
+  },
+  welcomeCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoImgLarge: {
+    height: 280,
+    width: "100%",
+    marginBottom: 80,
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 15 },
+    shadowOpacity: 0.65,
+    shadowRadius: 40,
+  },
+  welcomePrimaryBtn: {
+    width: "100%",
+    maxWidth: 340,
+    backgroundColor: "#34FF7A",
+    paddingVertical: 22,
+    borderRadius: 28,
+    alignItems: "center",
+    marginBottom: 16,
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  welcomePrimaryBtnText: { color: "#000", fontSize: 22 },
+  welcomeOutlineBtn: {
+    width: "100%",
+    maxWidth: 340,
+    paddingVertical: 22,
+    borderRadius: 28,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#34FF7A",
+    backgroundColor: "transparent",
+  },
+  welcomeOutlineBtnText: { color: "#FFFFFF", fontSize: 22 },
+  welcomeRegisterBlock: { alignItems: "center", marginTop: 36, width: "100%" },
+  welcomeFooter: { alignItems: "center", paddingBottom: 8 },
   logoSection: {
     flex: 1,
     alignItems: "center",
