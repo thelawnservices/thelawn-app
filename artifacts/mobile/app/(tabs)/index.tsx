@@ -1283,8 +1283,6 @@ export default function HomeScreen() {
           ))}
         </View>
 
-
-
       </ScrollView>
 
       {/* Landscaper Profile Modal — customers only */}

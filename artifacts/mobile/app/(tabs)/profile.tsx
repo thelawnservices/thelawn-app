@@ -188,8 +188,8 @@ function LandscaperProfile({
   return (
     <View style={cutStyles.container}>
 
-      {/* ── Hero Banner ─────────────────────────────── */}
-      <View style={[cutStyles.hero, { paddingTop: topPadding }]}>
+      {/* ── Hero — matches customer-facing full-screen profile ── */}
+      <View style={[cutStyles.hero, { paddingTop: topPadding + 16 }]}>
         {heroBackground ? (
           <Image source={{ uri: heroBackground }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
         ) : null}
@@ -201,36 +201,42 @@ function LandscaperProfile({
           <Text style={{ fontSize: 13 }}>🔄</Text>
         </TouchableOpacity>
 
-        {/* Edit Banner — bottom right */}
+        {/* Edit Banner — top left */}
         <TouchableOpacity style={cutStyles.editBannerBtn} onPress={pickHeroBackground} activeOpacity={0.8}>
-          <Text style={cutStyles.editBannerIcon}>✏️</Text>
-          <Text style={[cutStyles.editBannerText, { fontFamily: "Inter_500Medium" }]}>Edit Banner</Text>
+          <Ionicons name="camera-outline" size={14} color="#34FF7A" />
+          <Text style={[cutStyles.editBannerText, { fontFamily: "Inter_500Medium" }]}>Banner</Text>
         </TouchableOpacity>
-      </View>
 
-      {/* ── Profile Info Row (below hero) ───────────── */}
-      <View style={cutStyles.profileInfoRow}>
-        {/* Avatar — negative marginTop pulls it up over the hero */}
-        <TouchableOpacity style={cutStyles.avatarCircle} onPress={pickAvatar} activeOpacity={0.85}>
-          {avatarImage ? (
-            <Image source={{ uri: avatarImage }} style={cutStyles.avatarImage} />
-          ) : (
-            <Ionicons name="leaf" size={44} color="#000" />
-          )}
+        {/* Centered avatar with tap-to-edit camera overlay */}
+        <TouchableOpacity style={cutStyles.avatarWrap} onPress={pickAvatar} activeOpacity={0.85}>
+          <View style={cutStyles.avatarInner}>
+            {avatarImage ? (
+              <Image source={{ uri: avatarImage }} style={cutStyles.avatarImage} />
+            ) : (
+              <Ionicons name="leaf" size={52} color="#000" />
+            )}
+          </View>
+          {/* Camera edit badge */}
           <View style={cutStyles.avatarEditBadge}>
+            <Ionicons name="camera" size={13} color="#000" />
             <Text style={[cutStyles.avatarEditText, { fontFamily: "Inter_700Bold" }]}>EDIT</Text>
           </View>
         </TouchableOpacity>
 
-        {/* Business name + rating */}
-        <View style={cutStyles.businessInfoCol}>
-          <Text style={[cutStyles.heroName, { fontFamily: "Inter_700Bold" }]}>GreenScape Pros</Text>
-          <Text style={[cutStyles.heroSub, { fontFamily: "Inter_400Regular" }]}>Est. 2019 · Ellenton, FL</Text>
-          <View style={cutStyles.ratingBadge}>
-            <Text style={[cutStyles.ratingText, { fontFamily: "Inter_700Bold" }]}>★ 4.9</Text>
-            <Text style={[cutStyles.ratingCount, { fontFamily: "Inter_400Regular" }]}>(142)</Text>
+        {/* Business name + badges + location — all centered */}
+        <Text style={[cutStyles.heroName, { fontFamily: "Inter_700Bold" }]}>GreenScape Pros</Text>
+        <View style={cutStyles.heroBadgeRow}>
+          <View style={cutStyles.ratingPill}>
+            <Text style={[cutStyles.ratingPillText, { fontFamily: "Inter_600SemiBold" }]}>★ 4.9</Text>
           </View>
+          <View style={cutStyles.proBadge}>
+            <Text style={[cutStyles.proBadgeText, { fontFamily: "Inter_700Bold" }]}>PRO</Text>
+          </View>
+          <Text style={[cutStyles.jobsText, { fontFamily: "Inter_400Regular" }]}>142 jobs</Text>
         </View>
+        <Text style={[cutStyles.heroLocation, { fontFamily: "Inter_400Regular" }]}>
+          📍 Sarasota / Ellenton, FL
+        </Text>
       </View>
 
       {/* ── Tab Bar ─────────────────────────────────── */}
@@ -711,48 +717,39 @@ function CustomerProfile({ logout }: { logout: () => void }) {
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
-const AVATAR_SIZE = 100;
-const HERO_HEIGHT = 200;
-
 const cutStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A" },
 
+  /* ── Hero ── */
   hero: {
-    height: HERO_HEIGHT,
-    backgroundColor: "#0d1f12",
+    backgroundColor: "#0d2e18",
+    alignItems: "center",
+    paddingBottom: 28,
+    paddingHorizontal: 24,
     position: "relative",
     overflow: "hidden",
   },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.38)",
-  },
-  heroGradientTop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-    backgroundColor: "transparent",
+    backgroundColor: "rgba(0,0,0,0.30)",
   },
 
   editBannerBtn: {
     position: "absolute",
-    bottom: 12,
-    right: 14,
+    top: 14,
+    left: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
     backgroundColor: "rgba(0,0,0,0.65)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    paddingHorizontal: 13,
-    paddingVertical: 7,
+    borderColor: "rgba(52,255,122,0.35)",
+    paddingHorizontal: 11,
+    paddingVertical: 6,
     borderRadius: 20,
     zIndex: 10,
   },
-  editBannerIcon: { fontSize: 13 },
-  editBannerText: { fontSize: 12, color: "rgba(255,255,255,0.9)" },
+  editBannerText: { fontSize: 11, color: "#34FF7A" },
 
   togglePill: {
     position: "absolute",
@@ -771,67 +768,72 @@ const cutStyles = StyleSheet.create({
   },
   toggleText: { fontSize: 12, color: "#34FF7A" },
 
-  profileInfoRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    paddingTop: 10,
-    gap: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1E1E1E",
-    backgroundColor: "#0A0A0A",
-  },
-
-  avatarCircle: {
-    width: AVATAR_SIZE,
-    height: AVATAR_SIZE,
-    borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: "#34FF7A",
-    borderWidth: 4,
-    borderColor: "#0A0A0A",
+  /* Avatar — centered, glowing border, camera-edit badge */
+  avatarWrap: {
+    width: 116,
+    height: 116,
+    borderRadius: 36,
+    backgroundColor: "#050505",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -(AVATAR_SIZE / 2),
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 10,
-    overflow: "hidden",
-    flexShrink: 0,
+    marginBottom: 16,
+    borderWidth: 4,
+    borderColor: "#34FF7A",
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  avatarImage: { width: "100%", height: "100%", borderRadius: AVATAR_SIZE / 2 },
+  avatarInner: {
+    width: 90,
+    height: 90,
+    backgroundColor: "#34FF7A",
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  avatarImage: { width: 90, height: 90, borderRadius: 28 },
   avatarEditBadge: {
     position: "absolute",
-    bottom: 5,
-    right: 0,
+    bottom: -2,
+    right: -2,
     backgroundColor: "#34FF7A",
     borderRadius: 999,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
     borderWidth: 2,
     borderColor: "#0A0A0A",
   },
   avatarEditText: { fontSize: 8, color: "#000", letterSpacing: 0.5 },
 
-  businessInfoCol: { flex: 1, paddingBottom: 2 },
-  heroName: { fontSize: 20, color: "#FFFFFF", marginBottom: 3 },
-  heroSub: { fontSize: 12, color: "rgba(255,255,255,0.5)", marginBottom: 8 },
-  ratingBadge: {
+  /* Name / badges / location — all centered */
+  heroName: { fontSize: 24, color: "#FFFFFF", textAlign: "center", marginBottom: 10 },
+  heroBadgeRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    backgroundColor: "#1A1A1A",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    borderColor: "#2A2A2A",
+    gap: 8,
+    marginBottom: 8,
+    flexWrap: "wrap",
+    justifyContent: "center",
   },
-  ratingText: { fontSize: 13, color: "#FFFFFF" },
-  ratingCount: { fontSize: 12, color: "rgba(255,255,255,0.5)" },
+  ratingPill: {
+    backgroundColor: "rgba(52,255,122,0.15)",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#34FF7A",
+  },
+  ratingPillText: { fontSize: 14, color: "#34FF7A" },
+  proBadge: { backgroundColor: "#34FF7A", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
+  proBadgeText: { fontSize: 11, color: "#000000", letterSpacing: 1 },
+  jobsText: { fontSize: 14, color: "rgba(255,255,255,0.6)" },
+  heroLocation: { fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: 4 },
 
   tabBar: {
     flexDirection: "row",
