@@ -41,8 +41,10 @@ The Lawn may perform or require background checks on Landscapers, but does NOT g
 6. PROPERTY ACCESS & LIABILITY
 When you book a service, you are granting the Landscaper permission to access your property. The Lawn is NOT responsible or liable for any damage to property, injury, theft, or other incidents that occur during or as a result of a service. Any disputes regarding property damage must be resolved directly between the customer and the Landscaper.
 
-7. PAYMENTS
+7. PAYMENTS & COMMISSION FEES
 Payments are processed through the app. By adding a payment method, you authorize The Lawn to charge you for services booked. All pricing is set by individual Landscapers and is subject to change. Tips are voluntary.
+
+The Lawn collects a platform commission fee on each completed booking. All commission fees collected by The Lawn are remitted to The Lawn's business PayPal account at thelawnservice@gmail.com. Landscapers receive the agreed service amount minus the applicable platform commission. Commission rates are displayed at the time of booking confirmation.
 
 8. CANCELLATION POLICY
 Cancellations made more than 24 hours before a scheduled appointment are free of charge. Cancellations within 24 hours of the appointment may incur a cancellation fee set by the Landscaper. No-shows may be charged the full service price.
@@ -68,7 +70,7 @@ Any disputes arising out of or related to these Terms will be resolved through b
 The Lawn may update these Terms at any time. Continued use of the app after changes constitutes acceptance of the new Terms.
 
 14. CONTACT
-For questions about these Terms, contact us at legal@thelawn.app`;
+For questions about these Terms, contact us at TheLawnService@gmail.com`;
 
 const PRIVACY_CONTENT = `Last updated: April 7, 2026
 
@@ -126,7 +128,7 @@ We retain your data for as long as your account is active or as needed to provid
 We may update this Privacy Policy from time to time. We will notify you of significant changes through the app or via email.
 
 10. CONTACT
-For privacy questions or data requests, contact us at privacy@thelawn.app`;
+For privacy questions or data requests, contact us at TheLawnService@gmail.com`;
 
 export default function TermsModal({ visible, docType, onClose }: Props) {
   const insets = useSafeAreaInsets();
