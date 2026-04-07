@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
+import TermsModal from "@/components/TermsModal";
 
 const PAYMENT_METHODS = [
   { label: "🍎  Apple Pay", value: "Apple Pay",  emoji: "🍎", shortLabel: "Apple Pay" },
@@ -115,6 +116,7 @@ function LandscaperProfile({
 }) {
   const [focusedCell, setFocusedCell] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "loading" | "success">("idle");
+  const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
   const successOpacity = useRef(new Animated.Value(0)).current;
   const successScale = useRef(new Animated.Value(0.8)).current;
 
@@ -281,6 +283,33 @@ function LandscaperProfile({
       >
         <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile</Text>
       </TouchableOpacity>
+
+      <View style={styles.legalCard}>
+        <Text style={[styles.legalCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Legal</Text>
+        <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
+          <Ionicons name="document-text-outline" size={18} color="#AAAAAA" />
+          <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Terms of Service</Text>
+          <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+        </TouchableOpacity>
+        <View style={styles.legalDivider} />
+        <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
+          <Ionicons name="shield-checkmark-outline" size={18} color="#AAAAAA" />
+          <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Privacy Policy</Text>
+          <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+        </TouchableOpacity>
+        <View style={styles.legalDivider} />
+        <Text style={[styles.legalDisclaimer, { fontFamily: "Inter_400Regular" }]}>
+          The Lawn is a marketplace platform. All services are performed by independent contractors. The Lawn is not liable for damages, injuries, or disputes arising from booked services.
+        </Text>
+      </View>
+
+      {termsDoc && (
+        <TermsModal
+          visible={true}
+          docType={termsDoc}
+          onClose={() => setTermsDoc(null)}
+        />
+      )}
     </>
   );
 }
@@ -290,6 +319,7 @@ function CustomerProfile() {
   const [selectedPayment, setSelectedPayment] = useState("");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
   const [error, setError] = useState(false);
+  const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
   const successOpacity = useRef(new Animated.Value(0)).current;
   const successScale = useRef(new Animated.Value(0.8)).current;
 
@@ -430,10 +460,37 @@ function CustomerProfile() {
         <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile Settings</Text>
       </TouchableOpacity>
 
+      <View style={styles.legalCard}>
+        <Text style={[styles.legalCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Legal</Text>
+        <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
+          <Ionicons name="document-text-outline" size={18} color="#AAAAAA" />
+          <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Terms of Service</Text>
+          <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+        </TouchableOpacity>
+        <View style={styles.legalDivider} />
+        <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
+          <Ionicons name="shield-checkmark-outline" size={18} color="#AAAAAA" />
+          <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Privacy Policy</Text>
+          <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+        </TouchableOpacity>
+        <View style={styles.legalDivider} />
+        <Text style={[styles.legalDisclaimer, { fontFamily: "Inter_400Regular" }]}>
+          The Lawn is a marketplace platform. All services are performed by independent contractors. The Lawn is not liable for damages, injuries, or disputes arising from booked services.
+        </Text>
+      </View>
+
       <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.75}>
         <Ionicons name="log-out-outline" size={18} color="#ef4444" />
         <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Sign Out</Text>
       </TouchableOpacity>
+
+      {termsDoc && (
+        <TermsModal
+          visible={true}
+          docType={termsDoc}
+          onClose={() => setTermsDoc(null)}
+        />
+      )}
     </>
   );
 }
@@ -703,5 +760,35 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.55)",
     textAlign: "center",
     lineHeight: 22,
+  },
+  legalCard: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  legalCardTitle: {
+    fontSize: 13,
+    color: "#AAAAAA",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginBottom: 14,
+  },
+  legalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 10,
+  },
+  legalRowText: { fontSize: 14, color: "#FFFFFF", flex: 1 },
+  legalDivider: { height: 1, backgroundColor: "#2A2A2A", marginVertical: 2 },
+  legalDisclaimer: {
+    fontSize: 11,
+    color: "#555",
+    lineHeight: 17,
+    marginTop: 10,
   },
 });

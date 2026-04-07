@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/auth";
+import TermsModal from "@/components/TermsModal";
 
 type Step =
   | "welcome"
@@ -58,6 +59,7 @@ export default function LoginScreen() {
 
   const topPad = isWeb ? 60 : insets.top + 20;
   const botPad = isWeb ? 40 : insets.bottom + 20;
+  const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
 
   function go(role: "customer" | "landscaper") {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -115,6 +117,7 @@ export default function LoginScreen() {
   // ── Welcome ────────────────────────────────────────────────────
   if (step === "welcome") {
     return (
+      <>
       <View style={[styles.container, { paddingTop: isWeb ? 60 : insets.top, paddingBottom: isWeb ? 40 : insets.bottom }]}>
         <View style={styles.logoSection}>
           <Image
@@ -143,7 +146,23 @@ export default function LoginScreen() {
         </View>
 
         <Text style={[styles.demoNote, { fontFamily: "Inter_400Regular" }]}>Demo mode – tap to continue</Text>
+
+        <View style={styles.consentRow}>
+          <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}>By continuing you agree to our </Text>
+          <TouchableOpacity onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
+            <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Terms</Text>
+          </TouchableOpacity>
+          <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}> and </Text>
+          <TouchableOpacity onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
+            <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {termsDoc && (
+        <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
+      )}
+      </>
     );
   }
 
@@ -218,6 +237,7 @@ export default function LoginScreen() {
   // ── Customer Registration ──────────────────────────────────────
   if (step === "customer-register") {
     return (
+      <>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#0A0A0A" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.formHeader}>
@@ -258,13 +278,28 @@ export default function LoginScreen() {
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleCustomerRegister} activeOpacity={0.88}>
             <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Account</Text>
           </TouchableOpacity>
+          <View style={[styles.consentRow, { marginTop: 16 }]}>
+            <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}>By registering you agree to our </Text>
+            <TouchableOpacity onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
+              <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Terms</Text>
+            </TouchableOpacity>
+            <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}> & </Text>
+            <TouchableOpacity onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
+              <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Privacy Policy</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {termsDoc && (
+        <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
+      )}
+    </>
     );
   }
 
   // ── Landscaper Registration ────────────────────────────────────
   return (
+    <>
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#0A0A0A" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.formHeader}>
@@ -319,8 +354,22 @@ export default function LoginScreen() {
         <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleLandscaperRegister} activeOpacity={0.88}>
           <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Landscaper Account</Text>
         </TouchableOpacity>
+        <View style={[styles.consentRow, { marginTop: 16 }]}>
+          <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}>By registering you agree to our </Text>
+          <TouchableOpacity onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
+            <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Terms</Text>
+          </TouchableOpacity>
+          <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}> & </Text>
+          <TouchableOpacity onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
+            <Text style={[styles.consentLink, { fontFamily: "Inter_500Medium" }]}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    {termsDoc && (
+      <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
+    )}
+    </>
   );
 }
 
@@ -423,4 +472,14 @@ const styles = StyleSheet.create({
   specialtyChipText: { fontSize: 13, color: "#FFFFFF" },
   specialtyChipTextActive: { color: "#34FF7A" },
 
+  consentRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 8,
+    paddingHorizontal: 8,
+  },
+  consentText: { fontSize: 12, color: "rgba(255,255,255,0.4)" },
+  consentLink: { fontSize: 12, color: "#34FF7A", textDecorationLine: "underline" },
 });
