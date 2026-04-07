@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
+import { useJobs } from "@/contexts/jobs";
 
 const CUSTOMER_UPCOMING = [
   {
@@ -97,12 +98,14 @@ export default function AppointmentsScreen() {
   const isLandscaper = role === "landscaper";
 
   const [cancelledIds, setCancelledIds] = useState<string[]>([]);
+  const { acceptedJobs, cancelAccepted } = useJobs();
 
   const visibleScheduled = LANDSCAPER_SCHEDULED.filter(
     (a) => !cancelledIds.includes(a.id)
   );
 
   if (isLandscaper) {
+    const totalJobs = acceptedJobs.length + visibleScheduled.length;
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
@@ -118,7 +121,72 @@ export default function AppointmentsScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {visibleScheduled.length === 0 ? (
+          {/* ── Live accepted jobs (from accepting requests) ── */}
+          {acceptedJobs.length > 0 && (
+            <>
+              <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>
+                Recently Accepted
+              </Text>
+              {acceptedJobs.map((job) => (
+                <View key={job.id} style={[styles.lsCard, styles.newJobCard]}>
+                  <View style={styles.newJobBadge}>
+                    <Text style={[styles.newJobBadgeText, { fontFamily: "Inter_700Bold" }]}>NEW</Text>
+                  </View>
+                  <View style={styles.lsTopRow}>
+                    <View style={styles.lsServiceBadge}>
+                      <Ionicons name="leaf" size={14} color="#34FF7A" />
+                      <Text style={[styles.lsServiceText, { fontFamily: "Inter_600SemiBold" }]}>{job.service}</Text>
+                    </View>
+                    <Text style={[styles.lsBudget, { fontFamily: "Inter_700Bold" }]}>{job.budget}</Text>
+                  </View>
+                  <View style={styles.lsMetaRow}>
+                    <Ionicons name="calendar-outline" size={13} color="#555" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium" }]}>{job.date} at {job.time}</Text>
+                    <Text style={styles.metaDot}>·</Text>
+                    <Ionicons name="resize-outline" size={13} color="#555" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>{job.size} yard</Text>
+                  </View>
+                  <View style={styles.lsMetaRow}>
+                    <Ionicons name="person-outline" size={13} color="#555" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>{job.customer}</Text>
+                    {job.distance && (
+                      <>
+                        <Text style={styles.metaDot}>·</Text>
+                        <Ionicons name="location-outline" size={13} color="#555" />
+                        <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>{job.distance}</Text>
+                      </>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    style={styles.cancelBtn}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      Alert.alert(
+                        "Cancel Appointment?",
+                        `Cancel ${job.service} with ${job.customer} on ${job.date}?`,
+                        [
+                          { text: "Keep", style: "cancel" },
+                          { text: "Cancel Job", style: "destructive", onPress: () => cancelAccepted(job.id) },
+                        ]
+                      );
+                    }}
+                  >
+                    <Text style={[styles.cancelBtnText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </>
+          )}
+
+          {/* ── Pre-scheduled jobs ── */}
+          {visibleScheduled.length > 0 && (
+            <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }, acceptedJobs.length > 0 && { marginTop: 8 }]}>
+              Scheduled
+            </Text>
+          )}
+
+          {totalJobs === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={40} color="#333" />
               <Text style={[styles.emptyText, { fontFamily: "Inter_500Medium" }]}>
@@ -320,6 +388,30 @@ const styles = StyleSheet.create({
   emptyState: { paddingVertical: 80, alignItems: "center", gap: 10 },
   emptyText: { fontSize: 16, color: "#555" },
   emptySub: { fontSize: 13, color: "#444" },
+
+  sectionLabel: {
+    fontSize: 11,
+    color: "#AAAAAA",
+    textTransform: "uppercase",
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  newJobCard: {
+    borderColor: "#34FF7A33",
+    borderWidth: 1.5,
+    position: "relative",
+  },
+  newJobBadge: {
+    position: "absolute",
+    top: -1,
+    right: 14,
+    backgroundColor: "#34FF7A",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8,
+  },
+  newJobBadgeText: { fontSize: 10, color: "#000", letterSpacing: 0.8 },
 
   // Landscaper card
   lsCard: {

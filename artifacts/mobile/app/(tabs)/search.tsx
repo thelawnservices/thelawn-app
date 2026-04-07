@@ -17,6 +17,7 @@ import { Ionicons, Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
+import { useJobs } from "@/contexts/jobs";
 
 const FILTERS = ["All", "Lawn Mowing", "Hedge Trimming", "Mulching", "Cleanup"];
 
@@ -116,6 +117,7 @@ export default function SearchScreen() {
   const [sortIdx, setSortIdx] = useState(0);
   const [showSort, setShowSort] = useState(false);
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
+  const { acceptJob } = useJobs();
   const [customerTab, setCustomerTab] = useState<"find" | "requests">("find");
   const [myRequests, setMyRequests] = useState(MY_REQUESTS);
   const [showNewReqModal, setShowNewReqModal] = useState(false);
@@ -197,7 +199,21 @@ export default function SearchScreen() {
                   onPress={() => {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     setAcceptedIds((prev) => [...prev, req.id]);
-                    Alert.alert("Request Accepted!", `You accepted ${req.customer}'s ${req.service} job for ${req.date} at ${req.time}.`);
+                    acceptJob({
+                      id: req.id,
+                      service: req.service,
+                      size: req.size,
+                      customer: req.customer,
+                      date: req.date,
+                      time: req.time,
+                      budget: req.budget,
+                      distance: req.distance,
+                      zip: req.zip,
+                    });
+                    Alert.alert(
+                      "✅ Request Accepted!",
+                      `${req.customer}'s ${req.service} job (${req.date} at ${req.time}) has been added to your Appointments.`
+                    );
                   }}
                 >
                   <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>Accept Job</Text>
