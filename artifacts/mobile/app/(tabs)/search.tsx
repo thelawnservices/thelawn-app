@@ -125,6 +125,7 @@ export default function SearchScreen() {
   const [newReqService, setNewReqService] = useState("");
   const [newReqSize, setNewReqSize] = useState("");
   const [newReqNotes, setNewReqNotes] = useState("");
+  const [newReqBudget, setNewReqBudget] = useState("");
   const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
 
   const filtered = PROS.filter((p) => {
@@ -353,6 +354,23 @@ export default function SearchScreen() {
                 textAlignVertical="top"
               />
 
+              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>
+                Your Budget / Amount Willing to Pay{" "}
+                <Text style={{ color: "#ef4444" }}>*</Text>
+              </Text>
+              <View style={styles.budgetInputRow}>
+                <Text style={[styles.budgetDollar, { fontFamily: "Inter_700Bold" }]}>$</Text>
+                <TextInput
+                  style={[styles.budgetInput, { fontFamily: "Inter_500Medium" }]}
+                  placeholder="85"
+                  placeholderTextColor="#444"
+                  keyboardType="decimal-pad"
+                  value={newReqBudget}
+                  onChangeText={setNewReqBudget}
+                  returnKeyType="done"
+                />
+              </View>
+
               <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Attach Photos (optional)</Text>
               <TouchableOpacity
                 style={styles.uploadZone}
@@ -403,22 +421,29 @@ export default function SearchScreen() {
                   const today = new Date();
                   const futureDate = new Date(today.setDate(today.getDate() + 3));
                   const label = futureDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                  const budgetLabel = newReqBudget.trim() ? `$${parseFloat(newReqBudget).toFixed(0)}` : undefined;
                   setMyRequests((prev) => [
-                    { id: `mq${Date.now()}`, service: newReqService, size: newReqSize, date: label, time: "TBD", status: "pending" },
+                    { id: `mq${Date.now()}`, service: newReqService, size: newReqSize, date: label, time: "TBD", status: "pending", offerPrice: budgetLabel ? parseFloat(newReqBudget) : undefined },
                     ...prev,
                   ]);
                   setNewReqService("");
                   setNewReqSize("");
                   setNewReqNotes("");
+                  setNewReqBudget("");
                   setNewReqPhotos([]);
                   setShowNewReqModal(false);
-                  Alert.alert("Request Submitted!", "Landscapers in your area will review your request and send offers.");
+                  Alert.alert(
+                    "Request Submitted!",
+                    budgetLabel
+                      ? `Budget: ${budgetLabel} · Landscapers in your area will review and send offers.`
+                      : "Landscapers in your area will review your request and send offers."
+                  );
                 }}
               >
                 <Text style={[styles.modalSubmitText, { fontFamily: "Inter_600SemiBold" }]}>Submit Request</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => {
-                setNewReqService(""); setNewReqSize(""); setNewReqNotes(""); setNewReqPhotos([]);
+                setNewReqService(""); setNewReqSize(""); setNewReqNotes(""); setNewReqBudget(""); setNewReqPhotos([]);
                 setShowNewReqModal(false);
               }}>
                 <Text style={[styles.modalCancelText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
@@ -978,6 +1003,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#FFFFFF",
     minHeight: 100,
+  },
+  budgetInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#161616",
+    borderWidth: 1,
+    borderColor: "#222222",
+    borderRadius: 22,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    marginBottom: 16,
+    gap: 10,
+  },
+  budgetDollar: {
+    fontSize: 30,
+    color: "#34FF7A",
+  },
+  budgetInput: {
+    flex: 1,
+    fontSize: 30,
+    color: "#FFFFFF",
   },
   uploadZone: {
     borderWidth: 2,
