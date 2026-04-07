@@ -74,6 +74,23 @@ const PROS = [
 
 const SORT_OPTIONS = ["Recommended", "Closest", "Highest Rated"];
 
+type RequestStatus = "pending" | "offered" | "accepted" | "declined";
+
+const MY_REQUESTS: {
+  id: string;
+  service: string;
+  size: string;
+  date: string;
+  time: string;
+  status: RequestStatus;
+  offerPrice?: number;
+  pro?: string;
+}[] = [
+  { id: "mq1", service: "Lawn Mowing", size: "Medium", date: "Apr 14", time: "9:00 AM", status: "pending" },
+  { id: "mq2", service: "Hedge Trimming", size: "Small", date: "Apr 15", time: "11:00 AM", status: "offered", offerPrice: 75, pro: "John Rivera" },
+  { id: "mq3", service: "Clean Up", size: "Small", date: "Apr 10", time: "10:00 AM", status: "declined" },
+];
+
 const SERVICE_REQUESTS = [
   { id: "r1", service: "Lawn Mowing", size: "Medium", customer: "Alex T.", distance: "1.2 mi", zip: "34221", date: "Apr 14", time: "9:00 AM", budget: "$65" },
   { id: "r2", service: "Hedge Trimming", size: "Small", customer: "Maria K.", distance: "2.4 mi", zip: "34222", date: "Apr 15", time: "11:00 AM", budget: "$55" },
@@ -92,6 +109,8 @@ export default function SearchScreen() {
   const [sortIdx, setSortIdx] = useState(0);
   const [showSort, setShowSort] = useState(false);
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
+  const [customerTab, setCustomerTab] = useState<"find" | "requests">("find");
+  const [myRequests, setMyRequests] = useState(MY_REQUESTS);
 
   const filtered = PROS.filter((p) => {
     const matchesQuery =
@@ -184,25 +203,142 @@ export default function SearchScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>
-          Find Landscapers
+          {customerTab === "find" ? "Find Landscapers" : "My Requests"}
         </Text>
-        <View style={styles.searchBar}>
-          <Feather name="search" size={16} color="#555" />
-          <TextInput
-            style={[styles.searchInput, { fontFamily: "Inter_400Regular" }]}
-            placeholder="Search by name, service, or location..."
-            placeholderTextColor="#555"
-            value={query}
-            onChangeText={setQuery}
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")}>
-              <Ionicons name="close-circle" size={18} color="#555" />
-            </TouchableOpacity>
-          )}
+
+        {/* Inner tab toggle */}
+        <View style={styles.innerTabRow}>
+          <TouchableOpacity
+            style={[styles.innerTab, customerTab === "find" && styles.innerTabActive]}
+            onPress={() => { setCustomerTab("find"); Haptics.selectionAsync(); }}
+          >
+            <Text style={[styles.innerTabText, { fontFamily: "Inter_500Medium" }, customerTab === "find" && styles.innerTabTextActive]}>
+              Find Pros
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.innerTab, customerTab === "requests" && styles.innerTabActive]}
+            onPress={() => { setCustomerTab("requests"); Haptics.selectionAsync(); }}
+          >
+            <Text style={[styles.innerTabText, { fontFamily: "Inter_500Medium" }, customerTab === "requests" && styles.innerTabTextActive]}>
+              My Requests
+            </Text>
+            {myRequests.some((r) => r.status === "offered") && (
+              <View style={styles.notifDot} />
+            )}
+          </TouchableOpacity>
         </View>
+
+        {customerTab === "find" && (
+          <View style={styles.searchBar}>
+            <Feather name="search" size={16} color="#555" />
+            <TextInput
+              style={[styles.searchInput, { fontFamily: "Inter_400Regular" }]}
+              placeholder="Search by name, service, or location..."
+              placeholderTextColor="#555"
+              value={query}
+              onChangeText={setQuery}
+            />
+            {query.length > 0 && (
+              <TouchableOpacity onPress={() => setQuery("")}>
+                <Ionicons name="close-circle" size={18} color="#555" />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
       </View>
 
+      {/* My Requests view */}
+      {customerTab === "requests" && (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 12 }}>
+          {myRequests.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="clipboard-outline" size={40} color="#333" />
+              <Text style={[styles.emptyText, { fontFamily: "Inter_500Medium" }]}>No requests yet</Text>
+              <Text style={[styles.emptySubText, { fontFamily: "Inter_400Regular" }]}>Find a landscaper and book a service</Text>
+            </View>
+          ) : (
+            myRequests.map((req) => {
+              const isOffered = req.status === "offered";
+              const isDeclined = req.status === "declined";
+              const isAccepted = req.status === "accepted";
+              return (
+                <View key={req.id} style={[styles.myReqCard, isDeclined && styles.myReqCardFaded]}>
+                  <View style={styles.reqTopRow}>
+                    <View style={styles.reqServiceBadge}>
+                      <Ionicons name="leaf" size={14} color="#34FF7A" />
+                      <Text style={[styles.reqServiceText, { fontFamily: "Inter_600SemiBold" }]}>{req.service}</Text>
+                    </View>
+                    <View style={[
+                      styles.statusPill,
+                      isOffered && styles.statusPillOffered,
+                      isDeclined && styles.statusPillDeclined,
+                      isAccepted && styles.statusPillAccepted,
+                    ]}>
+                      <Text style={[
+                        styles.statusPillText,
+                        { fontFamily: "Inter_600SemiBold" },
+                        isOffered && { color: "#000" },
+                        isDeclined && { color: "#ff6b6b" },
+                        isAccepted && { color: "#34FF7A" },
+                      ]}>
+                        {isOffered ? "Offer Received" : isDeclined ? "Declined" : isAccepted ? "Accepted" : "Pending..."}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.reqMeta}>
+                    <Ionicons name="calendar-outline" size={13} color="#555" />
+                    <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.date} at {req.time}</Text>
+                    <Text style={styles.metaDot}>·</Text>
+                    <Ionicons name="resize-outline" size={13} color="#555" />
+                    <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.size} yard</Text>
+                  </View>
+
+                  {isOffered && req.pro && (
+                    <View style={styles.offerBox}>
+                      <View style={styles.offerBoxLeft}>
+                        <Text style={[styles.offerLabel, { fontFamily: "Inter_400Regular" }]}>Offer from {req.pro}</Text>
+                        <Text style={[styles.offerPrice, { fontFamily: "Inter_700Bold" }]}>${req.offerPrice}</Text>
+                      </View>
+                      <View style={styles.offerActions}>
+                        <TouchableOpacity
+                          style={styles.acceptOfferBtn}
+                          activeOpacity={0.85}
+                          onPress={() => {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            setMyRequests((prev) =>
+                              prev.map((r) => r.id === req.id ? { ...r, status: "accepted" as RequestStatus } : r)
+                            );
+                            Alert.alert("Offer Accepted!", `${req.pro} will arrive on ${req.date} at ${req.time}.`);
+                          }}
+                        >
+                          <Text style={[styles.acceptOfferText, { fontFamily: "Inter_600SemiBold" }]}>Accept</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.declineOfferBtn}
+                          activeOpacity={0.8}
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            setMyRequests((prev) =>
+                              prev.map((r) => r.id === req.id ? { ...r, status: "declined" as RequestStatus } : r)
+                            );
+                          }}
+                        >
+                          <Text style={[styles.declineOfferText, { fontFamily: "Inter_500Medium" }]}>Decline</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+                </View>
+              );
+            })
+          )}
+        </ScrollView>
+      )}
+
+      {/* Find Pros view */}
+      {customerTab === "find" && (
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Filter Chips */}
         <ScrollView
@@ -345,6 +481,7 @@ export default function SearchScreen() {
           )}
         </View>
       </ScrollView>
+      )}
     </View>
   );
 }
@@ -479,6 +616,79 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   bookBtnText: { color: "#000", fontSize: 15 },
+  innerTabRow: {
+    flexDirection: "row",
+    backgroundColor: "#111111",
+    borderRadius: 22,
+    padding: 4,
+    marginBottom: 12,
+    gap: 4,
+  },
+  innerTab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 9,
+    borderRadius: 18,
+    gap: 5,
+  },
+  innerTabActive: { backgroundColor: "#1A1A1A" },
+  innerTabText: { fontSize: 13, color: "#555" },
+  innerTabTextActive: { color: "#FFFFFF" },
+  notifDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "#34FF7A",
+  },
+  myReqCard: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 22,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#222222",
+    gap: 10,
+    marginBottom: 12,
+  },
+  myReqCardFaded: { opacity: 0.55 },
+  statusPill: {
+    backgroundColor: "#222",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  statusPillOffered: { backgroundColor: "#34FF7A" },
+  statusPillDeclined: { backgroundColor: "#2d0a0a" },
+  statusPillAccepted: { backgroundColor: "#0d2e18" },
+  statusPillText: { fontSize: 11, color: "#888" },
+  offerBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#0d2e18",
+    borderRadius: 18,
+    padding: 14,
+    marginTop: 2,
+  },
+  offerBoxLeft: { gap: 2 },
+  offerLabel: { fontSize: 12, color: "#AAAAAA" },
+  offerPrice: { fontSize: 22, color: "#FFFFFF" },
+  offerActions: { flexDirection: "row", gap: 8 },
+  acceptOfferBtn: {
+    backgroundColor: "#34FF7A",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  acceptOfferText: { fontSize: 13, color: "#000" },
+  declineOfferBtn: {
+    backgroundColor: "#222",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  declineOfferText: { fontSize: 13, color: "#888" },
   reqSubtitle: { fontSize: 13, color: "#AAAAAA", marginTop: 4 },
   reqCard: {
     backgroundColor: "#1A1A1A",
