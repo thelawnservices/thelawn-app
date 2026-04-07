@@ -70,6 +70,9 @@ export default function LoginScreen() {
   const [years, setYears] = useState("");
   const [paymentPref, setPaymentPref] = useState("");
 
+  // Role selection modal
+  const [showRoleModal, setShowRoleModal] = useState(false);
+
   // Forgot / verify
   const [showForgot, setShowForgot] = useState(false);
   const [forgotInput, setForgotInput] = useState("");
@@ -197,11 +200,11 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <View style={styles.welcomeRegisterBlock}>
-            <TouchableOpacity onPress={() => setStep("customer-register")} activeOpacity={0.7}>
-              <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? Register here</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setStep("landscaper-register")} activeOpacity={0.7} style={{ marginTop: 20 }}>
-              <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? Register here</Text>
+            <TouchableOpacity onPress={() => setShowRoleModal(true)} activeOpacity={0.7}>
+              <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>
+                Don't have an account?{" "}
+                <Text style={{ color: "#34FF7A" }}>Register here</Text>
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -224,6 +227,12 @@ export default function LoginScreen() {
       {termsDoc && (
         <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
       )}
+      <RoleSelectionModal
+        visible={showRoleModal}
+        onSelectCustomer={() => { setShowRoleModal(false); setStep("customer-register"); }}
+        onSelectLandscaper={() => { setShowRoleModal(false); setStep("landscaper-register"); }}
+        onClose={() => setShowRoleModal(false)}
+      />
       </>
     );
   }
@@ -313,7 +322,7 @@ export default function LoginScreen() {
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleCustomerLogin} activeOpacity={0.88}>
             <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setStep("customer-register")} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => setShowRoleModal(true)} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
             <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? <Text style={{ color: "#34FF7A" }}>Register here</Text></Text>
           </TouchableOpacity>
         </ScrollView>
@@ -325,6 +334,12 @@ export default function LoginScreen() {
         onChangeValue={setForgotInput}
         onSend={handleSendForgotCode}
         onClose={() => { setShowForgot(false); setForgotInput(""); }}
+      />
+      <RoleSelectionModal
+        visible={showRoleModal}
+        onSelectCustomer={() => { setShowRoleModal(false); setStep("customer-register"); }}
+        onSelectLandscaper={() => { setShowRoleModal(false); setStep("landscaper-register"); }}
+        onClose={() => setShowRoleModal(false)}
       />
       </>
     );
@@ -370,7 +385,7 @@ export default function LoginScreen() {
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleLandscaperLogin} activeOpacity={0.88}>
             <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setStep("landscaper-register")} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => setShowRoleModal(true)} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
             <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? <Text style={{ color: "#34FF7A" }}>Register here</Text></Text>
           </TouchableOpacity>
         </ScrollView>
@@ -382,6 +397,12 @@ export default function LoginScreen() {
         onChangeValue={setForgotInput}
         onSend={handleSendForgotCode}
         onClose={() => { setShowForgot(false); setForgotInput(""); }}
+      />
+      <RoleSelectionModal
+        visible={showRoleModal}
+        onSelectCustomer={() => { setShowRoleModal(false); setStep("customer-register"); }}
+        onSelectLandscaper={() => { setShowRoleModal(false); setStep("landscaper-register"); }}
+        onClose={() => setShowRoleModal(false)}
       />
       </>
     );
@@ -551,6 +572,93 @@ function ErrorBanner({ message }: { message: string }) {
     </View>
   );
 }
+
+function RoleSelectionModal({
+  visible,
+  onSelectCustomer,
+  onSelectLandscaper,
+  onClose,
+}: {
+  visible: boolean;
+  onSelectCustomer: () => void;
+  onSelectLandscaper: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={rsStyles.backdrop}>
+        <View style={rsStyles.sheet}>
+          <Text style={[rsStyles.title, { fontFamily: "Inter_700Bold" }]}>
+            What kind of account are you creating?
+          </Text>
+
+          <TouchableOpacity style={rsStyles.primaryBtn} onPress={onSelectCustomer} activeOpacity={0.88}>
+            <Text style={[rsStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>I'm a Customer</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={rsStyles.outlineBtn} onPress={onSelectLandscaper} activeOpacity={0.88}>
+            <Text style={[rsStyles.outlineBtnText, { fontFamily: "Inter_600SemiBold" }]}>I'm a Landscaper / Business</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={onClose} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
+            <Text style={[rsStyles.cancelText, { fontFamily: "Inter_400Regular" }]}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const rsStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  sheet: {
+    width: "100%",
+    backgroundColor: "#161616",
+    borderRadius: 28,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: "#222222",
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 22,
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 28,
+    lineHeight: 30,
+  },
+  primaryBtn: {
+    width: "100%",
+    backgroundColor: "#34FF7A",
+    paddingVertical: 18,
+    borderRadius: 22,
+    alignItems: "center",
+    marginBottom: 14,
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  primaryBtnText: { color: "#000", fontSize: 17 },
+  outlineBtn: {
+    width: "100%",
+    paddingVertical: 18,
+    borderRadius: 22,
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#34FF7A",
+    backgroundColor: "transparent",
+  },
+  outlineBtnText: { color: "#FFFFFF", fontSize: 17 },
+  cancelText: { color: "#888888", fontSize: 14 },
+});
 
 function ForgotModal({
   visible,
