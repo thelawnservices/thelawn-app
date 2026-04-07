@@ -1128,7 +1128,7 @@ export default function HomeScreen() {
           return (
             <>
               <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-                Pending Requests Near You
+                Pending Requests Within 50 Miles
               </Text>
               {visible.length === 0 ? (
                 <View style={styles.pendingEmptyBox}>
@@ -1226,6 +1226,10 @@ export default function HomeScreen() {
 
         {/* Horizontal Trusted Landscapers — customers only */}
         {role !== "landscaper" && (
+          <>
+          <Text style={[styles.sectionSubtitle, { fontFamily: "Inter_400Regular" }]}>
+            Recommended Landscapers Near You (within 25 miles)
+          </Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -1273,6 +1277,7 @@ export default function HomeScreen() {
               })
             )}
           </ScrollView>
+          </>
         )}
 
 
@@ -1537,6 +1542,7 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 20, color: "#FFFFFF" },
   statLabel: { fontSize: 11, color: "#FFFFFF" },
   sectionTitle: { fontSize: 17, color: "#FFFFFF", marginBottom: 12 },
+  sectionSubtitle: { fontSize: 12, color: "#666666", marginBottom: 10, marginTop: -4 },
   appointmentCard: {
     backgroundColor: "#1A1A1A",
     borderRadius: 20,

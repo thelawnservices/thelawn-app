@@ -70,6 +70,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="requests"
+        options={{
+          title: "Requests",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="mail-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="jobs"
         options={{
           title: "My Jobs",

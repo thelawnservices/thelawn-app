@@ -52,6 +52,41 @@ const SHARED_COMPLETED_JOBS = [
   },
 ];
 
+const SERVICE_HISTORY = [
+  {
+    id: "h1",
+    service: "Lawn Mowing",
+    customer: "Zamire Smith",
+    landscaper: "GreenScape Pros",
+    date: "Apr 7, 2026",
+    amount: "$65.00",
+  },
+  {
+    id: "h2",
+    service: "Hedge Trimming",
+    customer: "Marcus T.",
+    landscaper: "GreenScape Pros",
+    date: "Mar 28, 2026",
+    amount: "$55.00",
+  },
+  {
+    id: "h3",
+    service: "Mulching",
+    customer: "Alex T.",
+    landscaper: "GreenScape Pros",
+    date: "Mar 15, 2026",
+    amount: "$135.00",
+  },
+  {
+    id: "h4",
+    service: "Lawn Mowing",
+    customer: "Priya N.",
+    landscaper: "GreenScape Pros",
+    date: "Feb 22, 2026",
+    amount: "$52.00",
+  },
+];
+
 const STATUS_STEPS: { key: JobStatus; label: string }[] = [
   { key: "arrived", label: "Arrived" },
   { key: "started", label: "Work Started" },
@@ -304,6 +339,40 @@ export default function JobsScreen() {
             </View>
           ))
         )}
+
+        {/* ── Service History ─────────────────────────────────── */}
+        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 12 }]}>
+          Service History
+        </Text>
+
+        {SERVICE_HISTORY.map((entry) => (
+          <View key={entry.id} style={styles.historyCard}>
+            <View style={styles.historyIconCol}>
+              <View style={styles.historyIconWrap}>
+                <Ionicons name="leaf" size={14} color="#34FF7A" />
+              </View>
+              <View style={styles.historyLine} />
+            </View>
+            <View style={styles.historyBody}>
+              <View style={styles.historyTopRow}>
+                <Text style={[styles.historyService, { fontFamily: "Inter_600SemiBold" }]}>{entry.service}</Text>
+                <Text style={[styles.historyAmount, { fontFamily: "Inter_600SemiBold" }]}>{entry.amount}</Text>
+              </View>
+              <Text style={[styles.historyPerson, { fontFamily: "Inter_400Regular" }]}>
+                {isLandscaper ? entry.customer : entry.landscaper}
+              </Text>
+              <Text style={[styles.historyDate, { fontFamily: "Inter_400Regular" }]}>{entry.date}</Text>
+            </View>
+          </View>
+        ))}
+
+        {/* All sales are final notice */}
+        <View style={styles.finalSaleNotice}>
+          <Ionicons name="information-circle-outline" size={14} color="#555" />
+          <Text style={[styles.finalSaleText, { fontFamily: "Inter_400Regular" }]}>
+            All sales are final. No refunds after completion confirmation.
+          </Text>
+        </View>
       </ScrollView>
 
       <ChatModal
@@ -420,6 +489,64 @@ const styles = StyleSheet.create({
 
   emptyRow: { paddingVertical: 24, alignItems: "center" },
   emptyText: { fontSize: 14, color: "#555" },
+
+  historyCard: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 2,
+  },
+  historyIconCol: {
+    alignItems: "center",
+    width: 28,
+  },
+  historyIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#0d2e18",
+    borderWidth: 1,
+    borderColor: "#34FF7A33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  historyLine: {
+    flex: 1,
+    width: 1,
+    backgroundColor: "#222222",
+    marginTop: 4,
+    marginBottom: -8,
+  },
+  historyBody: {
+    flex: 1,
+    paddingBottom: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1C1C1C",
+  },
+  historyTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  historyService: { fontSize: 14, color: "#FFFFFF" },
+  historyAmount: { fontSize: 14, color: "#34FF7A" },
+  historyPerson: { fontSize: 12, color: "#888888", marginBottom: 2 },
+  historyDate: { fontSize: 11, color: "#555555" },
+
+  finalSaleNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 20,
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  finalSaleText: {
+    fontSize: 11,
+    color: "#555555",
+    flex: 1,
+    lineHeight: 16,
+  },
 });
 
 const chatStyles = StyleSheet.create({
