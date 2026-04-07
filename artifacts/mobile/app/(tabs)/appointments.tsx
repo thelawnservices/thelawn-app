@@ -121,7 +121,7 @@ export default function AppointmentsScreen() {
                 ))}
               </View>
             </View>
-            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+            <Ionicons name="checkmark-circle" size={20} color="#34FF7A" />
           </TouchableOpacity>
         ))}
       </ScrollView>

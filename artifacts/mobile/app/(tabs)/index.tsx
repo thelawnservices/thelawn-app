@@ -558,7 +558,7 @@ const settStyles = StyleSheet.create({
     marginBottom: 14,
   },
   primaryBtn: {
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
     paddingVertical: 16,
     borderRadius: 28,
     alignItems: "center",
@@ -614,7 +614,7 @@ function PaymentMethodModal({ visible, onClose }: { visible: boolean; onClose: (
               style={[pmStyles.option, saved === opt.id && pmStyles.optionSelected]}
             >
               <Text style={[pmStyles.optionText, { fontFamily: "Inter_500Medium" }]}>{opt.label}</Text>
-              {saved === opt.id && <Ionicons name="checkmark-circle" size={20} color="#10B981" />}
+              {saved === opt.id && <Ionicons name="checkmark-circle" size={20} color="#34FF7A" />}
             </TouchableOpacity>
           ))}
         </Pressable>
@@ -636,7 +636,7 @@ const pmStyles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 10,
   },
-  optionSelected: { borderColor: "#10B981" },
+  optionSelected: { borderColor: "#34FF7A" },
   optionText: { fontSize: 15, color: "#FFFFFF" },
 });
 
@@ -832,7 +832,7 @@ const avStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#333333",
   },
-  dayChipActive: { backgroundColor: "#10B981", borderColor: "#10B981" },
+  dayChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   dayChipText: { fontSize: 13, color: "#AAAAAA" },
   dayChipTextActive: { color: "#000000" },
   timesRow: { flexDirection: "row", gap: 12 },
@@ -1068,7 +1068,7 @@ export default function HomeScreen() {
               activeOpacity={0.8}
             >
               <View style={styles.svcGridIconWrap}>
-                <Ionicons name={svc.icon} size={28} color="#10B981" />
+                <Ionicons name={svc.icon} size={28} color="#34FF7A" />
               </View>
               <Text style={[styles.svcGridName, { fontFamily: "Inter_500Medium" }]}>
                 {svc.name}
@@ -1093,7 +1093,7 @@ export default function HomeScreen() {
           activeOpacity={0.8}
         >
           <View style={styles.apptIcon}>
-            <Ionicons name="leaf" size={22} color="#10B981" />
+            <Ionicons name="leaf" size={22} color="#34FF7A" />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
@@ -1103,7 +1103,7 @@ export default function HomeScreen() {
               April 12 • 10:30 AM • John Rivera
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#10B981" />
+          <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
         </TouchableOpacity>
 
         {/* Quick Stats — staggered entrance */}
@@ -1137,7 +1137,7 @@ export default function HomeScreen() {
                   activeOpacity={0.8}
                 >
                   <View style={styles.proHIconWrap}>
-                    <Ionicons name={pro.icon} size={26} color="#10B981" />
+                    <Ionicons name={pro.icon} size={26} color="#34FF7A" />
                   </View>
                   <Text style={[styles.proHName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
                     {pro.name}
@@ -1201,7 +1201,7 @@ const styles = StyleSheet.create({
   logoImg: {
     height: 68,
     width: 248,
-    shadowColor: "#10B981",
+    shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -1292,7 +1292,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   svcGridName: { fontSize: 10, color: "#FFFFFF", textAlign: "center", lineHeight: 14 },
-  svcGridPrice: { fontSize: 11, color: "#10B981", textAlign: "center" },
+  svcGridPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
   svcGridUpdated: { fontSize: 9, color: "#555555", textAlign: "center", marginTop: 1 },
   proRow: { marginTop: 20, marginBottom: 24, marginHorizontal: -20 },
   proRowContent: { paddingHorizontal: 20, gap: 12 },
@@ -1319,13 +1319,13 @@ const styles = StyleSheet.create({
   trustedBadge: {
     backgroundColor: "#0d2e18",
     borderWidth: 1,
-    borderColor: "#10B981",
+    borderColor: "#34FF7A",
     borderRadius: 20,
     paddingHorizontal: 7,
     paddingVertical: 3,
     alignSelf: "flex-start",
   },
-  trustedBadgeText: { fontSize: 10, color: "#10B981" },
+  trustedBadgeText: { fontSize: 10, color: "#34FF7A" },
   skeletonCard: {
     width: 160,
     height: 160,
@@ -1368,11 +1368,11 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 11,
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
-    shadowColor: "#10B981",
+    shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -1399,9 +1399,9 @@ const styles = StyleSheet.create({
     borderColor: "#333333",
     backgroundColor: "#1a1a1a",
   },
-  notifTogglePillOn: { backgroundColor: "#0d2e18", borderColor: "#10B981" },
+  notifTogglePillOn: { backgroundColor: "#0d2e18", borderColor: "#34FF7A" },
   notifToggleText: { fontSize: 11, color: "#666666" },
-  notifToggleTextOn: { color: "#10B981" },
+  notifToggleTextOn: { color: "#34FF7A" },
   notifList: { gap: 12 },
   notifItem: {
     flexDirection: "row",
@@ -1443,7 +1443,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
   },
   offlineDot: { backgroundColor: "#FF3B30" },
   onlinePillText: { color: "#FFFFFF", fontSize: 11 },
@@ -1482,13 +1482,13 @@ const pushStyles = StyleSheet.create({
     marginBottom: 28,
   },
   allowBtn: {
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
     width: "100%",
     paddingVertical: 20,
     borderRadius: 28,
     alignItems: "center",
     marginBottom: 12,
-    shadowColor: "#10B981",
+    shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,

@@ -155,7 +155,7 @@ export default function JobsScreen() {
               </View>
               {appt.note && (
                 <View style={styles.notePill}>
-                  <Ionicons name="image-outline" size={12} color="#10B981" />
+                  <Ionicons name="image-outline" size={12} color="#34FF7A" />
                   <Text style={[styles.noteText, { fontFamily: "Inter_400Regular" }]}>{appt.note}</Text>
                 </View>
               )}
@@ -165,7 +165,7 @@ export default function JobsScreen() {
       ) : (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconBox}>
-            <Ionicons name="location-outline" size={44} color="#10B981" />
+            <Ionicons name="location-outline" size={44} color="#34FF7A" />
           </View>
           <Text style={[styles.emptyTitle, { fontFamily: "Inter_600SemiBold" }]}>No active jobs yet</Text>
           <Text style={[styles.emptySub, { fontFamily: "Inter_400Regular" }]}>
@@ -218,14 +218,14 @@ const styles = StyleSheet.create({
   },
   trackingTitle: { fontSize: 14, color: "#FFFFFF", flex: 1 },
   statusPill: {
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 20,
   },
-  statusPillComplete: { backgroundColor: "#0d2e18", borderWidth: 1, borderColor: "#10B981" },
+  statusPillComplete: { backgroundColor: "#0d2e18", borderWidth: 1, borderColor: "#34FF7A" },
   statusPillText: { fontSize: 11, color: "#000000" },
-  statusPillTextComplete: { color: "#10B981" },
+  statusPillTextComplete: { color: "#34FF7A" },
   trackingMeta: { fontSize: 12, color: "#888888" },
 
   actionRow: { flexDirection: "row", gap: 8, marginTop: 4 },
@@ -238,13 +238,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#10B981",
+    borderColor: "#34FF7A",
   },
   actionBtnDone: {
-    backgroundColor: "#10B981",
-    borderColor: "#10B981",
+    backgroundColor: "#34FF7A",
+    borderColor: "#34FF7A",
   },
-  actionBtnText: { fontSize: 11, color: "#10B981", textAlign: "center" },
+  actionBtnText: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
   actionBtnTextDone: { color: "#000000" },
 
   apptCard: {
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
   },
-  noteText: { fontSize: 12, color: "#10B981" },
+  noteText: { fontSize: 12, color: "#34FF7A" },
 
   emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 36, gap: 12, paddingBottom: 60 },
   emptyIconBox: { width: 80, height: 80, backgroundColor: "#0d2e18", borderRadius: 24, alignItems: "center", justifyContent: "center", marginBottom: 8 },

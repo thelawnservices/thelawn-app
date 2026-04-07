@@ -152,7 +152,7 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.formHeader}>
             <TouchableOpacity onPress={() => navBack("welcome")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="chevron-back" size={26} color="#10B981" />
+              <Ionicons name="chevron-back" size={26} color="#34FF7A" />
             </TouchableOpacity>
             <Text style={[styles.formTitle, { fontFamily: "Inter_700Bold" }]}>Sign in as Customer</Text>
             <View style={{ width: 26 }} />
@@ -182,7 +182,7 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.formHeader}>
             <TouchableOpacity onPress={() => navBack("welcome")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="chevron-back" size={26} color="#10B981" />
+              <Ionicons name="chevron-back" size={26} color="#34FF7A" />
             </TouchableOpacity>
             <Text style={[styles.formTitle, { fontFamily: "Inter_700Bold" }]}>Sign in as Landscaper</Text>
             <View style={{ width: 26 }} />
@@ -220,7 +220,7 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.formHeader}>
             <TouchableOpacity onPress={() => navBack("welcome")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="chevron-back" size={26} color="#10B981" />
+              <Ionicons name="chevron-back" size={26} color="#34FF7A" />
             </TouchableOpacity>
             <Text style={[styles.formTitle, { fontFamily: "Inter_700Bold" }]}>Customer Registration</Text>
             <View style={{ width: 26 }} />
@@ -264,7 +264,7 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <View style={styles.formHeader}>
           <TouchableOpacity onPress={() => navBack("welcome")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="chevron-back" size={26} color="#10B981" />
+            <Ionicons name="chevron-back" size={26} color="#34FF7A" />
           </TouchableOpacity>
           <Text style={[styles.formTitle, { fontFamily: "Inter_700Bold" }]}>Landscaper Registration</Text>
           <View style={{ width: 26 }} />
@@ -356,16 +356,16 @@ const errStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A", justifyContent: "center", paddingHorizontal: 28 },
   logoSection: { alignItems: "center", marginBottom: 56 },
-  logo: { fontSize: 72, color: "#10B981", letterSpacing: -4 },
+  logo: { fontSize: 72, color: "#34FF7A", letterSpacing: -4 },
   logoImg: { width: 525, height: 210 },
   buttonsSection: { gap: 10, marginBottom: 40 },
   dividerGap: { height: 10 },
   primaryBtn: {
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
     paddingVertical: 20,
     borderRadius: 28,
     alignItems: "center",
-    shadowColor: "#10B981",
+    shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#10B981",
+    borderColor: "#34FF7A",
   },
   outlineBtnText: { color: "#FFFFFF", fontSize: 17 },
   passkeyBtn: {
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   passkeyBtnText: { color: "#FFFFFF", fontSize: 15 },
-  registerLink: { textAlign: "center", fontSize: 12, color: "#10B981", textDecorationLine: "underline" },
+  registerLink: { textAlign: "center", fontSize: 12, color: "#34FF7A", textDecorationLine: "underline" },
   demoNote: { textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.4)" },
 
   formScroll: { paddingHorizontal: 24 },
@@ -420,8 +420,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
   },
-  specialtyChipActive: { backgroundColor: "#0d2e18", borderColor: "#10B981" },
+  specialtyChipActive: { backgroundColor: "#0d2e18", borderColor: "#34FF7A" },
   specialtyChipText: { fontSize: 13, color: "#FFFFFF" },
-  specialtyChipTextActive: { color: "#10B981" },
+  specialtyChipTextActive: { color: "#34FF7A" },
 
 });

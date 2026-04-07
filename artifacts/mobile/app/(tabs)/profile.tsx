@@ -140,7 +140,7 @@ function LandscaperProfile({
     <>
       <View style={styles.avatarRow}>
         <View style={styles.avatarBox}>
-          <Ionicons name="leaf" size={40} color="#10B981" />
+          <Ionicons name="leaf" size={40} color="#34FF7A" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>
@@ -203,9 +203,9 @@ function LandscaperProfile({
                     const isFocused = focusedCell === cellKey;
                     return (
                       <View style={[styles.priceInputWrapper, isFocused && styles.priceInputWrapperFocused]}>
-                        <Text style={[styles.priceDollar, isFocused && { color: "#10B981" }]}>$</Text>
+                        <Text style={[styles.priceDollar, isFocused && { color: "#34FF7A" }]}>$</Text>
                         <TextInput
-                          style={[styles.priceInput, { fontFamily: "Inter_600SemiBold" }, isFocused && { color: "#10B981" }]}
+                          style={[styles.priceInput, { fontFamily: "Inter_600SemiBold" }, isFocused && { color: "#34FF7A" }]}
                           value={matrix[svc][col.key]}
                           onChangeText={(t) =>
                             setMatrix((m) => ({
@@ -246,7 +246,7 @@ function LandscaperProfile({
           </TouchableOpacity>
         ) : (
           <Animated.View style={[styles.successBox, { opacity: successOpacity, transform: [{ scale: successScale }] }]}>
-            <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+            <Ionicons name="checkmark-circle" size={32} color="#34FF7A" />
             <Text style={[styles.savedMsg, { fontFamily: "Inter_600SemiBold" }]}>
               Prices saved!
             </Text>
@@ -324,7 +324,7 @@ function CustomerProfile() {
     <>
       <View style={styles.avatarRow}>
         <View style={styles.avatarBox}>
-          <Ionicons name="person" size={40} color="#10B981" />
+          <Ionicons name="person" size={40} color="#34FF7A" />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>Zamire Smith</Text>
@@ -407,7 +407,7 @@ function CustomerProfile() {
           </TouchableOpacity>
         ) : (
           <Animated.View style={[styles.successBox, { opacity: successOpacity, transform: [{ scale: successScale }] }]}>
-            <Ionicons name="checkmark-circle" size={32} color="#10B981" />
+            <Ionicons name="checkmark-circle" size={32} color="#34FF7A" />
             <Text style={[styles.savedMsg, { fontFamily: "Inter_600SemiBold" }]}>
               Payment method saved successfully!
             </Text>
@@ -452,9 +452,9 @@ const picStyles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
     borderWidth: 3,
-    borderColor: "#10B981",
+    borderColor: "#34FF7A",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -462,7 +462,7 @@ const picStyles = StyleSheet.create({
   avatarEmoji: { fontSize: 40 },
   nameCol: { flex: 1, gap: 6 },
   displayName: { fontSize: 18, color: "#FFFFFF" },
-  changeLink: { fontSize: 14, color: "#10B981" },
+  changeLink: { fontSize: 14, color: "#34FF7A" },
 });
 
 const styles = StyleSheet.create({
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  togglePillText: { fontSize: 12, color: "#10B981" },
+  togglePillText: { fontSize: 12, color: "#34FF7A" },
   toggleIcon: { fontSize: 14 },
   scroll: { padding: 20, paddingBottom: 48 },
   avatarRow: {
@@ -506,13 +506,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#10B981",
+    borderColor: "#34FF7A",
   },
   proName: { fontSize: 18, color: "#FFFFFF", marginBottom: 2 },
   proSub: { fontSize: 12, color: "#FFFFFF", marginBottom: 6 },
   starsRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   stars: { color: "#f59e0b", fontSize: 14 },
-  proRating: { fontSize: 12, color: "#10B981" },
+  proRating: { fontSize: 12, color: "#34FF7A" },
   card: {
     backgroundColor: "#1A1A1A",
     borderRadius: 20,
@@ -558,12 +558,12 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   paymentTileActive: {
-    borderColor: "#10B981",
+    borderColor: "#34FF7A",
     backgroundColor: "#0d2e18",
   },
   paymentTileEmoji: { fontSize: 26 },
   paymentTileLabel: { fontSize: 11, color: "#FFFFFF", textAlign: "center" },
-  paymentTileLabelActive: { color: "#10B981" },
+  paymentTileLabelActive: { color: "#34FF7A" },
   paymentCardError: { borderColor: "#ef4444" },
   errorMsg: { fontSize: 12, color: "#ef4444", marginTop: 6, marginBottom: 2 },
   priceCard: {
@@ -598,9 +598,9 @@ const styles = StyleSheet.create({
   },
   priceInputWrapperFocused: {
     backgroundColor: "#1a1a1a",
-    borderColor: "#10B981",
+    borderColor: "#34FF7A",
   },
-  priceDollar: { fontSize: 18, color: "#10B981", fontWeight: "600" },
+  priceDollar: { fontSize: 18, color: "#34FF7A", fontWeight: "600" },
   priceInput: {
     fontSize: 18,
     color: "#FFFFFF",
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   savePricesBtn: {
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
     paddingVertical: 15,
     borderRadius: 20,
     alignItems: "center",
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   savePricesBtnLoading: { opacity: 0.8 },
   savePricesBtnText: { color: "#000", fontSize: 15 },
   savePaymentBtn: {
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
     paddingVertical: 13,
     borderRadius: 20,
     alignItems: "center",
@@ -627,9 +627,9 @@ const styles = StyleSheet.create({
   savePaymentBtnLoading: { opacity: 0.8 },
   savePaymentText: { color: "#000", fontSize: 14 },
   successBox: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 14, paddingVertical: 6 },
-  savedMsg: { fontSize: 14, color: "#10B981" },
+  savedMsg: { fontSize: 14, color: "#34FF7A" },
   editBtn: {
-    backgroundColor: "#10B981",
+    backgroundColor: "#34FF7A",
     paddingVertical: 16,
     borderRadius: 24,
     alignItems: "center",
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     alignSelf: "flex-start",
   },
-  apptNoteText: { fontSize: 11, color: "#10B981" },
+  apptNoteText: { fontSize: 11, color: "#34FF7A" },
   sectionLabelSmall: {
     fontSize: 11,
     color: "#AAAAAA",
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
   priceCol: { flex: 1, alignItems: "center", gap: 3 },
   priceColLabel: { fontSize: 12, color: "#AAAAAA" },
   priceColSub: { fontSize: 10, color: "#555555" },
-  priceColValue: { fontSize: 18, color: "#10B981", marginTop: 4 },
+  priceColValue: { fontSize: 18, color: "#34FF7A", marginTop: 4 },
   bookingInfoBox: {
     marginBottom: 24,
     alignItems: "center",
