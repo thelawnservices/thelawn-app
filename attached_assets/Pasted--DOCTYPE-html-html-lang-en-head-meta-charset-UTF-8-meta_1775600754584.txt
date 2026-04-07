@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Lawn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+    body { font-family: 'Montserrat', system-ui, sans-serif; background: #050505; color: #F8F8F8; font-size: 16px; }
+    .iphone { max-width: 390px; transition: all 0.4s ease; }
+    .header { background: linear-gradient(90deg, #050505, #111111); box-shadow: 0 4px 20px rgba(0,0,0,0.6); height: 78px; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #111111; border-top: 1px solid #222222; max-width: 390px; margin: 0 auto; box-shadow: 0 -4px 20px rgba(0,0,0,0.6); }
+    .nav-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .nav-item.active { color: #34FF7A; }
+    .card { background: #161616; border: 1px solid #222222; box-shadow: 0 10px 30px -10px rgba(52, 255, 122, 0.15); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 15px 35px -10px rgba(52, 255, 122, 0.25); }
+    button, .btn-hover { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    button:active, .btn-hover:active { transform: scale(0.94); }
+    .micro-tap:active { transform: scale(0.92) !important; }
+
+    .preview-thumb { position: relative; overflow: hidden; border-radius: 20px; border: 1px solid #222222; }
+    .preview-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0; filter: blur(8px); transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .preview-thumb.loaded img { opacity: 1; filter: blur(0); }
+    .preview-skeleton { position: absolute; inset: 0; background: linear-gradient(90deg, #222222 25%, #2a2a2a 50%, #222222 75%); background-size: 300% 100%; animation: shimmer 1.4s linear infinite; display: flex; align-items: center; justify-content: center; color: #34FF7A; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .preview-stagger { animation: staggerPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+    .compression-badge { position: absolute; bottom: 6px; right: 6px; font-size: 9px; background: #34FF7A; color: #000; padding: 2px 7px; border-radius: 9999px; font-weight: 700; z-index: 10; }
+
+    .upload-zone { border: 2px dashed #34FF7A; border-radius: 24px; transition: all 0.3s ease; }
+    .upload-zone:hover { border-color: #22C55E; background: rgba(52, 255, 122, 0.05); }
+
+    .request-textarea { background: #161616; border: 1px solid #222222; border-radius: 20px; padding: 16px; font-size: 15px; line-height: 1.5; resize: vertical; min-height: 110px; transition: all 0.2s ease; }
+    .request-textarea:focus { border-color: #34FF7A; box-shadow: 0 0 0 3px rgba(52, 255, 122, 0.2); outline: none; }
+
+    .passkey-modal { animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .chat-modal { animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+    .app-logo-header { height: 68px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 12px rgba(52,255,122,0.45)); margin: 0 auto; }
+    .app-logo-login { height: 210px; width: auto; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(52,255,122,0.45)); margin-bottom: 32px; }
+  </style>
+</head>
+<body>
+
+  <div id="preview-container" class="iphone bg-[#050505] shadow-2xl relative">
+
+    <!-- HEADER -->
+    <div class="header h-14 flex items-center px-5 text-white relative">
+      <div class="flex-1"></div>
+      <img src="https://grok.x.ai/generated/1qQDY" alt="theLawn" class="app-logo-header">
+      <div class="flex-1"></div>
+      <svg onclick="toggleNotifications()" class="w-8 h-8 cursor-pointer micro-tap mr-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-9-5.197V8.5m.002 3.5L3 19" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 17h-2a1 1 0 01-1-1v-1a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1z" />
+      </svg>
+      <div onclick="toggleProfileDropdown()" id="profile-icon" class="w-9 h-9 bg-[#34FF7A] text-black rounded-2xl flex items-center justify-center text-xl font-bold cursor-pointer micro-tap ring-2 ring-[#34FF7A]/30 overflow-hidden">👤</div>
+    </div>
+
+    <!-- MY REQUESTS SCREEN – Updated with custom price input -->
+    <div id="my-requests-screen" class="hidden space-y-8 bg-[#050505]">
+      <div class="px-5 pt-4">
+        <h1 class="text-3xl font-semibold text-white">My Requests</h1>
+      </div>
+
+      <!-- Request New Service Card – Now includes custom price field -->
+      <div onclick="if(event.target.tagName!=='INPUT' && event.target.tagName!=='TEXTAREA') startNewRequest()" class="mx-5 card rounded-3xl p-6 cursor-pointer btn-hover">
+        <div class="flex items-center justify-center text-center mb-6">
+          <div>
+            <div class="text-5xl mb-3">📬</div>
+            <p class="font-semibold text-xl">Request New Service</p>
+            <p class="text-sm text-white/70">Can’t find landscaping service? Request here!</p>
+          </div>
+        </div>
+
+        <!-- Service Type -->
+        <div class="mb-6">
+          <p class="text-xs text-white/70 mb-3">Service Type</p>
+          <div class="grid grid-cols-2 gap-3">
+            <button onclick="selectServiceType(this)" data-type="Lawn Mowing" class="service-type-btn bg-[#222222] text-white py-3 rounded-3xl text-sm font-medium">Lawn Mowing</button>
+            <button onclick="selectServiceType(this)" data-type="Hedge Trimming" class="service-type-btn bg-[#222222] text-white py-3 rounded-3xl text-sm font-medium">Hedge Trimming</button>
+            <button onclick="selectServiceType(this)" data-type="Mulching" class="service-type-btn bg-[#222222] text-white py-3 rounded-3xl text-sm font-medium">Mulching</button>
+            <button onclick="selectServiceType(this)" data-type="Clean Up" class="service-type-btn bg-[#34FF7A] text-black py-3 rounded-3xl text-sm font-medium">Clean Up</button>
+          </div>
+        </div>
+
+        <!-- Yard Size -->
+        <div class="mb-6">
+          <p class="text-xs text-white/70 mb-3">Yard Size</p>
+          <div class="grid grid-cols-3 gap-3">
+            <button onclick="selectYardSize(this)" data-size="Small" class="yard-size-btn bg-[#222222] text-white py-3 rounded-3xl text-sm font-medium">Small</button>
+            <button onclick="selectYardSize(this)" data-size="Medium" class="yard-size-btn bg-[#222222] text-white py-3 rounded-3xl text-sm font-medium">Medium</button>
+            <button onclick="selectYardSize(this)" data-size="Large" class="yard-size-btn bg-[#222222] text-white py-3 rounded-3xl text-sm font-medium">Large</button>
+          </div>
+        </div>
+
+        <!-- Specific Needs -->
+        <div class="mb-6">
+          <p class="text-xs text-white/70 mb-2">Specific Needs / Instructions</p>
+          <textarea id="new-request-specific-needs" rows="3" class="request-textarea w-full" placeholder="Describe exactly what you need..."></textarea>
+        </div>
+
+        <!-- NEW: Custom Amount Willing to Pay -->
+        <div class="mb-6">
+          <p class="text-xs text-white/70 mb-2">Your Budget / Amount Willing to Pay *</p>
+          <div class="flex items-center bg-[#161616] border border-[#222222] rounded-3xl px-5 py-4">
+            <span class="text-[#34FF7A] text-3xl mr-3">$</span>
+            <input id="customer-budget-input" type="number" placeholder="85" class="flex-1 bg-transparent text-white text-3xl outline-none font-medium">
+          </div>
+        </div>
+
+        <!-- Attach Photos -->
+        <div class="upload-zone p-6 text-center" onclick="document.getElementById('request-file-upload').click()">
+          <p class="text-xs text-white/70 mb-1">Attach Photos (optional)</p>
+          <p class="text-xs text-[#34FF7A] font-medium">Up to 5 photos • Progressive loading active</p>
+          <div class="mt-4 flex flex-col items-center">
+            <span class="text-5xl">📸</span>
+            <p class="text-sm font-medium mt-2">Tap to attach photos</p>
+          </div>
+          <input type="file" id="request-file-upload" accept="image/*" multiple class="hidden" onchange="handleRequestFileUpload(event)">
+        </div>
+        <div id="request-file-preview" class="flex gap-3 mt-6 flex-wrap"></div>
+      </div>
+
+      <!-- List of customer’s requests -->
+      <div class="px-5">
+        <p class="text-xs text-white/70 mb-3">Your Requests</p>
+        <div id="customer-requests-list" class="space-y-4"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav h-16 flex items-center justify-around text-xs font-medium text-[#A1A1A1]">
+      <div onclick="switchTab(0)" class="nav-item flex flex-col items-center active"><div class="text-3xl">🌿</div><div>Home</div></div>
+      <div onclick="switchTab(1)" class="nav-item flex flex-col items-center"><div class="text-3xl">🔍</div><div>Search</div></div>
+      <div onclick="switchTab(2)" class="nav-item flex flex-col items-center"><div class="text-3xl">📅</div><div>Appointments</div></div>
+      <div onclick="switchTab(5)" class="nav-item flex flex-col items-center"><div class="text-3xl">📬</div><div>Requests</div></div>
+      <div onclick="switchTab(3)" class="nav-item flex flex-col items-center"><div class="text-3xl">📌</div><div>My Jobs</div></div>
+    </div>
+
+  </div>
+
+  <script>
+    let db = { 
+      users: {}, 
+      jobs: [], 
+      requests: [], 
+      notifications: [], 
+      reviews: [],
+      servicePhotos: [],
+      landscaperPrices: {} 
+    };
+    let currentUserType = null;
+    let currentUser = null;
+    let currentRequestFiles = [];
+    let currentChatJobId = null;
+    let selectedServiceType = null;
+    let selectedYardSize = null;
+
+    function loadDB() { const saved = localStorage.getItem('thelawn_db'); if(saved) db = JSON.parse(saved); }
+    function saveDB() { localStorage.setItem('thelawn_db', JSON.stringify(db)); }
+
+    function startNewRequest() {
+      const specificNeeds = document.getElementById('new-request-specific-needs').value.trim();
+      const budget = parseFloat(document.getElementById('customer-budget-input').value) || 0;
+
+      if (!selectedServiceType || !selectedYardSize || budget <= 0) {
+        alert("Please select service type, yard size, and enter your budget amount.");
+        return;
+      }
+
+      // Create the request with customer's custom price
+      const newRequest = {
+        id: Date.now(),
+        customer: currentUser.first + " " + currentUser.last,
+        service: selectedServiceType,
+        yardSize: selectedYardSize,
+        description: specificNeeds,
+        customerPrice: budget,
+        status: "Pending",
+        address: currentUser.address || "Unknown",
+        date: "Flexible",
+        time: "Anytime"
+      };
+      db.requests.push(newRequest);
+      saveDB();
+
+      alert(`✅ Request submitted!\nService: ${selectedServiceType}\nBudget: $${budget}\nWaiting for landscaper acceptance.`);
+
+      // Reset form
+      document.getElementById('new-request-specific-needs').value = '';
+      document.getElementById('customer-budget-input').value = '';
+      document.getElementById('request-file-preview').innerHTML = '';
+      currentRequestFiles = [];
+      selectedServiceType = null;
+      selectedYardSize = null;
+
+      updateMyRequestsScreen();
+    }
+
+    function selectServiceType(btn) {
+      document.querySelectorAll('.service-type-btn').forEach(b => b.classList.remove('bg-[#34FF7A]', 'text-black'));
+      btn.classList.add('bg-[#34FF7A]', 'text-black');
+      selectedServiceType = btn.dataset.type;
+    }
+
+    function selectYardSize(btn) {
+      document.querySelectorAll('.yard-size-btn').forEach(b => b.classList.remove('bg-[#34FF7A]', 'text-black'));
+      btn.classList.add('bg-[#34FF7A]', 'text-black');
+      selectedYardSize = btn.dataset.size;
+    }
+
+    function updateMyRequestsScreen() {
+      const container = document.getElementById('customer-requests-list');
+      const myRequests = db.requests.filter(r => r.customer === (currentUser.first + " " + currentUser.last));
+      let html = '';
+      if (myRequests.length) {
+        html = myRequests.map(r => `
+          <div class="card rounded-3xl p-5">
+            <p class="font-medium">${r.service}</p>
+            <p class="text-xs text-white/70">${r.yardSize} yard • $${r.customerPrice}</p>
+            <p class="text-xs text-white/70">${r.description}</p>
+            <p class="text-[#34FF7A] text-sm mt-2">${r.status}</p>
+          </div>
+        `).join('');
+      } else {
+        html = `<p class="text-white/50 text-center py-8">No requests yet.</p>`;
+      }
+      container.innerHTML = html;
+    }
+
+    window.onload = () => {
+      loadDB();
+      console.log("%c✅ The Lawn – Customer request form now includes custom 'Amount Willing to Pay' field. Price is honored on acceptance 🌱", "color:#34FF7A;font-weight:bold");
+    };
+  </script>
+</body>
+</html>

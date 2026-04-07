@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   Image,
+  Linking,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -100,11 +101,11 @@ const MY_REQUESTS: {
 ];
 
 const SERVICE_REQUESTS = [
-  { id: "r1", service: "Lawn Mowing", size: "Medium", customer: "Alex T.", distance: "1.2 mi", zip: "34221", date: "Apr 14", time: "9:00 AM", budget: "$65" },
-  { id: "r2", service: "Hedge Trimming", size: "Small", customer: "Maria K.", distance: "2.4 mi", zip: "34222", date: "Apr 15", time: "11:00 AM", budget: "$55" },
-  { id: "r3", service: "Mulching", size: "Large", customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM", budget: "$180" },
-  { id: "r4", service: "Clean Up", size: "Small", customer: "Sarah B.", distance: "0.9 mi", zip: "34219", date: "Apr 17", time: "10:00 AM", budget: "$30" },
-  { id: "r5", service: "Lawn Mowing", size: "Large", customer: "James W.", distance: "4.5 mi", zip: "34211", date: "Apr 18", time: "7:30 AM", budget: "$120" },
+  { id: "r1", service: "Lawn Mowing", size: "Medium", customer: "Alex T.", distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible", budget: "$65", description: "Medium yard, front and back. Nothing special, straightforward job.", address: "8910 45th Ave E, Ellenton, FL" },
+  { id: "r2", service: "Hedge Trimming", size: "Small", customer: "Priya N.", distance: "3.1 mi", zip: "34208", date: "Apr 16", time: "Morning preferred", budget: "$55", description: "Small hedges along fence line. Should take about 1 hour.", address: "22 Palmetto Dr, Bradenton, FL" },
+  { id: "r3", service: "Mulching", size: "Large", customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM", budget: "$180", description: "Large backyard needs fresh mulch around all flower beds and trees.", address: "4400 53rd Ave E, Bradenton, FL" },
+  { id: "r4", service: "Clean Up", size: "Small", customer: "Sarah B.", distance: "0.9 mi", zip: "34219", date: "Apr 17", time: "10:00 AM", budget: "$30", description: "Light cleanup — leaves and debris in driveway and side yard.", address: "712 Riviera Dunes Way, Palmetto, FL" },
+  { id: "r5", service: "Lawn Mowing", size: "Large", customer: "James W.", distance: "4.5 mi", zip: "34211", date: "Apr 18", time: "7:30 AM", budget: "$120", description: "Large corner lot. Needs edging along sidewalk and driveway too.", address: "6021 Greenfield Way, Lakewood Ranch, FL" },
 ];
 
 export default function SearchScreen() {
@@ -152,14 +153,25 @@ export default function SearchScreen() {
 
   if (role === "landscaper") {
     const visibleRequests = SERVICE_REQUESTS.filter((r) => !acceptedIds.includes(r.id));
+
+    const openMaps = (address: string) => {
+      const encoded = encodeURIComponent(address);
+      const url = Platform.OS === "ios"
+        ? `maps://?q=${encoded}`
+        : `geo:0,0?q=${encoded}`;
+      Linking.openURL(url).catch(() =>
+        Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encoded}`)
+      );
+    };
+
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
           <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>
-            Service Requests Near You
+            Incoming Requests
           </Text>
           <Text style={[styles.reqSubtitle, { fontFamily: "Inter_400Regular" }]}>
-            Within 50 mi · ZIP 34222
+            Within 25 mi · ZIP 34222
           </Text>
         </View>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 12 }}>
@@ -179,16 +191,35 @@ export default function SearchScreen() {
                   </View>
                   <Text style={[styles.reqBudget, { fontFamily: "Inter_700Bold" }]}>{req.budget}</Text>
                 </View>
+
+                {req.description ? (
+                  <Text style={[styles.reqDescription, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
+                    {req.description}
+                  </Text>
+                ) : null}
+
+                <TouchableOpacity
+                  style={styles.reqAddressRow}
+                  activeOpacity={0.7}
+                  onPress={() => openMaps(req.address ?? "")}
+                >
+                  <Ionicons name="location" size={13} color="#34FF7A" />
+                  <Text style={[styles.reqAddressText, { fontFamily: "Inter_400Regular" }]} numberOfLines={1}>
+                    {req.address}
+                  </Text>
+                  <Ionicons name="open-outline" size={12} color="#34FF7A" />
+                </TouchableOpacity>
+
                 <View style={styles.reqMeta}>
                   <Ionicons name="resize-outline" size={13} color="#555" />
                   <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.size} yard</Text>
                   <Text style={styles.metaDot}>·</Text>
-                  <Ionicons name="location-outline" size={13} color="#555" />
+                  <Ionicons name="navigate-outline" size={13} color="#555" />
                   <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.distance} · ZIP {req.zip}</Text>
                 </View>
                 <View style={styles.reqMeta}>
                   <Ionicons name="calendar-outline" size={13} color="#555" />
-                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.date} at {req.time}</Text>
+                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.date} · {req.time}</Text>
                   <Text style={styles.metaDot}>·</Text>
                   <Ionicons name="person-outline" size={13} color="#555" />
                   <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.customer}</Text>
@@ -996,6 +1027,27 @@ const styles = StyleSheet.create({
   },
   reqServiceText: { fontSize: 14, color: "#34FF7A" },
   reqBudget: { fontSize: 20, color: "#FFFFFF" },
+  reqDescription: {
+    fontSize: 13,
+    color: "#AAAAAA",
+    lineHeight: 19,
+    marginBottom: 8,
+  },
+  reqAddressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#0d2e18",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginBottom: 8,
+  },
+  reqAddressText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#34FF7A",
+  },
   reqMeta: { flexDirection: "row", alignItems: "center", gap: 5 },
   reqMetaText: { fontSize: 13, color: "#AAAAAA" },
   acceptBtn: {
