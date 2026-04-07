@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#050505", justifyContent: "center", paddingHorizontal: 28 },
   logoSection: { alignItems: "center", marginBottom: 56 },
   logo: { fontSize: 72, color: "#22C55E", letterSpacing: -4 },
-  logoImg: { width: 420, height: 168 },
+  logoImg: { width: 525, height: 210 },
   buttonsSection: { gap: 10, marginBottom: 40 },
   dividerGap: { height: 10 },
   primaryBtn: {
