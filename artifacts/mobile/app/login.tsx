@@ -65,6 +65,7 @@ export default function LoginScreen() {
   const [lPassword, setLPassword] = useState("");
   const [lPhone, setLPhone] = useState("");
   const [specialty, setSpecialty] = useState("");
+  const [lCity, setLCity] = useState("");
   const [state, setState] = useState("");
   const [lZipCode, setLZipCode] = useState("");
   const [years, setYears] = useState("");
@@ -139,8 +140,8 @@ export default function LoginScreen() {
   }
 
   function handleLandscaperRegister() {
-    if (!lRegUsername.trim() || !businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !state.trim() || !lZipCode.trim() || !paymentPref) {
-      setErrors("Please fill all required fields including Username, Business Name, Email, Password, Phone, State, ZIP, and Payment Preference.");
+    if (!lRegUsername.trim() || !businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !lCity.trim() || !state.trim() || !lZipCode.trim() || !paymentPref) {
+      setErrors("Please fill all required fields including Username, Business Name, Email, Password, Phone, City, State, ZIP, and Payment Preference.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
@@ -512,12 +513,21 @@ export default function LoginScreen() {
             ))}
           </View>
         </Field>
-        <Field label="State">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={state} onChangeText={setState} placeholder="FL" placeholderTextColor="#555" autoCapitalize="characters" maxLength={2} />
+        <Field label="City (primary service area)">
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lCity} onChangeText={setLCity} placeholder="Ellenton" placeholderTextColor="#555" autoCapitalize="words" />
         </Field>
-        <Field label="ZIP Code (required)">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lZipCode} onChangeText={setLZipCode} placeholder="34222" placeholderTextColor="#555" keyboardType="numeric" maxLength={5} />
-        </Field>
+        <View style={styles.rowFields}>
+          <View style={{ flex: 1 }}>
+            <Field label="State">
+              <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={state} onChangeText={setState} placeholder="FL" placeholderTextColor="#555" autoCapitalize="characters" maxLength={2} />
+            </Field>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Field label="ZIP Code">
+              <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lZipCode} onChangeText={setLZipCode} placeholder="34222" placeholderTextColor="#555" keyboardType="numeric" maxLength={5} />
+            </Field>
+          </View>
+        </View>
         <Field label="Years of Experience">
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={setYears} placeholder="e.g. 5" placeholderTextColor="#555" keyboardType="numeric" maxLength={2} />
         </Field>

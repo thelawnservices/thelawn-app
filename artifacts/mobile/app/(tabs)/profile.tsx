@@ -107,7 +107,7 @@ export default function ProfileScreen() {
 
 // ── Landscaper Profile – Cut App Style ────────────────────────────────────────
 
-type LandscaperTab = "info" | "reviews" | "services";
+type LandscaperTab = "info" | "reviews" | "services" | "avail";
 type ReviewItem = { text: string; author: string; date: string; stars: number };
 
 function LandscaperProfile({
@@ -132,6 +132,68 @@ function LandscaperProfile({
   const [privVisible, setPrivVisible] = useState(true);
   const [privPrices, setPrivPrices] = useState(false);
   const [privReviews, setPrivReviews] = useState(true);
+
+  // Editable profile fields
+  const [editVisible, setEditVisible] = useState(false);
+  const [profileName, setProfileName] = useState("GreenScape Pros");
+  const [profileBio, setProfileBio] = useState("Professional landscaping services with over 10 years of experience. We specialize in lawn care, hedge trimming, mulching, and clean-up for residential properties.");
+  const [profileCity, setProfileCity] = useState("Ellenton");
+  const [profileState, setProfileState] = useState("FL");
+  const [profileZip, setProfileZip] = useState("34222");
+  // Draft fields used inside the edit modal
+  const [draftName, setDraftName] = useState(profileName);
+  const [draftBio, setDraftBio] = useState(profileBio);
+  const [draftCity, setDraftCity] = useState(profileCity);
+  const [draftState, setDraftState] = useState(profileState);
+  const [draftZip, setDraftZip] = useState(profileZip);
+
+  function openEdit() {
+    setDraftName(profileName);
+    setDraftBio(profileBio);
+    setDraftCity(profileCity);
+    setDraftState(profileState);
+    setDraftZip(profileZip);
+    setEditVisible(true);
+  }
+
+  function saveEdit() {
+    setProfileName(draftName.trim() || profileName);
+    setProfileBio(draftBio.trim() || profileBio);
+    setProfileCity(draftCity.trim() || profileCity);
+    setProfileState(draftState.trim() || profileState);
+    setProfileZip(draftZip.trim() || profileZip);
+    setEditVisible(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert("✅ Profile updated!");
+  }
+
+  // Availability
+  const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const [availDays, setAvailDays] = useState<Record<string, boolean>>({
+    Mon: true, Tue: true, Wed: true, Thu: true, Fri: true, Sat: true, Sun: false,
+  });
+  const [availStart, setAvailStart] = useState("8:00 AM");
+  const [availEnd, setAvailEnd] = useState("6:00 PM");
+  const [upcomingDates, setUpcomingDates] = useState<string[]>(["Apr 10, 2026", "Apr 14, 2026", "Apr 18, 2026"]);
+  const [newDateInput, setNewDateInput] = useState("");
+
+  function toggleDay(day: string) {
+    Haptics.selectionAsync();
+    setAvailDays((prev) => ({ ...prev, [day]: !prev[day] }));
+  }
+
+  function addDate() {
+    const d = newDateInput.trim();
+    if (!d) return;
+    setUpcomingDates((prev) => [...prev, d]);
+    setNewDateInput("");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
+  function removeDate(idx: number) {
+    Haptics.selectionAsync();
+    setUpcomingDates((prev) => prev.filter((_, i) => i !== idx));
+  }
   const [reviews, setReviews] = useState<ReviewItem[]>([
     { text: '"John did an amazing job on our yard – very professional and on time!"', author: "Sarah M.", date: "4 days ago", stars: 5 },
     { text: '"Reliable, on time, and the yard looks fantastic every time. Highly recommend."', author: "Marcus T.", date: "2 weeks ago", stars: 5 },
@@ -224,7 +286,7 @@ function LandscaperProfile({
         </TouchableOpacity>
 
         {/* Business name + badges + location — all centered */}
-        <Text style={[cutStyles.heroName, { fontFamily: "Inter_700Bold" }]}>GreenScape Pros</Text>
+        <Text style={[cutStyles.heroName, { fontFamily: "Inter_700Bold" }]}>{profileName}</Text>
         <View style={cutStyles.heroBadgeRow}>
           <View style={cutStyles.ratingPill}>
             <Text style={[cutStyles.ratingPillText, { fontFamily: "Inter_600SemiBold" }]}>★ 4.9</Text>
@@ -235,21 +297,32 @@ function LandscaperProfile({
           <Text style={[cutStyles.jobsText, { fontFamily: "Inter_400Regular" }]}>142 jobs</Text>
         </View>
         <Text style={[cutStyles.heroLocation, { fontFamily: "Inter_400Regular" }]}>
-          📍 Sarasota / Ellenton, FL
+          📍 {profileCity}, {profileState} {profileZip}
         </Text>
+
+        {/* Edit Profile button */}
+        <TouchableOpacity style={cutStyles.editProfileBtn} onPress={openEdit} activeOpacity={0.8}>
+          <Ionicons name="pencil-outline" size={14} color="#000" />
+          <Text style={[cutStyles.editProfileBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile</Text>
+        </TouchableOpacity>
       </View>
 
       {/* ── Tab Bar ─────────────────────────────────── */}
       <View style={cutStyles.tabBar}>
-        {(["info", "reviews", "services"] as LandscaperTab[]).map((tab) => (
+        {([
+          { key: "info", label: "INFO" },
+          { key: "reviews", label: "REVIEWS" },
+          { key: "services", label: "SERVICES" },
+          { key: "avail", label: "AVAIL" },
+        ] as { key: LandscaperTab; label: string }[]).map((tab) => (
           <TouchableOpacity
-            key={tab}
-            style={[cutStyles.tabItem, activeTab === tab && cutStyles.tabItemActive]}
-            onPress={() => { Haptics.selectionAsync(); setActiveTab(tab); }}
+            key={tab.key}
+            style={[cutStyles.tabItem, activeTab === tab.key && cutStyles.tabItemActive]}
+            onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.key); }}
             activeOpacity={0.7}
           >
-            <Text style={[cutStyles.tabText, { fontFamily: "Inter_600SemiBold" }, activeTab === tab && cutStyles.tabTextActive]}>
-              {tab.toUpperCase()}
+            <Text style={[cutStyles.tabText, { fontFamily: "Inter_600SemiBold" }, activeTab === tab.key && cutStyles.tabTextActive]}>
+              {tab.label}
             </Text>
           </TouchableOpacity>
         ))}
@@ -285,7 +358,7 @@ function LandscaperProfile({
             <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>ABOUT</Text>
             <View style={cutStyles.card}>
               <Text style={[cutStyles.aboutText, { fontFamily: "Inter_400Regular" }]}>
-                Professional landscaping services with over 10 years of experience. We specialize in lawn care, hedge trimming, mulching, and clean-up for residential properties in the Sarasota / Ellenton area.
+                {profileBio}
               </Text>
             </View>
 
@@ -301,25 +374,18 @@ function LandscaperProfile({
               </TouchableOpacity>
             </View>
 
-            {/* Address & Hours */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>ADDRESS & HOURS</Text>
+            {/* Service Area */}
+            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>SERVICE AREA</Text>
             <View style={cutStyles.card}>
-              <Text style={[cutStyles.addrName, { fontFamily: "Inter_600SemiBold" }]}>GreenScape Pros</Text>
-              <Text style={[cutStyles.addrLine, { fontFamily: "Inter_400Regular" }]}>4627 Hall's Mill Crossing · Ellenton, FL 34222</Text>
-              <View style={cutStyles.mapBox}>
-                <Text style={cutStyles.mapPin}>📍</Text>
-                <Text style={[cutStyles.mapText, { fontFamily: "Inter_400Regular" }]}>Interactive Map · Sarasota / Ellenton Area</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Text style={{ fontSize: 18 }}>📍</Text>
+                <Text style={[cutStyles.addrLine, { fontFamily: "Inter_500Medium", color: "#fff" }]}>
+                  {profileCity}, {profileState} {profileZip}
+                </Text>
               </View>
-              <View style={cutStyles.hoursGrid}>
-                <View style={cutStyles.hoursCell}>
-                  <Text style={[cutStyles.hoursDayText, { fontFamily: "Inter_400Regular" }]}>Monday – Saturday</Text>
-                  <Text style={[cutStyles.hoursTimeText, { fontFamily: "Inter_600SemiBold" }]}>8:00 AM – 6:00 PM</Text>
-                </View>
-                <View style={cutStyles.hoursCell}>
-                  <Text style={[cutStyles.hoursDayText, { fontFamily: "Inter_400Regular" }]}>Sunday</Text>
-                  <Text style={[cutStyles.hoursClosedText, { fontFamily: "Inter_500Medium" }]}>Closed</Text>
-                </View>
-              </View>
+              <Text style={[{ color: "#888", fontSize: 13, marginTop: 6 }, { fontFamily: "Inter_400Regular" }]}>
+                View your full availability schedule in the AVAIL tab.
+              </Text>
             </View>
 
             {/* Photos of our work */}
@@ -495,7 +561,149 @@ function LandscaperProfile({
           </>
         )}
 
+        {/* ── AVAIL TAB ── */}
+        {activeTab === "avail" && (
+          <>
+            {/* Days of the week */}
+            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>AVAILABLE DAYS</Text>
+            <View style={cutStyles.card}>
+              <View style={availStyles.daysRow}>
+                {DAYS.map((day) => (
+                  <TouchableOpacity
+                    key={day}
+                    style={[availStyles.dayChip, availDays[day] && availStyles.dayChipOn]}
+                    onPress={() => toggleDay(day)}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[availStyles.dayChipText, { fontFamily: "Inter_600SemiBold" }, availDays[day] && availStyles.dayChipTextOn]}>
+                      {day}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Hours */}
+            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>WORKING HOURS</Text>
+            <View style={cutStyles.card}>
+              <View style={availStyles.hoursRow}>
+                <View style={availStyles.hoursField}>
+                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_400Regular" }]}>Start Time</Text>
+                  <TextInput
+                    style={[availStyles.hoursInput, { fontFamily: "Inter_600SemiBold" }]}
+                    value={availStart}
+                    onChangeText={setAvailStart}
+                    placeholder="8:00 AM"
+                    placeholderTextColor="#555"
+                  />
+                </View>
+                <Text style={[availStyles.hoursSep, { fontFamily: "Inter_400Regular" }]}>to</Text>
+                <View style={availStyles.hoursField}>
+                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_400Regular" }]}>End Time</Text>
+                  <TextInput
+                    style={[availStyles.hoursInput, { fontFamily: "Inter_600SemiBold" }]}
+                    value={availEnd}
+                    onChangeText={setAvailEnd}
+                    placeholder="6:00 PM"
+                    placeholderTextColor="#555"
+                  />
+                </View>
+              </View>
+              <Text style={[{ color: "#888", fontSize: 12, marginTop: 8 }, { fontFamily: "Inter_400Regular" }]}>
+                These hours apply to all selected days above.
+              </Text>
+            </View>
+
+            {/* Upcoming available dates */}
+            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>UPCOMING AVAILABLE DATES</Text>
+            <View style={cutStyles.card}>
+              <View style={availStyles.addDateRow}>
+                <TextInput
+                  style={[availStyles.addDateInput, { fontFamily: "Inter_400Regular" }]}
+                  value={newDateInput}
+                  onChangeText={setNewDateInput}
+                  placeholder="e.g. Apr 20, 2026"
+                  placeholderTextColor="#555"
+                  onSubmitEditing={addDate}
+                  returnKeyType="done"
+                />
+                <TouchableOpacity style={availStyles.addDateBtn} onPress={addDate} activeOpacity={0.8}>
+                  <Ionicons name="add" size={20} color="#000" />
+                </TouchableOpacity>
+              </View>
+
+              {upcomingDates.length === 0 ? (
+                <Text style={[{ color: "#666", fontSize: 13, marginTop: 8 }, { fontFamily: "Inter_400Regular" }]}>
+                  No upcoming dates added yet.
+                </Text>
+              ) : (
+                upcomingDates.map((date, idx) => (
+                  <View key={idx} style={availStyles.dateRow}>
+                    <Ionicons name="calendar-outline" size={16} color="#34FF7A" />
+                    <Text style={[availStyles.dateText, { fontFamily: "Inter_500Medium" }]}>{date}</Text>
+                    <TouchableOpacity onPress={() => removeDate(idx)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="close-circle" size={18} color="#555" />
+                    </TouchableOpacity>
+                  </View>
+                ))
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={[availStyles.saveAvailBtn]}
+              onPress={() => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                Alert.alert("✅ Availability saved!", "Customers will see your updated schedule.");
+              }}
+              activeOpacity={0.85}
+            >
+              <Text style={[availStyles.saveAvailBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Availability</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
       </ScrollView>
+
+      {/* ── Edit Profile Modal ── */}
+      <Modal visible={editVisible} transparent animationType="slide" onRequestClose={() => setEditVisible(false)}>
+        <Pressable style={privModalStyles.overlay} onPress={() => setEditVisible(false)}>
+          <Pressable style={[privModalStyles.sheet, { maxHeight: "85%" }]} onPress={(e) => e.stopPropagation()}>
+            <View style={privModalStyles.header}>
+              <Text style={[privModalStyles.title, { fontFamily: "Inter_700Bold" }]}>Edit Profile</Text>
+              <TouchableOpacity onPress={() => setEditVisible(false)} style={privModalStyles.closeBtn} activeOpacity={0.7}>
+                <Ionicons name="close" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {([
+                { label: "Business Name", value: draftName, onChange: setDraftName, placeholder: "GreenScape Pros", multiline: false },
+                { label: "About / Bio", value: draftBio, onChange: setDraftBio, placeholder: "Tell customers about your services…", multiline: true },
+                { label: "City", value: draftCity, onChange: setDraftCity, placeholder: "Ellenton", multiline: false },
+                { label: "State", value: draftState, onChange: setDraftState, placeholder: "FL", multiline: false },
+                { label: "ZIP Code", value: draftZip, onChange: setDraftZip, placeholder: "34222", multiline: false },
+              ] as { label: string; value: string; onChange: (v: string) => void; placeholder: string; multiline: boolean }[]).map((field) => (
+                <View key={field.label} style={availStyles.editField}>
+                  <Text style={[availStyles.editFieldLabel, { fontFamily: "Inter_500Medium" }]}>{field.label}</Text>
+                  <TextInput
+                    style={[availStyles.editFieldInput, { fontFamily: "Inter_400Regular" }, field.multiline && { height: 80, textAlignVertical: "top" }]}
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    placeholder={field.placeholder}
+                    placeholderTextColor="#555"
+                    multiline={field.multiline}
+                    autoCapitalize={field.label === "State" ? "characters" : "sentences"}
+                    maxLength={field.label === "State" ? 2 : field.label === "ZIP Code" ? 5 : undefined}
+                    keyboardType={field.label === "ZIP Code" ? "numeric" : "default"}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={privModalStyles.saveBtn} onPress={saveEdit} activeOpacity={0.85}>
+              <Text style={[privModalStyles.saveBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Profile</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {termsDoc && (
         <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
@@ -834,6 +1042,8 @@ const cutStyles = StyleSheet.create({
   proBadgeText: { fontSize: 11, color: "#000000", letterSpacing: 1 },
   jobsText: { fontSize: 14, color: "rgba(255,255,255,0.6)" },
   heroLocation: { fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: 4 },
+  editProfileBtn: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#34FF7A", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8, marginTop: 12, alignSelf: "center" },
+  editProfileBtnText: { fontSize: 13, color: "#000" },
 
   tabBar: {
     flexDirection: "row",
@@ -1018,4 +1228,91 @@ const privModalStyles = StyleSheet.create({
     marginTop: 28,
   },
   saveBtnText: { color: "#000000", fontSize: 16 },
+});
+
+const availStyles = StyleSheet.create({
+  daysRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  dayChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#222222",
+    borderWidth: 1,
+    borderColor: "#333333",
+  },
+  dayChipOn: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  dayChipText: { fontSize: 13, color: "#888888" },
+  dayChipTextOn: { color: "#000000" },
+
+  hoursRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  hoursField: { flex: 1 },
+  hoursLabel: { fontSize: 11, color: "#888888", marginBottom: 6, letterSpacing: 0.8 },
+  hoursInput: {
+    backgroundColor: "#222222",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#333333",
+    color: "#FFFFFF",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+  },
+  hoursSep: { fontSize: 13, color: "#888888", marginTop: 18 },
+
+  addDateRow: { flexDirection: "row", gap: 10, alignItems: "center", marginBottom: 16 },
+  addDateInput: {
+    flex: 1,
+    backgroundColor: "#222222",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#333333",
+    color: "#FFFFFF",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  addDateBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#34FF7A",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#222222",
+  },
+  dateText: { flex: 1, fontSize: 14, color: "#FFFFFF" },
+
+  saveAvailBtn: {
+    backgroundColor: "#34FF7A",
+    borderRadius: 28,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 12,
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+  },
+  saveAvailBtnText: { fontSize: 16, color: "#000000" },
+
+  editField: { marginBottom: 16 },
+  editFieldLabel: { fontSize: 12, color: "#AAAAAA", letterSpacing: 0.8, marginBottom: 6 },
+  editFieldInput: {
+    backgroundColor: "#222222",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#333333",
+    color: "#FFFFFF",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+  },
 });
