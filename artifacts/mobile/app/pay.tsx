@@ -867,29 +867,38 @@ export default function PayScreen() {
         <Text style={[styles.payMethodLabel, { fontFamily: "Inter_600SemiBold" }]}>
           Payment Method
         </Text>
-        <View style={styles.payMethodRow}>
+        <View style={styles.payMethodGrid}>
           {(
             [
-              { key: "applepay", icon: "logo-apple", label: "Apple Pay" },
-              { key: "debit",    icon: "card",       label: "Debit" },
-              { key: "venmo",    icon: "phone-portrait", label: "Venmo" },
-              { key: "paypal",   icon: "globe",      label: "PayPal" },
-              { key: "cashapp",  icon: "cash",       label: "Cash App" },
+              { key: "applepay", emoji: "",  label: "Apple Pay" },
+              { key: "venmo",    emoji: "💰", label: "Venmo" },
+              { key: "paypal",   emoji: "💳", label: "PayPal" },
+              { key: "cashapp",  emoji: "$",  label: "Cash App" },
             ] as const
           ).map((m) => (
             <TouchableOpacity
               key={m.key}
-              style={[styles.payMethodChip, paymentMethod === m.key && styles.payMethodChipActive]}
+              style={[styles.payMethodTile, paymentMethod === m.key && styles.payMethodTileActive]}
               onPress={() => { setPaymentMethod(m.key); Haptics.selectionAsync(); }}
               activeOpacity={0.8}
             >
-              <Ionicons name={m.icon} size={16} color={paymentMethod === m.key ? "#000" : "#AAAAAA"} />
-              <Text style={[styles.payMethodChipText, { fontFamily: "Inter_500Medium" }, paymentMethod === m.key && styles.payMethodChipTextActive]}>
+              <Text style={styles.payMethodTileEmoji}>{m.emoji}</Text>
+              <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === m.key && styles.payMethodTileTextActive]}>
                 {m.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+        <TouchableOpacity
+          style={[styles.payMethodTileFull, paymentMethod === "debit" && styles.payMethodTileActive]}
+          onPress={() => { setPaymentMethod("debit"); Haptics.selectionAsync(); }}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.payMethodTileEmoji}>💳</Text>
+          <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === "debit" && styles.payMethodTileTextActive]}>
+            Debit / Credit Card
+          </Text>
+        </TouchableOpacity>
 
         {paymentMethod === "applepay" && (
           <View style={styles.payFieldReady}>
@@ -971,9 +980,12 @@ export default function PayScreen() {
         <TouchableOpacity style={styles.authorizeBtn} onPress={handleAuthorize} activeOpacity={0.85}>
           <Ionicons name="lock-closed" size={18} color="#fff" />
           <Text style={[styles.authorizeBtnText, { fontFamily: "Inter_700Bold" }]}>
-            Authorize Payment Hold · ${total}
+            Pay Securely & Hold Funds · ${total}
           </Text>
         </TouchableOpacity>
+        <Text style={[styles.escrowDisclaimer, { fontFamily: "Inter_400Regular" }]}>
+          Money is held in escrow until both parties confirm completion.{"\n"}All sales are final.
+        </Text>
       </View>
     </View>
   );
@@ -1395,21 +1407,43 @@ const styles = StyleSheet.create({
   savedCardSub: { fontSize: 12, color: "#888888", marginTop: 2 },
 
   payMethodLabel: { fontSize: 11, color: "#AAAAAA", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10 },
-  payMethodRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
-  payMethodChip: {
+  payMethodGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 10 },
+  payMethodTile: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
+    justifyContent: "center",
+    gap: 8,
+    width: "48%",
+    paddingVertical: 18,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: "#222222",
     backgroundColor: "#1A1A1A",
   },
-  payMethodChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
-  payMethodChipText: { fontSize: 12, color: "#AAAAAA" },
-  payMethodChipTextActive: { color: "#000" },
+  payMethodTileFull: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    width: "100%",
+    paddingVertical: 18,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#222222",
+    backgroundColor: "#1A1A1A",
+    marginBottom: 12,
+  },
+  payMethodTileActive: { backgroundColor: "#0d2e18", borderColor: "#34FF7A" },
+  payMethodTileEmoji: { fontSize: 22 },
+  payMethodTileText: { fontSize: 14, color: "#FFFFFF" },
+  payMethodTileTextActive: { color: "#34FF7A" },
+  escrowDisclaimer: {
+    fontSize: 11,
+    color: "#555555",
+    textAlign: "center",
+    marginTop: 10,
+    lineHeight: 18,
+  },
   payFieldReady: {
     flexDirection: "row",
     alignItems: "center",
