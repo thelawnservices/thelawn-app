@@ -1311,161 +1311,228 @@ function LandscaperProfileViewModal({
   onClose: () => void;
   onBook: () => void;
 }) {
+  const insets = useSafeAreaInsets();
+  const isWeb = Platform.OS === "web";
+  const topPad = isWeb ? 20 : insets.top;
+
   if (!pro) return null;
+
+  const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
+
   return (
-    <Modal visible={!!pro} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={proModalStyles.overlay} onPress={onClose}>
-        <Pressable style={proModalStyles.sheet} onPress={(e) => e.stopPropagation()}>
-          {/* Hero bar */}
-          <View style={proModalStyles.hero}>
-            <View style={proModalStyles.heroIcon}>
-              <Ionicons name={pro.icon} size={38} color="#000" />
-            </View>
-            <TouchableOpacity style={proModalStyles.closeBtn} onPress={onClose} activeOpacity={0.7}>
-              <Ionicons name="close" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
+    <Modal visible={!!pro} animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+      <View style={fsStyles.container}>
+        {/* Back arrow — floats over the hero */}
+        <TouchableOpacity
+          style={[fsStyles.backBtn, { top: topPad + 12 }]}
+          onPress={onClose}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="arrow-back" size={22} color="#fff" />
+        </TouchableOpacity>
 
-          {/* Info */}
-          <Text style={[proModalStyles.name, { fontFamily: "Inter_700Bold" }]}>{pro.name}</Text>
-          <View style={proModalStyles.metaRow}>
-            <View style={proModalStyles.ratingPill}>
-              <Text style={[proModalStyles.ratingText, { fontFamily: "Inter_600SemiBold" }]}>★ {pro.rating}</Text>
-            </View>
-            <Text style={[proModalStyles.metaText, { fontFamily: "Inter_400Regular" }]}>{pro.jobs} jobs completed</Text>
-            {pro.rating >= 4.7 && pro.jobs >= 50 && (
-              <View style={proModalStyles.trustedBadge}>
-                <Text style={[proModalStyles.trustedText, { fontFamily: "Inter_500Medium" }]}>Trusted Pro</Text>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          {/* ── Hero ── */}
+          <View style={[fsStyles.hero, { paddingTop: topPad + 56 }]}>
+            <View style={fsStyles.avatarWrap}>
+              <View style={fsStyles.avatarInner}>
+                <Ionicons name={pro.icon} size={52} color="#000" />
               </View>
-            )}
-          </View>
-
-          <Text style={[proModalStyles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>ABOUT</Text>
-          <Text style={[proModalStyles.about, { fontFamily: "Inter_400Regular" }]}>
-            Professional landscaping services with outstanding reviews. Specializing in lawn mowing, hedge trimming, mulching, and clean-up for residential properties in the Sarasota / Ellenton area.
-          </Text>
-
-          {/* Services & Pricing */}
-          <Text style={[proModalStyles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>SERVICES & PRICING (BY YARD SIZE)</Text>
-          <View style={proModalStyles.pricingCard}>
-            {[
-              { size: "Small Yard",  desc: "Up to 2,000 sq ft",  price: "$45" },
-              { size: "Medium Yard", desc: "2,000–5,000 sq ft",  price: "$65" },
-              { size: "Large Yard",  desc: "5,000+ sq ft",       price: "$95+" },
-            ].map((tier, i, arr) => (
-              <View key={tier.size} style={[proModalStyles.pricingRow, i < arr.length - 1 && proModalStyles.pricingRowBorder]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[proModalStyles.pricingSize, { fontFamily: "Inter_600SemiBold" }]}>{tier.size}</Text>
-                  <Text style={[proModalStyles.pricingDesc, { fontFamily: "Inter_400Regular" }]}>{tier.desc}</Text>
+            </View>
+            <Text style={[fsStyles.heroName, { fontFamily: "Inter_700Bold" }]}>{pro.name}</Text>
+            <View style={fsStyles.heroBadgeRow}>
+              <View style={fsStyles.ratingPill}>
+                <Text style={[fsStyles.ratingText, { fontFamily: "Inter_600SemiBold" }]}>★ {pro.rating}</Text>
+              </View>
+              {isTrustedPro && (
+                <View style={fsStyles.proBadge}>
+                  <Text style={[fsStyles.proBadgeText, { fontFamily: "Inter_700Bold" }]}>PRO</Text>
                 </View>
-                <Text style={[proModalStyles.pricingPrice, { fontFamily: "Inter_700Bold" }]}>{tier.price}</Text>
-              </View>
-            ))}
+              )}
+              <Text style={[fsStyles.jobsText, { fontFamily: "Inter_400Regular" }]}>{pro.jobs} jobs</Text>
+            </View>
+            <Text style={[fsStyles.location, { fontFamily: "Inter_400Regular" }]}>
+              📍 Sarasota / Ellenton, FL · {pro.meta.split("•")[0].trim()}
+            </Text>
           </View>
 
-          {/* Recent Work */}
-          <Text style={[proModalStyles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 20 }]}>RECENT WORK</Text>
-          <View style={proModalStyles.photoGrid}>
-            {["🌿", "✂️", "🪴", "🌱", "🧹", "🌳"].map((emoji, i) => (
-              <View key={i} style={proModalStyles.photoTile}>
-                <Text style={proModalStyles.photoEmoji}>{emoji}</Text>
-              </View>
-            ))}
-          </View>
+          {/* ── Body ── */}
+          <View style={fsStyles.body}>
 
-          {/* Call / Text */}
-          <View style={proModalStyles.contactRow}>
-            <TouchableOpacity
-              style={proModalStyles.contactBtn}
-              activeOpacity={0.8}
-              onPress={() => Linking.openURL("tel:+19415550000").catch(() => Alert.alert("📞 Demo", "Calling " + pro.name))}
-            >
-              <Text style={proModalStyles.contactIcon}>📞</Text>
-              <Text style={[proModalStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+            {/* About */}
+            <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>ABOUT</Text>
+            <Text style={[fsStyles.aboutText, { fontFamily: "Inter_400Regular" }]}>
+              Professional landscaping services with outstanding reviews. Specializing in lawn mowing, hedge trimming, mulching, and clean-up for residential properties in the Sarasota / Ellenton area.
+            </Text>
+
+            {/* Services & Pricing */}
+            <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>SERVICES & PRICING (BY YARD SIZE)</Text>
+            <View style={fsStyles.pricingCard}>
+              {[
+                { size: "Small Yard",  desc: "Up to 2,000 sq ft",  price: "$45" },
+                { size: "Medium Yard", desc: "2,000 – 5,000 sq ft", price: "$65" },
+                { size: "Large Yard",  desc: "5,000+ sq ft",        price: "$95+" },
+              ].map((tier, i, arr) => (
+                <View
+                  key={tier.size}
+                  style={[fsStyles.pricingRow, i < arr.length - 1 && fsStyles.pricingRowBorder]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[fsStyles.pricingSize, { fontFamily: "Inter_600SemiBold" }]}>{tier.size}</Text>
+                    <Text style={[fsStyles.pricingDesc, { fontFamily: "Inter_400Regular" }]}>{tier.desc}</Text>
+                  </View>
+                  <Text style={[fsStyles.pricingPrice, { fontFamily: "Inter_700Bold" }]}>{tier.price}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Recent Work */}
+            <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>RECENT WORK</Text>
+            <View style={fsStyles.photoGrid}>
+              {["🌿", "✂️", "🪴", "🌱", "🧹", "🌳"].map((emoji, i) => (
+                <View key={i} style={fsStyles.photoTile}>
+                  <Text style={fsStyles.photoEmoji}>{emoji}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Call / Text */}
+            <View style={fsStyles.contactRow}>
+              <TouchableOpacity
+                style={fsStyles.contactBtn}
+                activeOpacity={0.8}
+                onPress={() =>
+                  Linking.openURL("tel:+19415550000").catch(() =>
+                    Alert.alert("📞 Demo", "Calling " + pro.name)
+                  )
+                }
+              >
+                <Text style={fsStyles.contactIcon}>📞</Text>
+                <Text style={[fsStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={fsStyles.contactBtn}
+                activeOpacity={0.8}
+                onPress={() =>
+                  Linking.openURL("sms:+19415550000").catch(() =>
+                    Alert.alert("💬 Demo", "Texting " + pro.name)
+                  )
+                }
+              >
+                <Text style={fsStyles.contactIcon}>💬</Text>
+                <Text style={[fsStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Book Now */}
+            <TouchableOpacity style={fsStyles.bookBtn} activeOpacity={0.85} onPress={onBook}>
+              <Ionicons name="calendar-outline" size={20} color="#000" />
+              <Text style={[fsStyles.bookBtnText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={proModalStyles.contactBtn}
-              activeOpacity={0.8}
-              onPress={() => Linking.openURL("sms:+19415550000").catch(() => Alert.alert("💬 Demo", "Texting " + pro.name))}
-            >
-              <Text style={proModalStyles.contactIcon}>💬</Text>
-              <Text style={[proModalStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
-            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity style={proModalStyles.bookBtn} activeOpacity={0.85} onPress={onBook}>
-            <Ionicons name="calendar-outline" size={18} color="#000" />
-            <Text style={[proModalStyles.bookBtnText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
-          </TouchableOpacity>
-        </Pressable>
-      </Pressable>
+        </ScrollView>
+      </View>
     </Modal>
   );
 }
 
-const proModalStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: "#1A1A1A",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 24,
-    paddingBottom: 48,
-    paddingTop: 0,
-    borderTopWidth: 1,
-    borderColor: "#222222",
+const fsStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#0A0A0A" },
+  backBtn: {
+    position: "absolute",
+    left: 16,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   hero: {
-    height: 100,
     backgroundColor: "#0d2e18",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    alignItems: "center",
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+  },
+  avatarWrap: {
+    width: 116,
+    height: 116,
+    borderRadius: 36,
+    backgroundColor: "#050505",
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: -24,
     marginBottom: 16,
-    position: "relative",
+    borderWidth: 4,
+    borderColor: "#34FF7A",
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  heroIcon: {
-    width: 68,
-    height: 68,
+  avatarInner: {
+    width: 90,
+    height: 90,
     backgroundColor: "#34FF7A",
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroName: { fontSize: 24, color: "#FFFFFF", textAlign: "center", marginBottom: 10 },
+  heroBadgeRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap", justifyContent: "center" },
+  ratingPill: { backgroundColor: "rgba(52,255,122,0.15)", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, borderWidth: 1, borderColor: "#34FF7A" },
+  ratingText: { fontSize: 14, color: "#34FF7A" },
+  proBadge: { backgroundColor: "#34FF7A", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
+  proBadgeText: { fontSize: 11, color: "#000000", letterSpacing: 1 },
+  jobsText: { fontSize: 14, color: "rgba(255,255,255,0.6)" },
+  location: { fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: 4 },
+  body: { paddingHorizontal: 20, paddingTop: 28 },
+  sectionLabel: { fontSize: 11, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 },
+  aboutText: { fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 22, marginBottom: 28 },
+  pricingCard: {
+    backgroundColor: "#161616",
     borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#222222",
+    marginBottom: 4,
+    overflow: "hidden",
+  },
+  pricingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  pricingRowBorder: { borderBottomWidth: 1, borderBottomColor: "#222222" },
+  pricingSize: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
+  pricingDesc: { fontSize: 12, color: "#555555" },
+  pricingPrice: { fontSize: 20, color: "#34FF7A" },
+  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 28 },
+  photoTile: {
+    width: "30.5%",
+    aspectRatio: 1,
+    backgroundColor: "#161616",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#222222",
     alignItems: "center",
     justifyContent: "center",
   },
-  closeBtn: {
-    position: "absolute",
-    top: 14,
-    right: 16,
-    width: 32,
-    height: 32,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  name: { fontSize: 22, color: "#FFFFFF", marginBottom: 10 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" },
-  ratingPill: { backgroundColor: "#0d2e18", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  ratingText: { fontSize: 13, color: "#34FF7A" },
-  metaText: { fontSize: 13, color: "#888888" },
-  trustedBadge: { backgroundColor: "#0d2e18", borderWidth: 1, borderColor: "#34FF7A", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
-  trustedText: { fontSize: 11, color: "#34FF7A" },
-  sectionTitle: { fontSize: 12, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 8 },
-  about: { fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 22, marginBottom: 24 },
+  photoEmoji: { fontSize: 34 },
   contactRow: { flexDirection: "row", gap: 12, marginBottom: 16 },
   contactBtn: {
     flex: 1,
-    backgroundColor: "#222222",
+    backgroundColor: "#161616",
     borderWidth: 1,
     borderColor: "#34FF7A",
     borderRadius: 28,
-    paddingVertical: 14,
+    paddingVertical: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -1476,48 +1543,18 @@ const proModalStyles = StyleSheet.create({
   bookBtn: {
     backgroundColor: "#34FF7A",
     borderRadius: 28,
-    paddingVertical: 18,
+    paddingVertical: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
     shadowColor: "#34FF7A",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 8,
   },
-  bookBtnText: { fontSize: 16, color: "#000000" },
-  pricingCard: {
-    backgroundColor: "#111111",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#222222",
-    marginBottom: 4,
-    overflow: "hidden",
-  },
-  pricingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-  },
-  pricingRowBorder: { borderBottomWidth: 1, borderBottomColor: "#222222" },
-  pricingSize: { fontSize: 14, color: "#FFFFFF", marginBottom: 2 },
-  pricingDesc: { fontSize: 11, color: "#666666" },
-  pricingPrice: { fontSize: 18, color: "#34FF7A" },
-  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 },
-  photoTile: {
-    width: "30.5%",
-    aspectRatio: 1,
-    backgroundColor: "#161616",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#222222",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  photoEmoji: { fontSize: 32 },
+  bookBtnText: { fontSize: 17, color: "#000000" },
 });
 
 const TRUSTED_PROS = [
