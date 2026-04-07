@@ -13,6 +13,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  useWindowDimensions,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -222,7 +223,7 @@ function AppHeader({
         </View>
         <Image
           source={require("../../assets/images/logo-transparent.png")}
-          style={styles.logoImg}
+          style={[styles.logoImg, { height: logoH, width: logoW }]}
           resizeMode="contain"
         />
         <View style={[{ flex: 1 }, styles.headerRight]}>
@@ -854,6 +855,9 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
+  const { width: screenWidth } = useWindowDimensions();
+  const logoH = screenWidth >= 640 ? 72 : 68;
+  const logoW = Math.round(logoH * (248 / 68));
   const { logout, role } = useAuth();
   const [prosLoaded, setProsLoaded] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
