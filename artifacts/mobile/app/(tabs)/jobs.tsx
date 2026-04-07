@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
+import { useNotifications } from "@/contexts/notifications";
 
 type JobStatus = "pending" | "arrived" | "started" | "completed";
 
@@ -120,6 +121,8 @@ function ChatModal({
   const [input, setInput] = useState("");
   const flatRef = useRef<FlatList>(null);
 
+  const { addNotification } = useNotifications();
+
   const otherParty = isLandscaper
     ? (jobData?.customer ?? "Customer")
     : (jobData?.landscaper ?? "Landscaper");
@@ -129,6 +132,11 @@ function ChatModal({
     if (!text) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setMessages((prev) => [...prev, { id: String(Date.now()), text, fromMe: true }]);
+    addNotification({
+      icon: "💬",
+      title: "New message",
+      sub: `${otherParty} sent you a message`,
+    });
     setInput("");
     setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
     setTimeout(() => {
@@ -136,6 +144,11 @@ function ChatModal({
         ...prev,
         { id: String(Date.now() + 1), text: isLandscaper ? "Thanks!" : "On my way!", fromMe: false },
       ]);
+      addNotification({
+        icon: "💬",
+        title: "New message",
+        sub: `${otherParty} replied`,
+      });
       setTimeout(() => flatRef.current?.scrollToEnd({ animated: true }), 100);
     }, 900);
   }
@@ -198,6 +211,7 @@ export default function JobsScreen() {
   const bottomPadding = isWeb ? 0 : insets.bottom;
   const { role } = useAuth();
   const isLandscaper = role === "landscaper";
+  const { addNotification } = useNotifications();
 
   const [jobStatuses, setJobStatuses] = useState<Record<string, JobStatus>>(
     Object.fromEntries(SHARED_ACTIVE_JOBS.map((j) => [j.id, "pending"]))
@@ -209,6 +223,12 @@ export default function JobsScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setJobStatuses((prev) => ({ ...prev, [jobId]: next }));
     if (next === "started" && statusOrder(current) < statusOrder("started")) {
+      const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
+      addNotification({
+        icon: "🛠️",
+        title: "Work has started",
+        sub: `${isLandscaper ? "You've" : "Your landscaper has"} started work on ${job?.service ?? "your job"}`,
+      });
       setTimeout(() => {
         Alert.alert(
           "✅ Customer Notified",
@@ -218,6 +238,12 @@ export default function JobsScreen() {
       }, 300);
     }
     if (next === "completed") {
+      const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
+      addNotification({
+        icon: "✅",
+        title: "Work complete!",
+        sub: `${job?.service ?? "Your job"} has been completed successfully`,
+      });
       setTimeout(() => {
         Alert.alert(
           "🎉 Job Complete",

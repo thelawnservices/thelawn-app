@@ -22,6 +22,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
+import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
 
 const CUSTOMER_QUICK_STATS = [
   { label: "Jobs Done", value: "3", icon: "checkmark-circle" as const, iconColor: "#34C759" },
@@ -80,26 +81,6 @@ function SkeletonCard() {
   );
 }
 
-const NOTIFICATIONS = [
-  {
-    id: "0",
-    icon: "✅",
-    title: "Request accepted!",
-    sub: "John Rivera accepted your Lawn Mowing request",
-  },
-  {
-    id: "1",
-    icon: "🚚",
-    title: "John Rivera is on the way!",
-    sub: "ETA: 8 minutes · Active service",
-  },
-  {
-    id: "2",
-    icon: "🛠️",
-    title: "Service in progress",
-    sub: "Your Lawn Mowing is underway",
-  },
-];
 
 function NotificationsPanel({
   visible,
@@ -110,7 +91,7 @@ function NotificationsPanel({
 }: {
   visible: boolean;
   onClose: () => void;
-  items: typeof NOTIFICATIONS;
+  items: ServiceNotification[];
   notifEnabled: boolean;
   onToggleEnabled: () => void;
 }) {
@@ -159,19 +140,28 @@ function NotificationsPanel({
               </View>
             </View>
             <View style={styles.notifList}>
-              {items.map((n) => (
-                <View key={n.id} style={styles.notifItem}>
-                  <Text style={styles.notifItemIcon}>{n.icon}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.notifItemTitle, { fontFamily: "Inter_500Medium" }]}>
-                      {n.title}
-                    </Text>
-                    <Text style={[styles.notifItemSub, { fontFamily: "Inter_400Regular" }]}>
-                      {n.sub}
-                    </Text>
-                  </View>
+              {items.length === 0 ? (
+                <View style={{ alignItems: "center", paddingVertical: 28 }}>
+                  <Text style={{ fontSize: 32, marginBottom: 10 }}>🔔</Text>
+                  <Text style={[{ color: "#888", fontSize: 14, textAlign: "center" }, { fontFamily: "Inter_400Regular" }]}>
+                    No alerts yet.{"\n"}Alerts appear when work starts, a message is sent, or a job is complete.
+                  </Text>
                 </View>
-              ))}
+              ) : (
+                items.map((n) => (
+                  <View key={n.id} style={styles.notifItem}>
+                    <Text style={styles.notifItemIcon}>{n.icon}</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.notifItemTitle, { fontFamily: "Inter_500Medium" }]}>
+                        {n.title}
+                      </Text>
+                      <Text style={[styles.notifItemSub, { fontFamily: "Inter_400Regular" }]}>
+                        {n.sub}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              )}
             </View>
           </Pressable>
         </Animated.View>
@@ -887,32 +877,25 @@ export default function HomeScreen() {
   const notifEnabledRef = React.useRef(notifEnabled);
   notifEnabledRef.current = notifEnabled;
 
-  const [notifItems, setNotifItems] = useState(NOTIFICATIONS);
+  const { notifications: notifItems } = useNotifications();
   const [missedCount, setMissedCount] = useState(0);
+  const notifVisibleRef = React.useRef(notifVisible);
+  notifVisibleRef.current = notifVisible;
+  const prevNotifCount = React.useRef(notifItems.length);
 
   useEffect(() => {
-    const t = setTimeout(() => setProsLoaded(true), 900);
-    const n = setTimeout(() => {
-      if (notifEnabledRef.current) setNotifVisible(true);
-    }, 4000);
-    const MOCK_MESSAGES = [
-      { id: "", icon: "🚚", title: "Landscaper Arrived", sub: "John Rivera has arrived at your location" },
-      { id: "", icon: "🌿", title: "Job In Progress", sub: "Your Lawn Mowing appointment has started" },
-      { id: "", icon: "✅", title: "Payment Confirmed", sub: "Escrow released for today's service" },
-    ];
-    let idx = 0;
-    const ws = setInterval(() => {
-      const msg = MOCK_MESSAGES[idx % MOCK_MESSAGES.length];
-      const item = { ...msg, id: String(Date.now()) };
-      setNotifItems((prev) => [item, ...prev]);
-      if (notifEnabledRef.current) {
-        setNotifVisible(true);
+    if (notifItems.length > prevNotifCount.current) {
+      if (notifVisibleRef.current) {
       } else {
         setMissedCount((c) => c + 1);
       }
-      idx++;
-    }, 6500);
-    return () => { clearTimeout(t); clearTimeout(n); clearInterval(ws); };
+    }
+    prevNotifCount.current = notifItems.length;
+  }, [notifItems.length]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setProsLoaded(true), 900);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
