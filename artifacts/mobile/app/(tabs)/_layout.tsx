@@ -77,8 +77,7 @@ export default function TabLayout() {
             <Ionicons name="mail-outline" size={size} color={color} />
           ),
           ...(role === "landscaper" && {
-            tabBarButton: () => null,
-            tabBarItemStyle: { width: 0, overflow: "hidden" },
+            href: null,
           }),
         }}
       />
