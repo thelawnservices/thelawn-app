@@ -68,21 +68,21 @@ function SkeletonCard() {
 const NOTIFICATIONS = [
   {
     id: "0",
-    icon: "🔒",
-    title: "Payment held in escrow",
-    sub: "Lawn Mowing · $48.35 secured — releases on completion",
+    icon: "✅",
+    title: "Request accepted!",
+    sub: "John Rivera accepted your Lawn Mowing request",
   },
   {
     id: "1",
     icon: "🚚",
     title: "John Rivera is on the way!",
-    sub: "ETA: 8 minutes",
+    sub: "ETA: 8 minutes · Active service",
   },
   {
     id: "2",
-    icon: "📅",
-    title: "Recurring appointment confirmed",
-    sub: "Next: April 19 · 10:30 AM",
+    icon: "🛠️",
+    title: "Service in progress",
+    sub: "Your Lawn Mowing is underway",
   },
 ];
 
@@ -126,7 +126,7 @@ function NotificationsPanel({
           <Pressable>
             <View style={styles.notifSheetHeader}>
               <Text style={[styles.notifSheetTitle, { fontFamily: "Inter_700Bold" }]}>
-                Notifications
+                Active Service Alerts
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <TouchableOpacity
