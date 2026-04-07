@@ -1199,8 +1199,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   logoImg: {
-    height: 48,
-    width: 175,
+    height: 54,
+    width: 197,
     shadowColor: "#22C55E",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
