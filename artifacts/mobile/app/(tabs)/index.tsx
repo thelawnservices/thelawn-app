@@ -18,15 +18,29 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
+import { useJobs } from "@/contexts/jobs";
 
-const QUICK_STATS = [
+const CUSTOMER_QUICK_STATS = [
   { label: "Jobs Done", value: "3", icon: "checkmark-circle" as const, iconColor: "#34C759" },
   { label: "Avg Rating", value: "4.9", icon: "star" as const, iconColor: "#f59e0b" },
   { label: "Saved Pros", value: "2", icon: "heart" as const, iconColor: "#f87171" },
 ];
 
-function AnimatedStatCard({ stat, delay }: { stat: typeof QUICK_STATS[0]; delay: number }) {
+const LANDSCAPER_QUICK_STATS = [
+  { label: "Jobs Accepted", value: "7", icon: "checkmark-circle" as const, iconColor: "#34C759" },
+  { label: "Avg Rating", value: "4.9", icon: "star" as const, iconColor: "#f59e0b" },
+  { label: "This Week", value: "$420", icon: "cash" as const, iconColor: "#34FF7A" },
+];
+
+const HOME_PENDING_REQUESTS = [
+  { id: "h1", service: "Lawn Mowing", size: "Medium", customer: "Alex T.", distance: "1.2 mi", zip: "34221", date: "Apr 14", time: "9:00 AM", budget: "$65" },
+  { id: "h2", service: "Hedge Trimming", size: "Small", customer: "Maria K.", distance: "2.4 mi", zip: "34222", date: "Apr 15", time: "11:00 AM", budget: "$55" },
+  { id: "h3", service: "Mulching", size: "Large", customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM", budget: "$180" },
+];
+
+function AnimatedStatCard({ stat, delay }: { stat: typeof CUSTOMER_QUICK_STATS[0]; delay: number }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(16)).current;
 
@@ -855,6 +869,8 @@ export default function HomeScreen() {
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
   const { logout, role } = useAuth();
+  const { acceptJob } = useJobs();
+  const [acceptedOnHome, setAcceptedOnHome] = useState<string[]>([]);
   const [prosLoaded, setProsLoaded] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(true);
@@ -1067,38 +1083,114 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Popular Services */}
-        <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-          Popular Services
-        </Text>
-        <View style={styles.servicesGrid}>
-          {[
-            { name: "Lawn\nMowing",    icon: "leaf" as const,   avg: "Avg $52" },
-            { name: "Hedge\nTrimming", icon: "cut" as const,    avg: "Avg $68" },
-            { name: "Mulching",        icon: "flower" as const, avg: "Avg $135" },
-            { name: "Clean Up",        icon: "trash" as const,  avg: "Avg $38" },
-          ].map((svc) => (
-            <TouchableOpacity
-              key={svc.name}
-              style={styles.svcGridCard}
-              onPress={() => router.navigate("/(tabs)/search")}
-              activeOpacity={0.8}
-            >
-              <View style={styles.svcGridIconWrap}>
-                <Ionicons name={svc.icon} size={28} color="#34FF7A" />
-              </View>
-              <Text style={[styles.svcGridName, { fontFamily: "Inter_500Medium" }]}>
-                {svc.name}
+        {/* Popular Services — customers only */}
+        {role !== "landscaper" && (
+          <>
+            <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
+              Popular Services
+            </Text>
+            <View style={styles.servicesGrid}>
+              {[
+                { name: "Lawn\nMowing",    icon: "leaf" as const,   avg: "Avg $52" },
+                { name: "Hedge\nTrimming", icon: "cut" as const,    avg: "Avg $68" },
+                { name: "Mulching",        icon: "flower" as const, avg: "Avg $135" },
+                { name: "Clean Up",        icon: "trash" as const,  avg: "Avg $38" },
+              ].map((svc) => (
+                <TouchableOpacity
+                  key={svc.name}
+                  style={styles.svcGridCard}
+                  onPress={() => router.navigate("/(tabs)/search")}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.svcGridIconWrap}>
+                    <Ionicons name={svc.icon} size={28} color="#34FF7A" />
+                  </View>
+                  <Text style={[styles.svcGridName, { fontFamily: "Inter_500Medium" }]}>
+                    {svc.name}
+                  </Text>
+                  <Text style={[styles.svcGridPrice, { fontFamily: "Inter_600SemiBold" }]}>
+                    {svc.avg}
+                  </Text>
+                  <Text style={[styles.svcGridUpdated, { fontFamily: "Inter_400Regular" }]}>
+                    Updated daily
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+
+        {/* Pending Customer Requests — landscapers only */}
+        {role === "landscaper" && (() => {
+          const visible = HOME_PENDING_REQUESTS.filter((r) => !acceptedOnHome.includes(r.id));
+          return (
+            <>
+              <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
+                Pending Requests Near You
               </Text>
-              <Text style={[styles.svcGridPrice, { fontFamily: "Inter_600SemiBold" }]}>
-                {svc.avg}
-              </Text>
-              <Text style={[styles.svcGridUpdated, { fontFamily: "Inter_400Regular" }]}>
-                Updated daily
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+              {visible.length === 0 ? (
+                <View style={styles.pendingEmptyBox}>
+                  <Ionicons name="clipboard-outline" size={32} color="#333" />
+                  <Text style={[styles.pendingEmptyText, { fontFamily: "Inter_400Regular" }]}>
+                    No new requests right now
+                  </Text>
+                </View>
+              ) : (
+                visible.map((req) => (
+                  <View key={req.id} style={styles.pendingCard}>
+                    <View style={styles.pendingTopRow}>
+                      <View style={styles.pendingBadge}>
+                        <Ionicons name="leaf" size={13} color="#34FF7A" />
+                        <Text style={[styles.pendingBadgeText, { fontFamily: "Inter_600SemiBold" }]}>
+                          {req.service}
+                        </Text>
+                      </View>
+                      <Text style={[styles.pendingBudget, { fontFamily: "Inter_700Bold" }]}>
+                        {req.budget}
+                      </Text>
+                    </View>
+                    <View style={styles.pendingMeta}>
+                      <Ionicons name="person-outline" size={12} color="#555" />
+                      <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
+                        {req.customer}
+                      </Text>
+                      <Text style={styles.pendingDot}>·</Text>
+                      <Ionicons name="location-outline" size={12} color="#555" />
+                      <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
+                        {req.distance}
+                      </Text>
+                    </View>
+                    <View style={styles.pendingMeta}>
+                      <Ionicons name="calendar-outline" size={12} color="#555" />
+                      <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
+                        {req.date} at {req.time}
+                      </Text>
+                      <Text style={styles.pendingDot}>·</Text>
+                      <Ionicons name="resize-outline" size={12} color="#555" />
+                      <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
+                        {req.size} yard
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.pendingAcceptBtn}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        setAcceptedOnHome((prev) => [...prev, req.id]);
+                        acceptJob({ id: req.id, service: req.service, size: req.size, customer: req.customer, date: req.date, time: req.time, budget: req.budget, distance: req.distance, zip: req.zip });
+                        Alert.alert("✅ Accepted!", `${req.customer}'s ${req.service} job added to your Appointments.`);
+                      }}
+                    >
+                      <Text style={[styles.pendingAcceptText, { fontFamily: "Inter_600SemiBold" }]}>
+                        Accept Request
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ))
+              )}
+            </>
+          );
+        })()}
 
         {/* Upcoming */}
         <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
@@ -1123,57 +1215,59 @@ export default function HomeScreen() {
           <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
         </TouchableOpacity>
 
-        {/* Quick Stats — staggered entrance */}
+        {/* Quick Stats — staggered entrance, role-aware */}
         <View style={styles.statsRow}>
-          {QUICK_STATS.map((s, i) => (
+          {(role === "landscaper" ? LANDSCAPER_QUICK_STATS : CUSTOMER_QUICK_STATS).map((s, i) => (
             <AnimatedStatCard key={s.label} stat={s} delay={i * 120} />
           ))}
         </View>
 
-        {/* Horizontal Trusted Landscapers */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.proRowContent}
-          style={styles.proRow}
-        >
-          {!prosLoaded ? (
-            <>
-              <SkeletonCard />
-              <SkeletonCard />
-              <SkeletonCard />
-            </>
-          ) : (
-            TRUSTED_PROS.map((pro) => {
-              const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
-              return (
-                <TouchableOpacity
-                  key={pro.name}
-                  style={[styles.proHCard, isOffline && styles.proHCardDisabled]}
-                  onPress={() => handleBooking(() => router.navigate("/pay"))}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.proHIconWrap}>
-                    <Ionicons name={pro.icon} size={26} color="#34FF7A" />
-                  </View>
-                  <Text style={[styles.proHName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
-                    {pro.name}
-                  </Text>
-                  <Text style={[styles.proHMeta, { fontFamily: "Inter_400Regular" }]}>
-                    {pro.rating} ★ • {pro.jobs} jobs
-                  </Text>
-                  {isTrustedPro && (
-                    <View style={styles.trustedBadge}>
-                      <Text style={[styles.trustedBadgeText, { fontFamily: "Inter_500Medium" }]}>
-                        Trusted Pro
-                      </Text>
+        {/* Horizontal Trusted Landscapers — customers only */}
+        {role !== "landscaper" && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.proRowContent}
+            style={styles.proRow}
+          >
+            {!prosLoaded ? (
+              <>
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
+            ) : (
+              TRUSTED_PROS.map((pro) => {
+                const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
+                return (
+                  <TouchableOpacity
+                    key={pro.name}
+                    style={[styles.proHCard, isOffline && styles.proHCardDisabled]}
+                    onPress={() => handleBooking(() => router.navigate("/pay"))}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.proHIconWrap}>
+                      <Ionicons name={pro.icon} size={26} color="#34FF7A" />
                     </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </ScrollView>
+                    <Text style={[styles.proHName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
+                      {pro.name}
+                    </Text>
+                    <Text style={[styles.proHMeta, { fontFamily: "Inter_400Regular" }]}>
+                      {pro.rating} ★ • {pro.jobs} jobs
+                    </Text>
+                    {isTrustedPro && (
+                      <View style={styles.trustedBadge}>
+                        <Text style={[styles.trustedBadgeText, { fontFamily: "Inter_500Medium" }]}>
+                          Trusted Pro
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </ScrollView>
+        )}
 
 
       </ScrollView>
@@ -1470,6 +1564,54 @@ const styles = StyleSheet.create({
   offlinePillText: { color: "#FF3B30" },
   ctaBtnDisabled: { backgroundColor: "#2a2a2a", shadowOpacity: 0 },
   proHCardDisabled: { opacity: 0.4 },
+
+  pendingCard: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#222222",
+    gap: 8,
+  },
+  pendingTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 2,
+  },
+  pendingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#0d2e18",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  pendingBadgeText: { fontSize: 12, color: "#34FF7A" },
+  pendingBudget: { fontSize: 16, color: "#FFFFFF" },
+  pendingMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  pendingMetaText: { fontSize: 12, color: "#888888" },
+  pendingDot: { color: "#333333", fontSize: 12 },
+  pendingAcceptBtn: {
+    backgroundColor: "#34FF7A",
+    borderRadius: 28,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  pendingAcceptText: { color: "#000000", fontSize: 14 },
+  pendingEmptyBox: {
+    alignItems: "center",
+    paddingVertical: 32,
+    gap: 10,
+  },
+  pendingEmptyText: { fontSize: 14, color: "#555555" },
 });
 
 const pushStyles = StyleSheet.create({
