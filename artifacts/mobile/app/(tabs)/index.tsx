@@ -1199,12 +1199,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   logoImg: {
-    height: 36,
-    width: 130,
+    height: 44,
+    width: 160,
     shadowColor: "#22C55E",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
   },
   notifBtn: {
     width: 36,
