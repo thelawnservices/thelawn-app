@@ -8,7 +8,6 @@ import {
   ScrollView,
   Platform,
   KeyboardAvoidingView,
-  Alert,
   Image,
 } from "react-native";
 import { router } from "expo-router";
@@ -78,6 +77,12 @@ export default function LoginScreen() {
   function skipPasskey() {
     setShowPasskey(false);
     if (pendingRole) go(pendingRole);
+  }
+
+  function handlePasskeyLogin(role: "customer" | "landscaper") {
+    Haptics.selectionAsync();
+    setPendingRole(role);
+    setShowPasskey(true);
   }
 
   function handleCustomerLogin() {
@@ -184,6 +189,7 @@ export default function LoginScreen() {
   // ── Customer Login ─────────────────────────────────────────────
   if (step === "customer-login") {
     return (
+      <>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#0A0A0A" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.formHeader}>
@@ -200,20 +206,27 @@ export default function LoginScreen() {
           <Field label="Password">
             <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={password} onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#555" secureTextEntry />
           </Field>
-          <TouchableOpacity style={styles.primaryBtn} onPress={handleCustomerLogin} activeOpacity={0.88}>
-            <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign In</Text>
+          <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("customer")} activeOpacity={0.85}>
+            <Text style={styles.passkeyLoginIcon}>🔑</Text>
+            <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in using Passcode saved on iPhone</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => {}} style={{ marginTop: 20, alignItems: "center" }} activeOpacity={0.7}>
-            <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Use Passkey (iPhone)</Text>
+          <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleCustomerLogin} activeOpacity={0.88}>
+            <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Password</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setStep("customer-register")} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
+            <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? <Text style={{ color: "#34FF7A" }}>Register here</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+      <PasskeyModal visible={showPasskey} onUsePasskey={finishPasskey} onSkip={skipPasskey} insets={insets} isWeb={isWeb} />
+      </>
     );
   }
 
   // ── Landscaper Login ───────────────────────────────────────────
   if (step === "landscaper-login") {
     return (
+      <>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#0A0A0A" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={styles.formHeader}>
@@ -230,22 +243,20 @@ export default function LoginScreen() {
           <Field label="Password">
             <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={password} onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#555" secureTextEntry />
           </Field>
-          <TouchableOpacity style={styles.primaryBtn} onPress={handleLandscaperLogin} activeOpacity={0.88}>
-            <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign In</Text>
+          <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("landscaper")} activeOpacity={0.85}>
+            <Text style={styles.passkeyLoginIcon}>🔑</Text>
+            <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in using Passcode saved on iPhone</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.passkeyBtn}
-            activeOpacity={0.85}
-            onPress={() => Alert.alert("Passkey / PIN", "iOS would now use your saved biometric login.\n\nDemo: tap OK to sign in.", [
-              { text: "Cancel", style: "cancel" },
-              { text: "Use Passkey", onPress: () => go("landscaper") },
-            ])}
-          >
-            <Text style={{ fontSize: 18, marginRight: 8 }}>🔑</Text>
-            <Text style={[styles.passkeyBtnText, { fontFamily: "Inter_500Medium" }]}>Sign in with saved Passkey / PIN</Text>
+          <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleLandscaperLogin} activeOpacity={0.88}>
+            <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Password</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setStep("landscaper-register")} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
+            <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? <Text style={{ color: "#34FF7A" }}>Register here</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+      <PasskeyModal visible={showPasskey} onUsePasskey={finishPasskey} onSkip={skipPasskey} insets={insets} isWeb={isWeb} />
+      </>
     );
   }
 
@@ -493,18 +504,20 @@ const styles = StyleSheet.create({
     borderColor: "#34FF7A",
   },
   outlineBtnText: { color: "#FFFFFF", fontSize: 17 },
-  passkeyBtn: {
+  passkeyLoginBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1A1A1A",
+    gap: 10,
+    backgroundColor: "rgba(52,255,122,0.08)",
     borderWidth: 1.5,
-    borderColor: "#222222",
+    borderColor: "#34FF7A",
     paddingVertical: 18,
     borderRadius: 28,
-    marginTop: 12,
+    marginTop: 16,
   },
-  passkeyBtnText: { color: "#FFFFFF", fontSize: 15 },
+  passkeyLoginIcon: { fontSize: 22 },
+  passkeyLoginText: { fontSize: 15, color: "#34FF7A" },
   registerLink: { textAlign: "center", fontSize: 12, color: "#34FF7A", textDecorationLine: "underline" },
   demoNote: { textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.4)" },
 
