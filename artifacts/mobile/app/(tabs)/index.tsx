@@ -1085,6 +1085,65 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Recommended Landscapers — customers only, near top */}
+        {role !== "landscaper" && (
+          <>
+          <View style={styles.recRow}>
+            <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginBottom: 0 }]}>
+              Recommended Landscapers
+            </Text>
+            <Text style={[styles.seeAllLink, { fontFamily: "Inter_400Regular" }]}>See all</Text>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.proRowContent}
+            style={[styles.proRow, { marginBottom: 4 }]}
+          >
+            {!prosLoaded ? (
+              <>
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
+            ) : (
+              TRUSTED_PROS.map((pro) => {
+                const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
+                return (
+                  <TouchableOpacity
+                    key={pro.name}
+                    style={[styles.proHCard, isOffline && styles.proHCardDisabled]}
+                    onPress={() => {
+                      if (isOffline) return;
+                      Haptics.selectionAsync();
+                      setSelectedPro(pro);
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.proHIconWrap}>
+                      <Ionicons name={pro.icon} size={26} color="#34FF7A" />
+                    </View>
+                    <Text style={[styles.proHName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
+                      {pro.name}
+                    </Text>
+                    <Text style={[styles.proHMeta, { fontFamily: "Inter_400Regular" }]}>
+                      {pro.rating} ★ • {pro.jobs} jobs
+                    </Text>
+                    {isTrustedPro && (
+                      <View style={styles.trustedBadge}>
+                        <Text style={[styles.trustedBadgeText, { fontFamily: "Inter_500Medium" }]}>
+                          Trusted Pro
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })
+            )}
+          </ScrollView>
+          </>
+        )}
+
         {/* Popular Services — customers only */}
         {role !== "landscaper" && (
           <>
@@ -1224,61 +1283,6 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        {/* Horizontal Trusted Landscapers — customers only */}
-        {role !== "landscaper" && (
-          <>
-          <Text style={[styles.sectionSubtitle, { fontFamily: "Inter_400Regular" }]}>
-            Recommended Landscapers Near You (within 25 miles)
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.proRowContent}
-            style={styles.proRow}
-          >
-            {!prosLoaded ? (
-              <>
-                <SkeletonCard />
-                <SkeletonCard />
-                <SkeletonCard />
-              </>
-            ) : (
-              TRUSTED_PROS.map((pro) => {
-                const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
-                return (
-                  <TouchableOpacity
-                    key={pro.name}
-                    style={[styles.proHCard, isOffline && styles.proHCardDisabled]}
-                    onPress={() => {
-                      if (isOffline) return;
-                      Haptics.selectionAsync();
-                      setSelectedPro(pro);
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.proHIconWrap}>
-                      <Ionicons name={pro.icon} size={26} color="#34FF7A" />
-                    </View>
-                    <Text style={[styles.proHName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
-                      {pro.name}
-                    </Text>
-                    <Text style={[styles.proHMeta, { fontFamily: "Inter_400Regular" }]}>
-                      {pro.rating} ★ • {pro.jobs} jobs
-                    </Text>
-                    {isTrustedPro && (
-                      <View style={styles.trustedBadge}>
-                        <Text style={[styles.trustedBadgeText, { fontFamily: "Inter_500Medium" }]}>
-                          Trusted Pro
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })
-            )}
-          </ScrollView>
-          </>
-        )}
 
 
       </ScrollView>
@@ -1340,6 +1344,34 @@ function LandscaperProfileViewModal({
           <Text style={[proModalStyles.about, { fontFamily: "Inter_400Regular" }]}>
             Professional landscaping services with outstanding reviews. Specializing in lawn mowing, hedge trimming, mulching, and clean-up for residential properties in the Sarasota / Ellenton area.
           </Text>
+
+          {/* Services & Pricing */}
+          <Text style={[proModalStyles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>SERVICES & PRICING (BY YARD SIZE)</Text>
+          <View style={proModalStyles.pricingCard}>
+            {[
+              { size: "Small Yard",  desc: "Up to 2,000 sq ft",  price: "$45" },
+              { size: "Medium Yard", desc: "2,000–5,000 sq ft",  price: "$65" },
+              { size: "Large Yard",  desc: "5,000+ sq ft",       price: "$95+" },
+            ].map((tier, i, arr) => (
+              <View key={tier.size} style={[proModalStyles.pricingRow, i < arr.length - 1 && proModalStyles.pricingRowBorder]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[proModalStyles.pricingSize, { fontFamily: "Inter_600SemiBold" }]}>{tier.size}</Text>
+                  <Text style={[proModalStyles.pricingDesc, { fontFamily: "Inter_400Regular" }]}>{tier.desc}</Text>
+                </View>
+                <Text style={[proModalStyles.pricingPrice, { fontFamily: "Inter_700Bold" }]}>{tier.price}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Recent Work */}
+          <Text style={[proModalStyles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 20 }]}>RECENT WORK</Text>
+          <View style={proModalStyles.photoGrid}>
+            {["🌿", "✂️", "🪴", "🌱", "🧹", "🌳"].map((emoji, i) => (
+              <View key={i} style={proModalStyles.photoTile}>
+                <Text style={proModalStyles.photoEmoji}>{emoji}</Text>
+              </View>
+            ))}
+          </View>
 
           {/* Call / Text */}
           <View style={proModalStyles.contactRow}>
@@ -1456,6 +1488,36 @@ const proModalStyles = StyleSheet.create({
     elevation: 6,
   },
   bookBtnText: { fontSize: 16, color: "#000000" },
+  pricingCard: {
+    backgroundColor: "#111111",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    marginBottom: 4,
+    overflow: "hidden",
+  },
+  pricingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  pricingRowBorder: { borderBottomWidth: 1, borderBottomColor: "#222222" },
+  pricingSize: { fontSize: 14, color: "#FFFFFF", marginBottom: 2 },
+  pricingDesc: { fontSize: 11, color: "#666666" },
+  pricingPrice: { fontSize: 18, color: "#34FF7A" },
+  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 20 },
+  photoTile: {
+    width: "30.5%",
+    aspectRatio: 1,
+    backgroundColor: "#161616",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#222222",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoEmoji: { fontSize: 32 },
 });
 
 const TRUSTED_PROS = [
@@ -1543,6 +1605,8 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, color: "#FFFFFF" },
   sectionTitle: { fontSize: 17, color: "#FFFFFF", marginBottom: 12 },
   sectionSubtitle: { fontSize: 12, color: "#666666", marginBottom: 10, marginTop: -4 },
+  recRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 12, paddingHorizontal: 20 },
+  seeAllLink: { fontSize: 13, color: "#34FF7A" },
   appointmentCard: {
     backgroundColor: "#1A1A1A",
     borderRadius: 20,
