@@ -13,7 +13,6 @@ import {
   Alert,
   ActivityIndicator,
   Image,
-  useWindowDimensions,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -206,9 +205,6 @@ function AppHeader({
   missedCount: number;
   onProfilePress: () => void;
 }) {
-  const { width: screenWidth } = useWindowDimensions();
-  const logoH = screenWidth >= 1024 ? 82 : screenWidth >= 768 ? 76 : screenWidth >= 640 ? 72 : 68;
-  const logoW = Math.round(logoH * (248 / 68));
   return (
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
       <View style={styles.headerRow}>
@@ -226,7 +222,7 @@ function AppHeader({
         </View>
         <Image
           source={require("../../assets/images/logo-transparent.png")}
-          style={[styles.logoImg, { height: logoH, width: logoW }]}
+          style={styles.logoImg}
           resizeMode="contain"
         />
         <View style={[{ flex: 1 }, styles.headerRight]}>
