@@ -206,6 +206,9 @@ function AppHeader({
   missedCount: number;
   onProfilePress: () => void;
 }) {
+  const { width: screenWidth } = useWindowDimensions();
+  const logoH = screenWidth >= 1024 ? 82 : screenWidth >= 768 ? 76 : screenWidth >= 640 ? 72 : 68;
+  const logoW = Math.round(logoH * (248 / 68));
   return (
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
       <View style={styles.headerRow}>
@@ -855,9 +858,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
-  const { width: screenWidth } = useWindowDimensions();
-  const logoH = screenWidth >= 1024 ? 82 : screenWidth >= 768 ? 76 : screenWidth >= 640 ? 72 : 68;
-  const logoW = Math.round(logoH * (248 / 68));
   const { logout, role } = useAuth();
   const [prosLoaded, setProsLoaded] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
