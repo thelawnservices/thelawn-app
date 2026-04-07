@@ -9,7 +9,9 @@ import {
   Platform,
   Alert,
   Modal,
+  Image,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -119,6 +121,8 @@ export default function SearchScreen() {
   const [showNewReqModal, setShowNewReqModal] = useState(false);
   const [newReqService, setNewReqService] = useState("");
   const [newReqSize, setNewReqSize] = useState("");
+  const [newReqNotes, setNewReqNotes] = useState("");
+  const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
 
   const filtered = PROS.filter((p) => {
     const matchesQuery =
@@ -259,58 +263,121 @@ export default function SearchScreen() {
       {/* New Request Modal */}
       <Modal visible={showNewReqModal} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHandle} />
-            <Text style={[styles.modalTitle, { fontFamily: "Inter_700Bold" }]}>Request New Service</Text>
-            <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Service Type</Text>
-            <View style={styles.modalChipRow}>
-              {NEW_REQUEST_SERVICES.map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  style={[styles.modalChip, newReqService === s && styles.modalChipActive]}
-                  onPress={() => { setNewReqService(s); Haptics.selectionAsync(); }}
-                >
-                  <Text style={[styles.modalChipText, { fontFamily: "Inter_500Medium" }, newReqService === s && { color: "#000" }]}>{s}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Yard Size</Text>
-            <View style={styles.modalChipRow}>
-              {NEW_REQUEST_SIZES.map((sz) => (
-                <TouchableOpacity
-                  key={sz}
-                  style={[styles.modalChip, newReqSize === sz && styles.modalChipActive]}
-                  onPress={() => { setNewReqSize(sz); Haptics.selectionAsync(); }}
-                >
-                  <Text style={[styles.modalChipText, { fontFamily: "Inter_500Medium" }, newReqSize === sz && { color: "#000" }]}>{sz}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity
-              style={[styles.modalSubmitBtn, (!newReqService || !newReqSize) && { opacity: 0.4 }]}
-              activeOpacity={0.85}
-              disabled={!newReqService || !newReqSize}
-              onPress={() => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                const today = new Date();
-                const futureDate = new Date(today.setDate(today.getDate() + 3));
-                const label = futureDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                setMyRequests((prev) => [
-                  { id: `mq${Date.now()}`, service: newReqService, size: newReqSize, date: label, time: "TBD", status: "pending" },
-                  ...prev,
-                ]);
-                setNewReqService("");
-                setNewReqSize("");
+          <ScrollView contentContainerStyle={styles.modalScrollOuter} keyboardShouldPersistTaps="handled">
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHandle} />
+              <Text style={[styles.modalTitle, { fontFamily: "Inter_700Bold" }]}>Request New Service</Text>
+
+              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Service Type</Text>
+              <View style={styles.modalChipRow}>
+                {NEW_REQUEST_SERVICES.map((s) => (
+                  <TouchableOpacity
+                    key={s}
+                    style={[styles.modalChip, newReqService === s && styles.modalChipActive]}
+                    onPress={() => { setNewReqService(s); Haptics.selectionAsync(); }}
+                  >
+                    <Text style={[styles.modalChipText, { fontFamily: "Inter_500Medium" }, newReqService === s && { color: "#000" }]}>{s}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Yard Size</Text>
+              <View style={styles.modalChipRow}>
+                {NEW_REQUEST_SIZES.map((sz) => (
+                  <TouchableOpacity
+                    key={sz}
+                    style={[styles.modalChip, newReqSize === sz && styles.modalChipActive]}
+                    onPress={() => { setNewReqSize(sz); Haptics.selectionAsync(); }}
+                  >
+                    <Text style={[styles.modalChipText, { fontFamily: "Inter_500Medium" }, newReqSize === sz && { color: "#000" }]}>{sz}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Specific Needs / Instructions</Text>
+              <TextInput
+                style={[styles.modalTextArea, { fontFamily: "Inter_400Regular" }]}
+                placeholder="Describe exactly what you need (e.g., mow front & back, trim hedges, remove debris...)"
+                placeholderTextColor="#555"
+                value={newReqNotes}
+                onChangeText={setNewReqNotes}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+
+              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Attach Photos (optional)</Text>
+              <TouchableOpacity
+                style={styles.uploadZone}
+                activeOpacity={0.8}
+                onPress={async () => {
+                  const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ["images"],
+                    allowsMultipleSelection: true,
+                    quality: 0.7,
+                    selectionLimit: 5,
+                  });
+                  if (!result.canceled) {
+                    setNewReqPhotos((prev) => [
+                      ...prev,
+                      ...result.assets.map((a) => a.uri),
+                    ].slice(0, 5));
+                    Haptics.selectionAsync();
+                  }
+                }}
+              >
+                <Ionicons name="camera-outline" size={28} color="#34FF7A" />
+                <Text style={[styles.uploadZoneText, { fontFamily: "Inter_500Medium" }]}>Tap to attach photos</Text>
+                <Text style={[styles.uploadZoneSubText, { fontFamily: "Inter_400Regular" }]}>Up to 5 photos · {newReqPhotos.length} selected</Text>
+              </TouchableOpacity>
+
+              {newReqPhotos.length > 0 && (
+                <View style={styles.photoPreviewRow}>
+                  {newReqPhotos.map((uri, idx) => (
+                    <View key={uri} style={styles.photoThumb}>
+                      <Image source={{ uri }} style={styles.photoThumbImg} />
+                      <TouchableOpacity
+                        style={styles.photoRemoveBtn}
+                        onPress={() => setNewReqPhotos((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <Ionicons name="close" size={12} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={[styles.modalSubmitBtn, (!newReqService || !newReqSize) && { opacity: 0.4 }]}
+                activeOpacity={0.85}
+                disabled={!newReqService || !newReqSize}
+                onPress={() => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  const today = new Date();
+                  const futureDate = new Date(today.setDate(today.getDate() + 3));
+                  const label = futureDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                  setMyRequests((prev) => [
+                    { id: `mq${Date.now()}`, service: newReqService, size: newReqSize, date: label, time: "TBD", status: "pending" },
+                    ...prev,
+                  ]);
+                  setNewReqService("");
+                  setNewReqSize("");
+                  setNewReqNotes("");
+                  setNewReqPhotos([]);
+                  setShowNewReqModal(false);
+                  Alert.alert("Request Submitted!", "Landscapers in your area will review your request and send offers.");
+                }}
+              >
+                <Text style={[styles.modalSubmitText, { fontFamily: "Inter_600SemiBold" }]}>Submit Request</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => {
+                setNewReqService(""); setNewReqSize(""); setNewReqNotes(""); setNewReqPhotos([]);
                 setShowNewReqModal(false);
-                Alert.alert("Request Submitted!", "Landscapers in your area will review your request and send offers.");
-              }}
-            >
-              <Text style={[styles.modalSubmitText, { fontFamily: "Inter_600SemiBold" }]}>Submit Request</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowNewReqModal(false)}>
-              <Text style={[styles.modalCancelText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+              }}>
+                <Text style={[styles.modalCancelText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
       </Modal>
 
@@ -854,6 +921,43 @@ const styles = StyleSheet.create({
   modalSubmitText: { fontSize: 16, color: "#000" },
   modalCancelBtn: { paddingVertical: 12, alignItems: "center" },
   modalCancelText: { fontSize: 14, color: "#555" },
+  modalScrollOuter: { flexGrow: 1, justifyContent: "flex-end" },
+  modalTextArea: {
+    backgroundColor: "#111",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#333",
+    padding: 14,
+    fontSize: 14,
+    color: "#FFFFFF",
+    minHeight: 100,
+  },
+  uploadZone: {
+    borderWidth: 2,
+    borderColor: "#34FF7A44",
+    borderStyle: "dashed",
+    borderRadius: 20,
+    paddingVertical: 20,
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#0d2e1822",
+  },
+  uploadZoneText: { fontSize: 14, color: "#FFFFFF" },
+  uploadZoneSubText: { fontSize: 12, color: "#AAAAAA" },
+  photoPreviewRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 2 },
+  photoThumb: { width: 72, height: 72, borderRadius: 14, overflow: "hidden", position: "relative" },
+  photoThumbImg: { width: "100%", height: "100%" },
+  photoRemoveBtn: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   reqSubtitle: { fontSize: 13, color: "#AAAAAA", marginTop: 4 },
   reqCard: {
     backgroundColor: "#1A1A1A",
