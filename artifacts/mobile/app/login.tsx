@@ -60,11 +60,24 @@ export default function LoginScreen() {
   const topPad = isWeb ? 60 : insets.top + 20;
   const botPad = isWeb ? 40 : insets.bottom + 20;
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
+  const [showPasskey, setShowPasskey] = useState(false);
+  const [pendingRole, setPendingRole] = useState<"customer" | "landscaper" | null>(null);
 
   function go(role: "customer" | "landscaper") {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     login(role);
     router.replace("/(tabs)");
+  }
+
+  function finishPasskey() {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setShowPasskey(false);
+    if (pendingRole) go(pendingRole);
+  }
+
+  function skipPasskey() {
+    setShowPasskey(false);
+    if (pendingRole) go(pendingRole);
   }
 
   function handleCustomerLogin() {
@@ -93,7 +106,8 @@ export default function LoginScreen() {
     }
     setErrors(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    go("customer");
+    setPendingRole("customer");
+    setTimeout(() => setShowPasskey(true), 800);
   }
 
   function handleLandscaperRegister() {
@@ -104,7 +118,8 @@ export default function LoginScreen() {
     }
     setErrors(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    go("landscaper");
+    setPendingRole("landscaper");
+    setTimeout(() => setShowPasskey(true), 800);
   }
 
   function navBack(to: Step) {
@@ -293,6 +308,7 @@ export default function LoginScreen() {
       {termsDoc && (
         <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
       )}
+      <PasskeyModal visible={showPasskey} onUsePasskey={finishPasskey} onSkip={skipPasskey} insets={insets} isWeb={isWeb} />
     </>
     );
   }
@@ -369,7 +385,55 @@ export default function LoginScreen() {
     {termsDoc && (
       <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
     )}
+    <PasskeyModal visible={showPasskey} onUsePasskey={finishPasskey} onSkip={skipPasskey} insets={insets} isWeb={isWeb} />
     </>
+  );
+}
+
+function PasskeyModal({
+  visible,
+  onUsePasskey,
+  onSkip,
+  insets,
+  isWeb,
+}: {
+  visible: boolean;
+  onUsePasskey: () => void;
+  onSkip: () => void;
+  insets: { bottom: number };
+  isWeb: boolean;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={pkStyles.backdrop}>
+        <View style={[pkStyles.sheet, { paddingBottom: isWeb ? 36 : insets.bottom + 24 }]}>
+          <View style={pkStyles.handle} />
+          <View style={pkStyles.iconBox}>
+            <Text style={pkStyles.iconText}>🔑</Text>
+          </View>
+          <Text style={[pkStyles.title, { fontFamily: "Inter_700Bold" }]}>
+            Use Passkey for faster login?
+          </Text>
+          <Text style={[pkStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>
+            Sign in with Face ID or Touch ID — no password needed
+          </Text>
+          <TouchableOpacity style={pkStyles.primaryBtn} onPress={onUsePasskey} activeOpacity={0.88}>
+            <Text style={pkStyles.primaryBtnIcon}>👤</Text>
+            <Text style={[pkStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+              Continue with Passkey
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={pkStyles.secondaryBtn} onPress={onSkip} activeOpacity={0.85}>
+            <Text style={[pkStyles.secondaryBtnText, { fontFamily: "Inter_500Medium" }]}>
+              Continue with Password
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onSkip} style={{ marginTop: 20, alignItems: "center" }} activeOpacity={0.6}>
+            <Text style={[pkStyles.notNow, { fontFamily: "Inter_400Regular" }]}>Not now</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -482,4 +546,82 @@ const styles = StyleSheet.create({
   },
   consentText: { fontSize: 12, color: "rgba(255,255,255,0.4)" },
   consentLink: { fontSize: 12, color: "#34FF7A", textDecorationLine: "underline" },
+});
+
+const pkStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: "#161616",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 28,
+    paddingTop: 20,
+    alignItems: "center",
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#333",
+    borderRadius: 2,
+    marginBottom: 24,
+  },
+  iconBox: {
+    width: 72,
+    height: 72,
+    backgroundColor: "#34FF7A",
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  iconText: { fontSize: 36 },
+  title: {
+    fontSize: 22,
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "rgba(255,255,255,0.6)",
+    textAlign: "center",
+    lineHeight: 24,
+    marginBottom: 28,
+  },
+  primaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: "#34FF7A",
+    paddingVertical: 18,
+    borderRadius: 28,
+    width: "100%",
+    marginBottom: 12,
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  primaryBtnIcon: { fontSize: 22 },
+  primaryBtnText: { fontSize: 17, color: "#000000" },
+  secondaryBtn: {
+    backgroundColor: "#222222",
+    paddingVertical: 18,
+    borderRadius: 28,
+    width: "100%",
+    alignItems: "center",
+  },
+  secondaryBtnText: { fontSize: 16, color: "rgba(255,255,255,0.8)" },
+  notNow: { fontSize: 13, color: "rgba(255,255,255,0.35)" },
 });

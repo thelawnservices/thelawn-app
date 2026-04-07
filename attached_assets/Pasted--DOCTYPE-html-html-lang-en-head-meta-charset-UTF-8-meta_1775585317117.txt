@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Lawn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+    body { font-family: 'Montserrat', system-ui, sans-serif; background: #050505; color: #F8F8F8; font-size: 16px; }
+    .iphone { max-width: 390px; transition: all 0.4s ease; }
+    .header { background: linear-gradient(90deg, #050505, #111111); box-shadow: 0 4px 20px rgba(0,0,0,0.6); height: 78px; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #111111; border-top: 1px solid #222222; max-width: 390px; margin: 0 auto; box-shadow: 0 -4px 20px rgba(0,0,0,0.6); }
+    .nav-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .nav-item.active { color: #34FF7A; }
+    .card { background: #161616; border: 1px solid #222222; box-shadow: 0 10px 30px -10px rgba(52, 255, 122, 0.15); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 15px 35px -10px rgba(52, 255, 122, 0.25); }
+    button, .btn-hover { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+    button:active, .btn-hover:active { transform: scale(0.94); }
+    .micro-tap:active { transform: scale(0.92) !important; }
+
+    /* PROGRESSIVE LOADING + REFINED ANIMATIONS */
+    .preview-thumb {
+      position: relative;
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid #222222;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .preview-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0;
+      filter: blur(8px);
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .preview-thumb.loaded img {
+      opacity: 1;
+      filter: blur(0);
+    }
+    .preview-skeleton {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, #222222 25%, #2a2a2a 50%, #222222 75%);
+      background-size: 300% 100%;
+      animation: shimmer 1.4s linear infinite;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #34FF7A;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .preview-stagger { animation: staggerPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+    .compression-badge {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      font-size: 9px;
+      background: #34FF7A;
+      color: #000;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      font-weight: 700;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(52, 255, 122, 0.4);
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 2px dashed #34FF7A;
+      border-radius: 24px;
+      transition: all 0.3s ease;
+    }
+    .upload-zone:hover { border-color: #22C55E; background: rgba(52, 255, 122, 0.05); }
+    .upload-zone:active { transform: scale(0.98); }
+
+    .request-textarea {
+      background: #161616;
+      border: 1px solid #222222;
+      border-radius: 20px;
+      padding: 16px;
+      font-size: 15px;
+      line-height: 1.5;
+      resize: vertical;
+      min-height: 110px;
+      transition: all 0.2s ease;
+    }
+    .request-textarea:focus {
+      border-color: #34FF7A;
+      box-shadow: 0 0 0 3px rgba(52, 255, 122, 0.2);
+      outline: none;
+    }
+
+    /* PASSKEY MODAL (same beautiful design for both accounts) */
+    .passkey-modal {
+      animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .app-logo-header { height: 68px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 12px rgba(52,255,122,0.45)); margin: 0 auto; }
+    .app-logo-login { height: 210px; width: auto; object-fit: contain; filter: drop-shadow(0 10px 30px rgba(52,255,122,0.45)); margin-bottom: 32px; }
+  </style>
+</head>
+<body>
+
+  <div id="preview-container" class="iphone bg-[#050505] shadow-2xl relative">
+
+    <!-- HEADER -->
+    <div class="header h-14 flex items-center px-5 text-white relative">
+      <div class="flex-1"></div>
+      <img src="https://grok.x.ai/generated/1qQDY" alt="theLawn" class="app-logo-header">
+      <div class="flex-1"></div>
+      <svg onclick="toggleNotifications()" class="w-8 h-8 cursor-pointer micro-tap mr-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-9-5.197V8.5m.002 3.5L3 19" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 17h-2a1 1 0 01-1-1v-1a1 1 0 011-1h2a1 1 0 011 1v1a1 1 0 01-1 1z" />
+      </svg>
+      <div onclick="toggleProfileDropdown()" id="profile-icon" class="w-9 h-9 bg-[#34FF7A] text-black rounded-2xl flex items-center justify-center text-xl font-bold cursor-pointer micro-tap ring-2 ring-[#34FF7A]/30 overflow-hidden">👤</div>
+    </div>
+
+    <!-- PROFILE DROPDOWN -->
+    <div id="profile-dropdown" class="profile-dropdown hidden">
+      <div class="dropdown-item" onclick="viewProfile()"><span class="text-2xl">👤</span><span class="font-medium">View Profile</span></div>
+      <div class="dropdown-item" onclick="switchTab(2)"><span class="text-2xl">📅</span><span class="font-medium">Appointments</span></div>
+      <div class="dropdown-item" onclick="openSettings()"><span class="text-2xl">⚙️</span><span class="font-medium">Settings</span></div>
+      <div class="dropdown-item" onclick="shareWithFriends()"><span class="text-2xl">🔗</span><span class="font-medium">Share with friends</span></div>
+      <div class="dropdown-item" onclick="openPaymentMethodModal()"><span class="text-2xl">💳</span><span class="font-medium">Payment Method</span></div>
+      <div class="dropdown-item" onclick="openVouchersModal()"><span class="text-2xl">🎟️</span><span class="font-medium">Vouchers</span></div>
+      <div class="dropdown-item" onclick="openHelpModal()"><span class="text-2xl">❔</span><span class="font-medium">Help and Resources</span></div>
+      <div id="availability-dropdown-item" onclick="openAvailabilityModal()" class="dropdown-item hidden"><span class="text-2xl">🗓️</span><span class="font-medium">Service Availability</span></div>
+      <div class="h-px bg-[#222222] mx-4"></div>
+      <div class="dropdown-item text-white/70 text-sm" onclick="logout()">Sign out</div>
+    </div>
+
+    <!-- PASSKEY MODAL (same beautiful Apple-style design for BOTH Customer & Landscaper) -->
+    <div id="passkey-modal" class="hidden fixed inset-0 bg-black/70 flex items-end justify-center z-[9999]">
+      <div class="passkey-modal bg-[#161616] w-full max-w-[390px] rounded-t-3xl p-8 text-center">
+        <div class="mx-auto w-16 h-16 bg-[#34FF7A] rounded-2xl flex items-center justify-center text-4xl mb-6">🔑</div>
+        <h2 class="text-2xl font-semibold mb-2">Use Passkey for faster login?</h2>
+        <p class="text-white/70 text-lg mb-8">Sign in with Face ID or Touch ID — no password needed</p>
+        
+        <button onclick="usePasskey()" class="w-full bg-[#34FF7A] text-black py-5 rounded-3xl font-semibold text-lg mb-4 flex items-center justify-center gap-3">
+          <span class="text-2xl">👤</span>
+          Continue with Passkey
+        </button>
+        
+        <button onclick="skipPasskey()" class="w-full bg-[#222222] py-5 rounded-3xl font-medium text-white/80">
+          Continue with Password
+        </button>
+        
+        <p onclick="skipPasskey()" class="text-xs text-white/50 mt-8 cursor-pointer">Not now</p>
+      </div>
+    </div>
+
+    <!-- MY REQUESTS (Customer) – Progressive Loading + Image Optimization -->
+    <div id="my-requests-screen" class="hidden space-y-8 bg-[#050505]">
+      <div class="px-5 pt-4">
+        <h1 class="text-3xl font-semibold text-white">My Requests</h1>
+      </div>
+
+      <!-- New Request Box -->
+      <div onclick="if(event.target.tagName!=='INPUT' && event.target.tagName!=='TEXTAREA') startNewRequest()" class="mx-5 card rounded-3xl p-6 cursor-pointer btn-hover">
+        <div class="flex items-center justify-center text-center mb-6">
+          <div>
+            <div class="text-5xl mb-3">📬</div>
+            <p class="font-semibold text-xl">Request New Service</p>
+            <p class="text-sm text-white/70">Can’t find landscaping service? Request here!</p>
+          </div>
+        </div>
+
+        <!-- Specific Needs -->
+        <div class="mb-6">
+          <p class="text-xs text-white/70 mb-2">Specific Needs / Instructions</p>
+          <textarea id="new-request-specific-needs" rows="4" class="request-textarea w-full" placeholder="Describe exactly what you need (e.g., mow front & back, trim hedges, remove debris...)"></textarea>
+        </div>
+
+        <!-- Advanced Upload -->
+        <div class="upload-zone p-6 text-center" onclick="document.getElementById('request-file-upload').click()">
+          <p class="text-xs text-white/70 mb-1">Attach Photos / Documents (optional)</p>
+          <p class="text-xs text-[#34FF7A] font-medium">Progressive loading • WebP • Adaptive quality</p>
+          <div class="mt-4 flex flex-col items-center">
+            <span class="text-5xl">📸</span>
+            <p class="text-sm font-medium mt-2">Tap or drag photos here</p>
+          </div>
+          <input type="file" id="request-file-upload" accept="image/*" multiple class="hidden" onchange="handleRequestFileUpload(event)">
+        </div>
+
+        <!-- PROGRESSIVE PREVIEW -->
+        <div id="request-file-preview" class="flex gap-3 mt-6 flex-wrap"></div>
+      </div>
+
+      <!-- List of customer’s requests -->
+      <div class="px-5">
+        <p class="text-xs text-white/70 mb-3">Your Requests</p>
+        <div id="customer-requests-list" class="space-y-4"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav h-16 flex items-center justify-around text-xs font-medium text-[#A1A1A1]">
+    <div onclick="switchTab(0)" class="nav-item flex flex-col items-center active"><div class="text-3xl">🌿</div><div>Home</div></div>
+    <div onclick="switchTab(1)" class="nav-item flex flex-col items-center"><div class="text-3xl">🔍</div><div>Search</div></div>
+    <div onclick="switchTab(2)" class="nav-item flex flex-col items-center"><div class="text-3xl">📅</div><div>Appointments</div></div>
+    <div onclick="switchTab(5)" class="nav-item flex flex-col items-center"><div class="text-3xl">📬</div><div>Requests</div></div>
+    <div onclick="switchTab(3)" class="nav-item flex flex-col items-center"><div class="text-3xl">📌</div><div>My Jobs</div></div>
+  </div>
+
+  <script>
+    let db = { users: {}, jobs: [], requests: [], landscaperPrices: { "John Rivera Landscaping": { "Lawn Mowing": {Small:45,Medium:65,Large:120}, "Hedge Trimming":{Small:55,Medium:75,Large:95}, "Mulching":{Small:110,Medium:140,Large:180}, "Clean Up":{Small:30,Medium:40,Large:55} } } };
+    let currentUserType = null;
+    let currentUser = null;
+    let currentRequestFiles = [];
+
+    function loadDB() { const saved = localStorage.getItem('thelawn_db'); if(saved) db = JSON.parse(saved); }
+    function saveDB() { localStorage.setItem('thelawn_db', JSON.stringify(db)); }
+
+    /* ADVANCED IMAGE OPTIMIZATION + PROGRESSIVE LOADING */
+    async function compressImage(file) {
+      return new Promise(async (resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let { width, height } = img;
+            const MAX_DIM = 1400;
+            if (width > MAX_DIM || height > MAX_DIM) {
+              const ratio = MAX_DIM / Math.max(width, height);
+              width = Math.floor(width * ratio);
+              height = Math.floor(height * ratio);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // WebP with adaptive quality (optimization strategy)
+            if (canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0) {
+              let quality = 0.94;
+              const tryWebP = () => {
+                canvas.toBlob((blob) => {
+                  if (blob.size > 900 * 1024 && quality > 0.65) {
+                    quality -= 0.04;
+                    tryWebP();
+                  } else {
+                    resolve(new File([blob], file.name.replace(/\.\w+$/, '.webp'), { type: 'image/webp', lastModified: Date.now() }));
+                  }
+                }, 'image/webp', quality);
+              };
+              tryWebP();
+            } else {
+              let quality = 0.92;
+              const tryJPEG = () => {
+                canvas.toBlob((blob) => {
+                  if (blob.size > 900 * 1024 && quality > 0.60) {
+                    quality -= 0.05;
+                    tryJPEG();
+                  } else {
+                    resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg', lastModified: Date.now() }));
+                  }
+                }, 'image/jpeg', quality);
+              };
+              tryJPEG();
+            }
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    /* PROGRESSIVE LOADING + REFINED ANIMATIONS */
+    async function handleRequestFileUpload(e) {
+      const files = Array.from(e.target.files).slice(0, 5);
+      const previewContainer = document.getElementById('request-file-preview');
+      previewContainer.innerHTML = '';
+      currentRequestFiles = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (!file.type.startsWith('image/')) continue;
+
+        // 1. Skeleton + shimmer
+        const thumb = document.createElement('div');
+        thumb.className = `preview-thumb w-20 h-20 relative preview-stagger`;
+        thumb.style.animationDelay = `${i * 60}ms`;
+        thumb.innerHTML = `<div class="preview-skeleton w-full h-full">OPTIMIZING</div>`;
+        previewContainer.appendChild(thumb);
+
+        // 2. Compress
+        const compressedFile = await compressImage(file);
+        currentRequestFiles.push(compressedFile);
+
+        // 3. Progressive render: low-res blur → crisp
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          thumb.innerHTML = `
+            <img src="${ev.target.result}" alt="preview">
+            <button onclick="removePreviewFile(this)" class="remove-btn absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs leading-none shadow-md">×</button>
+            <div class="compression-badge">COMPRESSED</div>
+          `;
+          const imgEl = thumb.querySelector('img');
+          // Force progressive effect
+          setTimeout(() => imgEl.classList.add('loaded'), 120);
+        };
+        reader.readAsDataURL(compressedFile);
+      }
+    }
+
+    function removePreviewFile(btn) {
+      const thumb = btn.parentElement;
+      const index = Array.from(thumb.parentNode.children).indexOf(thumb);
+      currentRequestFiles.splice(index, 1);
+      thumb.remove();
+    }
+
+    function startNewRequest() {
+      const specificNeeds = document.getElementById('new-request-specific-needs').value.trim();
+      if (!specificNeeds && currentRequestFiles.length === 0) {
+        if (!confirm("No specific needs or photos added. Continue?")) return;
+      }
+      window.specificNeeds = specificNeeds || "No specific needs provided";
+      window.attachedFiles = currentRequestFiles;
+      document.getElementById('my-requests-screen').classList.add('hidden');
+      document.getElementById('availability-screen').classList.remove('hidden');
+      renderServiceTypeButtons();
+      document.getElementById('new-request-specific-needs').value = '';
+      document.getElementById('request-file-preview').innerHTML = '';
+      currentRequestFiles = [];
+    }
+
+    /* PASSKEY – SAME BEAUTIFUL DESIGN FOR BOTH CUSTOMER AND LANDSCAPER */
+    function showPasskeyModal() {
+      document.getElementById('passkey-modal').classList.remove('hidden');
+    }
+
+    function usePasskey() {
+      document.getElementById('passkey-modal').classList.add('hidden');
+      alert("✅ Passkey activated!\n\nYou can now log in instantly with Face ID / Touch ID on this device.");
+    }
+
+    function skipPasskey() {
+      document.getElementById('passkey-modal').classList.add('hidden');
+    }
+
+    function completeCustomerRegistration() {
+      // ... existing registration logic ...
+      currentUser = { first: document.getElementById('reg-firstname').value.trim(), ... /* other fields */ };
+      currentUserType = 'customer';
+      document.getElementById('customer-register-screen').classList.add('hidden');
+      document.getElementById('home-screen').classList.remove('hidden');
+      updateHomeScreen();
+      updateProfileIcon();
+      // Show unified Passkey modal for Customer
+      setTimeout(showPasskeyModal, 800);
+    }
+
+    function completeLandscaperRegistration() {
+      // ... existing registration logic ...
+      currentUser = { businessName: document.getElementById('lreg-business-name').value.trim(), ... /* other fields */ };
+      currentUserType = 'landscaper';
+      document.getElementById('landscaper-register-screen').classList.add('hidden');
+      document.getElementById('home-screen').classList.remove('hidden');
+      updateHomeScreen();
+      updateProfileIcon();
+      // Show THE SAME unified Passkey modal for Landscaper
+      setTimeout(showPasskeyModal, 800);
+    }
+
+    function updateProfileIcon() {
+      const icon = document.getElementById('profile-icon');
+      if (!currentUser) return;
+      if (currentUser.profilePicture) {
+        icon.innerHTML = `<img src="${currentUser.profilePicture}" class="w-full h-full object-cover">`;
+      } else {
+        let letter = currentUserType === 'customer' && currentUser.first ? currentUser.first[0].toUpperCase() : currentUser.businessName ? currentUser.businessName[0].toUpperCase() : '';
+        icon.innerHTML = letter ? `<span class="text-xl font-bold">${letter}</span>` : '👤';
+      }
+    }
+
+    window.onload = () => {
+      loadDB();
+      console.log("%c✅ The Lawn – PROGRESSIVE LOADING + IMAGE OPTIMIZATION + REFINED ANIMATIONS + UNIFIED PASSKEY (both accounts) complete 🌱", "color:#34FF7A;font-weight:bold");
+    };
+  </script>
+</body>
+</html>
