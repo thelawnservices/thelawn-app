@@ -1128,7 +1128,7 @@ export default function HomeScreen() {
           return (
             <>
               <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-                Pending Requests Within 50 Miles
+                Pending Requests Within 25 Miles
               </Text>
               {visible.length === 0 ? (
                 <View style={styles.pendingEmptyBox}>
