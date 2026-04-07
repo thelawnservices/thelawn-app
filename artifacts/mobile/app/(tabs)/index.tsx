@@ -12,6 +12,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -219,7 +220,11 @@ function AppHeader({
             </Text>
           </TouchableOpacity>
         </View>
-        <Text style={[styles.logo, { fontFamily: "GreatVibes_400Regular" }]}>theLawn</Text>
+        <Image
+          source={require("../../assets/images/logo-transparent.png")}
+          style={styles.logoImg}
+          resizeMode="contain"
+        />
         <View style={[{ flex: 1 }, styles.headerRight]}>
           <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
             <Ionicons
@@ -1193,12 +1198,10 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     gap: 4,
   },
-  logo: {
-    fontSize: 34,
-    color: "#fff",
-    letterSpacing: -1,
-    textShadow: "0 0 14px rgba(52, 255, 122, 0.7)",
-  } as any,
+  logoImg: {
+    height: 36,
+    width: 130,
+  },
   notifBtn: {
     width: 36,
     height: 36,

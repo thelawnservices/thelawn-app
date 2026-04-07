@@ -9,6 +9,7 @@ import {
   Platform,
   KeyboardAvoidingView,
   Alert,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -114,7 +115,11 @@ export default function LoginScreen() {
     return (
       <View style={[styles.container, { paddingTop: isWeb ? 60 : insets.top, paddingBottom: isWeb ? 40 : insets.bottom }]}>
         <View style={styles.logoSection}>
-          <Text style={[styles.logo, { fontFamily: "GreatVibes_400Regular" }]}>theLawn</Text>
+          <Image
+            source={require("../assets/images/logo-transparent.png")}
+            style={styles.logoImg}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.buttonsSection}>
@@ -352,6 +357,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#050505", justifyContent: "center", paddingHorizontal: 28 },
   logoSection: { alignItems: "center", marginBottom: 56 },
   logo: { fontSize: 72, color: "#22C55E", letterSpacing: -4 },
+  logoImg: { width: 220, height: 120 },
   buttonsSection: { gap: 10, marginBottom: 40 },
   dividerGap: { height: 10 },
   primaryBtn: {
