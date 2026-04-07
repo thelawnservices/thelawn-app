@@ -354,7 +354,7 @@ function LandscaperProfile({
               </TouchableOpacity>
               <View style={styles.legalDivider} />
               <Text style={[styles.legalDisclaimer, { fontFamily: "Inter_400Regular" }]}>
-                The Lawn is a marketplace platform. All services are performed by independent contractors.
+                TheLawn is a marketplace platform. All services are performed by independent contractors.
               </Text>
             </View>
 
@@ -695,7 +695,7 @@ function CustomerProfile({ logout }: { logout: () => void }) {
         </TouchableOpacity>
         <View style={styles.legalDivider} />
         <Text style={[styles.legalDisclaimer, { fontFamily: "Inter_400Regular" }]}>
-          The Lawn is a marketplace platform. All services are performed by independent contractors. The Lawn is not liable for damages, injuries, or disputes arising from booked services.
+          TheLawn is a marketplace platform. All services are performed by independent contractors. TheLawn is not liable for damages, injuries, or disputes arising from booked services.
         </Text>
       </View>
 

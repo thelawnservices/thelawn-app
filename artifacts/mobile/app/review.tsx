@@ -139,7 +139,7 @@ export default function ReviewScreen() {
           </View>
           <View style={styles.lineItem}>
             <Text style={[styles.lineLabel, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-              The Lawn fee (3%)
+              TheLawn fee (3%)
             </Text>
             <Text style={[styles.lineValue, { color: colors.foreground, fontFamily: "Inter_500Medium" }]}>
               ${fee.toFixed(2)}
