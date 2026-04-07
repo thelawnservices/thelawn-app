@@ -13,6 +13,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Linking,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -872,6 +873,7 @@ export default function HomeScreen() {
   const { acceptJob } = useJobs();
   const [acceptedOnHome, setAcceptedOnHome] = useState<string[]>([]);
   const [prosLoaded, setProsLoaded] = useState(false);
+  const [selectedPro, setSelectedPro] = useState<TrustedPro | null>(null);
   const [notifVisible, setNotifVisible] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
@@ -1243,7 +1245,11 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     key={pro.name}
                     style={[styles.proHCard, isOffline && styles.proHCardDisabled]}
-                    onPress={() => handleBooking(() => router.navigate("/pay"))}
+                    onPress={() => {
+                      if (isOffline) return;
+                      Haptics.selectionAsync();
+                      setSelectedPro(pro);
+                    }}
                     activeOpacity={0.8}
                   >
                     <View style={styles.proHIconWrap}>
@@ -1271,9 +1277,181 @@ export default function HomeScreen() {
 
 
       </ScrollView>
+
+      {/* Landscaper Profile Modal — customers only */}
+      <LandscaperProfileViewModal
+        pro={selectedPro}
+        onClose={() => setSelectedPro(null)}
+        onBook={() => {
+          setSelectedPro(null);
+          handleBooking(() => router.navigate("/pay"));
+        }}
+      />
     </View>
   );
 }
+
+type TrustedPro = { name: string; rating: number; jobs: number; meta: string; icon: "leaf" | "grid" | "flower" | "star" | "cut" | "options" | "earth" };
+
+function LandscaperProfileViewModal({
+  pro,
+  onClose,
+  onBook,
+}: {
+  pro: TrustedPro | null;
+  onClose: () => void;
+  onBook: () => void;
+}) {
+  if (!pro) return null;
+  return (
+    <Modal visible={!!pro} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={proModalStyles.overlay} onPress={onClose}>
+        <Pressable style={proModalStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          {/* Hero bar */}
+          <View style={proModalStyles.hero}>
+            <View style={proModalStyles.heroIcon}>
+              <Ionicons name={pro.icon} size={38} color="#000" />
+            </View>
+            <TouchableOpacity style={proModalStyles.closeBtn} onPress={onClose} activeOpacity={0.7}>
+              <Ionicons name="close" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Info */}
+          <Text style={[proModalStyles.name, { fontFamily: "Inter_700Bold" }]}>{pro.name}</Text>
+          <View style={proModalStyles.metaRow}>
+            <View style={proModalStyles.ratingPill}>
+              <Text style={[proModalStyles.ratingText, { fontFamily: "Inter_600SemiBold" }]}>★ {pro.rating}</Text>
+            </View>
+            <Text style={[proModalStyles.metaText, { fontFamily: "Inter_400Regular" }]}>{pro.jobs} jobs completed</Text>
+            {pro.rating >= 4.7 && pro.jobs >= 50 && (
+              <View style={proModalStyles.trustedBadge}>
+                <Text style={[proModalStyles.trustedText, { fontFamily: "Inter_500Medium" }]}>Trusted Pro</Text>
+              </View>
+            )}
+          </View>
+
+          <Text style={[proModalStyles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>ABOUT</Text>
+          <Text style={[proModalStyles.about, { fontFamily: "Inter_400Regular" }]}>
+            Professional landscaping services with outstanding reviews. Specializing in lawn mowing, hedge trimming, mulching, and clean-up for residential properties in the Sarasota / Ellenton area.
+          </Text>
+
+          {/* Call / Text */}
+          <View style={proModalStyles.contactRow}>
+            <TouchableOpacity
+              style={proModalStyles.contactBtn}
+              activeOpacity={0.8}
+              onPress={() => Linking.openURL("tel:+19415550000").catch(() => Alert.alert("📞 Demo", "Calling " + pro.name))}
+            >
+              <Text style={proModalStyles.contactIcon}>📞</Text>
+              <Text style={[proModalStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={proModalStyles.contactBtn}
+              activeOpacity={0.8}
+              onPress={() => Linking.openURL("sms:+19415550000").catch(() => Alert.alert("💬 Demo", "Texting " + pro.name))}
+            >
+              <Text style={proModalStyles.contactIcon}>💬</Text>
+              <Text style={[proModalStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={proModalStyles.bookBtn} activeOpacity={0.85} onPress={onBook}>
+            <Ionicons name="calendar-outline" size={18} color="#000" />
+            <Text style={[proModalStyles.bookBtnText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const proModalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: "#1A1A1A",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+    paddingTop: 0,
+    borderTopWidth: 1,
+    borderColor: "#222222",
+  },
+  hero: {
+    height: 100,
+    backgroundColor: "#0d2e18",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: -24,
+    marginBottom: 16,
+    position: "relative",
+  },
+  heroIcon: {
+    width: 68,
+    height: 68,
+    backgroundColor: "#34FF7A",
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeBtn: {
+    position: "absolute",
+    top: 14,
+    right: 16,
+    width: 32,
+    height: 32,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  name: { fontSize: 22, color: "#FFFFFF", marginBottom: 10 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" },
+  ratingPill: { backgroundColor: "#0d2e18", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
+  ratingText: { fontSize: 13, color: "#34FF7A" },
+  metaText: { fontSize: 13, color: "#888888" },
+  trustedBadge: { backgroundColor: "#0d2e18", borderWidth: 1, borderColor: "#34FF7A", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
+  trustedText: { fontSize: 11, color: "#34FF7A" },
+  sectionTitle: { fontSize: 12, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 8 },
+  about: { fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 22, marginBottom: 24 },
+  contactRow: { flexDirection: "row", gap: 12, marginBottom: 16 },
+  contactBtn: {
+    flex: 1,
+    backgroundColor: "#222222",
+    borderWidth: 1,
+    borderColor: "#34FF7A",
+    borderRadius: 28,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  contactIcon: { fontSize: 18 },
+  contactLabel: { fontSize: 15, color: "#34FF7A" },
+  bookBtn: {
+    backgroundColor: "#34FF7A",
+    borderRadius: 28,
+    paddingVertical: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  bookBtnText: { fontSize: 16, color: "#000000" },
+});
 
 const TRUSTED_PROS = [
   { name: "John Rivera Landscaping", rating: 4.9, jobs: 142, meta: "2.3 mi • 142 jobs completed", icon: "leaf" as const },

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Platform,
   Alert,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -99,6 +100,16 @@ export default function AppointmentsScreen() {
 
   const [cancelledIds, setCancelledIds] = useState<string[]>([]);
   const { acceptedJobs, cancelAccepted } = useJobs();
+
+  function openMaps(address: string) {
+    const encoded = encodeURIComponent(address);
+    const url = Platform.OS === "ios"
+      ? `maps://?daddr=${encoded}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${encoded}`;
+    Linking.openURL(url).catch(() =>
+      Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${encoded}`)
+    );
+  }
 
   const visibleScheduled = LANDSCAPER_SCHEDULED.filter(
     (a) => !cancelledIds.includes(a.id)
@@ -233,13 +244,18 @@ export default function AppointmentsScreen() {
                   </Text>
                 </View>
 
-                {/* Address */}
-                <View style={styles.lsMetaRow}>
-                  <Ionicons name="location-outline" size={13} color="#555" />
-                  <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]} numberOfLines={1}>
+                {/* Address — tap to open maps */}
+                <TouchableOpacity
+                  style={styles.lsMetaRow}
+                  activeOpacity={0.7}
+                  onPress={() => openMaps(appt.address)}
+                >
+                  <Ionicons name="location-outline" size={13} color="#34FF7A" />
+                  <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }, styles.mapAddressLink]} numberOfLines={1}>
                     {appt.address}
                   </Text>
-                </View>
+                  <Ionicons name="navigate-outline" size={12} color="#34FF7A" />
+                </TouchableOpacity>
 
                 {/* Phone */}
                 <View style={styles.lsMetaRow}>
@@ -436,6 +452,7 @@ const styles = StyleSheet.create({
   lsBudget: { fontSize: 20, color: "#FFFFFF" },
   lsMetaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   lsMetaText: { fontSize: 13, color: "#AAAAAA", flex: 1 },
+  mapAddressLink: { color: "#34FF7A", textDecorationLine: "underline", flex: 1 },
   metaDot: { color: "#333", fontSize: 12 },
   notePill: {
     flexDirection: "row",

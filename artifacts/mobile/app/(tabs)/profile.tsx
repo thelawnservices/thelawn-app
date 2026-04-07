@@ -11,6 +11,9 @@ import {
   ActivityIndicator,
   TextInput,
   Image,
+  Modal,
+  Pressable,
+  Switch,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -125,6 +128,10 @@ function LandscaperProfile({
   const [heroBackground, setHeroBackground] = useState<string | null>(null);
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const [servicePhotos, setServicePhotos] = useState<string[]>([]);
+  const [privacyVisible, setPrivacyVisible] = useState(false);
+  const [privVisible, setPrivVisible] = useState(true);
+  const [privPrices, setPrivPrices] = useState(false);
+  const [privReviews, setPrivReviews] = useState(true);
   const [reviews, setReviews] = useState<ReviewItem[]>([
     { text: '"John did an amazing job on our yard – very professional and on time!"', author: "Sarah M.", date: "4 days ago", stars: 5 },
     { text: '"Reliable, on time, and the yard looks fantastic every time. Highly recommend."', author: "Marcus T.", date: "2 weeks ago", stars: 5 },
@@ -351,10 +358,65 @@ function LandscaperProfile({
               </Text>
             </View>
 
+            {/* Privacy Settings */}
+            <View style={[styles.legalCard, { marginTop: 0 }]}>
+              <TouchableOpacity
+                style={styles.legalRow}
+                onPress={() => { Haptics.selectionAsync(); setPrivacyVisible(true); }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="lock-closed-outline" size={18} color="#AAAAAA" />
+                <Text style={[styles.legalRowText, { fontFamily: "Inter_500Medium" }]}>Privacy Settings</Text>
+                <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.75}>
               <Ionicons name="log-out-outline" size={18} color="#ef4444" />
               <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Sign Out</Text>
             </TouchableOpacity>
+
+            {/* ── Privacy Settings Modal ── */}
+            <Modal visible={privacyVisible} transparent animationType="slide" onRequestClose={() => setPrivacyVisible(false)}>
+              <Pressable style={privModalStyles.overlay} onPress={() => setPrivacyVisible(false)}>
+                <Pressable style={privModalStyles.sheet} onPress={(e) => e.stopPropagation()}>
+                  <View style={privModalStyles.header}>
+                    <Text style={[privModalStyles.title, { fontFamily: "Inter_700Bold" }]}>Privacy Settings</Text>
+                    <TouchableOpacity onPress={() => setPrivacyVisible(false)} style={privModalStyles.closeBtn} activeOpacity={0.7}>
+                      <Ionicons name="close" size={22} color="#FFFFFF" />
+                    </TouchableOpacity>
+                  </View>
+
+                  {([
+                    { label: "Profile visible to customers", value: privVisible, onChange: setPrivVisible },
+                    { label: "Show prices publicly", value: privPrices, onChange: setPrivPrices },
+                    { label: "Allow customer reviews", value: privReviews, onChange: setPrivReviews },
+                  ] as const).map((row, idx) => (
+                    <View key={idx} style={privModalStyles.row}>
+                      <Text style={[privModalStyles.rowLabel, { fontFamily: "Inter_400Regular" }]}>{row.label}</Text>
+                      <Switch
+                        value={row.value}
+                        onValueChange={(v) => { Haptics.selectionAsync(); (row.onChange as (v: boolean) => void)(v); }}
+                        trackColor={{ false: "#333333", true: "#34FF7A" }}
+                        thumbColor={row.value ? "#000000" : "#888888"}
+                      />
+                    </View>
+                  ))}
+
+                  <TouchableOpacity
+                    style={privModalStyles.saveBtn}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      setPrivacyVisible(false);
+                      Alert.alert("✅ Privacy settings saved");
+                    }}
+                  >
+                    <Text style={[privModalStyles.saveBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Settings</Text>
+                  </TouchableOpacity>
+                </Pressable>
+              </Pressable>
+            </Modal>
           </>
         )}
 
@@ -903,4 +965,55 @@ const styles = StyleSheet.create({
   legalRowText: { fontSize: 14, color: "#FFFFFF", flex: 1 },
   legalDivider: { height: 1, backgroundColor: "#2A2A2A", marginVertical: 2 },
   legalDisclaimer: { fontSize: 11, color: "#555", lineHeight: 17, marginTop: 10 },
+});
+
+const privModalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  sheet: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 28,
+    padding: 28,
+    width: "100%",
+    maxWidth: 380,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 28,
+  },
+  title: { fontSize: 20, color: "#FFFFFF" },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#222222",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#222222",
+  },
+  rowLabel: { fontSize: 15, color: "#FFFFFF", flex: 1, paddingRight: 12 },
+  saveBtn: {
+    backgroundColor: "#34FF7A",
+    paddingVertical: 18,
+    borderRadius: 28,
+    alignItems: "center",
+    marginTop: 28,
+  },
+  saveBtnText: { color: "#000000", fontSize: 16 },
 });
