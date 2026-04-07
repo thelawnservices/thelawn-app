@@ -856,7 +856,7 @@ export default function HomeScreen() {
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
   const { width: screenWidth } = useWindowDimensions();
-  const logoH = screenWidth >= 640 ? 72 : 68;
+  const logoH = screenWidth >= 1024 ? 82 : screenWidth >= 768 ? 76 : screenWidth >= 640 ? 72 : 68;
   const logoW = Math.round(logoH * (248 / 68));
   const { logout, role } = useAuth();
   const [prosLoaded, setProsLoaded] = useState(false);
