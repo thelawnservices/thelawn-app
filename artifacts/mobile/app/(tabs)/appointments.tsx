@@ -121,7 +121,7 @@ export default function AppointmentsScreen() {
                 ))}
               </View>
             </View>
-            <Ionicons name="checkmark-circle" size={20} color="#22C55E" />
+            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -130,9 +130,9 @@ export default function AppointmentsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#050505" },
+  container: { flex: 1, backgroundColor: "#0A0A0A" },
   header: {
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   card: {
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 22,
     padding: 16,
     flexDirection: "row",

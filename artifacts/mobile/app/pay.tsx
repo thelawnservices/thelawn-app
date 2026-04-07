@@ -71,7 +71,7 @@ export default function PayScreen() {
 
   const proName = params.proName || "John Rivera";
   const proInitials = params.proInitials || "JR";
-  const proColor = params.proColor || "#22C55E";
+  const proColor = params.proColor || "#10B981";
 
   const [payState, setPayState] = useState<PayState>("availability");
   const [selectedService, setSelectedService] = useState<string | null>(null);
@@ -206,7 +206,7 @@ export default function PayScreen() {
   // ─── Processing ───────────────────────────────────────────────
   if (payState === "processing") {
     return (
-      <View style={[styles.fullCenter, { backgroundColor: "#050505" }]}>
+      <View style={[styles.fullCenter, { backgroundColor: "#0A0A0A" }]}>
         <Animated.View style={[styles.spinner, { transform: [{ rotate: spin }] }]} />
         <Text style={[styles.processingText, { fontFamily: "Inter_500Medium" }]}>
           Processing with {PAY_METHOD_LABELS[paymentMethod]}...
@@ -218,9 +218,9 @@ export default function PayScreen() {
   // ─── Success ──────────────────────────────────────────────────
   if (payState === "success") {
     return (
-      <View style={[styles.fullCenter, { backgroundColor: "#050505", paddingBottom: bottomPadding + 20 }]}>
+      <View style={[styles.fullCenter, { backgroundColor: "#0A0A0A", paddingBottom: bottomPadding + 20 }]}>
         <View style={styles.lockIconBox}>
-          <Ionicons name="lock-closed" size={52} color="#22C55E" />
+          <Ionicons name="lock-closed" size={52} color="#10B981" />
         </View>
         <Text style={[styles.successTitle, { fontFamily: "Inter_700Bold" }]}>
           Payment Held in Escrow
@@ -281,7 +281,7 @@ export default function PayScreen() {
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
           <TouchableOpacity onPress={() => router.dismiss()} style={styles.backBtn}>
-            <Ionicons name="chevron-down" size={24} color="#22C55E" />
+            <Ionicons name="chevron-down" size={24} color="#10B981" />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Select Date & Time</Text>
           <View style={{ width: 36 }} />
@@ -510,7 +510,7 @@ export default function PayScreen() {
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
           <TouchableOpacity onPress={() => setPayState("availability")} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={24} color="#22C55E" />
+            <Ionicons name="chevron-back" size={24} color="#10B981" />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Job Details</Text>
           <View style={{ width: 36 }} />
@@ -518,7 +518,7 @@ export default function PayScreen() {
 
         {/* Date/time pill */}
         <View style={styles.selectedSlotPill}>
-          <Ionicons name="calendar-outline" size={14} color="#22C55E" />
+          <Ionicons name="calendar-outline" size={14} color="#10B981" />
           <Text style={[styles.selectedSlotText, { fontFamily: "Inter_500Medium" }]}>
             {selectedDateLabel} at {selectedTime}
           </Text>
@@ -650,7 +650,7 @@ export default function PayScreen() {
           )}
 
           <TouchableOpacity style={styles.addPhotoBtn} onPress={addPhoto}>
-            <Ionicons name="camera-outline" size={22} color="#22C55E" />
+            <Ionicons name="camera-outline" size={22} color="#10B981" />
             <Text style={[styles.addPhotoBtnText, { fontFamily: "Inter_500Medium" }]}>
               + Add Photo
             </Text>
@@ -691,7 +691,7 @@ export default function PayScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: topPadding + 12 }]}>
         <TouchableOpacity onPress={() => setPayState("details")} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#22C55E" />
+          <Ionicons name="chevron-back" size={24} color="#10B981" />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Review & Pay</Text>
         <View style={{ width: 36 }} />
@@ -712,7 +712,7 @@ export default function PayScreen() {
             </Text>
             {recurring && (
               <View style={styles.recurringBadge}>
-                <Ionicons name="repeat" size={11} color="#22C55E" />
+                <Ionicons name="repeat" size={11} color="#10B981" />
                 <Text style={[styles.recurringBadgeText, { fontFamily: "Inter_500Medium" }]}>
                   {recurringFreq} · Charged per appointment
                 </Text>
@@ -738,7 +738,7 @@ export default function PayScreen() {
         {/* Job Instructions preview */}
         {instructions.trim().length > 0 && (
           <View style={styles.instructionsPreview}>
-            <Ionicons name="document-text-outline" size={16} color="#22C55E" />
+            <Ionicons name="document-text-outline" size={16} color="#10B981" />
             <Text style={[styles.instructionsPreviewText, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
               {instructions}
             </Text>
@@ -845,7 +845,7 @@ export default function PayScreen() {
         {/* Escrow Notice */}
         <View style={styles.escrowNotice}>
           <View style={styles.escrowNoticeTop}>
-            <Ionicons name="lock-closed" size={16} color="#22C55E" />
+            <Ionicons name="lock-closed" size={16} color="#10B981" />
             <Text style={[styles.escrowNoticeTitle, { fontFamily: "Inter_600SemiBold" }]}>
               Secure Escrow Payment
             </Text>
@@ -893,7 +893,7 @@ export default function PayScreen() {
 
         {paymentMethod === "applepay" && (
           <View style={styles.payFieldReady}>
-            <Ionicons name="checkmark-circle" size={20} color="#22C55E" />
+            <Ionicons name="checkmark-circle" size={20} color="#10B981" />
             <Text style={[styles.payFieldReadyText, { fontFamily: "Inter_500Medium" }]}>
               Apple Pay ready — tap Authorize to confirm
             </Text>
@@ -980,7 +980,7 @@ export default function PayScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#050505" },
+  container: { flex: 1, backgroundColor: "#0A0A0A" },
   fullCenter: {
     flex: 1,
     alignItems: "center",
@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: 28,
     borderWidth: 4,
-    borderColor: "#22C55E",
+    borderColor: "#10B981",
     borderTopColor: "transparent",
     marginBottom: 8,
   },
@@ -1011,7 +1011,7 @@ const styles = StyleSheet.create({
   successSub: { fontSize: 14, color: "#888888", textAlign: "center", lineHeight: 22 },
   escrowInfoBox: {
     width: "100%",
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 20,
     padding: 18,
     gap: 14,
@@ -1029,11 +1029,11 @@ const styles = StyleSheet.create({
   escrowStepNumText: { fontSize: 14, color: "#FFFFFF" },
   escrowStepText: { fontSize: 14, color: "#FFFFFF", flex: 1 },
   successBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#10B981",
     paddingVertical: 16,
     borderRadius: 22,
     alignItems: "center",
-    shadowColor: "#22C55E",
+    shadowColor: "#10B981",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 10,
@@ -1049,10 +1049,10 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#222222",
-    backgroundColor: "#050505",
+    backgroundColor: "#0A0A0A",
   },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
-  headerTitle: { flex: 1, textAlign: "center", fontSize: 17, color: "#22C55E" },
+  headerTitle: { flex: 1, textAlign: "center", fontSize: 17, color: "#10B981" },
   selectedSlotPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -1068,7 +1068,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 18,
     padding: 14,
     marginBottom: 24,
@@ -1090,13 +1090,13 @@ const styles = StyleSheet.create({
     width: 62,
     paddingVertical: 14,
     borderRadius: 18,
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#222222",
     gap: 2,
   },
-  dateTileActive: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
+  dateTileActive: { backgroundColor: "#10B981", borderColor: "#10B981" },
   dateTileDay: { fontSize: 11, color: "#555" },
   dateTileDate: { fontSize: 20, color: "#FFFFFF" },
   dateTileMonth: { fontSize: 11, color: "#555" },
@@ -1110,20 +1110,20 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 16,
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#222222",
     minWidth: "30%",
     alignItems: "center",
   },
-  timeTileActive: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
+  timeTileActive: { backgroundColor: "#10B981", borderColor: "#10B981" },
   timeTileDisabled: { backgroundColor: "#0d0d0d", borderColor: "#1a1a1a" },
   timeTileText: { fontSize: 14, color: "#FFFFFF" },
   hintText: { fontSize: 13, color: "#888888", textAlign: "center", marginTop: 8 },
-  fieldLabel: { fontSize: 15, color: "#22C55E", marginBottom: 4 },
+  fieldLabel: { fontSize: 15, color: "#10B981", marginBottom: 4 },
   fieldHint: { fontSize: 13, color: "#888888", marginBottom: 12 },
   addressInput: {
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#222222",
     borderRadius: 18,
@@ -1133,10 +1133,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   addressInputFilled: {
-    borderColor: "#22C55E",
+    borderColor: "#10B981",
   },
   textArea: {
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#222222",
     borderRadius: 18,
@@ -1164,28 +1164,28 @@ const styles = StyleSheet.create({
     gap: 10,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "#22C55E",
+    borderColor: "#10B981",
     borderRadius: 22,
     paddingVertical: 20,
     marginBottom: 8,
   },
-  addPhotoBtnText: { fontSize: 15, color: "#22C55E" },
+  addPhotoBtnText: { fontSize: 15, color: "#10B981" },
   bottomBar: {
     paddingHorizontal: 20,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: "#222222",
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
   },
   continueBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#10B981",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
     paddingVertical: 16,
     borderRadius: 22,
-    shadowColor: "#22C55E",
+    shadowColor: "#10B981",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -1201,7 +1201,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 20,
     padding: 16,
     marginBottom: 12,
@@ -1245,16 +1245,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#222",
   },
-  tipBtnActive: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
+  tipBtnActive: { backgroundColor: "#10B981", borderColor: "#10B981" },
   tipBtnLabel: { fontSize: 16, color: "#FFFFFF" },
   tipBtnAmount: { fontSize: 12, color: "#888888", marginTop: 2 },
   breakdown: {
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 20,
     padding: 18,
     marginBottom: 14,
@@ -1267,7 +1267,7 @@ const styles = StyleSheet.create({
   lineValue: { fontSize: 14, color: "#FFFFFF" },
   totalRow: { borderTopWidth: 1, borderTopColor: "#333", paddingTop: 12, marginTop: 4 },
   totalLabel: { fontSize: 17, color: "#FFFFFF" },
-  totalValue: { fontSize: 26, color: "#22C55E" },
+  totalValue: { fontSize: 26, color: "#10B981" },
   escrowNotice: {
     backgroundColor: "#0A1F1A",
     borderWidth: 1,
@@ -1278,17 +1278,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   escrowNoticeTop: { flexDirection: "row", alignItems: "center", gap: 8 },
-  escrowNoticeTitle: { fontSize: 14, color: "#22C55E" },
+  escrowNoticeTitle: { fontSize: 14, color: "#10B981" },
   escrowNoticeText: { fontSize: 13, color: "#A8FFD1", lineHeight: 20 },
   authorizeBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#10B981",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
     paddingVertical: 16,
     borderRadius: 22,
-    shadowColor: "#22C55E",
+    shadowColor: "#10B981",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -1299,7 +1299,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 18,
     padding: 16,
     marginTop: 20,
@@ -1315,7 +1315,7 @@ const styles = StyleSheet.create({
     padding: 3,
     justifyContent: "center",
   },
-  toggleTrackOn: { backgroundColor: "#22C55E" },
+  toggleTrackOn: { backgroundColor: "#10B981" },
   toggleThumb: {
     width: 20,
     height: 20,
@@ -1334,12 +1334,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     borderRadius: 14,
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#222222",
   },
-  freqChipActive: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
+  freqChipActive: { backgroundColor: "#10B981", borderColor: "#10B981" },
   freqChipText: { fontSize: 13, color: "#FFFFFF" },
   freqChipTextActive: { color: "#000" },
 
@@ -1354,7 +1354,7 @@ const styles = StyleSheet.create({
   recurringDateRow: { flexDirection: "row", gap: 12 },
   recurringDateLabel: { fontSize: 11, color: "#AAAAAA", marginBottom: 6 },
   recurringDateInput: {
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#222222",
     borderRadius: 14,
@@ -1371,11 +1371,11 @@ const styles = StyleSheet.create({
     marginTop: 3,
     marginBottom: 2,
   },
-  recurringBadgeText: { fontSize: 11, color: "#22C55E" },
+  recurringBadgeText: { fontSize: 11, color: "#10B981" },
   savedCardRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 22,
     padding: 16,
     marginTop: 16,
@@ -1387,7 +1387,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 14,
-    backgroundColor: "#22C55E",
+    backgroundColor: "#10B981",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1405,9 +1405,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#222222",
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
   },
-  payMethodChipActive: { backgroundColor: "#22C55E", borderColor: "#22C55E" },
+  payMethodChipActive: { backgroundColor: "#10B981", borderColor: "#10B981" },
   payMethodChipText: { fontSize: 12, color: "#AAAAAA" },
   payMethodChipTextActive: { color: "#000" },
   payFieldReady: {
@@ -1418,9 +1418,9 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 14,
   },
-  payFieldReadyText: { fontSize: 13, color: "#22C55E", flex: 1 },
+  payFieldReadyText: { fontSize: 13, color: "#10B981", flex: 1 },
   payFieldBox: {
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#222222",
@@ -1437,7 +1437,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   payFieldInputStandalone: {
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#222222",
     borderRadius: 20,
@@ -1456,7 +1456,7 @@ const styles = StyleSheet.create({
   },
   serviceTile: {
     width: "46%",
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 24,
     borderWidth: 1,
     borderColor: "#222222",
@@ -1466,16 +1466,16 @@ const styles = StyleSheet.create({
   },
   serviceTileActive: {
     backgroundColor: "#0d2e18",
-    borderColor: "#22C55E",
+    borderColor: "#10B981",
   },
   serviceEmoji: { fontSize: 44 },
   serviceLabel: { fontSize: 14, color: "#FFFFFF", textAlign: "center" },
-  serviceLabelActive: { color: "#22C55E" },
+  serviceLabelActive: { color: "#10B981" },
 
   yardSizeRow: { flexDirection: "row", gap: 10, marginBottom: 4 },
   yardChip: {
     flex: 1,
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderWidth: 1,
     borderColor: "#222222",
     borderRadius: 18,
@@ -1484,12 +1484,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
-  yardChipActive: { backgroundColor: "#0d2e18", borderColor: "#22C55E" },
+  yardChipActive: { backgroundColor: "#0d2e18", borderColor: "#10B981" },
   yardChipLabel: { fontSize: 14, color: "#FFFFFF" },
-  yardChipLabelActive: { color: "#22C55E" },
+  yardChipLabelActive: { color: "#10B981" },
   yardChipSub: { fontSize: 9, color: "#666666", textAlign: "center" },
-  yardChipSubActive: { color: "#22C55E" },
-  yardChipPrice: { fontSize: 16, color: "#22C55E", marginTop: 4 },
+  yardChipSubActive: { color: "#10B981" },
+  yardChipPrice: { fontSize: 16, color: "#10B981", marginTop: 4 },
 
   tipExtraRow: { flexDirection: "row", gap: 10, marginTop: 10, marginBottom: 4 },
   tipExtraBtn: {
@@ -1502,14 +1502,14 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     borderColor: "#222222",
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
   },
   tipExtraBtnCustom: {},
   tipExtraBtnNone: { flex: 0.55 },
   tipExtraLabel: { fontSize: 13, color: "#AAAAAA" },
 
   customTipBox: {
-    backgroundColor: "#161616",
+    backgroundColor: "#1A1A1A",
     borderRadius: 20,
     borderWidth: 1,
     borderColor: "#222222",
@@ -1525,7 +1525,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
-  customTipDollar: { fontSize: 20, color: "#22C55E" },
+  customTipDollar: { fontSize: 20, color: "#10B981" },
   customTipInput: {
     flex: 1,
     fontSize: 20,
@@ -1533,7 +1533,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   customTipApplyBtn: {
-    backgroundColor: "#22C55E",
+    backgroundColor: "#10B981",
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 14,
