@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,12 @@ import {
   Animated,
   ActivityIndicator,
   TextInput,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
 import TermsModal from "@/components/TermsModal";
 
@@ -103,6 +105,7 @@ export default function ProfileScreen() {
 // ── Landscaper Profile – Cut App Style ────────────────────────────────────────
 
 type LandscaperTab = "info" | "reviews" | "services";
+type ReviewItem = { text: string; author: string; date: string; stars: number };
 
 function LandscaperProfile({
   matrix,
@@ -119,21 +122,97 @@ function LandscaperProfile({
 }) {
   const [activeTab, setActiveTab] = useState<LandscaperTab>("info");
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
+  const [heroBackground, setHeroBackground] = useState<string | null>(null);
+  const [avatarImage, setAvatarImage] = useState<string | null>(null);
+  const [servicePhotos, setServicePhotos] = useState<string[]>([]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([
+    { text: '"John did an amazing job on our yard – very professional and on time!"', author: "Sarah M.", date: "4 days ago", stars: 5 },
+    { text: '"Reliable, on time, and the yard looks fantastic every time. Highly recommend."', author: "Marcus T.", date: "2 weeks ago", stars: 5 },
+    { text: '"Great hedge trimming, left the property spotless. Will book again."', author: "Alex R.", date: "3 weeks ago", stars: 5 },
+  ]);
+  const [newReviewText, setNewReviewText] = useState("");
+
+  async function pickAvatar() {
+    Haptics.selectionAsync();
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (!result.canceled) setAvatarImage(result.assets[0].uri);
+  }
+
+  async function pickHeroBackground() {
+    Haptics.selectionAsync();
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.85,
+    });
+    if (!result.canceled) setHeroBackground(result.assets[0].uri);
+  }
+
+  async function pickServicePhotos() {
+    Haptics.selectionAsync();
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setServicePhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
+    }
+  }
+
+  function submitReview() {
+    const text = newReviewText.trim();
+    if (!text) { Alert.alert("Please write a review before posting."); return; }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setReviews((prev) => [
+      { text: `"${text}"`, author: "You", date: "Just now", stars: 5 },
+      ...prev,
+    ]);
+    setNewReviewText("");
+    Alert.alert("✅ Review posted!");
+  }
 
   return (
     <View style={cutStyles.container}>
+
       {/* ── Hero Banner ─────────────────────────────── */}
       <View style={[cutStyles.hero, { paddingTop: topPadding + 8 }]}>
-        {/* Toggle pill top-right */}
+        {/* Background image (if set) */}
+        {heroBackground ? (
+          <Image source={{ uri: heroBackground }} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
+        ) : null}
+        {/* Dark gradient overlay */}
+        <View style={cutStyles.heroOverlay} />
+
+        {/* Toggle pill */}
         <TouchableOpacity style={cutStyles.togglePill} onPress={toggle} activeOpacity={0.8}>
           <Text style={[cutStyles.toggleText, { fontFamily: "Inter_500Medium" }]}>Landscaper View</Text>
           <Text style={{ fontSize: 13 }}>🔄</Text>
         </TouchableOpacity>
 
-        {/* Circular avatar */}
-        <View style={cutStyles.avatarCircle}>
-          <Ionicons name="leaf" size={52} color="#000" />
-        </View>
+        {/* Change background button */}
+        <TouchableOpacity style={cutStyles.changeBgBtn} onPress={pickHeroBackground} activeOpacity={0.8}>
+          <Text style={cutStyles.changeBgIcon}>📸</Text>
+          <Text style={[cutStyles.changeBgText, { fontFamily: "Inter_500Medium" }]}>Change Background</Text>
+        </TouchableOpacity>
+
+        {/* Editable avatar */}
+        <TouchableOpacity style={cutStyles.avatarCircle} onPress={pickAvatar} activeOpacity={0.85}>
+          {avatarImage ? (
+            <Image source={{ uri: avatarImage }} style={cutStyles.avatarImage} />
+          ) : (
+            <Ionicons name="leaf" size={52} color="#000" />
+          )}
+          <View style={cutStyles.avatarEditBadge}>
+            <Text style={[cutStyles.avatarEditText, { fontFamily: "Inter_700Bold" }]}>EDIT</Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Rating badge */}
         <View style={cutStyles.ratingBadge}>
@@ -167,20 +246,21 @@ function LandscaperProfile({
       {/* ── Tab Content ─────────────────────────────── */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={cutStyles.tabContent}>
 
+        {/* ── INFO TAB ── */}
         {activeTab === "info" && (
           <>
-            {/* Quick action buttons */}
+            {/* Quick actions */}
             <View style={cutStyles.actionsRow}>
               {[
                 { icon: "⭐", label: "ADD" },
                 { icon: "📅", label: "BOOK" },
-                { icon: "✍️", label: "REVIEW" },
+                { icon: "✍️", label: "REVIEW", onPress: () => setActiveTab("reviews") },
                 { icon: "🔗", label: "SHARE" },
               ].map((btn) => (
                 <TouchableOpacity
                   key={btn.label}
                   style={cutStyles.actionChip}
-                  onPress={() => Alert.alert(btn.label, `${btn.label} action tapped`)}
+                  onPress={btn.onPress ?? (() => Alert.alert(btn.label, `${btn.label} action`))}
                   activeOpacity={0.75}
                 >
                   <Text style={cutStyles.actionChipIcon}>{btn.icon}</Text>
@@ -199,19 +279,11 @@ function LandscaperProfile({
 
             {/* Call & Text */}
             <View style={cutStyles.contactRow}>
-              <TouchableOpacity
-                style={cutStyles.contactBtn}
-                onPress={() => Alert.alert("📞 Calling…", "Connecting to GreenScape Pros.\n\n(Demo)")}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={cutStyles.contactBtn} onPress={() => Alert.alert("📞 Calling…", "Connecting to GreenScape Pros.\n\n(Demo)")} activeOpacity={0.8}>
                 <Text style={cutStyles.contactIcon}>📞</Text>
                 <Text style={[cutStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={cutStyles.contactBtn}
-                onPress={() => Alert.alert("💬 Texting…", "Opening chat with GreenScape Pros.\n\n(Demo)")}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={cutStyles.contactBtn} onPress={() => Alert.alert("💬 Texting…", "Opening chat with GreenScape Pros.\n\n(Demo)")} activeOpacity={0.8}>
                 <Text style={cutStyles.contactIcon}>💬</Text>
                 <Text style={[cutStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
               </TouchableOpacity>
@@ -221,19 +293,11 @@ function LandscaperProfile({
             <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>ADDRESS & HOURS</Text>
             <View style={cutStyles.card}>
               <Text style={[cutStyles.addrName, { fontFamily: "Inter_600SemiBold" }]}>GreenScape Pros</Text>
-              <Text style={[cutStyles.addrLine, { fontFamily: "Inter_400Regular" }]}>
-                4627 Hall's Mill Crossing · Ellenton, FL 34222
-              </Text>
-
-              {/* Map placeholder */}
+              <Text style={[cutStyles.addrLine, { fontFamily: "Inter_400Regular" }]}>4627 Hall's Mill Crossing · Ellenton, FL 34222</Text>
               <View style={cutStyles.mapBox}>
                 <Text style={cutStyles.mapPin}>📍</Text>
-                <Text style={[cutStyles.mapText, { fontFamily: "Inter_400Regular" }]}>
-                  Interactive Map · Sarasota / Ellenton Area
-                </Text>
+                <Text style={[cutStyles.mapText, { fontFamily: "Inter_400Regular" }]}>Interactive Map · Sarasota / Ellenton Area</Text>
               </View>
-
-              {/* Hours grid */}
               <View style={cutStyles.hoursGrid}>
                 <View style={cutStyles.hoursCell}>
                   <Text style={[cutStyles.hoursDayText, { fontFamily: "Inter_400Regular" }]}>Monday – Saturday</Text>
@@ -246,14 +310,26 @@ function LandscaperProfile({
               </View>
             </View>
 
-            {/* Photos */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>PHOTOS</Text>
+            {/* Photos of our work */}
+            <View style={cutStyles.photosSectionHeader}>
+              <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold", marginBottom: 0 }]}>PHOTOS OF OUR WORK</Text>
+              <TouchableOpacity onPress={pickServicePhotos} activeOpacity={0.75}>
+                <Text style={[cutStyles.addPhotosLink, { fontFamily: "Inter_600SemiBold" }]}>+ Add Photos</Text>
+              </TouchableOpacity>
+            </View>
             <View style={cutStyles.photosGrid}>
-              {["🌿", "✂️", "🪴", "🧹"].map((emoji, i) => (
-                <View key={i} style={cutStyles.photoCell}>
-                  <Text style={cutStyles.photoEmoji}>{emoji}</Text>
-                </View>
-              ))}
+              {servicePhotos.length === 0
+                ? ["🌿", "✂️", "🪴", "🧹"].map((emoji, i) => (
+                    <View key={i} style={cutStyles.photoCell}>
+                      <Text style={cutStyles.photoEmoji}>{emoji}</Text>
+                    </View>
+                  ))
+                : servicePhotos.map((uri, i) => (
+                    <View key={i} style={cutStyles.photoCell}>
+                      <Image source={{ uri }} style={cutStyles.photoImage} />
+                    </View>
+                  ))
+              }
             </View>
 
             {/* Legal */}
@@ -283,32 +359,73 @@ function LandscaperProfile({
           </>
         )}
 
+        {/* ── REVIEWS TAB ── */}
         {activeTab === "reviews" && (
           <>
+            {/* Write-a-review form */}
+            <View style={cutStyles.card}>
+              <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold", marginBottom: 10 }]}>WRITE A REVIEW</Text>
+              <TextInput
+                style={[cutStyles.reviewInput, { fontFamily: "Inter_400Regular" }]}
+                value={newReviewText}
+                onChangeText={setNewReviewText}
+                placeholder="What did you think of the service?"
+                placeholderTextColor="#555"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+              <TouchableOpacity style={cutStyles.postReviewBtn} onPress={submitReview} activeOpacity={0.85}>
+                <Text style={[cutStyles.postReviewBtnText, { fontFamily: "Inter_600SemiBold" }]}>Post Review</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Rating overview */}
             <View style={cutStyles.ratingHeader}>
               <Text style={[cutStyles.ratingBig, { fontFamily: "Inter_700Bold" }]}>4.9</Text>
               <View>
                 <Text style={cutStyles.starsRow}>★★★★★</Text>
-                <Text style={[cutStyles.ratingSubtext, { fontFamily: "Inter_400Regular" }]}>142 reviews</Text>
+                <Text style={[cutStyles.ratingSubtext, { fontFamily: "Inter_400Regular" }]}>{reviews.length} reviews</Text>
               </View>
             </View>
 
-            {[
-              { text: "\"John did an amazing job on our yard – very professional and on time!\"", author: "Sarah M.", ago: "4 days ago", stars: 5 },
-              { text: "\"Reliable, on time, and the yard looks fantastic every time. Highly recommend.\"", author: "Marcus T.", ago: "2 weeks ago", stars: 5 },
-              { text: "\"Great hedge trimming, left the property spotless. Will book again.\"", author: "Alex R.", ago: "3 weeks ago", stars: 5 },
-            ].map((r, i) => (
+            {/* Reviews list */}
+            {reviews.map((r, i) => (
               <View key={i} style={[cutStyles.card, { marginBottom: 12 }]}>
                 <Text style={cutStyles.reviewStars}>{"★".repeat(r.stars)}</Text>
                 <Text style={[cutStyles.reviewText, { fontFamily: "Inter_400Regular" }]}>{r.text}</Text>
-                <Text style={[cutStyles.reviewAuthor, { fontFamily: "Inter_400Regular" }]}>— {r.author} · {r.ago}</Text>
+                <Text style={[cutStyles.reviewAuthor, { fontFamily: "Inter_400Regular" }]}>— {r.author} · {r.date}</Text>
               </View>
             ))}
           </>
         )}
 
+        {/* ── SERVICES TAB ── */}
         {activeTab === "services" && (
-          <PriceMatrixEditor matrix={matrix} setMatrix={setMatrix} />
+          <>
+            {/* Read-only price cards */}
+            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>OUR SERVICES & PRICING</Text>
+            {PRICE_SERVICES.map((svc) => (
+              <View key={svc} style={[cutStyles.card, { marginBottom: 12 }]}>
+                <Text style={[cutStyles.svcCardName, { fontFamily: "Inter_600SemiBold" }]}>{svc}</Text>
+                <View style={cutStyles.svcPriceRow}>
+                  {YARD_COLS.map((col) => (
+                    <View key={col.key} style={cutStyles.svcPriceCell}>
+                      <Text style={[cutStyles.svcColLabel, { fontFamily: "Inter_400Regular" }]}>{col.label}</Text>
+                      <Text style={[cutStyles.svcColSub, { fontFamily: "Inter_400Regular" }]}>{col.sub}</Text>
+                      <Text style={[cutStyles.svcPrice, { fontFamily: "Inter_700Bold" }]}>
+                        ${matrix[svc][col.key]}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ))}
+
+            {/* Editable price matrix */}
+            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold", marginTop: 12 }]}>EDIT PRICES</Text>
+            <PriceMatrixEditor matrix={matrix} setMatrix={setMatrix} />
+          </>
         )}
 
       </ScrollView>
@@ -354,9 +471,7 @@ function PriceMatrixEditor({
 
   return (
     <View style={styles.priceCard}>
-      <Text style={[styles.priceCardTitle, { fontFamily: "Inter_600SemiBold" }]}>
-        Service Prices by Yard Size
-      </Text>
+      <Text style={[styles.priceCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Service Prices by Yard Size</Text>
       {PRICE_SERVICES.map((svc, si) => (
         <View key={svc} style={[styles.priceMatrixCard, si > 0 && { marginTop: 12 }]}>
           <Text style={[styles.priceServiceLabel, { fontFamily: "Inter_500Medium" }]}>{svc}</Text>
@@ -547,7 +662,13 @@ const cutStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#1E1E1E",
     position: "relative",
+    overflow: "visible",
   },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+
   togglePill: {
     position: "absolute",
     top: 14,
@@ -555,7 +676,7 @@ const cutStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "rgba(0,0,0,0.6)",
     borderWidth: 1,
     borderColor: "#333",
     borderRadius: 20,
@@ -564,6 +685,22 @@ const cutStyles = StyleSheet.create({
     zIndex: 10,
   },
   toggleText: { fontSize: 12, color: "#34FF7A" },
+
+  changeBgBtn: {
+    position: "absolute",
+    top: 14,
+    left: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 10,
+  },
+  changeBgIcon: { fontSize: 14 },
+  changeBgText: { fontSize: 12, color: "rgba(255,255,255,0.85)" },
 
   avatarCircle: {
     position: "absolute",
@@ -583,7 +720,21 @@ const cutStyles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 16,
     elevation: 10,
+    overflow: "hidden",
   },
+  avatarImage: { width: "100%", height: "100%", borderRadius: AVATAR_SIZE / 2 },
+  avatarEditBadge: {
+    position: "absolute",
+    bottom: 4,
+    right: 0,
+    backgroundColor: "#34FF7A",
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 2,
+    borderColor: "#0A0A0A",
+  },
+  avatarEditText: { fontSize: 9, color: "#000", letterSpacing: 0.5 },
 
   ratingBadge: {
     position: "absolute",
@@ -596,6 +747,7 @@ const cutStyles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 20,
+    zIndex: 3,
   },
   ratingText: { fontSize: 13, color: "#FFFFFF" },
   ratingCount: { fontSize: 12, color: "rgba(255,255,255,0.5)" },
@@ -604,6 +756,7 @@ const cutStyles = StyleSheet.create({
     position: "absolute",
     bottom: 44,
     left: AVATAR_SIZE + 28,
+    zIndex: 3,
   },
   heroName: { fontSize: 22, color: "#FFFFFF", marginBottom: 3 },
   heroSub: { fontSize: 13, color: "rgba(255,255,255,0.55)" },
@@ -615,83 +768,31 @@ const cutStyles = StyleSheet.create({
     borderBottomColor: "#222222",
     backgroundColor: "#0A0A0A",
   },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 14,
-    borderBottomWidth: 3,
-    borderBottomColor: "transparent",
-  },
+  tabItem: { flex: 1, alignItems: "center", paddingVertical: 14, borderBottomWidth: 3, borderBottomColor: "transparent" },
   tabItemActive: { borderBottomColor: "#34FF7A" },
   tabText: { fontSize: 12, color: "#888888", letterSpacing: 0.8 },
   tabTextActive: { color: "#34FF7A" },
 
   tabContent: { padding: 20, paddingBottom: 60 },
 
-  actionsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 8,
-    marginBottom: 24,
-  },
-  actionChip: {
-    flex: 1,
-    backgroundColor: "#1A1A1A",
-    borderRadius: 999,
-    paddingVertical: 10,
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 1,
-    borderColor: "#2A2A2A",
-  },
+  actionsRow: { flexDirection: "row", justifyContent: "space-between", gap: 8, marginBottom: 24 },
+  actionChip: { flex: 1, backgroundColor: "#1A1A1A", borderRadius: 999, paddingVertical: 10, alignItems: "center", gap: 4, borderWidth: 1, borderColor: "#2A2A2A" },
   actionChipIcon: { fontSize: 18 },
   actionChipLabel: { fontSize: 10, color: "#FFFFFF", letterSpacing: 0.5 },
 
-  sectionHeading: {
-    fontSize: 12,
-    color: "#AAAAAA",
-    letterSpacing: 1.4,
-    marginBottom: 10,
-    marginTop: 4,
-  },
+  sectionHeading: { fontSize: 12, color: "#AAAAAA", letterSpacing: 1.4, marginBottom: 10, marginTop: 4 },
 
-  card: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 20,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: "#222222",
-    marginBottom: 20,
-  },
+  card: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 18, borderWidth: 1, borderColor: "#222222", marginBottom: 20 },
   aboutText: { fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 22 },
 
   contactRow: { flexDirection: "row", gap: 12, marginBottom: 24 },
-  contactBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#1A1A1A",
-    borderWidth: 1.5,
-    borderColor: "#34FF7A",
-    borderRadius: 28,
-    paddingVertical: 16,
-  },
+  contactBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#1A1A1A", borderWidth: 1.5, borderColor: "#34FF7A", borderRadius: 28, paddingVertical: 16 },
   contactIcon: { fontSize: 22 },
   contactLabel: { fontSize: 16, color: "#34FF7A" },
 
   addrName: { fontSize: 15, color: "#FFFFFF", marginBottom: 4 },
   addrLine: { fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 14 },
-  mapBox: {
-    height: 120,
-    backgroundColor: "#222222",
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    marginBottom: 16,
-  },
+  mapBox: { height: 120, backgroundColor: "#222222", borderRadius: 16, alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 16 },
   mapPin: { fontSize: 28 },
   mapText: { fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center" },
   hoursGrid: { flexDirection: "row", gap: 16 },
@@ -700,18 +801,16 @@ const cutStyles = StyleSheet.create({
   hoursTimeText: { fontSize: 14, color: "#FFFFFF" },
   hoursClosedText: { fontSize: 14, color: "rgba(255,255,255,0.35)" },
 
+  photosSectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10, marginTop: 4 },
+  addPhotosLink: { fontSize: 13, color: "#34FF7A" },
   photosGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 8 },
-  photoCell: {
-    width: "47%",
-    aspectRatio: 16 / 9,
-    backgroundColor: "#1A1A1A",
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#222222",
-  },
+  photoCell: { width: "47%", aspectRatio: 16 / 9, backgroundColor: "#1A1A1A", borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#222222", overflow: "hidden" },
   photoEmoji: { fontSize: 36 },
+  photoImage: { width: "100%", height: "100%" },
+
+  reviewInput: { backgroundColor: "#222222", borderRadius: 14, padding: 14, fontSize: 14, color: "#FFFFFF", minHeight: 100, marginBottom: 12 },
+  postReviewBtn: { backgroundColor: "#34FF7A", borderRadius: 28, paddingVertical: 13, alignItems: "center" },
+  postReviewBtnText: { fontSize: 15, color: "#000" },
 
   ratingHeader: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 20 },
   ratingBig: { fontSize: 56, color: "#FFFFFF", lineHeight: 64 },
@@ -720,6 +819,13 @@ const cutStyles = StyleSheet.create({
   reviewStars: { fontSize: 15, color: "#f59e0b", marginBottom: 6 },
   reviewText: { fontSize: 14, color: "#FFFFFF", lineHeight: 22 },
   reviewAuthor: { fontSize: 12, color: "#555", marginTop: 8 },
+
+  svcCardName: { fontSize: 15, color: "#FFFFFF", marginBottom: 14 },
+  svcPriceRow: { flexDirection: "row", gap: 8 },
+  svcPriceCell: { flex: 1, alignItems: "center", gap: 3 },
+  svcColLabel: { fontSize: 11, color: "#AAAAAA" },
+  svcColSub: { fontSize: 9, color: "#555" },
+  svcPrice: { fontSize: 20, color: "#34FF7A", marginTop: 4 },
 });
 
 const picStyles = StyleSheet.create({
