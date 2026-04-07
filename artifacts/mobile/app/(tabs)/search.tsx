@@ -8,6 +8,7 @@ import {
   TextInput,
   Platform,
   Alert,
+  Modal,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
@@ -76,6 +77,9 @@ const SORT_OPTIONS = ["Recommended", "Closest", "Highest Rated"];
 
 type RequestStatus = "pending" | "offered" | "accepted" | "declined";
 
+const NEW_REQUEST_SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up"];
+const NEW_REQUEST_SIZES = ["Small", "Medium", "Large"];
+
 const MY_REQUESTS: {
   id: string;
   service: string;
@@ -85,9 +89,10 @@ const MY_REQUESTS: {
   status: RequestStatus;
   offerPrice?: number;
   pro?: string;
+  proRating?: number;
 }[] = [
   { id: "mq1", service: "Lawn Mowing", size: "Medium", date: "Apr 14", time: "9:00 AM", status: "pending" },
-  { id: "mq2", service: "Hedge Trimming", size: "Small", date: "Apr 15", time: "11:00 AM", status: "offered", offerPrice: 75, pro: "John Rivera" },
+  { id: "mq2", service: "Hedge Trimming", size: "Small", date: "Apr 15", time: "11:00 AM", status: "offered", offerPrice: 75, pro: "John Rivera", proRating: 4.9 },
   { id: "mq3", service: "Clean Up", size: "Small", date: "Apr 10", time: "10:00 AM", status: "declined" },
 ];
 
@@ -111,6 +116,9 @@ export default function SearchScreen() {
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
   const [customerTab, setCustomerTab] = useState<"find" | "requests">("find");
   const [myRequests, setMyRequests] = useState(MY_REQUESTS);
+  const [showNewReqModal, setShowNewReqModal] = useState(false);
+  const [newReqService, setNewReqService] = useState("");
+  const [newReqSize, setNewReqSize] = useState("");
 
   const filtered = PROS.filter((p) => {
     const matchesQuery =
@@ -248,14 +256,89 @@ export default function SearchScreen() {
         )}
       </View>
 
+      {/* New Request Modal */}
+      <Modal visible={showNewReqModal} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHandle} />
+            <Text style={[styles.modalTitle, { fontFamily: "Inter_700Bold" }]}>Request New Service</Text>
+            <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Service Type</Text>
+            <View style={styles.modalChipRow}>
+              {NEW_REQUEST_SERVICES.map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.modalChip, newReqService === s && styles.modalChipActive]}
+                  onPress={() => { setNewReqService(s); Haptics.selectionAsync(); }}
+                >
+                  <Text style={[styles.modalChipText, { fontFamily: "Inter_500Medium" }, newReqService === s && { color: "#000" }]}>{s}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Yard Size</Text>
+            <View style={styles.modalChipRow}>
+              {NEW_REQUEST_SIZES.map((sz) => (
+                <TouchableOpacity
+                  key={sz}
+                  style={[styles.modalChip, newReqSize === sz && styles.modalChipActive]}
+                  onPress={() => { setNewReqSize(sz); Haptics.selectionAsync(); }}
+                >
+                  <Text style={[styles.modalChipText, { fontFamily: "Inter_500Medium" }, newReqSize === sz && { color: "#000" }]}>{sz}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity
+              style={[styles.modalSubmitBtn, (!newReqService || !newReqSize) && { opacity: 0.4 }]}
+              activeOpacity={0.85}
+              disabled={!newReqService || !newReqSize}
+              onPress={() => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                const today = new Date();
+                const futureDate = new Date(today.setDate(today.getDate() + 3));
+                const label = futureDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                setMyRequests((prev) => [
+                  { id: `mq${Date.now()}`, service: newReqService, size: newReqSize, date: label, time: "TBD", status: "pending" },
+                  ...prev,
+                ]);
+                setNewReqService("");
+                setNewReqSize("");
+                setShowNewReqModal(false);
+                Alert.alert("Request Submitted!", "Landscapers in your area will review your request and send offers.");
+              }}
+            >
+              <Text style={[styles.modalSubmitText, { fontFamily: "Inter_600SemiBold" }]}>Submit Request</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowNewReqModal(false)}>
+              <Text style={[styles.modalCancelText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* My Requests view */}
       {customerTab === "requests" && (
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 12 }}>
+
+          {/* Request New Service card */}
+          <TouchableOpacity
+            style={styles.newReqCard}
+            activeOpacity={0.85}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowNewReqModal(true); }}
+          >
+            <View style={styles.newReqIconBox}>
+              <Ionicons name="add-circle" size={28} color="#34FF7A" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.newReqTitle, { fontFamily: "Inter_600SemiBold" }]}>Request New Service</Text>
+              <Text style={[styles.newReqSub, { fontFamily: "Inter_400Regular" }]}>Can't find what you need? Request it!</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#555" />
+          </TouchableOpacity>
+
           {myRequests.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="clipboard-outline" size={40} color="#333" />
               <Text style={[styles.emptyText, { fontFamily: "Inter_500Medium" }]}>No requests yet</Text>
-              <Text style={[styles.emptySubText, { fontFamily: "Inter_400Regular" }]}>Find a landscaper and book a service</Text>
+              <Text style={[styles.emptySubText, { fontFamily: "Inter_400Regular" }]}>Tap above to request a service</Text>
             </View>
           ) : (
             myRequests.map((req) => {
@@ -298,8 +381,21 @@ export default function SearchScreen() {
                   {isOffered && req.pro && (
                     <View style={styles.offerBox}>
                       <View style={styles.offerBoxLeft}>
-                        <Text style={[styles.offerLabel, { fontFamily: "Inter_400Regular" }]}>Offer from {req.pro}</Text>
+                        <View style={styles.offerProRow}>
+                          <Text style={[styles.offerLabel, { fontFamily: "Inter_500Medium" }]}>{req.pro}</Text>
+                          {req.proRating && (
+                            <View style={styles.ratingPill}>
+                              <Ionicons name="star" size={11} color="#f59e0b" />
+                              <Text style={[styles.ratingText, { fontFamily: "Inter_600SemiBold" }]}>{req.proRating}</Text>
+                            </View>
+                          )}
+                        </View>
                         <Text style={[styles.offerPrice, { fontFamily: "Inter_700Bold" }]}>${req.offerPrice}</Text>
+                        <TouchableOpacity
+                          onPress={() => Alert.alert(`${req.pro}`, `Rating: ${req.proRating} ★\n\nReviews:\n• "Great service and on time!"\n• "Professional and clean work"`)}
+                        >
+                          <Text style={[styles.viewProfileLink, { fontFamily: "Inter_500Medium" }]}>View Profile →</Text>
+                        </TouchableOpacity>
                       </View>
                       <View style={styles.offerActions}>
                         <TouchableOpacity
@@ -689,6 +785,75 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   declineOfferText: { fontSize: 13, color: "#888" },
+  offerProRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  ratingPill: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "#1a1200", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
+  ratingText: { fontSize: 11, color: "#f59e0b" },
+  viewProfileLink: { fontSize: 12, color: "#34FF7A", marginTop: 4 },
+  newReqCard: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 22,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderWidth: 1,
+    borderColor: "#34FF7A33",
+    marginBottom: 4,
+  },
+  newReqIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#0d2e18",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  newReqTitle: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
+  newReqSub: { fontSize: 12, color: "#AAAAAA" },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    backgroundColor: "#1A1A1A",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: 40,
+    gap: 12,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#333",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 8,
+  },
+  modalTitle: { fontSize: 20, color: "#FFFFFF", marginBottom: 4 },
+  modalSubLabel: { fontSize: 12, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
+  modalChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  modalChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    backgroundColor: "#111",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  modalChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  modalChipText: { fontSize: 13, color: "#FFFFFF" },
+  modalSubmitBtn: {
+    backgroundColor: "#34FF7A",
+    paddingVertical: 15,
+    borderRadius: 24,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  modalSubmitText: { fontSize: 16, color: "#000" },
+  modalCancelBtn: { paddingVertical: 12, alignItems: "center" },
+  modalCancelText: { fontSize: 14, color: "#555" },
   reqSubtitle: { fontSize: 13, color: "#AAAAAA", marginTop: 4 },
   reqCard: {
     backgroundColor: "#1A1A1A",
