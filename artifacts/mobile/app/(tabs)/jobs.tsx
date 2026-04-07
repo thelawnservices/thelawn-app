@@ -88,7 +88,6 @@ const SERVICE_HISTORY = [
 ];
 
 const STATUS_STEPS: { key: JobStatus; label: string }[] = [
-  { key: "arrived", label: "Arrived" },
   { key: "started", label: "Work Started" },
   { key: "completed", label: "Completed" },
 ];
@@ -206,8 +205,27 @@ export default function JobsScreen() {
   const [chatJobData, setChatJobData] = useState<{ landscaper?: string; customer?: string } | null>(null);
 
   function advanceStatus(jobId: string, next: JobStatus) {
+    const current = jobStatuses[jobId];
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setJobStatuses((prev) => ({ ...prev, [jobId]: next }));
+    if (next === "started" && statusOrder(current) < statusOrder("started")) {
+      setTimeout(() => {
+        Alert.alert(
+          "✅ Customer Notified",
+          "The customer has been notified that you've arrived and work has started.",
+          [{ text: "OK" }]
+        );
+      }, 300);
+    }
+    if (next === "completed") {
+      setTimeout(() => {
+        Alert.alert(
+          "🎉 Job Complete",
+          "The customer has been notified that work is complete. Payment will be released from escrow within 24 hours.",
+          [{ text: "OK" }]
+        );
+      }, 300);
+    }
   }
 
   function openChat(data: { landscaper?: string; customer?: string }) {

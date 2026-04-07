@@ -63,7 +63,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="appointments"
         options={{
-          title: "Appointments",
+          title: "Appts",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
@@ -76,7 +76,10 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="mail-outline" size={size} color={color} />
           ),
-          ...(role === "landscaper" && { tabBarButton: () => null }),
+          ...(role === "landscaper" && {
+            tabBarButton: () => null,
+            tabBarItemStyle: { width: 0, overflow: "hidden" },
+          }),
         }}
       />
       <Tabs.Screen
