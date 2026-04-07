@@ -23,6 +23,7 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
+import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 
 const CUSTOMER_QUICK_STATS = [
   { label: "Jobs Done", value: "3", icon: "checkmark-circle" as const, iconColor: "#34C759" },
@@ -1295,6 +1296,7 @@ function LandscaperProfileViewModal({
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPad = isWeb ? 20 : insets.top;
+  const { availability } = useLandscaperProfile();
 
   if (!pro) return null;
 
@@ -1381,6 +1383,47 @@ function LandscaperProfileViewModal({
                 </View>
               ))}
             </View>
+
+            {/* Availability (shown once landscaper has saved it) */}
+            {availability.saved && (
+              <>
+                <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
+                  AVAILABILITY
+                </Text>
+                <View style={fsStyles.availCard}>
+                  {/* Days */}
+                  <View style={fsStyles.availDaysRow}>
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+                      <View
+                        key={day}
+                        style={[fsStyles.availDayChip, availability.days[day] && fsStyles.availDayChipOn]}
+                      >
+                        <Text style={[fsStyles.availDayText, { fontFamily: "Inter_600SemiBold" }, availability.days[day] && fsStyles.availDayTextOn]}>
+                          {day}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                  {/* Hours */}
+                  <Text style={[fsStyles.availHours, { fontFamily: "Inter_400Regular" }]}>
+                    🕐 {availability.startTime} – {availability.endTime}
+                  </Text>
+                  {/* Upcoming dates */}
+                  {availability.upcomingDates.length > 0 && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={[{ color: "#888", fontSize: 11, letterSpacing: 0.8, marginBottom: 6 }, { fontFamily: "Inter_500Medium" }]}>
+                        UPCOMING DATES
+                      </Text>
+                      {availability.upcomingDates.map((date, i) => (
+                        <Text key={i} style={[{ color: "#34FF7A", fontSize: 13, marginBottom: 3 }, { fontFamily: "Inter_400Regular" }]}>
+                          📅 {date}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </>
+            )}
 
             {/* Call / Text */}
             <View style={fsStyles.contactRow}>
@@ -1536,6 +1579,20 @@ const fsStyles = StyleSheet.create({
     elevation: 8,
   },
   bookBtnText: { fontSize: 17, color: "#000000" },
+
+  availCard: {
+    backgroundColor: "#1a2e1f",
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "rgba(52,255,122,0.2)",
+  },
+  availDaysRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
+  availDayChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: "#222222", borderWidth: 1, borderColor: "#333" },
+  availDayChipOn: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  availDayText: { fontSize: 11, color: "#666" },
+  availDayTextOn: { color: "#000" },
+  availHours: { fontSize: 14, color: "rgba(255,255,255,0.75)" },
 });
 
 const TRUSTED_PROS = [

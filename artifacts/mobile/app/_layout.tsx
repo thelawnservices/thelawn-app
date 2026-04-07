@@ -18,6 +18,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/contexts/auth";
 import { JobsProvider } from "@/contexts/jobs";
 import { NotificationsProvider } from "@/contexts/notifications";
+import { LandscaperProfileProvider } from "@/contexts/landscaperProfile";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,11 +58,13 @@ export default function RootLayout() {
           <AuthProvider>
             <JobsProvider>
               <NotificationsProvider>
+              <LandscaperProfileProvider>
               <GestureHandlerRootView>
                 <KeyboardProvider>
                   <RootLayoutNav />
                 </KeyboardProvider>
               </GestureHandlerRootView>
+              </LandscaperProfileProvider>
               </NotificationsProvider>
             </JobsProvider>
           </AuthProvider>

@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
+import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import TermsModal from "@/components/TermsModal";
 
 const PAYMENT_METHODS = [
@@ -107,7 +108,7 @@ export default function ProfileScreen() {
 
 // ── Landscaper Profile – Cut App Style ────────────────────────────────────────
 
-type LandscaperTab = "info" | "reviews" | "services" | "avail";
+type LandscaperTab = "info" | "reviews" | "services";
 type ReviewItem = { text: string; author: string; date: string; stars: number };
 
 function LandscaperProfile({
@@ -194,6 +195,24 @@ function LandscaperProfile({
     Haptics.selectionAsync();
     setUpcomingDates((prev) => prev.filter((_, i) => i !== idx));
   }
+
+  const { saveAvailability } = useLandscaperProfile();
+
+  function handleSaveAvailability() {
+    saveAvailability({
+      days: availDays,
+      startTime: availStart,
+      endTime: availEnd,
+      upcomingDates,
+      city: profileCity,
+      state: profileState,
+      zip: profileZip,
+      saved: true,
+    });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert("✅ Availability saved!", "Customers can now see your schedule.");
+  }
+
   const [reviews, setReviews] = useState<ReviewItem[]>([
     { text: '"John did an amazing job on our yard – very professional and on time!"', author: "Sarah M.", date: "4 days ago", stars: 5 },
     { text: '"Reliable, on time, and the yard looks fantastic every time. Highly recommend."', author: "Marcus T.", date: "2 weeks ago", stars: 5 },
@@ -257,14 +276,14 @@ function LandscaperProfile({
         ) : null}
         <View style={cutStyles.heroOverlay} />
 
-        {/* Toggle pill — top right */}
-        <TouchableOpacity style={cutStyles.togglePill} onPress={toggle} activeOpacity={0.8}>
+        {/* Toggle pill — top right, below status bar */}
+        <TouchableOpacity style={[cutStyles.togglePill, { top: topPadding + 14 }]} onPress={toggle} activeOpacity={0.8}>
           <Text style={[cutStyles.toggleText, { fontFamily: "Inter_500Medium" }]}>Landscaper View</Text>
           <Text style={{ fontSize: 13 }}>🔄</Text>
         </TouchableOpacity>
 
-        {/* Edit Banner — top left */}
-        <TouchableOpacity style={cutStyles.editBannerBtn} onPress={pickHeroBackground} activeOpacity={0.8}>
+        {/* Edit Banner — top left, below status bar */}
+        <TouchableOpacity style={[cutStyles.editBannerBtn, { top: topPadding + 14 }]} onPress={pickHeroBackground} activeOpacity={0.8}>
           <Ionicons name="camera-outline" size={14} color="#34FF7A" />
           <Text style={[cutStyles.editBannerText, { fontFamily: "Inter_500Medium" }]}>Banner</Text>
         </TouchableOpacity>
@@ -309,20 +328,15 @@ function LandscaperProfile({
 
       {/* ── Tab Bar ─────────────────────────────────── */}
       <View style={cutStyles.tabBar}>
-        {([
-          { key: "info", label: "INFO" },
-          { key: "reviews", label: "REVIEWS" },
-          { key: "services", label: "SERVICES" },
-          { key: "avail", label: "AVAIL" },
-        ] as { key: LandscaperTab; label: string }[]).map((tab) => (
+        {(["info", "reviews", "services"] as LandscaperTab[]).map((tab) => (
           <TouchableOpacity
-            key={tab.key}
-            style={[cutStyles.tabItem, activeTab === tab.key && cutStyles.tabItemActive]}
-            onPress={() => { Haptics.selectionAsync(); setActiveTab(tab.key); }}
+            key={tab}
+            style={[cutStyles.tabItem, activeTab === tab && cutStyles.tabItemActive]}
+            onPress={() => { Haptics.selectionAsync(); setActiveTab(tab); }}
             activeOpacity={0.7}
           >
-            <Text style={[cutStyles.tabText, { fontFamily: "Inter_600SemiBold" }, activeTab === tab.key && cutStyles.tabTextActive]}>
-              {tab.label}
+            <Text style={[cutStyles.tabText, { fontFamily: "Inter_600SemiBold" }, activeTab === tab && cutStyles.tabTextActive]}>
+              {tab.toUpperCase()}
             </Text>
           </TouchableOpacity>
         ))}
@@ -374,18 +388,94 @@ function LandscaperProfile({
               </TouchableOpacity>
             </View>
 
-            {/* Service Area */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>SERVICE AREA</Text>
+            {/* Service & Availability */}
+            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>SERVICE & AVAILABILITY</Text>
             <View style={cutStyles.card}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              {/* Location row */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 18 }}>
                 <Text style={{ fontSize: 18 }}>📍</Text>
                 <Text style={[cutStyles.addrLine, { fontFamily: "Inter_500Medium", color: "#fff" }]}>
                   {profileCity}, {profileState} {profileZip}
                 </Text>
               </View>
-              <Text style={[{ color: "#888", fontSize: 13, marginTop: 6 }, { fontFamily: "Inter_400Regular" }]}>
-                View your full availability schedule in the AVAIL tab.
-              </Text>
+
+              {/* Available Days */}
+              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 8 }]}>AVAILABLE DAYS</Text>
+              <View style={[availStyles.daysRow, { marginBottom: 18 }]}>
+                {DAYS.map((day) => (
+                  <TouchableOpacity
+                    key={day}
+                    style={[availStyles.dayChip, availDays[day] && availStyles.dayChipOn]}
+                    onPress={() => toggleDay(day)}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[availStyles.dayChipText, { fontFamily: "Inter_600SemiBold" }, availDays[day] && availStyles.dayChipTextOn]}>
+                      {day}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Working Hours */}
+              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 8 }]}>WORKING HOURS</Text>
+              <View style={[availStyles.hoursRow, { marginBottom: 18 }]}>
+                <View style={availStyles.hoursField}>
+                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_400Regular" }]}>Start</Text>
+                  <TextInput
+                    style={[availStyles.hoursInput, { fontFamily: "Inter_600SemiBold" }]}
+                    value={availStart}
+                    onChangeText={setAvailStart}
+                    placeholder="8:00 AM"
+                    placeholderTextColor="#555"
+                  />
+                </View>
+                <Text style={[availStyles.hoursSep, { fontFamily: "Inter_400Regular" }]}>to</Text>
+                <View style={availStyles.hoursField}>
+                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_400Regular" }]}>End</Text>
+                  <TextInput
+                    style={[availStyles.hoursInput, { fontFamily: "Inter_600SemiBold" }]}
+                    value={availEnd}
+                    onChangeText={setAvailEnd}
+                    placeholder="6:00 PM"
+                    placeholderTextColor="#555"
+                  />
+                </View>
+              </View>
+
+              {/* Upcoming Dates */}
+              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 8 }]}>UPCOMING AVAILABLE DATES</Text>
+              <View style={[availStyles.addDateRow, { marginBottom: 8 }]}>
+                <TextInput
+                  style={[availStyles.addDateInput, { fontFamily: "Inter_400Regular" }]}
+                  value={newDateInput}
+                  onChangeText={setNewDateInput}
+                  placeholder="e.g. Apr 20, 2026"
+                  placeholderTextColor="#555"
+                  onSubmitEditing={addDate}
+                  returnKeyType="done"
+                />
+                <TouchableOpacity style={availStyles.addDateBtn} onPress={addDate} activeOpacity={0.8}>
+                  <Ionicons name="add" size={20} color="#000" />
+                </TouchableOpacity>
+              </View>
+              {upcomingDates.length === 0 ? (
+                <Text style={[{ color: "#666", fontSize: 13 }, { fontFamily: "Inter_400Regular" }]}>No upcoming dates added.</Text>
+              ) : (
+                upcomingDates.map((date, idx) => (
+                  <View key={idx} style={availStyles.dateRow}>
+                    <Ionicons name="calendar-outline" size={15} color="#34FF7A" />
+                    <Text style={[availStyles.dateText, { fontFamily: "Inter_500Medium" }]}>{date}</Text>
+                    <TouchableOpacity onPress={() => removeDate(idx)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Ionicons name="close-circle" size={17} color="#555" />
+                    </TouchableOpacity>
+                  </View>
+                ))
+              )}
+
+              {/* Save button */}
+              <TouchableOpacity style={[availStyles.saveAvailBtn, { marginTop: 20 }]} onPress={handleSaveAvailability} activeOpacity={0.85}>
+                <Text style={[availStyles.saveAvailBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Availability</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Photos of our work */}
@@ -558,107 +648,6 @@ function LandscaperProfile({
             {/* Editable price matrix */}
             <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold", marginTop: 12 }]}>EDIT PRICES</Text>
             <PriceMatrixEditor matrix={matrix} setMatrix={setMatrix} />
-          </>
-        )}
-
-        {/* ── AVAIL TAB ── */}
-        {activeTab === "avail" && (
-          <>
-            {/* Days of the week */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>AVAILABLE DAYS</Text>
-            <View style={cutStyles.card}>
-              <View style={availStyles.daysRow}>
-                {DAYS.map((day) => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[availStyles.dayChip, availDays[day] && availStyles.dayChipOn]}
-                    onPress={() => toggleDay(day)}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={[availStyles.dayChipText, { fontFamily: "Inter_600SemiBold" }, availDays[day] && availStyles.dayChipTextOn]}>
-                      {day}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Hours */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>WORKING HOURS</Text>
-            <View style={cutStyles.card}>
-              <View style={availStyles.hoursRow}>
-                <View style={availStyles.hoursField}>
-                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_400Regular" }]}>Start Time</Text>
-                  <TextInput
-                    style={[availStyles.hoursInput, { fontFamily: "Inter_600SemiBold" }]}
-                    value={availStart}
-                    onChangeText={setAvailStart}
-                    placeholder="8:00 AM"
-                    placeholderTextColor="#555"
-                  />
-                </View>
-                <Text style={[availStyles.hoursSep, { fontFamily: "Inter_400Regular" }]}>to</Text>
-                <View style={availStyles.hoursField}>
-                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_400Regular" }]}>End Time</Text>
-                  <TextInput
-                    style={[availStyles.hoursInput, { fontFamily: "Inter_600SemiBold" }]}
-                    value={availEnd}
-                    onChangeText={setAvailEnd}
-                    placeholder="6:00 PM"
-                    placeholderTextColor="#555"
-                  />
-                </View>
-              </View>
-              <Text style={[{ color: "#888", fontSize: 12, marginTop: 8 }, { fontFamily: "Inter_400Regular" }]}>
-                These hours apply to all selected days above.
-              </Text>
-            </View>
-
-            {/* Upcoming available dates */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>UPCOMING AVAILABLE DATES</Text>
-            <View style={cutStyles.card}>
-              <View style={availStyles.addDateRow}>
-                <TextInput
-                  style={[availStyles.addDateInput, { fontFamily: "Inter_400Regular" }]}
-                  value={newDateInput}
-                  onChangeText={setNewDateInput}
-                  placeholder="e.g. Apr 20, 2026"
-                  placeholderTextColor="#555"
-                  onSubmitEditing={addDate}
-                  returnKeyType="done"
-                />
-                <TouchableOpacity style={availStyles.addDateBtn} onPress={addDate} activeOpacity={0.8}>
-                  <Ionicons name="add" size={20} color="#000" />
-                </TouchableOpacity>
-              </View>
-
-              {upcomingDates.length === 0 ? (
-                <Text style={[{ color: "#666", fontSize: 13, marginTop: 8 }, { fontFamily: "Inter_400Regular" }]}>
-                  No upcoming dates added yet.
-                </Text>
-              ) : (
-                upcomingDates.map((date, idx) => (
-                  <View key={idx} style={availStyles.dateRow}>
-                    <Ionicons name="calendar-outline" size={16} color="#34FF7A" />
-                    <Text style={[availStyles.dateText, { fontFamily: "Inter_500Medium" }]}>{date}</Text>
-                    <TouchableOpacity onPress={() => removeDate(idx)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name="close-circle" size={18} color="#555" />
-                    </TouchableOpacity>
-                  </View>
-                ))
-              )}
-            </View>
-
-            <TouchableOpacity
-              style={[availStyles.saveAvailBtn]}
-              onPress={() => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert("✅ Availability saved!", "Customers will see your updated schedule.");
-              }}
-              activeOpacity={0.85}
-            >
-              <Text style={[availStyles.saveAvailBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Availability</Text>
-            </TouchableOpacity>
           </>
         )}
 
