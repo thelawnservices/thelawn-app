@@ -76,6 +76,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="mail-outline" size={size} color={color} />
           ),
+          ...(role === "landscaper" && { tabBarButton: () => null }),
         }}
       />
       <Tabs.Screen
