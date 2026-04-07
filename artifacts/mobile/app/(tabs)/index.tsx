@@ -1036,6 +1036,23 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Greeting */}
+        <View style={styles.greetingRow}>
+          <Text style={[styles.greetingText, { fontFamily: "Inter_600SemiBold" }]}>
+            {(() => {
+              const h = new Date().getHours();
+              const tod = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+              const name = role === "landscaper" ? "John" : "Alex";
+              return `${tod}, ${name} 👋`;
+            })()}
+          </Text>
+          <Text style={[styles.greetingZip, { fontFamily: "Inter_400Regular" }]}>
+            {role === "landscaper"
+              ? "Pending requests within 50 mi · ZIP 34222"
+              : "Landscapers near you · ZIP 34222"}
+          </Text>
+        </View>
+
         {/* CTA Button – customers only */}
         {role !== "landscaper" && (
           <TouchableOpacity
@@ -1215,6 +1232,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scrollContent: { padding: 20, paddingBottom: 40 },
+  greetingRow: { marginBottom: 20 },
+  greetingText: { fontSize: 22, color: "#FFFFFF", marginBottom: 4 },
+  greetingZip: { fontSize: 13, color: "#AAAAAA" },
   ctaBtn: {
     backgroundColor: "#34C759",
     flexDirection: "row",

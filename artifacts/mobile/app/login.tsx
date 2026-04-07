@@ -42,6 +42,7 @@ export default function LoginScreen() {
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [zipCode, setZipCode] = useState("");
 
   // Landscaper reg
   const [businessName, setBusinessName] = useState("");
@@ -51,6 +52,7 @@ export default function LoginScreen() {
   const [specialty, setSpecialty] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
+  const [lZipCode, setLZipCode] = useState("");
   const [years, setYears] = useState("");
   const [paymentPref, setPaymentPref] = useState("");
 
@@ -82,8 +84,8 @@ export default function LoginScreen() {
   }
 
   function handleCustomerRegister() {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim() || !phone.trim() || !address.trim()) {
-      setErrors("Please fill in all fields");
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim() || !phone.trim() || !address.trim() || !zipCode.trim()) {
+      setErrors("Please fill in all fields including ZIP Code");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
@@ -93,8 +95,8 @@ export default function LoginScreen() {
   }
 
   function handleLandscaperRegister() {
-    if (!businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !city.trim() || !state.trim() || !paymentPref) {
-      setErrors("Please fill all required fields: Business Name, Email, Password, Phone, City, State, and Payment Preference.");
+    if (!businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !city.trim() || !state.trim() || !lZipCode.trim() || !paymentPref) {
+      setErrors("Please fill all required fields: Business Name, Email, Password, Phone, City, State, ZIP Code, and Payment Preference.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
@@ -250,6 +252,9 @@ export default function LoginScreen() {
           <Field label="Service Address">
             <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={address} onChangeText={setAddress} placeholder="8910 45th Ave E, Ellenton, FL" placeholderTextColor="#555" autoCapitalize="words" />
           </Field>
+          <Field label="ZIP Code">
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={zipCode} onChangeText={setZipCode} placeholder="34222" placeholderTextColor="#555" keyboardType="numeric" maxLength={5} />
+          </Field>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleCustomerRegister} activeOpacity={0.88}>
             <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Account</Text>
           </TouchableOpacity>
@@ -303,6 +308,9 @@ export default function LoginScreen() {
             </Field>
           </View>
         </View>
+        <Field label="ZIP Code">
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lZipCode} onChangeText={setLZipCode} placeholder="34222" placeholderTextColor="#555" keyboardType="numeric" maxLength={5} />
+        </Field>
         <Field label="Years of Experience">
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={setYears} placeholder="e.g. 5" placeholderTextColor="#555" keyboardType="numeric" maxLength={2} />
         </Field>
