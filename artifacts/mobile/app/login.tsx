@@ -10,13 +10,19 @@ import {
   KeyboardAvoidingView,
   Image,
   Modal,
+  Dimensions,
 } from "react-native";
+
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/contexts/auth";
 import TermsModal from "@/components/TermsModal";
+
+const { height: SCREEN_H } = Dimensions.get("window");
+const LOGO_H = Math.min(280, Math.max(200, SCREEN_H * 0.38));
+const LOGO_MB = Math.min(80, Math.max(40, SCREEN_H * 0.08));
 
 type Step =
   | "welcome"
@@ -654,13 +660,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logoImgLarge: {
-    height: 280,
+    height: LOGO_H,
     width: "100%",
-    marginBottom: 80,
+    marginBottom: LOGO_MB,
     shadowColor: "#34FF7A",
-    shadowOffset: { width: 0, height: 15 },
-    shadowOpacity: 0.65,
-    shadowRadius: 40,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
   },
   welcomePrimaryBtn: {
     width: "100%",
