@@ -8,7 +8,10 @@ import {
   Platform,
   Alert,
   Linking,
+  Modal,
+  Pressable,
 } from "react-native";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -19,22 +22,24 @@ const CUSTOMER_UPCOMING = [
   {
     id: "1",
     service: "Lawn Mowing",
-    date: "April 12",
+    date: "April 12, 2026",
     time: "10:30 AM",
     pro: "John Rivera",
     price: "$45",
     initials: "JR",
     color: "#FFFFFF",
+    address: "4627 Hall's Mill Crossing, Ellenton, FL 34222",
   },
   {
     id: "2",
     service: "Hedge Trimming",
-    date: "April 18",
+    date: "April 18, 2026",
     time: "9:00 AM",
     pro: "GreenScape Pros",
     price: "$65",
     initials: "GP",
     color: "#166D42",
+    address: "22 Palmetto Dr, Bradenton, FL 34208",
   },
 ];
 
@@ -42,15 +47,118 @@ const CUSTOMER_PAST = [
   {
     id: "3",
     service: "Lawn Mowing",
-    date: "March 28",
+    date: "March 28, 2026",
     time: "11:00 AM",
     pro: "John Rivera",
     price: "$45",
     initials: "JR",
     color: "#FFFFFF",
     rating: 5,
+    address: "4627 Hall's Mill Crossing, Ellenton, FL 34222",
   },
 ];
+
+type CustomerAppt = typeof CUSTOMER_UPCOMING[0];
+
+function JobDetailsModal({
+  appt,
+  onClose,
+}: {
+  appt: CustomerAppt | null;
+  onClose: () => void;
+}) {
+  if (!appt) return null;
+
+  function openMapsAddress() {
+    const encoded = encodeURIComponent(appt!.address);
+    const url =
+      Platform.OS === "ios"
+        ? `maps://?daddr=${encoded}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${encoded}`;
+    Linking.openURL(url).catch(() =>
+      Linking.openURL(
+        `https://www.google.com/maps/dir/?api=1&destination=${encoded}`
+      )
+    );
+  }
+
+  return (
+    <Modal visible={!!appt} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={jdStyles.overlay} onPress={onClose}>
+        <Pressable style={jdStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          {/* Handle bar */}
+          <View style={jdStyles.handle} />
+
+          {/* Header row */}
+          <View style={jdStyles.headerRow}>
+            <TouchableOpacity style={jdStyles.backBtn} onPress={onClose} activeOpacity={0.7}>
+              <Ionicons name="arrow-back" size={20} color="#34FF7A" />
+            </TouchableOpacity>
+            <Text style={[jdStyles.title, { fontFamily: "Inter_700Bold" }]}>Job Details</Text>
+            <View style={{ width: 36 }} />
+          </View>
+
+          {/* Date / time card */}
+          <View style={jdStyles.dateCard}>
+            <Ionicons name="calendar-outline" size={18} color="#34FF7A" />
+            <Text style={[jdStyles.dateText, { fontFamily: "Inter_500Medium" }]}>
+              {appt.date} at {appt.time}
+            </Text>
+          </View>
+
+          {/* Pro */}
+          <View style={jdStyles.proRow}>
+            <View style={[jdStyles.proAvatar, { backgroundColor: appt.color }]}>
+              <Text style={[jdStyles.proInitials, { fontFamily: "Inter_700Bold" }]}>
+                {appt.initials}
+              </Text>
+            </View>
+            <View>
+              <Text style={[jdStyles.proLabel, { fontFamily: "Inter_400Regular" }]}>Service Pro</Text>
+              <Text style={[jdStyles.proName, { fontFamily: "Inter_600SemiBold" }]}>{appt.pro}</Text>
+            </View>
+            <Text style={[jdStyles.priceTag, { fontFamily: "Inter_700Bold" }]}>{appt.price}</Text>
+          </View>
+
+          {/* Service address */}
+          <Text style={[jdStyles.sectionLabel, { fontFamily: "Inter_500Medium" }]}>
+            Service Address
+          </Text>
+          <TouchableOpacity
+            style={jdStyles.addressCard}
+            onPress={() => { Haptics.selectionAsync(); openMapsAddress(); }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="location" size={20} color="#34FF7A" />
+            <Text style={[jdStyles.addressText, { fontFamily: "Inter_400Regular" }]}>
+              {appt.address}
+            </Text>
+            <Ionicons name="navigate-outline" size={16} color="#34FF7A" />
+          </TouchableOpacity>
+          <Text style={[jdStyles.addressHint, { fontFamily: "Inter_400Regular" }]}>
+            Tap address to open directions
+          </Text>
+
+          {/* Confirm & Pay */}
+          <TouchableOpacity
+            style={jdStyles.payBtn}
+            activeOpacity={0.85}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onClose();
+              router.navigate("/pay");
+            }}
+          >
+            <Ionicons name="card-outline" size={18} color="#000" />
+            <Text style={[jdStyles.payBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+              Confirm &amp; Pay
+            </Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
 
 const LANDSCAPER_SCHEDULED = [
   {
@@ -99,6 +207,7 @@ export default function AppointmentsScreen() {
   const isLandscaper = role === "landscaper";
 
   const [cancelledIds, setCancelledIds] = useState<string[]>([]);
+  const [selectedAppt, setSelectedAppt] = useState<CustomerAppt | null>(null);
   const { acceptedJobs, cancelAccepted } = useJobs();
 
   function openMaps(address: string) {
@@ -314,11 +423,18 @@ export default function AppointmentsScreen() {
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Appointments</Text>
       </View>
 
+      <JobDetailsModal appt={selectedAppt} onClose={() => setSelectedAppt(null)} />
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Upcoming</Text>
 
         {CUSTOMER_UPCOMING.map((appt) => (
-          <TouchableOpacity key={appt.id} style={styles.card} activeOpacity={0.8}>
+          <TouchableOpacity
+            key={appt.id}
+            style={styles.card}
+            activeOpacity={0.8}
+            onPress={() => { Haptics.selectionAsync(); setSelectedAppt(appt); }}
+          >
             <View style={[styles.avatar, { backgroundColor: appt.color }]}>
               <Text style={styles.avatarText}>{appt.initials}</Text>
             </View>
@@ -338,7 +454,7 @@ export default function AppointmentsScreen() {
                 with {appt.pro}
               </Text>
             </View>
-            <View style={styles.statusDot} />
+            <Ionicons name="chevron-forward" size={16} color="#34FF7A" />
           </TouchableOpacity>
         ))}
 
@@ -505,6 +621,130 @@ const styles = StyleSheet.create({
   priceText: { fontSize: 15, color: "#FFFFFF" },
   subText: { fontSize: 12, color: "#555", marginBottom: 3 },
   proText: { fontSize: 12, color: "#555" },
-  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#34C759" },
   ratingRow: { flexDirection: "row", gap: 2 },
+});
+
+const jdStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: "#111111",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingBottom: 52,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderColor: "#222222",
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#333",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+  },
+  title: { fontSize: 20, color: "#34FF7A" },
+
+  dateCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  dateText: { fontSize: 15, color: "#FFFFFF" },
+
+  proRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 22,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  proAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  proInitials: { color: "#000", fontSize: 15 },
+  proLabel: { fontSize: 11, color: "#666666", marginBottom: 2 },
+  proName: { fontSize: 15, color: "#FFFFFF" },
+  priceTag: { fontSize: 18, color: "#34FF7A", marginLeft: "auto" },
+
+  sectionLabel: {
+    fontSize: 12,
+    color: "#AAAAAA",
+    textTransform: "uppercase",
+    letterSpacing: 1.1,
+    marginBottom: 10,
+  },
+  addressCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 22,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: "#34FF7A33",
+    marginBottom: 6,
+  },
+  addressText: {
+    flex: 1,
+    fontSize: 14,
+    color: "#FFFFFF",
+    lineHeight: 20,
+  },
+  addressHint: {
+    fontSize: 11,
+    color: "#555555",
+    marginBottom: 28,
+    paddingHorizontal: 4,
+  },
+  payBtn: {
+    backgroundColor: "#34FF7A",
+    borderRadius: 28,
+    paddingVertical: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    shadowColor: "#34FF7A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  payBtnText: { fontSize: 17, color: "#000000" },
 });
