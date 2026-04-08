@@ -20,7 +20,7 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
 import { useNotifications } from "@/contexts/notifications";
-import { simulatePhotoReview } from "@/utils/moderation";
+import { simulatePhotoReview, validateText } from "@/utils/moderation";
 
 type JobStatus = "pending" | "arrived" | "started" | "completed";
 
@@ -208,6 +208,214 @@ function ChatModal({
   );
 }
 
+// ── Dispute Modal ─────────────────────────────────────────────────────────────
+
+const DISPUTE_CATEGORIES = [
+  { key: "not_completed",  label: "Work was not completed",   icon: "close-circle-outline" as const },
+  { key: "quality",        label: "Poor quality of work",     icon: "thumbs-down-outline" as const },
+  { key: "damage",         label: "Damage to my property",    icon: "warning-outline" as const },
+  { key: "no_show",        label: "Landscaper didn't show",   icon: "person-remove-outline" as const },
+  { key: "other",          label: "Other issue",              icon: "help-circle-outline" as const },
+];
+
+const DISPUTE_EMAIL = "TheLawnServices@gmail.com";
+const MAX_DISPUTE_CHARS = 500;
+
+function DisputeModal({
+  visible,
+  jobId,
+  jobService,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  jobId: string;
+  jobService: string;
+  onClose: () => void;
+  onSubmit: (jobId: string, category: string, message: string) => void;
+}) {
+  const [category, setCategory] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent">("idle");
+  const [msgErr, setMsgErr] = useState<string | null>(null);
+  const [catErr, setCatErr] = useState(false);
+  const successOpacity = useRef(new Animated.Value(0)).current;
+
+  function reset() {
+    setCategory(""); setMessage(""); setSubmitState("idle");
+    setMsgErr(null); setCatErr(false); successOpacity.setValue(0);
+  }
+
+  function handleSubmit() {
+    let hasErr = false;
+    if (!category) { setCatErr(true); hasErr = true; }
+    if (!message.trim()) { setMsgErr("Please describe the issue before submitting."); hasErr = true; }
+    else {
+      const v = validateText(message, MAX_DISPUTE_CHARS);
+      if (!v.valid) { setMsgErr(v.error ?? "Please revise your message."); hasErr = true; }
+    }
+    if (hasErr) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); return; }
+
+    setSubmitState("sending");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setTimeout(() => {
+      setSubmitState("sent");
+      Animated.timing(successOpacity, { toValue: 1, duration: 400, useNativeDriver: false }).start();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setTimeout(() => {
+        onSubmit(jobId, category, message.trim());
+        reset();
+        onClose();
+      }, 2000);
+    }, 1400);
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={() => { if (submitState !== "sending") { onClose(); reset(); } }}>
+      <View style={dispStyles.container}>
+        {/* Header */}
+        <View style={dispStyles.header}>
+          <TouchableOpacity
+            style={dispStyles.closeBtn}
+            onPress={() => { if (submitState !== "sending") { onClose(); reset(); } }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-down" size={22} color="#CCCCCC" />
+          </TouchableOpacity>
+          <Text style={[dispStyles.headerTitle, { fontFamily: "Inter_700Bold" }]}>File a Dispute</Text>
+          <View style={{ width: 36 }} />
+        </View>
+
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 60 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Job reference */}
+            <View style={dispStyles.jobRefRow}>
+              <Ionicons name="leaf-outline" size={14} color="#34FF7A" />
+              <Text style={[dispStyles.jobRefText, { fontFamily: "Inter_400Regular" }]}>
+                Regarding: <Text style={{ fontFamily: "Inter_600SemiBold", color: "#FFFFFF" }}>{jobService}</Text>
+              </Text>
+            </View>
+
+            {/* To: field */}
+            <View style={dispStyles.toCard}>
+              <View style={dispStyles.toRow}>
+                <Text style={[dispStyles.toLabel, { fontFamily: "Inter_600SemiBold" }]}>TO</Text>
+                <View style={dispStyles.toEmailBadge}>
+                  <Ionicons name="mail-outline" size={13} color="#34FF7A" />
+                  <Text style={[dispStyles.toEmailText, { fontFamily: "Inter_500Medium" }]}>{DISPUTE_EMAIL}</Text>
+                </View>
+              </View>
+              <Text style={[dispStyles.toNote, { fontFamily: "Inter_400Regular" }]}>
+                Our team reviews all disputes within 24–48 hours. Payment remains frozen until resolved.
+              </Text>
+            </View>
+
+            {/* Category */}
+            <Text style={[dispStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>What's the issue? *</Text>
+            {catErr && (
+              <View style={dispStyles.errRow}>
+                <Ionicons name="alert-circle-outline" size={13} color="#FF4444" />
+                <Text style={[dispStyles.errText, { fontFamily: "Inter_400Regular" }]}>Please select a category.</Text>
+              </View>
+            )}
+            <View style={dispStyles.categoryList}>
+              {DISPUTE_CATEGORIES.map((cat) => {
+                const sel = category === cat.key;
+                return (
+                  <TouchableOpacity
+                    key={cat.key}
+                    style={[dispStyles.categoryItem, sel && dispStyles.categoryItemSelected]}
+                    onPress={() => { setCategory(cat.key); setCatErr(false); Haptics.selectionAsync(); }}
+                    activeOpacity={0.75}
+                  >
+                    <Ionicons name={cat.icon} size={18} color={sel ? "#FF4444" : "#888"} />
+                    <Text style={[dispStyles.categoryText, { fontFamily: sel ? "Inter_600SemiBold" : "Inter_400Regular" }, sel && { color: "#FF4444" }]}>
+                      {cat.label}
+                    </Text>
+                    {sel && <Ionicons name="checkmark-circle" size={16} color="#FF4444" style={{ marginLeft: "auto" }} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Message */}
+            <Text style={[dispStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 20 }]}>Describe the issue *</Text>
+            <Text style={[dispStyles.sectionSub, { fontFamily: "Inter_400Regular" }]}>
+              Be specific — include dates, times, and any relevant details.
+            </Text>
+            <TextInput
+              style={[dispStyles.messageInput, msgErr ? dispStyles.messageInputError : null, { fontFamily: "Inter_400Regular" }]}
+              placeholder="Example: The landscaper only mowed the front yard and left without finishing the back. The edging was also missed entirely..."
+              placeholderTextColor="#555"
+              multiline
+              numberOfLines={6}
+              maxLength={MAX_DISPUTE_CHARS}
+              value={message}
+              onChangeText={(t) => { setMessage(t); if (msgErr) setMsgErr(null); }}
+              textAlignVertical="top"
+              editable={submitState === "idle"}
+            />
+            <View style={dispStyles.charCountRow}>
+              {msgErr && (
+                <View style={dispStyles.errRow}>
+                  <Ionicons name="alert-circle-outline" size={13} color="#FF4444" />
+                  <Text style={[dispStyles.errText, { fontFamily: "Inter_400Regular" }]}>{msgErr}</Text>
+                </View>
+              )}
+              <Text style={[dispStyles.charCount, { fontFamily: "Inter_400Regular", color: message.length > MAX_DISPUTE_CHARS * 0.9 ? "#FFAA00" : "#555" }]}>
+                {message.length}/{MAX_DISPUTE_CHARS}
+              </Text>
+            </View>
+
+            {/* Legal note */}
+            <View style={dispStyles.legalNote}>
+              <Ionicons name="shield-checkmark-outline" size={14} color="#777" />
+              <Text style={[dispStyles.legalText, { fontFamily: "Inter_400Regular" }]}>
+                By submitting, your message will be sent to <Text style={{ color: "#34FF7A" }}>{DISPUTE_EMAIL}</Text> along with your job details. False disputes may result in account review.
+              </Text>
+            </View>
+
+            {/* Submit / Success */}
+            {submitState !== "sent" ? (
+              <TouchableOpacity
+                style={[dispStyles.submitBtn, submitState === "sending" && dispStyles.submitBtnLoading]}
+                onPress={submitState === "idle" ? handleSubmit : undefined}
+                activeOpacity={0.85}
+              >
+                {submitState === "sending" ? (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <ActivityIndicator size="small" color="#fff" />
+                    <Text style={[dispStyles.submitBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sending to TheLawnServices...</Text>
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Ionicons name="send-outline" size={17} color="#fff" />
+                    <Text style={[dispStyles.submitBtnText, { fontFamily: "Inter_700Bold" }]}>Submit Dispute</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ) : (
+              <Animated.View style={[dispStyles.sentBox, { opacity: successOpacity }]}>
+                <Ionicons name="checkmark-circle" size={28} color="#34FF7A" />
+                <View style={{ flex: 1 }}>
+                  <Text style={[dispStyles.sentTitle, { fontFamily: "Inter_700Bold" }]}>Dispute Submitted!</Text>
+                  <Text style={[dispStyles.sentSub, { fontFamily: "Inter_400Regular" }]}>
+                    Sent to {DISPUTE_EMAIL} · Our team will respond within 24–48 hours.
+                  </Text>
+                </View>
+              </Animated.View>
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+}
+
 function JobCompletionPhotoModal({
   visible,
   onClose,
@@ -336,6 +544,8 @@ export default function JobsScreen() {
   const [pendingCompletionUris, setPendingCompletionUris] = useState<Set<string>>(new Set());
   // Customer side: track approval per jobId
   const [customerApproved, setCustomerApproved] = useState<Record<string, "approved" | "disputed" | null>>({});
+  const [disputeJobId, setDisputeJobId] = useState<string | null>(null);
+  const [disputeMessages, setDisputeMessages] = useState<Record<string, { category: string; message: string }>>({});
 
   function advanceStatus(jobId: string, next: JobStatus) {
     const current = jobStatuses[jobId];
@@ -425,6 +635,20 @@ export default function JobsScreen() {
             submitCompletion(photoModalJobId, photos);
             setPhotoModalJobId(null);
           }
+        }}
+      />
+
+      {/* Dispute Modal */}
+      <DisputeModal
+        visible={disputeJobId !== null}
+        jobId={disputeJobId ?? ""}
+        jobService={SHARED_ACTIVE_JOBS.find((j) => j.id === disputeJobId)?.service ?? "Service"}
+        onClose={() => setDisputeJobId(null)}
+        onSubmit={(jobId, category, message) => {
+          setCustomerApproved((prev) => ({ ...prev, [jobId]: "disputed" }));
+          setDisputeMessages((prev) => ({ ...prev, [jobId]: { category, message } }));
+          setDisputeJobId(null);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }}
       />
 
@@ -564,22 +788,7 @@ export default function JobsScreen() {
                           activeOpacity={0.85}
                           onPress={() => {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            Alert.alert(
-                              "Open Dispute?",
-                              "Are you unsatisfied with the work? This will flag the order and send it to TheLawnServices for further review. Payment will be frozen until resolved.",
-                              [
-                                { text: "Cancel", style: "cancel" },
-                                {
-                                  text: "Yes, Dispute",
-                                  style: "destructive",
-                                  onPress: () => {
-                                    setCustomerApproved((prev) => ({ ...prev, [job.id]: "disputed" }));
-                                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                                    setTimeout(() => Alert.alert("Dispute Filed", "Our team at TheLawnServices will review and respond within 24–48 hours."), 400);
-                                  },
-                                },
-                              ]
-                            );
+                            setDisputeJobId(job.id);
                           }}
                         >
                           <Ionicons name="alert-circle-outline" size={16} color="#FF4444" />
@@ -606,15 +815,31 @@ export default function JobsScreen() {
                 </View>
               )}
               {!isLandscaper && customerApproved[job.id] === "disputed" && (
-                <View style={[jobPhotoStyles.approvalBanner, { backgroundColor: "#1A0505", borderColor: "#3A1010" }]}>
+                <View style={[jobPhotoStyles.approvalBanner, { backgroundColor: "#1A0505", borderColor: "#3A1010", gap: 10 }]}>
                   <View style={jobPhotoStyles.approvalTop}>
                     <Ionicons name="shield-outline" size={15} color="#FF4444" />
                     <Text style={[jobPhotoStyles.approvalTitle, { fontFamily: "Inter_600SemiBold", color: "#FF4444" }]}>
                       Dispute Under Further Review
                     </Text>
                   </View>
-                  <Text style={[{ fontSize: 12, color: "#BBBBBB", lineHeight: 18 }, { fontFamily: "Inter_400Regular" }]}>
-                    TheLawnServices is reviewing your case. You'll be contacted within 24–48 hours.
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Ionicons name="mail-outline" size={12} color="#34FF7A" />
+                    <Text style={[{ fontSize: 11, color: "#34FF7A" }, { fontFamily: "Inter_500Medium" }]}>
+                      Sent to TheLawnServices@gmail.com
+                    </Text>
+                  </View>
+                  {disputeMessages[job.id] && (
+                    <View style={{ backgroundColor: "#2A0808", borderRadius: 10, padding: 10, borderWidth: 1, borderColor: "#3A1010" }}>
+                      <Text style={[{ fontSize: 11, color: "#FF9999", marginBottom: 4 }, { fontFamily: "Inter_600SemiBold" }]}>
+                        {DISPUTE_CATEGORIES.find((c) => c.key === disputeMessages[job.id].category)?.label ?? "Issue Reported"}
+                      </Text>
+                      <Text style={[{ fontSize: 12, color: "#CCCCCC", lineHeight: 18 }, { fontFamily: "Inter_400Regular" }]}>
+                        {disputeMessages[job.id].message}
+                      </Text>
+                    </View>
+                  )}
+                  <Text style={[{ fontSize: 11, color: "#888", lineHeight: 17 }, { fontFamily: "Inter_400Regular" }]}>
+                    Our team will respond within 24–48 hours. Payment is frozen until resolved.
                   </Text>
                 </View>
               )}
@@ -1042,4 +1267,93 @@ const jobPhotoStyles = StyleSheet.create({
   },
   disputeBtnText: { fontSize: 13, color: "#FF4444" },
   autoExpireText: { fontSize: 11, color: "#888", lineHeight: 17 },
+});
+
+const dispStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#0A0A0A" },
+  header: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingTop: 56, paddingBottom: 16,
+    borderBottomWidth: 1, borderBottomColor: "#1A1A1A",
+  },
+  headerTitle: { fontSize: 18, color: "#FFFFFF" },
+  closeBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+
+  jobRefRow: {
+    flexDirection: "row", alignItems: "center", gap: 7,
+    backgroundColor: "#0d2e18", borderRadius: 10, padding: 10,
+    borderWidth: 1, borderColor: "#1a4a2a", marginBottom: 16,
+  },
+  jobRefText: { fontSize: 13, color: "#AAAAAA", flex: 1 },
+
+  toCard: {
+    backgroundColor: "#111", borderRadius: 16,
+    borderWidth: 1, borderColor: "#222", padding: 14, marginBottom: 20,
+  },
+  toRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
+  toLabel: { fontSize: 11, color: "#777", letterSpacing: 1 },
+  toEmailBadge: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#0d2e18", borderRadius: 20,
+    borderWidth: 1, borderColor: "#1a4a2a",
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  toEmailText: { fontSize: 13, color: "#34FF7A" },
+  toNote: { fontSize: 12, color: "#777", lineHeight: 18 },
+
+  sectionLabel: { fontSize: 13, color: "#AAAAAA", letterSpacing: 0.6, marginBottom: 8 },
+  sectionSub: { fontSize: 12, color: "#666", marginBottom: 10, lineHeight: 18 },
+
+  categoryList: {
+    backgroundColor: "#111", borderRadius: 16,
+    borderWidth: 1, borderColor: "#222", overflow: "hidden",
+  },
+  categoryItem: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingHorizontal: 16, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: "#1A1A1A",
+  },
+  categoryItemSelected: { backgroundColor: "#1A0505" },
+  categoryText: { fontSize: 14, color: "#CCCCCC", flex: 1 },
+
+  messageInput: {
+    backgroundColor: "#141414", borderRadius: 16,
+    borderWidth: 1, borderColor: "#222",
+    paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: 14, color: "#FFFFFF", minHeight: 130,
+  },
+  messageInputError: { borderColor: "#FF4444" },
+
+  charCountRow: {
+    flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between", marginTop: 6, marginBottom: 4,
+  },
+  charCount: { fontSize: 11 },
+
+  errRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 4 },
+  errText: { fontSize: 12, color: "#FF4444" },
+
+  legalNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#111", borderRadius: 12, borderWidth: 1, borderColor: "#1E1E1E",
+    padding: 12, marginTop: 16, marginBottom: 8,
+  },
+  legalText: { fontSize: 11, color: "#666", flex: 1, lineHeight: 17 },
+
+  submitBtn: {
+    backgroundColor: "#CC2222", borderRadius: 18,
+    paddingVertical: 16, alignItems: "center", justifyContent: "center",
+    marginTop: 16,
+  },
+  submitBtnLoading: { backgroundColor: "#882222" },
+  submitBtnText: { fontSize: 15, color: "#FFFFFF" },
+
+  sentBox: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: "#0d2e18", borderRadius: 16,
+    borderWidth: 1, borderColor: "#1a4a2a",
+    padding: 16, marginTop: 16,
+  },
+  sentTitle: { fontSize: 15, color: "#34FF7A" },
+  sentSub: { fontSize: 12, color: "#AAAAAA", marginTop: 3, lineHeight: 17 },
 });
