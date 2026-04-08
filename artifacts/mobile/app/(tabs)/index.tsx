@@ -292,7 +292,6 @@ function ProfileDropdownModal({
   onPaymentHistory,
   onVouchers,
   onHelp,
-  onAvailability,
   isLandscaper,
   onSignOut,
 }: {
@@ -305,7 +304,6 @@ function ProfileDropdownModal({
   onPaymentHistory: () => void;
   onVouchers: () => void;
   onHelp: () => void;
-  onAvailability: () => void;
   isLandscaper: boolean;
   onSignOut: () => void;
 }) {
@@ -325,10 +323,6 @@ function ProfileDropdownModal({
                   <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>My Services</Text>
                   <Ionicons name="chevron-forward" size={16} color="#555" />
                 </View>
-              </TouchableOpacity>
-              <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
-                <Ionicons name="calendar-outline" size={20} color="#CCCCCC" />
-                <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
               </TouchableOpacity>
             </>
           )}
@@ -758,7 +752,7 @@ const helpStyles = StyleSheet.create({
 });
 
 const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const AVAIL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf"];
+const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
 
 type ServiceAvail = { days: string[]; startTime: string; endTime: string };
 type AvailState = Record<string, ServiceAvail>;
@@ -768,9 +762,8 @@ const DEFAULT_AVAIL: AvailState = {
   "Weeding/Mulching": { days: ["Tue", "Thu"], startTime: "09:00", endTime: "17:00" },
   "Sod Installation": { days: ["Mon", "Wed", "Fri"], startTime: "07:00", endTime: "17:00" },
   "Artificial Turf":  { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "07:00", endTime: "16:00" },
+  "Full Service":     { days: ["Mon", "Wed", "Fri"], startTime: "08:00", endTime: "17:00" },
 };
-
-const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
 
 type PricingTier = { size: string; desc: string; price: string };
 
@@ -782,6 +775,7 @@ const DEFAULT_PRICING: PricingTier[] = [
 
 function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [offered, setOffered] = useState<string[]>([...ALL_SERVICES]);
+  const [avail, setAvail] = useState<AvailState>(() => JSON.parse(JSON.stringify(DEFAULT_AVAIL)));
   const [pricing, setPricing] = useState<PricingTier[]>(
     DEFAULT_PRICING.map((t) => ({ ...t }))
   );
@@ -792,6 +786,19 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
     setOffered((prev) =>
       prev.includes(svc) ? prev.filter((s) => s !== svc) : [...prev, svc]
     );
+  }
+
+  function toggleDay(service: string, day: string) {
+    setAvail((prev) => {
+      const days = prev[service].days.includes(day)
+        ? prev[service].days.filter((d) => d !== day)
+        : [...prev[service].days, day];
+      return { ...prev, [service]: { ...prev[service], days } };
+    });
+  }
+
+  function setTime(service: string, field: "startTime" | "endTime", val: string) {
+    setAvail((prev) => ({ ...prev, [service]: { ...prev[service], [field]: val } }));
   }
 
   function updatePrice(index: number, value: string) {
@@ -849,6 +856,63 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
                 );
               })}
             </View>
+
+            <View style={svcStyles.divider} />
+
+            {/* ── Availability Schedule ────────────────────── */}
+            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Availability Schedule</Text>
+            <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
+              Set available days and hours for each service you offer.
+            </Text>
+            {offered.map((service, si) => (
+              <View key={service} style={si > 0 ? { marginTop: 22 } : undefined}>
+                <Text style={[svcStyles.schedServiceLabel, { fontFamily: "Inter_600SemiBold" }]}>{service}</Text>
+                <View style={svcStyles.daysRow}>
+                  {ALL_DAYS.map((day) => {
+                    const active = avail[service]?.days.includes(day) ?? false;
+                    return (
+                      <TouchableOpacity
+                        key={day}
+                        onPress={() => { toggleDay(service, day); Haptics.selectionAsync(); }}
+                        activeOpacity={0.75}
+                        style={[svcStyles.dayChip, active && svcStyles.dayChipActive]}
+                      >
+                        <Text style={[svcStyles.dayChipText, active && svcStyles.dayChipTextActive, { fontFamily: "Inter_500Medium" }]}>
+                          {day}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                <View style={svcStyles.timesRow}>
+                  <View style={svcStyles.timeCol}>
+                    <Text style={[svcStyles.timeLabel, { fontFamily: "Inter_400Regular" }]}>Start</Text>
+                    <TextInput
+                      style={[svcStyles.timeInput, { fontFamily: "Inter_400Regular" }]}
+                      value={avail[service]?.startTime ?? "08:00"}
+                      onChangeText={(v) => setTime(service, "startTime", v)}
+                      placeholder="08:00"
+                      placeholderTextColor="#777"
+                    />
+                  </View>
+                  <View style={svcStyles.timeCol}>
+                    <Text style={[svcStyles.timeLabel, { fontFamily: "Inter_400Regular" }]}>End</Text>
+                    <TextInput
+                      style={[svcStyles.timeInput, { fontFamily: "Inter_400Regular" }]}
+                      value={avail[service]?.endTime ?? "17:00"}
+                      onChangeText={(v) => setTime(service, "endTime", v)}
+                      placeholder="17:00"
+                      placeholderTextColor="#777"
+                    />
+                  </View>
+                </View>
+              </View>
+            ))}
+            {offered.length === 0 && (
+              <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular", marginTop: 4 }]}>
+                Select at least one service above to set its schedule.
+              </Text>
+            )}
 
             <View style={svcStyles.divider} />
 
@@ -940,177 +1004,27 @@ const svcStyles = StyleSheet.create({
   },
   saveBtnSuccess: { backgroundColor: "#22c55e" },
   saveBtnText: { fontSize: 16, color: "#000" },
-});
-
-function ServiceAvailabilityModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const [avail, setAvail] = useState<AvailState>(() => JSON.parse(JSON.stringify(DEFAULT_AVAIL)));
-  const [offered, setOffered] = useState<string[]>([...AVAIL_SERVICES]);
-
-  function toggleOffered(service: string) {
-    setOffered((prev) =>
-      prev.includes(service) ? prev.filter((s) => s !== service) : [...prev, service]
-    );
-  }
-
-  function toggleDay(service: string, day: string) {
-    setAvail((prev) => {
-      const days = prev[service].days.includes(day)
-        ? prev[service].days.filter((d) => d !== day)
-        : [...prev[service].days, day];
-      return { ...prev, [service]: { ...prev[service], days } };
-    });
-  }
-
-  function setTime(service: string, field: "startTime" | "endTime", val: string) {
-    setAvail((prev) => ({ ...prev, [service]: { ...prev[service], [field]: val } }));
-  }
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={settStyles.overlay} onPress={onClose}>
-        <Pressable
-          style={[settStyles.sheet, { maxHeight: "85%", paddingBottom: 0 }]}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View style={settStyles.header}>
-            <Text style={[settStyles.title, { fontFamily: "Inter_700Bold" }]}>Service Availability</Text>
-            <TouchableOpacity onPress={onClose} style={settStyles.closeBtn} activeOpacity={0.7}>
-              <Ionicons name="close" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-
-            {/* ── Services I Offer ─────────────────────────── */}
-            <Text style={[avStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>Services I Offer</Text>
-            <Text style={[avStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
-              Uncheck any service you don't provide — it will be hidden from your schedule and profile.
-            </Text>
-            <View style={avStyles.offeredRow}>
-              {AVAIL_SERVICES.map((svc) => {
-                const on = offered.includes(svc);
-                return (
-                  <TouchableOpacity
-                    key={svc}
-                    style={[avStyles.offeredChip, on && avStyles.offeredChipOn]}
-                    onPress={() => { toggleOffered(svc); Haptics.selectionAsync(); }}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name={on ? "checkmark-circle" : "ellipse-outline"} size={16} color={on ? "#000" : "#555"} />
-                    <Text style={[avStyles.offeredChipText, { fontFamily: "Inter_500Medium" }, on && avStyles.offeredChipTextOn]}>{svc}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            <View style={avStyles.divider} />
-
-            {/* ── Per-service schedule (offered only) ─────── */}
-            {AVAIL_SERVICES.filter((s) => offered.includes(s)).map((service, si) => (
-              <View key={service} style={si > 0 ? { marginTop: 28 } : undefined}>
-                <Text style={[avStyles.serviceLabel, { fontFamily: "Inter_600SemiBold" }]}>{service}</Text>
-
-                <View style={avStyles.daysRow}>
-                  {ALL_DAYS.map((day) => {
-                    const active = avail[service].days.includes(day);
-                    return (
-                      <TouchableOpacity
-                        key={day}
-                        onPress={() => toggleDay(service, day)}
-                        activeOpacity={0.75}
-                        style={[avStyles.dayChip, active && avStyles.dayChipActive]}
-                      >
-                        <Text style={[avStyles.dayChipText, active && avStyles.dayChipTextActive, { fontFamily: "Inter_500Medium" }]}>
-                          {day}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <View style={avStyles.timesRow}>
-                  <View style={avStyles.timeCol}>
-                    <Text style={[avStyles.timeLabel, { fontFamily: "Inter_400Regular" }]}>Start Time</Text>
-                    <TextInput
-                      style={[avStyles.timeInput, { fontFamily: "Inter_400Regular" }]}
-                      value={avail[service].startTime}
-                      onChangeText={(v) => setTime(service, "startTime", v)}
-                      placeholder="08:00"
-                      placeholderTextColor="#777"
-                    />
-                  </View>
-                  <View style={avStyles.timeCol}>
-                    <Text style={[avStyles.timeLabel, { fontFamily: "Inter_400Regular" }]}>End Time</Text>
-                    <TextInput
-                      style={[avStyles.timeInput, { fontFamily: "Inter_400Regular" }]}
-                      value={avail[service].endTime}
-                      onChangeText={(v) => setTime(service, "endTime", v)}
-                      placeholder="17:00"
-                      placeholderTextColor="#777"
-                    />
-                  </View>
-                </View>
-              </View>
-            ))}
-
-            <TouchableOpacity
-              style={[settStyles.primaryBtn, { marginTop: 32 }]}
-              activeOpacity={0.85}
-              onPress={() => {
-                Alert.alert("Availability Saved", "Customers will now see your available times.");
-                onClose();
-              }}
-            >
-              <Text style={[settStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Availability</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
-
-const avStyles = StyleSheet.create({
-  sectionHeading: { fontSize: 16, color: "#FFFFFF", marginBottom: 6 },
-  sectionHint: { fontSize: 12, color: "#888", marginBottom: 14, lineHeight: 18 },
-  offeredRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
-  offeredChip: {
-    flexDirection: "row", alignItems: "center", gap: 7,
-    paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: 14, backgroundColor: "#1A1A1A",
+  schedServiceLabel: { fontSize: 14, color: "#FFFFFF", marginBottom: 10 },
+  daysRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 },
+  dayChip: {
+    paddingHorizontal: 11, paddingVertical: 7,
+    borderRadius: 10, backgroundColor: "#1A1A1A",
     borderWidth: 1, borderColor: "#333",
   },
-  offeredChipOn: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
-  offeredChipText: { fontSize: 13, color: "#666" },
-  offeredChipTextOn: { color: "#000" },
-  divider: { height: 1, backgroundColor: "#222", marginBottom: 24 },
-  serviceLabel: { fontSize: 15, color: "#FFFFFF", marginBottom: 12 },
-  daysRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
-  dayChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: "#222222",
-    borderWidth: 1,
-    borderColor: "#333333",
-  },
   dayChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
-  dayChipText: { fontSize: 13, color: "#CCCCCC" },
-  dayChipTextActive: { color: "#000000" },
-  timesRow: { flexDirection: "row", gap: 12 },
+  dayChipText: { fontSize: 12, color: "#777" },
+  dayChipTextActive: { color: "#000" },
+  timesRow: { flexDirection: "row", gap: 12, marginBottom: 4 },
   timeCol: { flex: 1 },
-  timeLabel: { fontSize: 11, color: "#CCCCCC", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 },
+  timeLabel: { fontSize: 11, color: "#888", marginBottom: 5 },
   timeInput: {
-    backgroundColor: "#222222",
-    borderWidth: 1,
-    borderColor: "#333333",
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: "#FFFFFF",
+    backgroundColor: "#1A1A1A", borderRadius: 10,
+    borderWidth: 1, borderColor: "#333",
+    paddingHorizontal: 12, paddingVertical: 10,
+    color: "#FFFFFF", fontSize: 14,
   },
 });
+
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -1146,7 +1060,6 @@ export default function HomeScreen() {
   const [paymentVisible, setPaymentVisible] = useState(false);
   const [vouchersVisible, setVouchersVisible] = useState(false);
   const [helpVisible, setHelpVisible] = useState(false);
-  const [availabilityVisible, setAvailabilityVisible] = useState(false);
   const [servicesEditVisible, setServicesEditVisible] = useState(false);
   const [paymentHistoryVisible, setPaymentHistoryVisible] = useState(false);
   const [feedLiked, setFeedLiked] = useState<Set<string>>(new Set());
@@ -1231,7 +1144,6 @@ export default function HomeScreen() {
         onPaymentHistory={() => { setDropdownVisible(false); setPaymentHistoryVisible(true); }}
         onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
-        onAvailability={() => { setDropdownVisible(false); setAvailabilityVisible(true); }}
         isLandscaper={role === "landscaper"}
         onSignOut={() => { setDropdownVisible(false); logout(); }}
       />
@@ -1259,10 +1171,6 @@ export default function HomeScreen() {
       <HelpResourcesModal
         visible={helpVisible}
         onClose={() => setHelpVisible(false)}
-      />
-      <ServiceAvailabilityModal
-        visible={availabilityVisible}
-        onClose={() => setAvailabilityVisible(false)}
       />
 
       {/* Push Notification Permission Modal – shown once after first login */}
@@ -1769,27 +1677,6 @@ function LandscaperProfileViewModal({
             <Text style={[fsStyles.aboutText, { fontFamily: "Inter_400Regular" }]}>
               Professional landscaping services with outstanding reviews. Specializing in mowing/edging, weeding/mulching, sod installation, and artificial turf for residential properties in the Sarasota / Ellenton area.
             </Text>
-
-            {/* Services & Pricing */}
-            <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>SERVICES & PRICING (BY YARD SIZE)</Text>
-            <View style={fsStyles.pricingCard}>
-              {[
-                { size: "Small Yard",  desc: "Up to 2,000 sq ft",  price: "$45" },
-                { size: "Medium Yard", desc: "2,000 – 5,000 sq ft", price: "$65" },
-                { size: "Large Yard",  desc: "5,000+ sq ft",        price: "$95+" },
-              ].map((tier, i, arr) => (
-                <View
-                  key={tier.size}
-                  style={[fsStyles.pricingRow, i < arr.length - 1 && fsStyles.pricingRowBorder]}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text style={[fsStyles.pricingSize, { fontFamily: "Inter_600SemiBold" }]}>{tier.size}</Text>
-                    <Text style={[fsStyles.pricingDesc, { fontFamily: "Inter_400Regular" }]}>{tier.desc}</Text>
-                  </View>
-                  <Text style={[fsStyles.pricingPrice, { fontFamily: "Inter_700Bold" }]}>{tier.price}</Text>
-                </View>
-              ))}
-            </View>
 
             {/* Recent Work */}
             <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>RECENT WORK</Text>
