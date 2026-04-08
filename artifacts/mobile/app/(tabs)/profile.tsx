@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -181,7 +181,27 @@ function LandscaperProfile({
     setUpcomingDates((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  const { saveAvailability } = useLandscaperProfile();
+  const { saveAvailability, bookedSlots } = useLandscaperProfile();
+  const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
+
+  const monthDates = useMemo(() => {
+    const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const MON_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const result = [];
+    for (let i = 0; i < 28; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      result.push({
+        label: DAY_NAMES[d.getDay()],
+        dateNum: String(d.getDate()),
+        month: MON_NAMES[d.getMonth()],
+        year: d.getFullYear(),
+      });
+    }
+    return result;
+  }, []);
 
   function handleSaveAvailability() {
     saveAvailability({
@@ -433,34 +453,56 @@ function LandscaperProfile({
                 </View>
               </View>
 
-              {/* Upcoming Dates */}
-              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 8 }]}>UPCOMING AVAILABLE DATES</Text>
-              <View style={[availStyles.addDateRow, { marginBottom: 8 }]}>
-                <TextInput
-                  style={[availStyles.addDateInput, { fontFamily: "Inter_400Regular" }]}
-                  value={newDateInput}
-                  onChangeText={setNewDateInput}
-                  placeholder="e.g. Apr 20, 2026"
-                  placeholderTextColor="#555"
-                  onSubmitEditing={addDate}
-                  returnKeyType="done"
-                />
-                <TouchableOpacity style={availStyles.addDateBtn} onPress={addDate} activeOpacity={0.8}>
-                  <Ionicons name="add" size={20} color="#000" />
-                </TouchableOpacity>
-              </View>
-              {upcomingDates.length === 0 ? (
-                <Text style={[{ color: "#666", fontSize: 13 }, { fontFamily: "Inter_400Regular" }]}>No upcoming dates added.</Text>
-              ) : (
-                upcomingDates.map((date, idx) => (
-                  <View key={idx} style={availStyles.dateRow}>
-                    <Ionicons name="calendar-outline" size={15} color="#34FF7A" />
-                    <Text style={[availStyles.dateText, { fontFamily: "Inter_500Medium" }]}>{date}</Text>
-                    <TouchableOpacity onPress={() => removeDate(idx)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Ionicons name="close-circle" size={17} color="#555" />
+              {/* Monthly Schedule Calendar */}
+              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 12 }]}>MONTHLY SCHEDULE (NEXT 4 WEEKS)</Text>
+              <View style={availStyles.calGrid}>
+                {monthDates.map((d, i) => {
+                  const dateKey = `${d.month} ${d.dateNum}, ${d.year}`;
+                  const hasBookings = (bookedSlots[dateKey] ?? []).length > 0;
+                  const isAvail = !!availDays[d.label];
+                  const isCalSelected = calendarSelectedDate === dateKey;
+                  return (
+                    <TouchableOpacity
+                      key={i}
+                      style={[
+                        availStyles.calCell,
+                        isAvail && availStyles.calCellAvail,
+                        isCalSelected && availStyles.calCellSelected,
+                        hasBookings && availStyles.calCellHasBookings,
+                      ]}
+                      onPress={() => setCalendarSelectedDate(isCalSelected ? null : dateKey)}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[availStyles.calCellLabel, { fontFamily: "Inter_400Regular" }, isAvail ? { color: "rgba(0,0,0,0.6)" } : { color: "#444" }]}>
+                        {d.label.slice(0, 2)}
+                      </Text>
+                      <Text style={[availStyles.calCellDate, { fontFamily: "Inter_700Bold" }, isAvail ? { color: "#000" } : { color: "#444" }]}>
+                        {d.dateNum}
+                      </Text>
+                      {hasBookings && <View style={availStyles.calDot} />}
                     </TouchableOpacity>
-                  </View>
-                ))
+                  );
+                })}
+              </View>
+              {calendarSelectedDate && (
+                <View style={availStyles.calSlotList}>
+                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_600SemiBold", marginBottom: 8 }]}>
+                    {calendarSelectedDate}
+                  </Text>
+                  {(bookedSlots[calendarSelectedDate] ?? []).length === 0 ? (
+                    <Text style={[{ fontSize: 13, color: "#555" }, { fontFamily: "Inter_400Regular" }]}>No bookings this day.</Text>
+                  ) : (
+                    (bookedSlots[calendarSelectedDate] ?? []).map((slot, i) => (
+                      <View key={i} style={availStyles.calSlotRow}>
+                        <Ionicons name="time-outline" size={14} color="#34FF7A" />
+                        <Text style={[availStyles.calSlotText, { fontFamily: "Inter_500Medium" }]}>{slot.time}</Text>
+                        <Text style={[availStyles.calSlotDur, { fontFamily: "Inter_400Regular" }]}>
+                          {slot.service} · {slot.durationMinutes} min
+                        </Text>
+                      </View>
+                    ))
+                  )}
+                </View>
               )}
 
               {/* Save button */}
@@ -1298,6 +1340,55 @@ const availStyles = StyleSheet.create({
     borderBottomColor: "#222222",
   },
   dateText: { flex: 1, fontSize: 14, color: "#FFFFFF" },
+
+  calGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 16,
+  },
+  calCell: {
+    width: "12.5%",
+    minWidth: 38,
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: "#111111",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#1e1e1e",
+    position: "relative",
+  },
+  calCellAvail: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  calCellSelected: { borderColor: "#fff", borderWidth: 2 },
+  calCellHasBookings: { borderColor: "#f87171" },
+  calCellLabel: { fontSize: 9, marginBottom: 2 },
+  calCellDate: { fontSize: 14 },
+  calDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#f87171",
+    marginTop: 3,
+  },
+  calSlotList: {
+    backgroundColor: "#111111",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#222222",
+  },
+  calSlotRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1e1e1e",
+  },
+  calSlotText: { fontSize: 14, color: "#FFFFFF" },
+  calSlotDur: { fontSize: 12, color: "#888888", flex: 1, textAlign: "right" },
 
   saveAvailBtn: {
     backgroundColor: "#34FF7A",

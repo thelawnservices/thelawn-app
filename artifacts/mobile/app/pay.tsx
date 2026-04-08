@@ -50,6 +50,14 @@ type PhotoIcon = typeof PHOTO_ICONS[number];
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+const SERVICE_DURATIONS: Record<string, number> = {
+  "Lawn Mowing":    120,
+  "Hedge Trimming":  60,
+  "Mulching":        90,
+  "Clean Up":        60,
+  "Full Service":   150,
+};
+
 function parseTimeToMinutes(t: string): number {
   const [timePart, period] = t.split(" ");
   let [h, m] = timePart.split(":").map(Number);
@@ -83,13 +91,13 @@ export default function PayScreen() {
   const proInitials = params.proInitials || "JR";
   const proColor = params.proColor || "#34FF7A";
 
-  const { availability } = useLandscaperProfile();
+  const { availability, bookedSlots, addBookedSlot } = useLandscaperProfile();
 
   const rollingDates = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const result = [];
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 28; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
       const dayName = DAY_LABELS[d.getDay()];
@@ -117,6 +125,8 @@ export default function PayScreen() {
   const [payState, setPayState] = useState<PayState>("availability");
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
   const [selectedYardSize, setSelectedYardSize] = useState<string | null>(null);
+  const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
   const toggleService = (name: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -127,8 +137,26 @@ export default function PayScreen() {
       return next;
     });
   };
-  const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
+
+  const bookingDurationMinutes = useMemo(
+    () => [...selectedServices].reduce((sum, svc) => sum + (SERVICE_DURATIONS[svc] ?? 60), 0) || 60,
+    [selectedServices]
+  );
+
+  const availableTimeSlotsForDate = useMemo(() => {
+    if (selectedDateIdx === null || !rollingDates[selectedDateIdx]) return timeSlots;
+    const dateKey = `${rollingDates[selectedDateIdx].month} ${rollingDates[selectedDateIdx].dateNum}, ${rollingDates[selectedDateIdx].year}`;
+    const slotsTaken = bookedSlots[dateKey] ?? [];
+    return timeSlots.filter((slot) => {
+      const slotStart = parseTimeToMinutes(slot);
+      return !slotsTaken.some(({ time, durationMinutes }) => {
+        const bookedStart = parseTimeToMinutes(time);
+        const bookedEnd = bookedStart + durationMinutes;
+        const slotEnd = slotStart + bookingDurationMinutes;
+        return slotStart < bookedEnd && slotEnd > bookedStart;
+      });
+    });
+  }, [selectedDateIdx, timeSlots, bookedSlots, rollingDates, bookingDurationMinutes]);
   const [recurring, setRecurring] = useState(false);
   const [recurringFreq, setRecurringFreq] = useState<"Weekly" | "Bi-weekly" | "Monthly">("Weekly");
   const [recurringStart, setRecurringStart] = useState("Apr 7, 2026");
@@ -240,6 +268,10 @@ export default function PayScreen() {
     if (valid !== true) {
       Alert.alert("Payment Error", valid);
       return;
+    }
+    if (selectedDateLabel && selectedTime) {
+      const primaryService = [...selectedServices][0] ?? "Service";
+      addBookedSlot(selectedDateLabel, selectedTime, bookingDurationMinutes, primaryService);
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setPayState("processing");
@@ -431,33 +463,44 @@ export default function PayScreen() {
               : "Available Times"}
           </Text>
           <View style={styles.timeGrid}>
-            {timeSlots.map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[
-                  styles.timeTile,
-                  selectedTime === t && styles.timeTileActive,
-                  selectedDateIdx === null && styles.timeTileDisabled,
-                ]}
-                onPress={() => {
-                  if (selectedDateIdx === null) return;
-                  setSelectedTime(t);
-                  Haptics.selectionAsync();
-                }}
-                disabled={selectedDateIdx === null}
-              >
-                <Text
+            {timeSlots.map((t) => {
+              const isAvail = availableTimeSlotsForDate.includes(t);
+              const isBooked = !isAvail;
+              const isSelected = selectedTime === t;
+              const isDisabled = selectedDateIdx === null || isBooked;
+              return (
+                <TouchableOpacity
+                  key={t}
                   style={[
-                    styles.timeTileText,
-                    { fontFamily: "Inter_500Medium" },
-                    selectedTime === t && { color: "#fff" },
-                    selectedDateIdx === null && { color: "#d1d5db" },
+                    styles.timeTile,
+                    isSelected && styles.timeTileActive,
+                    isDisabled && styles.timeTileDisabled,
+                    isBooked && styles.timeTileBooked,
                   ]}
+                  onPress={() => {
+                    if (isDisabled) return;
+                    setSelectedTime(t);
+                    Haptics.selectionAsync();
+                  }}
+                  disabled={isDisabled}
+                  activeOpacity={isDisabled ? 1 : 0.8}
                 >
-                  {t}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.timeTileText,
+                      { fontFamily: "Inter_500Medium" },
+                      isSelected && { color: "#fff" },
+                      isDisabled && { color: "#444" },
+                    ]}
+                  >
+                    {t}
+                  </Text>
+                  {isBooked && (
+                    <Text style={[styles.timeTileBookedLabel, { fontFamily: "Inter_400Regular" }]}>Booked</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {selectedDateIdx === null && (
@@ -1231,6 +1274,8 @@ const styles = StyleSheet.create({
   },
   timeTileActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   timeTileDisabled: { backgroundColor: "#0d0d0d", borderColor: "#1a1a1a" },
+  timeTileBooked: { opacity: 0.38, borderColor: "#1a1a1a" },
+  timeTileBookedLabel: { fontSize: 10, color: "#555", marginTop: 1 },
   timeTileText: { fontSize: 14, color: "#FFFFFF" },
   hintText: { fontSize: 13, color: "#888888", textAlign: "center", marginTop: 8 },
   fieldLabel: { fontSize: 15, color: "#34FF7A", marginBottom: 4 },
