@@ -15,12 +15,13 @@ export type ActiveDiscount = {
   discountAmt: number | null;
   label: string;
   announcementTitle: string;
+  expiresAt?: string;
 };
 
 type NotificationsContextType = {
   notifications: ServiceNotification[];
   addNotification: (n: Omit<ServiceNotification, "id">) => void;
-  broadcastAnnouncement: (landscaperName: string, title: string, message: string) => void;
+  broadcastAnnouncement: (landscaperName: string, title: string, message: string, expiresAt?: string) => void;
   clearNotifications: () => void;
   activeDiscounts: ActiveDiscount[];
   getDiscountForPro: (name: string) => ActiveDiscount | null;
@@ -76,16 +77,17 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     setNotifications((prev) => [{ ...n, id, timestamp, type: n.type ?? "service" }, ...prev]);
   }
 
-  function broadcastAnnouncement(landscaperName: string, title: string, message: string) {
+  function broadcastAnnouncement(landscaperName: string, title: string, message: string, expiresAt?: string) {
     const id = String(Date.now());
     const now = new Date();
     const timestamp = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const expirySuffix = expiresAt ? `\nPromotion expires: ${expiresAt}` : "";
     setNotifications((prev) => [
       {
         id,
         icon: "megaphone-outline",
         title: `📣 ${landscaperName}: ${title}`,
-        sub: message,
+        sub: `${message}${expirySuffix}`,
         type: "announcement",
         timestamp,
       },
@@ -96,7 +98,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     if (parsed) {
       setActiveDiscounts((prev) => {
         const filtered = prev.filter((d) => d.landscaperName !== landscaperName);
-        return [{ landscaperName, ...parsed }, ...filtered];
+        return [{ landscaperName, ...parsed, expiresAt }, ...filtered];
       });
     }
   }

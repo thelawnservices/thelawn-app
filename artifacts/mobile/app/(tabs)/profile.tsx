@@ -234,17 +234,23 @@ function LandscaperProfile({
   const [announceVisible, setAnnounceVisible] = useState(false);
   const [announceTitle, setAnnounceTitle] = useState("");
   const [announceMsg, setAnnounceMsg] = useState("");
+  const [announceExpiryDate, setAnnounceExpiryDate] = useState("");
+  const [announceExpiryTime, setAnnounceExpiryTime] = useState("");
   const [announceState, setAnnounceState] = useState<"compose" | "sending" | "sent">("compose");
   const [announceTitleErr, setAnnounceTitleErr] = useState<string | null>(null);
   const [announceMsgErr, setAnnounceMsgErr] = useState<string | null>(null);
+  const [announceExpiryErr, setAnnounceExpiryErr] = useState<string | null>(null);
   const ANNOUNCE_FOLLOWER_COUNT = 12;
 
   function openAnnounce() {
     setAnnounceTitle("");
     setAnnounceMsg("");
+    setAnnounceExpiryDate("");
+    setAnnounceExpiryTime("");
     setAnnounceState("compose");
     setAnnounceTitleErr(null);
     setAnnounceMsgErr(null);
+    setAnnounceExpiryErr(null);
     setAnnounceVisible(true);
   }
 
@@ -258,10 +264,15 @@ function LandscaperProfile({
     if (!announceMsg.trim()) { setAnnounceMsgErr("Please enter a message."); hasErr = true; }
     else if (!msgV.ok) { setAnnounceMsgErr("Please remove inappropriate language."); hasErr = true; }
     else { setAnnounceMsgErr(null); }
+    if (!announceExpiryDate.trim() || !announceExpiryTime.trim()) {
+      setAnnounceExpiryErr("Please set the promotion end date and time.");
+      hasErr = true;
+    } else { setAnnounceExpiryErr(null); }
     if (hasErr) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); return; }
+    const expiresAt = `${announceExpiryDate.trim()} at ${announceExpiryTime.trim()}`;
     setAnnounceState("sending");
     setTimeout(() => {
-      broadcastAnnouncement(profileName, announceTitle.trim(), announceMsg.trim());
+      broadcastAnnouncement(profileName, announceTitle.trim(), announceMsg.trim(), expiresAt);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setAnnounceState("sent");
       setTimeout(() => setAnnounceVisible(false), 2800);
@@ -524,6 +535,46 @@ function LandscaperProfile({
                       {announceMsg.length}/300
                     </Text>
                   </View>
+
+                  {/* Promotion expiry */}
+                  <View style={announceStyles.expiryHeader}>
+                    <Ionicons name="time-outline" size={15} color="#FFAA00" />
+                    <Text style={[announceStyles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginBottom: 0, color: "#FFAA00" }]}>
+                      Promotion Ends *
+                    </Text>
+                  </View>
+                  <Text style={[announceStyles.expiryHint, { fontFamily: "Inter_400Regular" }]}>
+                    Set the date and time your promotion expires.
+                  </Text>
+                  <View style={announceStyles.expiryRow}>
+                    <View style={{ flex: 2 }}>
+                      <Text style={[announceStyles.expirySubLabel, { fontFamily: "Inter_400Regular" }]}>Date</Text>
+                      <TextInput
+                        style={[announceStyles.expiryInput, announceExpiryErr && announceStyles.inputErr, { fontFamily: "Inter_400Regular" }]}
+                        placeholder="e.g. Apr 20, 2026"
+                        placeholderTextColor="#555"
+                        value={announceExpiryDate}
+                        onChangeText={(t) => { setAnnounceExpiryDate(t); if (announceExpiryErr) setAnnounceExpiryErr(null); }}
+                        editable={announceState === "compose"}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[announceStyles.expirySubLabel, { fontFamily: "Inter_400Regular" }]}>Time</Text>
+                      <TextInput
+                        style={[announceStyles.expiryInput, announceExpiryErr && announceStyles.inputErr, { fontFamily: "Inter_400Regular" }]}
+                        placeholder="11:59 PM"
+                        placeholderTextColor="#555"
+                        value={announceExpiryTime}
+                        onChangeText={(t) => { setAnnounceExpiryTime(t); if (announceExpiryErr) setAnnounceExpiryErr(null); }}
+                        editable={announceState === "compose"}
+                      />
+                    </View>
+                  </View>
+                  {announceExpiryErr && (
+                    <Text style={[announceStyles.errText, { fontFamily: "Inter_400Regular", marginBottom: 8 }]}>
+                      {announceExpiryErr}
+                    </Text>
+                  )}
 
                   {/* Send button */}
                   <TouchableOpacity
@@ -2110,5 +2161,18 @@ const announceStyles = StyleSheet.create({
   sentBox: { alignItems: "center", paddingVertical: 28, gap: 12 },
   sentTitle: { fontSize: 20, color: "#34FF7A" },
   sentSub: { fontSize: 14, color: "#BBBBBB", textAlign: "center", lineHeight: 20 },
+  expiryHeader: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    marginTop: 4, marginBottom: 6,
+  },
+  expiryHint: { fontSize: 11, color: "#777", marginBottom: 10, lineHeight: 16 },
+  expiryRow: { flexDirection: "row", gap: 10, marginBottom: 4 },
+  expirySubLabel: { fontSize: 11, color: "#999", marginBottom: 5 },
+  expiryInput: {
+    backgroundColor: "#1A1A1A", borderRadius: 12,
+    borderWidth: 1, borderColor: "#FFAA0050",
+    color: "#FFFFFF", fontSize: 13,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
 });
 

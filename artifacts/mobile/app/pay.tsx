@@ -232,9 +232,18 @@ export default function PayScreen() {
     };
   }, [selectedDateIdx, bookedSlots, rollingDates, bookingDurationMinutes, availability.endTime]);
   const [recurring, setRecurring] = useState(false);
-  const [recurringFreq, setRecurringFreq] = useState<"Weekly" | "Bi-weekly" | "Monthly">("Weekly");
+  const [recurringDays, setRecurringDays] = useState<string[]>([]);
   const [recurringStart, setRecurringStart] = useState("Apr 7, 2026");
   const [recurringEnd, setRecurringEnd] = useState("Apr 7, 2027");
+  const RECURRING_DAY_OPTIONS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+  function toggleRecurringDay(day: string) {
+    Haptics.selectionAsync();
+    setRecurringDays((prev) => {
+      if (prev.includes(day)) return prev.filter((d) => d !== day);
+      if (prev.length >= 3) return prev;
+      return [...prev, day];
+    });
+  }
   const [tipPresetIdx, setTipPresetIdx] = useState<number | null>(1);
   const [tipMode, setTipMode] = useState<"preset" | "custom" | "none">("preset");
   const [customTipAmount, setCustomTipAmount] = useState("");
@@ -742,33 +751,58 @@ export default function PayScreen() {
 
           {recurring && (
             <View style={styles.recurringExpandBox}>
-              <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginBottom: 10 }]}>
-                Frequency
+              {/* Day-of-week picker */}
+              <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginBottom: 6 }]}>
+                Service Days (up to 3 per week)
               </Text>
-              <View style={styles.freqRow}>
-                {(["Weekly", "Bi-weekly", "Monthly"] as const).map((f) => (
-                  <TouchableOpacity
-                    key={f}
-                    style={[styles.freqChip, recurringFreq === f && styles.freqChipActive]}
-                    onPress={() => {
-                      setRecurringFreq(f);
-                      Haptics.selectionAsync();
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text
+              <Text style={[styles.recurringNote, { fontFamily: "Inter_400Regular", marginBottom: 10 }]}>
+                Pick up to 3 days per week. The landscaper visits on these days every month.
+              </Text>
+              <View style={styles.dayPickerRow}>
+                {RECURRING_DAY_OPTIONS.map((day) => {
+                  const selected = recurringDays.includes(day);
+                  const maxReached = recurringDays.length >= 3 && !selected;
+                  return (
+                    <TouchableOpacity
+                      key={day}
                       style={[
-                        styles.freqChipText,
-                        { fontFamily: "Inter_500Medium" },
-                        recurringFreq === f && styles.freqChipTextActive,
+                        styles.dayChip,
+                        selected && styles.dayChipActive,
+                        maxReached && styles.dayChipDisabled,
                       ]}
+                      onPress={() => !maxReached && toggleRecurringDay(day)}
+                      activeOpacity={maxReached ? 1 : 0.75}
                     >
-                      {f}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={[
+                          styles.dayChipText,
+                          { fontFamily: selected ? "Inter_700Bold" : "Inter_400Regular" },
+                          selected && styles.dayChipTextActive,
+                          maxReached && styles.dayChipTextDisabled,
+                        ]}
+                      >
+                        {day}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-              <View style={styles.recurringDateRow}>
+              {recurringDays.length === 0 && (
+                <Text style={[styles.recurringNote, { fontFamily: "Inter_400Regular", color: "#f87171", marginBottom: 8 }]}>
+                  Please select at least one service day.
+                </Text>
+              )}
+              {recurringDays.length > 0 && (
+                <View style={styles.selectedDaysPill}>
+                  <Ionicons name="repeat" size={12} color="#34FF7A" />
+                  <Text style={[styles.selectedDaysText, { fontFamily: "Inter_500Medium" }]}>
+                    {recurringDays.join(" · ")} every month
+                  </Text>
+                </View>
+              )}
+
+              {/* Date range */}
+              <View style={[styles.recurringDateRow, { marginTop: 14 }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.recurringDateLabel, { fontFamily: "Inter_400Regular" }]}>
                     Start Date
@@ -1087,7 +1121,7 @@ export default function PayScreen() {
               <View style={styles.recurringBadge}>
                 <Ionicons name="repeat" size={11} color="#34FF7A" />
                 <Text style={[styles.recurringBadgeText, { fontFamily: "Inter_500Medium" }]}>
-                  {recurringFreq} · Charged per appointment
+                  {recurringDays.length > 0 ? recurringDays.join(" · ") : "Select days"} · Monthly
                 </Text>
               </View>
             )}
@@ -1829,6 +1863,39 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   recurringNote: { fontSize: 11, color: "#999999", lineHeight: 16 },
+  dayPickerRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  dayChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    backgroundColor: "#111",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#333",
+    minWidth: 48,
+    alignItems: "center",
+  },
+  dayChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  dayChipDisabled: { opacity: 0.3 },
+  dayChipText: { fontSize: 12, color: "#CCCCCC" },
+  dayChipTextActive: { color: "#000" },
+  dayChipTextDisabled: { color: "#555" },
+  selectedDaysPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#0d2e18",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    alignSelf: "flex-start",
+    marginBottom: 4,
+  },
+  selectedDaysText: { fontSize: 12, color: "#34FF7A" },
 
   recurringBadge: {
     flexDirection: "row",
