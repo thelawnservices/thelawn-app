@@ -528,7 +528,7 @@ function RecurringSeriesCard({
             {pendingInst.pro} has marked the {pendingInst.date} appointment as done.
             {isInPerson
               ? " Confirm completion and pay them directly."
-              : ` Confirming will charge ${pendingInst.price} to ${preferredPayment ?? "your saved payment method"}.`}
+              : ` Confirming will mark the ${pendingInst.price} job as complete.`}
           </Text>
 
           {/* Completion photos (if landscaper attached any) */}

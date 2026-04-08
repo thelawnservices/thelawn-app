@@ -1256,15 +1256,6 @@ export default function PayScreen() {
           </View>
         )}
 
-        {preferredPayment && PROFILE_TO_PAY_KEY[preferredPayment] && allowedPayOptions.some((o) => o.key === PROFILE_TO_PAY_KEY[preferredPayment!]) && (
-          <View style={styles.preferredPayBanner}>
-            <Ionicons name="star" size={14} color="#34FF7A" />
-            <Text style={[styles.preferredPayBannerText, { fontFamily: "Inter_500Medium" }]}>
-              {preferredPayment} auto-selected from your saved preference
-            </Text>
-          </View>
-        )}
-
         {/* Dynamic payment tiles — small tiles for options 1-4, full-width for rest */}
         <View style={styles.payMethodGrid}>
           {allowedPayOptions.filter((o) => !["debit","inperson"].includes(o.key)).map((m) => (
