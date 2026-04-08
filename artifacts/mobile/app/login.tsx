@@ -32,7 +32,7 @@ type Step =
   | "landscaper-register"
   | "verify-code";
 
-const SPECIALTIES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf"];
+const SPECIALTIES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -64,12 +64,11 @@ export default function LoginScreen() {
   const [lEmail, setLEmail] = useState("");
   const [lPassword, setLPassword] = useState("");
   const [lPhone, setLPhone] = useState("");
-  const [specialty, setSpecialty] = useState("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [lCity, setLCity] = useState("");
   const [state, setState] = useState("");
   const [lZipCode, setLZipCode] = useState("");
   const [years, setYears] = useState("");
-  const [paymentPref, setPaymentPref] = useState("");
 
   // Role selection modal
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -140,8 +139,13 @@ export default function LoginScreen() {
   }
 
   function handleLandscaperRegister() {
-    if (!lRegUsername.trim() || !businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !lCity.trim() || !state.trim() || !lZipCode.trim() || !paymentPref) {
-      setErrors("Please fill all required fields including Username, Business Name, Email, Password, Phone, City, State, ZIP, and Payment Preference.");
+    if (!lRegUsername.trim() || !businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !lCity.trim() || !state.trim() || !lZipCode.trim()) {
+      setErrors("Please fill all required fields: Username, Business Name, Email, Password, Phone, City, State, and ZIP.");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    if (selectedServices.length === 0) {
+      setErrors("Please select at least one service you provide.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
@@ -504,13 +508,30 @@ export default function LoginScreen() {
         <Field label="Phone Number">
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lPhone} onChangeText={setLPhone} placeholder="(555) 000-0000" placeholderTextColor="#777" keyboardType="phone-pad" />
         </Field>
-        <Field label="Specialty Service">
+        <Field label="Services You Provide (select all that apply)">
+          <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+            These will appear on your profile immediately after registration. You can update them anytime in My Services.
+          </Text>
           <View style={styles.specialtyGrid}>
-            {SPECIALTIES.map((s) => (
-              <TouchableOpacity key={s} style={[styles.specialtyChip, specialty === s && styles.specialtyChipActive]} onPress={() => setSpecialty(s)} activeOpacity={0.8}>
-                <Text style={[styles.specialtyChipText, { fontFamily: "Inter_500Medium" }, specialty === s && styles.specialtyChipTextActive]}>{s}</Text>
-              </TouchableOpacity>
-            ))}
+            {SPECIALTIES.map((s) => {
+              const on = selectedServices.includes(s);
+              return (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.specialtyChip, on && styles.specialtyChipActive]}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSelectedServices((prev) =>
+                      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+                    );
+                  }}
+                  activeOpacity={0.8}
+                >
+                  {on && <Ionicons name="checkmark-circle" size={14} color="#000" style={{ marginRight: 4 }} />}
+                  <Text style={[styles.specialtyChipText, { fontFamily: "Inter_500Medium" }, on && styles.specialtyChipTextActive]}>{s}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </Field>
         <Field label="City (primary service area)">
@@ -530,16 +551,6 @@ export default function LoginScreen() {
         </View>
         <Field label="Years of Experience">
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={setYears} placeholder="e.g. 5" placeholderTextColor="#777" keyboardType="numeric" maxLength={2} />
-        </Field>
-
-        <Field label="Receive Payment Preference">
-          <View style={styles.specialtyGrid}>
-            {(["Apple Pay", "Venmo", "PayPal", "Cash App", "Debit Card"] as const).map((opt) => (
-              <TouchableOpacity key={opt} style={[styles.specialtyChip, paymentPref === opt && styles.specialtyChipActive]} onPress={() => setPaymentPref(opt)} activeOpacity={0.8}>
-                <Text style={[styles.specialtyChipText, { fontFamily: "Inter_500Medium" }, paymentPref === opt && styles.specialtyChipTextActive]}>{opt}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
         </Field>
 
         <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleLandscaperRegister} activeOpacity={0.88}>
@@ -853,6 +864,7 @@ const styles = StyleSheet.create({
   formTitle: { fontSize: 20, color: "#FFFFFF" },
   fieldWrap: { marginBottom: 16 },
   fieldLabel: { fontSize: 13, color: "#AAAAAA", marginBottom: 7 },
+  fieldHint: { fontSize: 12, color: "#666", marginBottom: 12, lineHeight: 17 },
   input: {
     backgroundColor: "#1A1A1A",
     borderWidth: 1,
@@ -912,6 +924,8 @@ const styles = StyleSheet.create({
   errorText: { color: "#ff6b6b", fontSize: 13, flex: 1 },
   specialtyGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   specialtyChip: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
