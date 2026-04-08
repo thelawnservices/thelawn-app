@@ -288,7 +288,7 @@ function ProfileDropdownModal({
   visible,
   onClose,
   onViewProfile,
-  onAppointments,
+  onServices,
   onSettings,
   onShare,
   onPaymentHistory,
@@ -302,7 +302,7 @@ function ProfileDropdownModal({
   visible: boolean;
   onClose: () => void;
   onViewProfile: () => void;
-  onAppointments: () => void;
+  onServices: () => void;
   onSettings: () => void;
   onShare: () => void;
   onPaymentHistory: () => void;
@@ -323,6 +323,13 @@ function ProfileDropdownModal({
           </TouchableOpacity>
           {isLandscaper && (
             <>
+              <TouchableOpacity style={dropStyles.item} onPress={onServices} activeOpacity={0.7}>
+                <Ionicons name="construct-outline" size={20} color="#CCCCCC" />
+                <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                  <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>My Services</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#555" />
+                </View>
+              </TouchableOpacity>
               <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
                 <Ionicons name="calendar-outline" size={20} color="#CCCCCC" />
                 <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
@@ -333,10 +340,6 @@ function ProfileDropdownModal({
               </TouchableOpacity>
             </>
           )}
-          <TouchableOpacity style={dropStyles.item} onPress={onAppointments} activeOpacity={0.7}>
-            <Ionicons name="calendar" size={20} color="#CCCCCC" />
-            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Appointments</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onSettings} activeOpacity={0.7}>
             <Ionicons name="settings-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Settings</Text>
@@ -775,6 +778,178 @@ const DEFAULT_AVAIL: AvailState = {
   "Artificial Turf":  { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "07:00", endTime: "16:00" },
 };
 
+const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
+
+type PricingTier = { size: string; desc: string; price: string };
+
+const DEFAULT_PRICING: PricingTier[] = [
+  { size: "Small Yard",  desc: "Up to 2,000 sq ft",  price: "$45" },
+  { size: "Medium Yard", desc: "2,000–5,000 sq ft",   price: "$65" },
+  { size: "Large Yard",  desc: "5,000+ sq ft",         price: "$95" },
+];
+
+function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const [offered, setOffered] = useState<string[]>([...ALL_SERVICES]);
+  const [pricing, setPricing] = useState<PricingTier[]>(
+    DEFAULT_PRICING.map((t) => ({ ...t }))
+  );
+  const [saved, setSaved] = useState(false);
+
+  function toggleService(svc: string) {
+    Haptics.selectionAsync();
+    setOffered((prev) =>
+      prev.includes(svc) ? prev.filter((s) => s !== svc) : [...prev, svc]
+    );
+  }
+
+  function updatePrice(index: number, value: string) {
+    setPricing((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, price: value } : t))
+    );
+  }
+
+  function handleSave() {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSaved(true);
+    setTimeout(() => { setSaved(false); onClose(); }, 900);
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={svcStyles.overlay}>
+        <View style={svcStyles.sheet}>
+          {/* Header */}
+          <View style={svcStyles.header}>
+            <Text style={[svcStyles.title, { fontFamily: "Inter_700Bold" }]}>My Services</Text>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+
+            {/* ── Services I Offer ───────────────────────── */}
+            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Services I Offer</Text>
+            <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
+              Toggle the services you provide. Unchecked services are hidden from your profile.
+            </Text>
+            <View style={svcStyles.chipsRow}>
+              {ALL_SERVICES.map((svc) => {
+                const on = offered.includes(svc);
+                return (
+                  <TouchableOpacity
+                    key={svc}
+                    style={[svcStyles.chip, on && svcStyles.chipOn]}
+                    onPress={() => toggleService(svc)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons
+                      name={on ? "checkmark-circle" : "ellipse-outline"}
+                      size={16}
+                      color={on ? "#000" : "#555"}
+                    />
+                    <Text
+                      style={[svcStyles.chipText, { fontFamily: "Inter_500Medium" }, on && svcStyles.chipTextOn]}
+                    >
+                      {svc}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={svcStyles.divider} />
+
+            {/* ── Pricing by Yard Size ────────────────────── */}
+            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Pricing by Yard Size</Text>
+            <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
+              Set your base rates — customers see these on your profile.
+            </Text>
+            {pricing.map((tier, i) => (
+              <View key={tier.size} style={svcStyles.pricingRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[svcStyles.pricingSize, { fontFamily: "Inter_600SemiBold" }]}>{tier.size}</Text>
+                  <Text style={[svcStyles.pricingDesc, { fontFamily: "Inter_400Regular" }]}>{tier.desc}</Text>
+                </View>
+                <TextInput
+                  style={[svcStyles.priceInput, { fontFamily: "Inter_700Bold" }]}
+                  value={tier.price}
+                  onChangeText={(v) => updatePrice(i, v)}
+                  keyboardType="default"
+                  maxLength={8}
+                  selectTextOnFocus
+                  placeholderTextColor="#555"
+                />
+              </View>
+            ))}
+
+            <View style={svcStyles.divider} />
+
+            {/* ── Save ───────────────────────────────────── */}
+            <TouchableOpacity
+              style={[svcStyles.saveBtn, saved && svcStyles.saveBtnSuccess]}
+              onPress={handleSave}
+              activeOpacity={0.85}
+            >
+              <Ionicons name={saved ? "checkmark-circle" : "save-outline"} size={18} color="#000" />
+              <Text style={[svcStyles.saveBtnText, { fontFamily: "Inter_700Bold" }]}>
+                {saved ? "Saved!" : "Save Changes"}
+              </Text>
+            </TouchableOpacity>
+
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const svcStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#111", borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    borderWidth: 1, borderColor: "#222", padding: 24, maxHeight: "88%",
+  },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24 },
+  title: { fontSize: 20, color: "#FFFFFF" },
+  sectionLabel: { fontSize: 15, color: "#FFFFFF", marginBottom: 6 },
+  sectionHint: { fontSize: 12, color: "#777", marginBottom: 14, lineHeight: 18 },
+  chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
+  chip: {
+    flexDirection: "row", alignItems: "center", gap: 7,
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: 14, backgroundColor: "#1A1A1A",
+    borderWidth: 1, borderColor: "#333",
+  },
+  chipOn: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  chipText: { fontSize: 13, color: "#666" },
+  chipTextOn: { color: "#000" },
+  divider: { height: 1, backgroundColor: "#222", marginBottom: 22, marginTop: 4 },
+  pricingRow: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#1A1A1A", borderRadius: 14,
+    borderWidth: 1, borderColor: "#222",
+    paddingHorizontal: 16, paddingVertical: 14,
+    marginBottom: 10,
+  },
+  pricingSize: { fontSize: 14, color: "#FFFFFF", marginBottom: 2 },
+  pricingDesc: { fontSize: 12, color: "#888" },
+  priceInput: {
+    fontSize: 18, color: "#34FF7A",
+    backgroundColor: "#111", borderRadius: 10,
+    borderWidth: 1, borderColor: "#34FF7A44",
+    paddingHorizontal: 12, paddingVertical: 8,
+    minWidth: 70, textAlign: "center",
+  },
+  saveBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
+    backgroundColor: "#34FF7A", borderRadius: 16,
+    paddingVertical: 16, marginTop: 4,
+  },
+  saveBtnSuccess: { backgroundColor: "#22c55e" },
+  saveBtnText: { fontSize: 16, color: "#000" },
+});
+
 function ServiceAvailabilityModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [avail, setAvail] = useState<AvailState>(() => JSON.parse(JSON.stringify(DEFAULT_AVAIL)));
   const [offered, setOffered] = useState<string[]>([...AVAIL_SERVICES]);
@@ -981,6 +1156,7 @@ export default function HomeScreen() {
   const [vouchersVisible, setVouchersVisible] = useState(false);
   const [helpVisible, setHelpVisible] = useState(false);
   const [availabilityVisible, setAvailabilityVisible] = useState(false);
+  const [servicesEditVisible, setServicesEditVisible] = useState(false);
   const [paymentHistoryVisible, setPaymentHistoryVisible] = useState(false);
   const [walletVisible, setWalletVisible] = useState(false);
   const [feedLiked, setFeedLiked] = useState<Set<string>>(new Set());
@@ -1052,7 +1228,7 @@ export default function HomeScreen() {
         visible={dropdownVisible}
         onClose={() => setDropdownVisible(false)}
         onViewProfile={() => { setDropdownVisible(false); router.navigate("/(tabs)/profile"); }}
-        onAppointments={() => { setDropdownVisible(false); router.navigate("/(tabs)/appointments"); }}
+        onServices={() => { setDropdownVisible(false); setServicesEditVisible(true); }}
         onSettings={() => { setDropdownVisible(false); setSettingsVisible(true); }}
         onShare={() => {
           setDropdownVisible(false);
@@ -1073,6 +1249,10 @@ export default function HomeScreen() {
       <WalletModal
         visible={walletVisible}
         onClose={() => setWalletVisible(false)}
+      />
+      <ServicesEditModal
+        visible={servicesEditVisible}
+        onClose={() => setServicesEditVisible(false)}
       />
       <PaymentHistoryModal
         visible={paymentHistoryVisible}
