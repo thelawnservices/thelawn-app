@@ -393,34 +393,22 @@ function LandscaperProfile({
         {/* ── INFO TAB ── */}
         {activeTab === "info" && (
           <>
-            {/* Quick actions */}
+            {/* Quick actions — landscaper viewing own profile: Share only */}
             <View style={cutStyles.actionsRow}>
-              {([
-                { ionIcon: "star-outline" as const,          label: "ADD" },
-                { ionIcon: "calendar-outline" as const,      label: "BOOK" },
-                { ionIcon: "create-outline" as const,        label: "REVIEW", onPress: () => setActiveTab("reviews") },
-                {
-                  ionIcon: "share-social-outline" as const,
-                  label: "SHARE",
-                  onPress: () => {
-                    Share.share({
-                      title: "GreenScape Pros on TheLawn",
-                      message: "Check out GreenScape Pros on TheLawn — top-rated landscaping near you! https://thelawn.app",
-                      url: "https://thelawn.app",
-                    }).catch(() => {});
-                  },
-                },
-              ]).map((btn) => (
-                <TouchableOpacity
-                  key={btn.label}
-                  style={cutStyles.actionChip}
-                  onPress={btn.onPress ?? (() => Alert.alert(btn.label, `${btn.label} action`))}
-                  activeOpacity={0.75}
-                >
-                  <Ionicons name={btn.ionIcon} size={20} color="#fff" style={{ marginBottom: 4 }} />
-                  <Text style={[cutStyles.actionChipLabel, { fontFamily: "Inter_600SemiBold" }]}>{btn.label}</Text>
-                </TouchableOpacity>
-              ))}
+              <TouchableOpacity
+                style={[cutStyles.actionChip, cutStyles.actionChipShare]}
+                onPress={() => {
+                  Share.share({
+                    title: "GreenScape Pros on TheLawn",
+                    message: "Check out GreenScape Pros on TheLawn — top-rated landscaping near you! https://thelawn.app",
+                    url: "https://thelawn.app",
+                  }).catch(() => {});
+                }}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="share-social-outline" size={20} color="#34FF7A" />
+                <Text style={[cutStyles.actionChipLabel, { fontFamily: "Inter_600SemiBold", color: "#34FF7A", fontSize: 13, letterSpacing: 0.8 }]}>SHARE MY PROFILE</Text>
+              </TouchableOpacity>
             </View>
 
             {/* About */}
@@ -1435,6 +1423,7 @@ const cutStyles = StyleSheet.create({
 
   actionsRow: { flexDirection: "row", justifyContent: "space-between", gap: 8, marginBottom: 24 },
   actionChip: { flex: 1, backgroundColor: "#1A1A1A", borderRadius: 999, paddingVertical: 10, alignItems: "center", gap: 4, borderWidth: 1, borderColor: "#2A2A2A" },
+  actionChipShare: { flex: 0, width: "100%", borderColor: "#34FF7A30", backgroundColor: "#0D200F", paddingVertical: 14, flexDirection: "row", gap: 10 },
   actionChipIcon: { fontSize: 18 },
   actionChipLabel: { fontSize: 10, color: "#FFFFFF", letterSpacing: 0.5 },
 
