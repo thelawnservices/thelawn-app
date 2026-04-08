@@ -409,7 +409,7 @@ export default function PayScreen() {
           <View style={successStyles.receiptNote}>
             <Ionicons name="mail-outline" size={13} color="#BBBBBB" />
             <Text style={[successStyles.receiptNoteText, { fontFamily: "Inter_400Regular" }]}>
-              Receipt sent to TheLawnServices@gmail.com
+              Receipt sent to TheLawnServices
             </Text>
           </View>
 
@@ -476,7 +476,7 @@ export default function PayScreen() {
         <View style={successStyles.receiptNote}>
           <Ionicons name="mail-outline" size={13} color="#BBBBBB" />
           <Text style={[successStyles.receiptNoteText, { fontFamily: "Inter_400Regular" }]}>
-            Receipt sent to TheLawnServices@gmail.com
+            Receipt sent to TheLawnServices
           </Text>
         </View>
 

@@ -70,7 +70,7 @@ Any disputes arising out of or related to these Terms will be resolved through b
 TheLawn may update these Terms at any time. Continued use of the app after changes constitutes acceptance of the new Terms.
 
 14. CONTACT
-For questions about these Terms, contact us at TheLawnServices@gmail.com`;
+For questions about these Terms, contact us at TheLawnServices`;
 
 const PRIVACY_CONTENT = `Last updated: April 7, 2026
 
@@ -128,7 +128,7 @@ We retain your data for as long as your account is active or as needed to provid
 We may update this Privacy Policy from time to time. We will notify you of significant changes through the app or via email.
 
 10. CONTACT
-For privacy questions or data requests, contact us at TheLawnServices@gmail.com`;
+For privacy questions or data requests, contact us at TheLawnServices`;
 
 export default function TermsModal({ visible, docType, onClose }: Props) {
   const insets = useSafeAreaInsets();

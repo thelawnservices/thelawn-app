@@ -256,7 +256,7 @@ export default function LoginScreen() {
           </View>
           <Text style={[styles.verifySubtitle, { fontFamily: "Inter_400Regular" }]}>
             A 6-digit code was sent to your registered email from{"\n"}
-            <Text style={{ color: "#34FF7A", fontFamily: "Inter_600SemiBold" }}>TheLawnServices@gmail.com</Text>
+            <Text style={{ color: "#34FF7A", fontFamily: "Inter_600SemiBold" }}>TheLawnServices</Text>
           </Text>
 
           {errors && <ErrorBanner message={errors} />}

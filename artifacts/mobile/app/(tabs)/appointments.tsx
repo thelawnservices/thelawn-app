@@ -511,7 +511,7 @@ function RecurringSeriesCard({
             <View style={rcStyles.expiredBox}>
               <Ionicons name="warning-outline" size={15} color="#FF4444" />
               <Text style={[rcStyles.expiredText, { fontFamily: "Inter_600SemiBold" }]}>
-                Review window expired · Sent to TheLawnServices@gmail.com for further review
+                Review window expired · Sent to TheLawnServices for further review
               </Text>
             </View>
           ) : (
@@ -571,7 +571,7 @@ function RecurringSeriesCard({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 Alert.alert(
                   "Dispute This Work?",
-                  `Are you unsatisfied with the ${pendingInst.service} completed on ${pendingInst.date}?\n\nThis will flag the order and send it to TheLawnServices@gmail.com for further review. Payment will be held until resolved.`,
+                  `Are you unsatisfied with the ${pendingInst.service} completed on ${pendingInst.date}?\n\nThis will flag the order and send it to TheLawnServices for further review. Payment will be held until resolved.`,
                   [
                     { text: "Cancel", style: "cancel" },
                     {
@@ -583,7 +583,7 @@ function RecurringSeriesCard({
                         setTimeout(() => {
                           Alert.alert(
                             "Dispute Opened",
-                            "Your dispute has been submitted. Our team at TheLawnServices@gmail.com will review the case and respond within 24–48 hours. Payment is frozen until resolved.",
+                            "Your dispute has been submitted. Our team at TheLawnServices will review the case and respond within 24–48 hours. Payment is frozen until resolved.",
                             [{ text: "OK" }]
                           );
                         }, 400);
@@ -603,7 +603,7 @@ function RecurringSeriesCard({
             <View style={rcStyles.autoExpireNote}>
               <Ionicons name="mail-outline" size={12} color="#888" />
               <Text style={[rcStyles.autoExpireText, { fontFamily: "Inter_400Regular" }]}>
-                If no action is taken within 24 hours, the order will automatically be sent to TheLawnServices@gmail.com for further review.
+                If no action is taken within 24 hours, the order will automatically be sent to TheLawnServices for further review.
               </Text>
             </View>
           )}
@@ -618,7 +618,7 @@ function RecurringSeriesCard({
             <Text style={[rcStyles.disputedBannerTitle, { fontFamily: "Inter_700Bold" }]}>Dispute Under Further Review</Text>
           </View>
           <Text style={[rcStyles.disputedBannerSub, { fontFamily: "Inter_400Regular" }]}>
-            Our team at TheLawnServices@gmail.com is reviewing your dispute. Payment is frozen. You'll be contacted within 24–48 hours.
+            Our team at TheLawnServices is reviewing your dispute. Payment is frozen. You'll be contacted within 24–48 hours.
           </Text>
         </View>
       )}

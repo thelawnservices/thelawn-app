@@ -76,7 +76,7 @@ export default function PaymentHistoryModal({
           <View style={s.emailNote}>
             <Ionicons name="mail-outline" size={13} color="#34FF7A" />
             <Text style={[s.emailNoteText, { fontFamily: "Inter_400Regular" }]}>
-              All transactions are logged and sent to TheLawnServices@gmail.com for dispute resolution.
+              All transactions are logged and sent to TheLawnServices for dispute resolution.
             </Text>
           </View>
 
@@ -125,7 +125,7 @@ export default function PaymentHistoryModal({
                           <View style={s.disputeNote}>
                             <Ionicons name="shield-checkmark-outline" size={13} color="#FFAA00" />
                             <Text style={[s.disputeNoteText, { fontFamily: "Inter_400Regular" }]}>
-                              For disputes, reference Order ID {item.orderId} when contacting TheLawnServices@gmail.com
+                              For disputes, reference Order ID {item.orderId} when contacting TheLawnServices
                             </Text>
                           </View>
                         </View>
@@ -180,7 +180,7 @@ export default function PaymentHistoryModal({
                           <View style={s.disputeNote}>
                             <Ionicons name="shield-checkmark-outline" size={13} color="#FFAA00" />
                             <Text style={[s.disputeNoteText, { fontFamily: "Inter_400Regular" }]}>
-                              For disputes, reference Order ID {item.orderId} when contacting TheLawnServices@gmail.com
+                              For disputes, reference Order ID {item.orderId} when contacting TheLawnServices
                             </Text>
                           </View>
                         </View>

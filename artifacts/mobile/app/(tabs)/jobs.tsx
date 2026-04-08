@@ -501,7 +501,7 @@ export default function JobsScreen() {
                       <View style={jobPhotoStyles.expiredRow}>
                         <Ionicons name="warning-outline" size={13} color="#FF4444" />
                         <Text style={[jobPhotoStyles.expiredText, { fontFamily: "Inter_500Medium" }]}>
-                          Review window expired. Sent to TheLawnServices@gmail.com.
+                          Review window expired. Sent to TheLawnServices.
                         </Text>
                       </View>
                     ) : (
@@ -533,7 +533,7 @@ export default function JobsScreen() {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                             Alert.alert(
                               "Open Dispute?",
-                              "Are you unsatisfied with the work? This will flag the order and send it to TheLawnServices@gmail.com for further review. Payment will be frozen until resolved.",
+                              "Are you unsatisfied with the work? This will flag the order and send it to TheLawnServices for further review. Payment will be frozen until resolved.",
                               [
                                 { text: "Cancel", style: "cancel" },
                                 {
@@ -542,7 +542,7 @@ export default function JobsScreen() {
                                   onPress: () => {
                                     setCustomerApproved((prev) => ({ ...prev, [job.id]: "disputed" }));
                                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                                    setTimeout(() => Alert.alert("Dispute Filed", "Our team at TheLawnServices@gmail.com will review and respond within 24–48 hours."), 400);
+                                    setTimeout(() => Alert.alert("Dispute Filed", "Our team at TheLawnServices will review and respond within 24–48 hours."), 400);
                                   },
                                 },
                               ]
@@ -555,7 +555,7 @@ export default function JobsScreen() {
                       </View>
                     )}
                     <Text style={[jobPhotoStyles.autoExpireText, { fontFamily: "Inter_400Regular" }]}>
-                      If no action is taken within 24 hours, the order is automatically sent to TheLawnServices@gmail.com for further review.
+                      If no action is taken within 24 hours, the order is automatically sent to TheLawnServices for further review.
                     </Text>
                   </View>
                 );
@@ -581,7 +581,7 @@ export default function JobsScreen() {
                     </Text>
                   </View>
                   <Text style={[{ fontSize: 12, color: "#BBBBBB", lineHeight: 18 }, { fontFamily: "Inter_400Regular" }]}>
-                    TheLawnServices@gmail.com is reviewing your case. You'll be contacted within 24–48 hours.
+                    TheLawnServices is reviewing your case. You'll be contacted within 24–48 hours.
                   </Text>
                 </View>
               )}
