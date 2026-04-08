@@ -14,6 +14,7 @@ import {
   Modal,
   Pressable,
   Switch,
+  Share,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,11 +25,22 @@ import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import TermsModal from "@/components/TermsModal";
 
 const PAYMENT_METHODS = [
-  { label: "Apple Pay",  value: "Apple Pay",  ionIcon: "logo-apple" as const,   shortLabel: "Apple Pay" },
-  { label: "Venmo",      value: "Venmo",       ionIcon: "cash-outline" as const,  shortLabel: "Venmo" },
-  { label: "PayPal",     value: "PayPal",      ionIcon: "card-outline" as const,  shortLabel: "PayPal" },
-  { label: "Debit Card", value: "Debit Card",  ionIcon: "card" as const,          shortLabel: "Debit" },
+  { label: "Apple Pay",  value: "Apple Pay",  ionIcon: "logo-apple" as const,            shortLabel: "Apple Pay" },
+  { label: "Venmo",      value: "Venmo",       ionIcon: "cash-outline" as const,          shortLabel: "Venmo" },
+  { label: "PayPal",     value: "PayPal",      ionIcon: "card-outline" as const,          shortLabel: "PayPal" },
+  { label: "Debit Card", value: "Debit Card",  ionIcon: "card" as const,                  shortLabel: "Debit" },
   { label: "Cash App",   value: "Cash App",    ionIcon: "phone-portrait-outline" as const, shortLabel: "Cash App" },
+  { label: "In Person",  value: "In Person",   ionIcon: "hand-left-outline" as const,     shortLabel: "In Person" },
+];
+
+const LANDSCAPER_PAY_OPTIONS = [
+  { value: "Cash",     icon: "cash-outline" as const },
+  { value: "Venmo",    icon: "phone-portrait-outline" as const },
+  { value: "PayPal",   icon: "card-outline" as const },
+  { value: "Cash App", icon: "phone-portrait-outline" as const },
+  { value: "Zelle",    icon: "swap-horizontal-outline" as const },
+  { value: "Check",    icon: "document-outline" as const },
+  { value: "In Person",icon: "hand-left-outline" as const },
 ];
 
 type PayStatus = "paid" | "pending" | "refunded" | "failed";
@@ -141,6 +153,7 @@ function LandscaperProfile({
   const [privVisible, setPrivVisible] = useState(true);
   const [privPrices, setPrivPrices] = useState(false);
   const [privReviews, setPrivReviews] = useState(true);
+  const [acceptedPayments, setAcceptedPayments] = useState<string[]>(["Cash", "Venmo", "In Person"]);
 
   // Editable profile fields
   const [editVisible, setEditVisible] = useState(false);
@@ -388,7 +401,17 @@ function LandscaperProfile({
                 { ionIcon: "star-outline" as const,          label: "ADD" },
                 { ionIcon: "calendar-outline" as const,      label: "BOOK" },
                 { ionIcon: "create-outline" as const,        label: "REVIEW", onPress: () => setActiveTab("reviews") },
-                { ionIcon: "share-social-outline" as const,  label: "SHARE" },
+                {
+                  ionIcon: "share-social-outline" as const,
+                  label: "SHARE",
+                  onPress: () => {
+                    Share.share({
+                      title: "GreenScape Pros on TheLawn",
+                      message: "Check out GreenScape Pros on TheLawn — top-rated landscaping near you! https://thelawn.app",
+                      url: "https://thelawn.app",
+                    }).catch(() => {});
+                  },
+                },
               ]).map((btn) => (
                 <TouchableOpacity
                   key={btn.label}
@@ -420,6 +443,45 @@ function LandscaperProfile({
                 <Ionicons name="chatbubble-outline" size={22} color="#34FF7A" />
                 <Text style={[cutStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
               </TouchableOpacity>
+            </View>
+
+            {/* Accepted Payments */}
+            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>ACCEPTED PAYMENTS</Text>
+            <View style={cutStyles.card}>
+              <Text style={[{ fontSize: 12, color: "#666", marginBottom: 12 }, { fontFamily: "Inter_400Regular" }]}>
+                Select all payment types you accept from customers
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {LANDSCAPER_PAY_OPTIONS.map((opt) => {
+                  const on = acceptedPayments.includes(opt.value);
+                  return (
+                    <TouchableOpacity
+                      key={opt.value}
+                      style={[
+                        payPrefStyles.chip,
+                        on && payPrefStyles.chipOn,
+                      ]}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setAcceptedPayments((prev) =>
+                          on ? prev.filter((v) => v !== opt.value) : [...prev, opt.value]
+                        );
+                      }}
+                      activeOpacity={0.75}
+                    >
+                      <Ionicons name={opt.icon} size={14} color={on ? "#000" : "#888"} />
+                      <Text style={[payPrefStyles.chipText, { fontFamily: "Inter_500Medium" }, on && payPrefStyles.chipTextOn]}>
+                        {opt.value}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {acceptedPayments.length > 0 && (
+                <Text style={[{ fontSize: 11, color: "#555", marginTop: 12 }, { fontFamily: "Inter_400Regular" }]}>
+                  Customers will see: {acceptedPayments.join(" · ")}
+                </Text>
+              )}
             </View>
 
             {/* Service & Availability */}
@@ -1537,4 +1599,24 @@ const phStyles = StyleSheet.create({
     borderRadius: 20,
   },
   statusText: { fontSize: 11 },
+});
+
+const payPrefStyles = StyleSheet.create({
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#111111",
+    borderWidth: 1.5,
+    borderColor: "#2a2a2a",
+  },
+  chipOn: {
+    backgroundColor: "#34FF7A",
+    borderColor: "#34FF7A",
+  },
+  chipText: { fontSize: 13, color: "#888" },
+  chipTextOn: { color: "#000" },
 });

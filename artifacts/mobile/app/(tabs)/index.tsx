@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Image,
   Linking,
+  Share,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -951,7 +952,14 @@ export default function HomeScreen() {
         onViewProfile={() => { setDropdownVisible(false); router.navigate("/(tabs)/profile"); }}
         onAppointments={() => { setDropdownVisible(false); router.navigate("/(tabs)/appointments"); }}
         onSettings={() => { setDropdownVisible(false); setSettingsVisible(true); }}
-        onShare={() => { setDropdownVisible(false); Alert.alert("Share", "Share link copied to clipboard!"); }}
+        onShare={() => {
+          setDropdownVisible(false);
+          Share.share({
+            title: "TheLawn — Book Landscaping Services",
+            message: "Book trusted local landscapers on TheLawn! Check it out: https://thelawn.app",
+            url: "https://thelawn.app",
+          }).catch(() => {});
+        }}
         onPaymentMethod={() => { setDropdownVisible(false); setPaymentVisible(true); }}
         onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
