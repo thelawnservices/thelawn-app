@@ -23,11 +23,11 @@ const TIP_OPTIONS = [
   { label: "20%", value: 0.2 },
 ];
 
-const SERVICE_OPTIONS = [
-  { label: "Lawn Mowing",    emoji: "🌿" },
-  { label: "Hedge Trimming", emoji: "✂️" },
-  { label: "Mulching",       emoji: "🪴" },
-  { label: "Clean Up",       emoji: "🗑️" },
+const SERVICE_OPTIONS: { label: string; icon: "leaf" | "cut" | "flower" | "trash" }[] = [
+  { label: "Lawn Mowing",    icon: "leaf"   },
+  { label: "Hedge Trimming", icon: "cut"    },
+  { label: "Mulching",       icon: "flower" },
+  { label: "Clean Up",       icon: "trash"  },
 ];
 
 const YARD_SIZE_OPTIONS = [
@@ -561,7 +561,9 @@ export default function PayScreen() {
                       <Ionicons name="checkmark" size={13} color="#000" />
                     </View>
                   )}
-                  <Text style={styles.serviceEmoji}>{svc.emoji}</Text>
+                  <View style={[styles.serviceIconCircle, isSelected && styles.serviceIconCircleActive]}>
+                    <Ionicons name={svc.icon} size={28} color={isSelected ? "#34FF7A" : "#888"} />
+                  </View>
                   <Text style={[
                     styles.serviceLabel,
                     { fontFamily: "Inter_600SemiBold" },
@@ -580,11 +582,16 @@ export default function PayScreen() {
           </View>
           {selectedServices.size > 1 && selectedYardSize && (
             <View style={styles.multiServiceTotal}>
-              <Text style={[{ color: "#888", fontSize: 13 }, { fontFamily: "Inter_400Regular" }]}>
-                {[...selectedServices].join(" + ")}
-              </Text>
-              <Text style={[{ color: "#34FF7A", fontSize: 15 }, { fontFamily: "Inter_700Bold" }]}>
-                ${[...selectedServices].reduce((s, n) => s + (PRICE_MATRIX[n]?.[selectedYardSize] ?? 0), 0)} total
+              <View style={styles.multiServiceTotalTop}>
+                <Text style={[styles.multiServiceTotalLabel, { fontFamily: "Inter_500Medium" }]}>
+                  {selectedServices.size} Services Selected
+                </Text>
+                <Text style={[styles.multiServiceTotalPrice, { fontFamily: "Inter_700Bold" }]}>
+                  ${[...selectedServices].reduce((s, n) => s + (PRICE_MATRIX[n]?.[selectedYardSize] ?? 0), 0)}
+                </Text>
+              </View>
+              <Text style={[styles.multiServiceTotalNames, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
+                {[...selectedServices].join("  •  ")}
               </Text>
             </View>
           )}
@@ -1550,22 +1557,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  serviceEmoji: { fontSize: 44 },
-  serviceLabel: { fontSize: 14, color: "#FFFFFF", textAlign: "center" },
-  serviceLabelActive: { color: "#34FF7A" },
-  serviceTilePrice: { fontSize: 15, color: "#888", marginTop: 2 },
-  multiServiceTotal: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  serviceIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#252525",
     alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  serviceIconCircleActive: {
+    backgroundColor: "rgba(52,255,122,0.12)",
+  },
+  serviceLabel: { fontSize: 13, color: "#FFFFFF", textAlign: "center" },
+  serviceLabelActive: { color: "#34FF7A" },
+  serviceTilePrice: { fontSize: 16, color: "#666", marginTop: 2 },
+  multiServiceTotal: {
     backgroundColor: "#0d2e18",
     borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: 4,
+    paddingVertical: 14,
+    marginTop: 8,
     borderWidth: 1,
-    borderColor: "rgba(52,255,122,0.25)",
+    borderColor: "rgba(52,255,122,0.3)",
+    gap: 6,
   },
+  multiServiceTotalTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  multiServiceTotalLabel: { fontSize: 13, color: "rgba(255,255,255,0.6)" },
+  multiServiceTotalPrice: { fontSize: 22, color: "#34FF7A" },
+  multiServiceTotalNames: { fontSize: 12, color: "#666", lineHeight: 18 },
 
   yardSizeRow: { flexDirection: "row", gap: 10, marginBottom: 4 },
   yardChip: {
