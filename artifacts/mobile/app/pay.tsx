@@ -803,7 +803,7 @@ export default function PayScreen() {
                 style={[
                   styles.tipBtnLabel,
                   { fontFamily: "Inter_600SemiBold" },
-                  tipMode === "preset" && tipPresetIdx === i && { color: "#fff" },
+                  tipMode === "preset" && tipPresetIdx === i && { color: "#34FF7A" },
                 ]}
               >
                 {t.label}
@@ -812,7 +812,6 @@ export default function PayScreen() {
                 style={[
                   styles.tipBtnAmount,
                   { fontFamily: "Inter_400Regular" },
-                  tipMode === "preset" && tipPresetIdx === i && { color: "rgba(255,255,255,0.8)" },
                 ]}
               >
                 ${(basePrice * t.value).toFixed(2)}
@@ -826,8 +825,8 @@ export default function PayScreen() {
             onPress={() => { setTipMode("custom"); Haptics.selectionAsync(); }}
             activeOpacity={0.8}
           >
-            <Ionicons name="pencil-outline" size={14} color={tipMode === "custom" ? "#fff" : "#AAAAAA"} />
-            <Text style={[styles.tipExtraLabel, { fontFamily: "Inter_500Medium" }, tipMode === "custom" && { color: "#fff" }]}>
+            <Ionicons name="pencil-outline" size={14} color={tipMode === "custom" ? "#34FF7A" : "#AAAAAA"} />
+            <Text style={[styles.tipExtraLabel, { fontFamily: "Inter_500Medium" }, tipMode === "custom" && { color: "#34FF7A" }]}>
               Custom Tip
             </Text>
           </TouchableOpacity>
@@ -836,7 +835,7 @@ export default function PayScreen() {
             onPress={() => { setTipMode("none"); setCustomTipAmount(""); Haptics.selectionAsync(); }}
             activeOpacity={0.8}
           >
-            <Text style={[styles.tipExtraLabel, { fontFamily: "Inter_500Medium" }, tipMode === "none" && { color: "#fff" }]}>
+            <Text style={[styles.tipExtraLabel, { fontFamily: "Inter_500Medium" }, tipMode === "none" && { color: "#34FF7A" }]}>
               No Tip
             </Text>
           </TouchableOpacity>
@@ -1305,7 +1304,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#222",
   },
-  tipBtnActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  tipBtnActive: { backgroundColor: "#1A1A1A", borderColor: "#34FF7A", borderWidth: 2 },
   tipBtnLabel: { fontSize: 16, color: "#FFFFFF" },
   tipBtnAmount: { fontSize: 12, color: "#888888", marginTop: 2 },
   breakdown: {
