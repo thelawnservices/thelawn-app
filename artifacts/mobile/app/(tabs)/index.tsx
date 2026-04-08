@@ -1149,37 +1149,6 @@ export default function HomeScreen() {
             )}
           </ScrollView>
 
-          {/* My Favorites section */}
-          {favorites.size > 0 && (
-            <>
-              <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 4 }]}>
-                My Favorites
-              </Text>
-              {TRUSTED_PROS.filter((p) => favorites.has(p.name)).map((pro) => (
-                <TouchableOpacity
-                  key={pro.name}
-                  style={styles.favRow}
-                  onPress={() => { Haptics.selectionAsync(); setSelectedPro(pro); }}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.favRowIcon}>
-                    <Ionicons name={pro.icon} size={22} color="#34FF7A" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.favRowName, { fontFamily: "Inter_600SemiBold" }]}>{pro.name}</Text>
-                    <Text style={[styles.favRowMeta, { fontFamily: "Inter_400Regular" }]}>{pro.meta}</Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => toggleFavorite(pro.name)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="heart" size={20} color="#f87171" />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
-            </>
-          )}
           </>
         )}
 
