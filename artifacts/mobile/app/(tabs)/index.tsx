@@ -329,7 +329,7 @@ function NotificationsPanel({
           <Pressable>
             <View style={styles.notifSheetHeader}>
               <Text style={[styles.notifSheetTitle, { fontFamily: "Inter_700Bold" }]}>
-                Active Service Alerts
+                Alerts & Announcements
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                 <TouchableOpacity
@@ -355,21 +355,38 @@ function NotificationsPanel({
                   </Text>
                 </View>
               ) : (
-                items.map((n) => (
-                  <View key={n.id} style={styles.notifItem}>
-                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(52,255,122,0.1)", alignItems: "center", justifyContent: "center" }}>
-                      <Ionicons name={n.icon as any} size={22} color="#34FF7A" />
+                items.map((n) => {
+                  const isAnnounce = n.type === "announcement";
+                  return (
+                    <View key={n.id} style={[styles.notifItem, isAnnounce && styles.notifItemAnnounce]}>
+                      <View style={{
+                        width: 40, height: 40, borderRadius: 20,
+                        backgroundColor: isAnnounce ? "rgba(255,170,0,0.12)" : "rgba(52,255,122,0.1)",
+                        alignItems: "center", justifyContent: "center",
+                      }}>
+                        <Ionicons name={n.icon as any} size={22} color={isAnnounce ? "#FFAA00" : "#34FF7A"} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                          {isAnnounce && (
+                            <View style={styles.announcePill}>
+                              <Text style={[styles.announcePillText, { fontFamily: "Inter_700Bold" }]}>ANNOUNCEMENT</Text>
+                            </View>
+                          )}
+                          {n.timestamp && (
+                            <Text style={[styles.notifTimestamp, { fontFamily: "Inter_400Regular" }]}>{n.timestamp}</Text>
+                          )}
+                        </View>
+                        <Text style={[styles.notifItemTitle, { fontFamily: "Inter_500Medium" }, isAnnounce && { color: "#FFCC55" }]}>
+                          {n.title}
+                        </Text>
+                        <Text style={[styles.notifItemSub, { fontFamily: "Inter_400Regular" }]}>
+                          {n.sub}
+                        </Text>
+                      </View>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.notifItemTitle, { fontFamily: "Inter_500Medium" }]}>
-                        {n.title}
-                      </Text>
-                      <Text style={[styles.notifItemSub, { fontFamily: "Inter_400Regular" }]}>
-                        {n.sub}
-                      </Text>
-                    </View>
-                  </View>
-                ))
+                  );
+                })
               )}
             </View>
           </Pressable>
@@ -3113,6 +3130,13 @@ const styles = StyleSheet.create({
   notifItemIcon: { fontSize: 32 },
   notifItemTitle: { fontSize: 14, color: "#FFFFFF", marginBottom: 4 },
   notifItemSub: { fontSize: 12, color: "#BBBBBB" },
+  notifItemAnnounce: { borderColor: "#FFAA0030", backgroundColor: "#1A1400" },
+  announcePill: {
+    backgroundColor: "#FFAA0020", borderRadius: 6,
+    paddingHorizontal: 6, paddingVertical: 2,
+  },
+  announcePillText: { fontSize: 9, color: "#FFAA00", letterSpacing: 0.5 },
+  notifTimestamp: { fontSize: 11, color: "#555" },
   offlineBanner: {
     flexDirection: "row",
     alignItems: "center",

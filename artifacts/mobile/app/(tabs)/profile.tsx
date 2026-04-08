@@ -25,6 +25,7 @@ import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import TermsModal from "@/components/TermsModal";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import { validateText, simulatePhotoReview } from "@/utils/moderation";
+import { useNotifications } from "@/contexts/notifications";
 
 const PAYMENT_METHODS = [
   { label: "Apple Pay",  value: "Apple Pay",  ionIcon: "logo-apple" as const,            shortLabel: "Apple Pay" },
@@ -140,6 +141,7 @@ function LandscaperProfile({
 }) {
   const { setAvatarUri } = useAuth();
   const { myServices, bookedSlots } = useLandscaperProfile();
+  const { broadcastAnnouncement } = useNotifications();
   const [activeTab, setActiveTab] = useState<LandscaperTab>("info");
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
   const [heroBackground, setHeroBackground] = useState<string | null>(null);
@@ -153,6 +155,44 @@ function LandscaperProfile({
   const [lsMenuVisible, setLsMenuVisible] = useState(false);
   const [replyingToIdx, setReplyingToIdx] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
+
+  // Announcements
+  const [announceVisible, setAnnounceVisible] = useState(false);
+  const [announceTitle, setAnnounceTitle] = useState("");
+  const [announceMsg, setAnnounceMsg] = useState("");
+  const [announceState, setAnnounceState] = useState<"compose" | "sending" | "sent">("compose");
+  const [announceTitleErr, setAnnounceTitleErr] = useState<string | null>(null);
+  const [announceMsgErr, setAnnounceMsgErr] = useState<string | null>(null);
+  const ANNOUNCE_FOLLOWER_COUNT = 12;
+
+  function openAnnounce() {
+    setAnnounceTitle("");
+    setAnnounceMsg("");
+    setAnnounceState("compose");
+    setAnnounceTitleErr(null);
+    setAnnounceMsgErr(null);
+    setAnnounceVisible(true);
+  }
+
+  function sendAnnouncement() {
+    const titleV = validateText(announceTitle.trim(), 60);
+    const msgV = validateText(announceMsg.trim(), 300);
+    let hasErr = false;
+    if (!announceTitle.trim()) { setAnnounceTitleErr("Please enter a title."); hasErr = true; }
+    else if (titleV.hasProfanity) { setAnnounceTitleErr("Please remove inappropriate language."); hasErr = true; }
+    else { setAnnounceTitleErr(null); }
+    if (!announceMsg.trim()) { setAnnounceMsgErr("Please enter a message."); hasErr = true; }
+    else if (msgV.hasProfanity) { setAnnounceMsgErr("Please remove inappropriate language."); hasErr = true; }
+    else { setAnnounceMsgErr(null); }
+    if (hasErr) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); return; }
+    setAnnounceState("sending");
+    setTimeout(() => {
+      broadcastAnnouncement(profileName, announceTitle.trim(), announceMsg.trim());
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setAnnounceState("sent");
+      setTimeout(() => setAnnounceVisible(false), 2800);
+    }, 1800);
+  }
 
   // Editable profile fields
   const [editVisible, setEditVisible] = useState(false);
@@ -306,6 +346,11 @@ function LandscaperProfile({
         <Modal visible={lsMenuVisible} transparent animationType="fade" onRequestClose={() => setLsMenuVisible(false)}>
           <Pressable style={menuStyles.overlay} onPress={() => setLsMenuVisible(false)}>
             <View style={[menuStyles.dropdown, { top: topPadding + 62, right: 16 }]}>
+              <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); openAnnounce(); }}>
+                <Ionicons name="megaphone-outline" size={18} color="#FFAA00" />
+                <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#FFAA00" }]}>Send Announcement</Text>
+              </TouchableOpacity>
+              <View style={menuStyles.divider} />
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setPrivacyVisible(true); }}>
                 <Ionicons name="lock-closed-outline" size={18} color="#CCCCCC" />
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Privacy Settings</Text>
@@ -322,6 +367,112 @@ function LandscaperProfile({
               </TouchableOpacity>
             </View>
           </Pressable>
+        </Modal>
+
+        {/* ── Announcement Compose Modal ─────────────────────── */}
+        <Modal visible={announceVisible} transparent animationType="slide" onRequestClose={() => { if (announceState !== "sending") setAnnounceVisible(false); }}>
+          <View style={announceStyles.overlay}>
+            <View style={announceStyles.sheet}>
+
+              {/* Header */}
+              <View style={announceStyles.header}>
+                <View style={announceStyles.headerLeft}>
+                  <Ionicons name="megaphone-outline" size={20} color="#FFAA00" />
+                  <Text style={[announceStyles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Send Announcement</Text>
+                </View>
+                {announceState !== "sending" && announceState !== "sent" && (
+                  <TouchableOpacity onPress={() => setAnnounceVisible(false)} activeOpacity={0.7}>
+                    <Ionicons name="close" size={22} color="#CCCCCC" />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* Followers pill */}
+              <View style={announceStyles.followersPill}>
+                <Ionicons name="heart" size={13} color="#f87171" />
+                <Text style={[announceStyles.followersText, { fontFamily: "Inter_500Medium" }]}>
+                  {ANNOUNCE_FOLLOWER_COUNT} customers will be notified
+                </Text>
+              </View>
+
+              {announceState === "sent" ? (
+                <View style={announceStyles.sentBox}>
+                  <Ionicons name="checkmark-circle" size={48} color="#34FF7A" />
+                  <Text style={[announceStyles.sentTitle, { fontFamily: "Inter_700Bold" }]}>Announcement Sent!</Text>
+                  <Text style={[announceStyles.sentSub, { fontFamily: "Inter_400Regular" }]}>
+                    {ANNOUNCE_FOLLOWER_COUNT} customers who favorited you have been notified.
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {/* Title field */}
+                  <Text style={[announceStyles.fieldLabel, { fontFamily: "Inter_600SemiBold" }]}>Title *</Text>
+                  <TextInput
+                    style={[announceStyles.titleInput, announceTitleErr && announceStyles.inputErr, { fontFamily: "Inter_400Regular" }]}
+                    placeholder="e.g. Spring Special — 20% Off Mowing"
+                    placeholderTextColor="#555"
+                    value={announceTitle}
+                    onChangeText={(t) => { setAnnounceTitle(t.slice(0, 60)); if (announceTitleErr) setAnnounceTitleErr(null); }}
+                    maxLength={60}
+                    editable={announceState === "compose"}
+                  />
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                    {announceTitleErr
+                      ? <Text style={[announceStyles.errText, { fontFamily: "Inter_400Regular" }]}>{announceTitleErr}</Text>
+                      : <Text />}
+                    <Text style={[announceStyles.charCount, { fontFamily: "Inter_400Regular" }]}>{announceTitle.length}/60</Text>
+                  </View>
+
+                  {/* Message field */}
+                  <Text style={[announceStyles.fieldLabel, { fontFamily: "Inter_600SemiBold" }]}>Message *</Text>
+                  <TextInput
+                    style={[announceStyles.msgInput, announceMsgErr && announceStyles.inputErr, { fontFamily: "Inter_400Regular" }]}
+                    placeholder="Write your message to customers who follow you…"
+                    placeholderTextColor="#555"
+                    value={announceMsg}
+                    onChangeText={(t) => { setAnnounceMsg(t.slice(0, 300)); if (announceMsgErr) setAnnounceMsgErr(null); }}
+                    maxLength={300}
+                    multiline
+                    numberOfLines={5}
+                    textAlignVertical="top"
+                    editable={announceState === "compose"}
+                  />
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
+                    {announceMsgErr
+                      ? <Text style={[announceStyles.errText, { fontFamily: "Inter_400Regular" }]}>{announceMsgErr}</Text>
+                      : <Text />}
+                    <Text style={[announceStyles.charCount, { fontFamily: "Inter_400Regular", color: announceMsg.length > 270 ? "#FFAA00" : "#555" }]}>
+                      {announceMsg.length}/300
+                    </Text>
+                  </View>
+
+                  {/* Send button */}
+                  <TouchableOpacity
+                    style={[announceStyles.sendBtn, announceState === "sending" && announceStyles.sendBtnSending]}
+                    onPress={sendAnnouncement}
+                    activeOpacity={0.85}
+                    disabled={announceState === "sending"}
+                  >
+                    {announceState === "sending" ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                        <ActivityIndicator size="small" color="#000" />
+                        <Text style={[announceStyles.sendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sending to {ANNOUNCE_FOLLOWER_COUNT} customers…</Text>
+                      </View>
+                    ) : (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <Ionicons name="megaphone-outline" size={18} color="#000" />
+                        <Text style={[announceStyles.sendBtnText, { fontFamily: "Inter_700Bold" }]}>Send to {ANNOUNCE_FOLLOWER_COUNT} Followers</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+
+                  <Text style={[announceStyles.disclaimer, { fontFamily: "Inter_400Regular" }]}>
+                    Only customers who have favorited your profile will receive this notification.
+                  </Text>
+                </>
+              )}
+            </View>
+          </View>
         </Modal>
 
         {/* Edit Banner — top left, below status bar */}
@@ -1887,5 +2038,60 @@ const custSettStyles = StyleSheet.create({
     padding: 14, marginTop: 20,
   },
   successText: { fontSize: 14, color: "#34FF7A", flex: 1 },
+});
+
+const announceStyles = StyleSheet.create({
+  overlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: "#111111",
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    borderWidth: 1, borderColor: "#1E1E1E",
+    padding: 24, paddingBottom: 40,
+  },
+  header: {
+    flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between", marginBottom: 16,
+  },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  headerTitle: { fontSize: 18, color: "#FFFFFF" },
+  followersPill: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#1F0A0A", borderWidth: 1, borderColor: "#f8717140",
+    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+    alignSelf: "flex-start", marginBottom: 20,
+  },
+  followersText: { fontSize: 13, color: "#f87171" },
+  fieldLabel: { fontSize: 13, color: "#CCCCCC", marginBottom: 6 },
+  titleInput: {
+    backgroundColor: "#1A1A1A", borderRadius: 12,
+    borderWidth: 1, borderColor: "#2A2A2A",
+    color: "#FFFFFF", fontSize: 14,
+    paddingHorizontal: 14, paddingVertical: 12,
+    marginBottom: 4,
+  },
+  msgInput: {
+    backgroundColor: "#1A1A1A", borderRadius: 12,
+    borderWidth: 1, borderColor: "#2A2A2A",
+    color: "#FFFFFF", fontSize: 14,
+    paddingHorizontal: 14, paddingVertical: 12,
+    minHeight: 110, marginBottom: 4,
+  },
+  inputErr: { borderColor: "#f87171" },
+  errText: { fontSize: 12, color: "#f87171", flex: 1 },
+  charCount: { fontSize: 11, color: "#555", textAlign: "right" },
+  sendBtn: {
+    backgroundColor: "#FFAA00", borderRadius: 22,
+    paddingVertical: 15, alignItems: "center",
+    justifyContent: "center", marginBottom: 12,
+  },
+  sendBtnSending: { backgroundColor: "#FFAA0099" },
+  sendBtnText: { fontSize: 15, color: "#000" },
+  disclaimer: { fontSize: 11, color: "#555", textAlign: "center", lineHeight: 16 },
+  sentBox: { alignItems: "center", paddingVertical: 28, gap: 12 },
+  sentTitle: { fontSize: 20, color: "#34FF7A" },
+  sentSub: { fontSize: 14, color: "#BBBBBB", textAlign: "center", lineHeight: 20 },
 });
 
