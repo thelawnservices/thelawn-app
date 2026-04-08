@@ -99,11 +99,8 @@ export default function SearchScreen() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [sortIdx, setSortIdx] = useState(0);
   const [showSort, setShowSort] = useState(false);
-  const [priceRangeIdx, setPriceRangeIdx] = useState(0);
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
   const { acceptJob } = useJobs();
-
-  const priceRange = PRICE_RANGES[priceRangeIdx];
 
   const filtered = PROS.filter((p) => {
     const matchesQuery =
@@ -112,8 +109,7 @@ export default function SearchScreen() {
       p.specialty.toLowerCase().includes(query.toLowerCase());
     const matchesFilter =
       activeFilter === "All" || p.tags.includes(activeFilter);
-    const matchesPrice = p.price >= priceRange.min && p.price < priceRange.max;
-    return matchesQuery && matchesFilter && matchesPrice;
+    return matchesQuery && matchesFilter;
   });
 
   const sorted = [...filtered].sort((a, b) => {
@@ -301,37 +297,6 @@ export default function SearchScreen() {
           ))}
         </ScrollView>
 
-        {/* Price Range Filter Row */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.filtersRow, { paddingTop: 0 }]}
-        >
-          {PRICE_RANGES.map((pr, i) => (
-            <TouchableOpacity
-              key={pr.label}
-              style={[styles.filterChip, styles.priceFilterChip, priceRangeIdx === i && styles.priceChipActive]}
-              onPress={() => { setPriceRangeIdx(i); Haptics.selectionAsync(); }}
-            >
-              <Ionicons
-                name="cash-outline"
-                size={12}
-                color={priceRangeIdx === i ? "#000" : "#34FF7A"}
-                style={{ marginRight: 4 }}
-              />
-              <Text
-                style={[
-                  styles.filterChipText,
-                  { fontFamily: "Inter_500Medium" },
-                  priceRangeIdx === i && styles.priceChipTextActive,
-                ]}
-              >
-                {pr.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
         {/* Sort Row */}
         <View style={styles.sortRow}>
           <Text style={[styles.resultCount, { fontFamily: "Inter_400Regular" }]}>
@@ -486,9 +451,6 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   filterChipText: { fontSize: 13, color: "#FFFFFF" },
   filterChipTextActive: { color: "#000" },
-  priceChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
-  priceChipTextActive: { color: "#000" },
-  priceFilterChip: { flexDirection: "row", alignItems: "center" },
   sortRow: {
     flexDirection: "row",
     alignItems: "center",
