@@ -69,11 +69,6 @@ const LANDSCAPER_QUICK_STATS = [
   { label: "This Week", value: "$420", icon: "cash" as const, iconColor: "#34FF7A" },
 ];
 
-const HOME_PENDING_REQUESTS = [
-  { id: "h1", service: "Mowing/Edging",    size: "Medium", customer: "Alex T.",    distance: "1.2 mi", zip: "34221", date: "Apr 14", time: "9:00 AM",  budget: "$70"  },
-  { id: "h2", service: "Weeding/Mulching", size: "Small",  customer: "Maria K.",   distance: "2.4 mi", zip: "34222", date: "Apr 15", time: "11:00 AM", budget: "$90"  },
-  { id: "h3", service: "Sod Installation", size: "Large",  customer: "Carlos R.",  distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM",  budget: "$850" },
-];
 
 function AnimatedStatCard({ stat, delay, onPress }: { stat: { label: string; value: string; icon: "checkmark-circle" | "star" | "heart" | "cash"; iconColor: string }; delay: number; onPress?: () => void }) {
   const opacity = useRef(new Animated.Value(0)).current;
@@ -911,7 +906,6 @@ export default function HomeScreen() {
   const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "G" : "Z");
   const { acceptJob } = useJobs();
   const { addBookedSlot } = useLandscaperProfile();
-  const [acceptedOnHome, setAcceptedOnHome] = useState<string[]>([]);
   const [prosLoaded, setProsLoaded] = useState(false);
   const [selectedPro, setSelectedPro] = useState<TrustedPro | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -1299,95 +1293,6 @@ export default function HomeScreen() {
           </>
         )}
 
-        {/* Pending Customer Requests — landscapers only, shown third */}
-        {role === "landscaper" && (() => {
-          const visible = HOME_PENDING_REQUESTS.filter((r) => !acceptedOnHome.includes(r.id));
-          return (
-            <>
-              <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-                Pending Requests Within 25 Miles
-              </Text>
-              {visible.length === 0 ? (
-                <View style={styles.pendingEmptyBox}>
-                  <Ionicons name="clipboard-outline" size={32} color="#333" />
-                  <Text style={[styles.pendingEmptyText, { fontFamily: "Inter_400Regular" }]}>
-                    No new requests right now
-                  </Text>
-                </View>
-              ) : (
-                visible.map((req) => (
-                  <View key={req.id} style={styles.pendingCard}>
-                    <View style={styles.pendingTopRow}>
-                      <View style={styles.pendingBadge}>
-                        <Ionicons name="leaf" size={13} color="#34FF7A" />
-                        <Text style={[styles.pendingBadgeText, { fontFamily: "Inter_600SemiBold" }]}>
-                          {req.service}
-                        </Text>
-                      </View>
-                      <View style={{ alignItems: "flex-end" }}>
-                        <Text style={{ fontSize: 10, color: "#888", fontFamily: "Inter_400Regular" }}>Customer's Offer</Text>
-                        <Text style={[styles.pendingBudget, { fontFamily: "Inter_700Bold" }]}>
-                          {req.budget}
-                        </Text>
-                      </View>
-                    </View>
-                    <View style={styles.pendingMeta}>
-                      <Ionicons name="person-outline" size={12} color="#CCCCCC" />
-                      <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
-                        {req.customer}
-                      </Text>
-                      <Text style={styles.pendingDot}>·</Text>
-                      <Ionicons name="location-outline" size={12} color="#CCCCCC" />
-                      <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
-                        {req.distance}
-                      </Text>
-                    </View>
-                    <View style={styles.pendingMeta}>
-                      <Ionicons name="calendar-outline" size={12} color="#CCCCCC" />
-                      <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
-                        {req.date} at {req.time}
-                      </Text>
-                      <Text style={styles.pendingDot}>·</Text>
-                      <Ionicons name="resize-outline" size={12} color="#CCCCCC" />
-                      <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
-                        {req.size} yard
-                      </Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.pendingAcceptBtn}
-                      activeOpacity={0.85}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        Alert.alert(
-                          "Agree to Customer's Price?",
-                          `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer.\n\nThis overrides your standard service rates for this job. No counter-offers.\n\nDo you want to accept?`,
-                          [
-                            { text: "Cancel", style: "cancel" },
-                            {
-                              text: `Accept at ${req.budget}`,
-                              onPress: () => {
-                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                                setAcceptedOnHome((prev) => [...prev, req.id]);
-                                acceptJob({ id: req.id, service: req.service, size: req.size, customer: req.customer, date: req.date, time: req.time, budget: req.budget, distance: req.distance, zip: req.zip });
-                                const blockMins = SERVICE_BLOCK_MINUTES[req.service] ?? 120;
-                                addBookedSlot(normalizeDateKey(req.date), normalizeTime(req.time), blockMins, req.service);
-                                Alert.alert("Job Accepted", `${req.customer}'s ${req.service} job for ${req.budget} has been added to your Appointments.`);
-                              },
-                            },
-                          ]
-                        );
-                      }}
-                    >
-                      <Text style={[styles.pendingAcceptText, { fontFamily: "Inter_600SemiBold" }]}>
-                        Accept at {req.budget}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                ))
-              )}
-            </>
-          );
-        })()}
 
         {/* Quick Stats — customers only */}
         {role !== "landscaper" && (
