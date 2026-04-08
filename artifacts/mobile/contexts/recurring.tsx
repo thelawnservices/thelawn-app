@@ -56,7 +56,7 @@ const biWeeklyDates = generateDates("April 18, 2026", "Bi-Weekly", 7);
 const INITIAL_INSTANCES: RecurringInstance[] = biWeeklyDates.map((date, i) => ({
   id: `r2-inst-${i}`,
   parentId: "2",
-  service: "Hedge Trimming",
+  service: "Mowing/Edging",
   date,
   time: "9:00 AM",
   pro: "GreenScape Pros",

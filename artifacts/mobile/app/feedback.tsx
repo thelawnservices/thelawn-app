@@ -81,7 +81,9 @@ export default function FeedbackScreen() {
           { paddingTop: topPadding + 12, backgroundColor: colors.card, borderBottomColor: colors.border },
         ]}
       >
-        <View style={{ width: 50 }} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color={colors.foreground} />
+        </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
           Rate Your Service
         </Text>
@@ -103,7 +105,7 @@ export default function FeedbackScreen() {
               John Rivera
             </Text>
             <Text style={[styles.proSvc, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-              Lawn Mowing · Today
+              Mowing/Edging · Today
             </Text>
           </View>
         </View>
@@ -196,6 +198,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
+  backBtn: { width: 50, alignItems: "flex-start", justifyContent: "center" },
   headerTitle: { flex: 1, textAlign: "center", fontSize: 17 },
   skipBtn: { width: 50, alignItems: "flex-end" },
   skipText: { fontSize: 14 },

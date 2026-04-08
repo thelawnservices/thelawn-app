@@ -14,11 +14,10 @@ import { useColors } from "@/hooks/useColors";
 import * as Haptics from "expo-haptics";
 
 const SERVICES = [
-  { id: "1", name: "Lawn Mowing", description: "Standard cut & edge", price: 45, icon: "leaf-outline" as const },
-  { id: "2", name: "Hedge Trimming", description: "Shape & trim hedges", price: 35, icon: "leaf" as const },
-  { id: "3", name: "Leaf Cleanup", description: "Rake & haul away", price: 55, icon: "trash-outline" as const },
-  { id: "4", name: "Mulching", description: "Beds & pathways", price: 65, icon: "flower-outline" as const },
-  { id: "5", name: "Full Service", description: "Everything included", price: 120, icon: "sparkles-outline" as const },
+  { id: "1", name: "Mowing/Edging",    description: "Mow & edge the full yard",      price: 70,   icon: "cut-outline" as const,    estTime: "1–2 hrs" },
+  { id: "2", name: "Weeding/Mulching", description: "Weed beds & apply fresh mulch",  price: 90,   icon: "flower-outline" as const, estTime: "2–4 hrs" },
+  { id: "3", name: "Sod Installation", description: "Remove old & install fresh sod", price: 350,  icon: "grid-outline" as const,   estTime: "4–8 hrs" },
+  { id: "4", name: "Artificial Turf",  description: "Full turf yard conversion",       price: 1200, icon: "layers-outline" as const, estTime: "10–20 hrs" },
 ];
 
 export default function BookingScreen() {

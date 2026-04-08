@@ -177,7 +177,7 @@ function LandscaperProfile({
   // Editable profile fields
   const [editVisible, setEditVisible] = useState(false);
   const [profileName, setProfileName] = useState("GreenScape Pros");
-  const [profileBio, setProfileBio] = useState("Professional landscaping services with over 10 years of experience. We specialize in lawn care, hedge trimming, mulching, and clean-up for residential properties.");
+  const [profileBio, setProfileBio] = useState("Professional landscaping services with over 10 years of experience. We specialize in mowing/edging, weeding/mulching, sod installation, and artificial turf for residential properties.");
   const [profileCity, setProfileCity] = useState("Ellenton");
   const [profileState, setProfileState] = useState("FL");
   const [profileZip, setProfileZip] = useState("34222");

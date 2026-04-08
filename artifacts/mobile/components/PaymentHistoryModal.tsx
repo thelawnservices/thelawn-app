@@ -30,21 +30,21 @@ type LandscaperPayRecord = {
 };
 
 export const CUSTOMER_PAYMENT_HISTORY: CustomerPayRecord[] = [
-  { id: "cp1", orderId: "TL-2026-40812", date: "Apr 8, 2026",  service: "Lawn Mowing",    pro: "John Rivera",       amount: "$65",  status: "paid",     yardSize: "Medium", address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "Apple Pay" },
-  { id: "cp2", orderId: "TL-2026-40267", date: "Apr 2, 2026",  service: "Hedge Trimming", pro: "EcoGreen Services", amount: "$55",  status: "paid",     yardSize: "Small",  address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Venmo" },
-  { id: "cp3", orderId: "TL-2026-32291", date: "Mar 22, 2026", service: "Clean Up",       pro: "Mike Torres",       amount: "$40",  status: "pending",  yardSize: "Small",  address: "14 Manatee Ave, Ellenton, FL",             payMethod: "PayPal" },
-  { id: "cp4", orderId: "TL-2026-31456", date: "Mar 14, 2026", service: "Mulching",       pro: "GreenScape Pros",   amount: "$180", status: "refunded", yardSize: "Large",  address: "8910 45th Ave E, Ellenton, FL",            payMethod: "Debit Card" },
-  { id: "cp5", orderId: "TL-2026-28731", date: "Mar 1, 2026",  service: "Lawn Mowing",    pro: "John Rivera",       amount: "$45",  status: "paid",     yardSize: "Small",  address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "In Person" },
-  { id: "cp6", orderId: "TL-2026-21043", date: "Feb 18, 2026", service: "Hedge Trimming", pro: "GreenScape Pros",   amount: "$75",  status: "paid",     yardSize: "Medium", address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Cash App" },
+  { id: "cp1", orderId: "TL-2026-40812", date: "Apr 8, 2026",  service: "Mowing/Edging",    pro: "John Rivera",       amount: "$70",   status: "paid",     yardSize: "Medium", address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "Apple Pay" },
+  { id: "cp2", orderId: "TL-2026-40267", date: "Apr 2, 2026",  service: "Weeding/Mulching", pro: "EcoGreen Services", amount: "$90",   status: "paid",     yardSize: "Small",  address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Venmo" },
+  { id: "cp3", orderId: "TL-2026-32291", date: "Mar 22, 2026", service: "Sod Installation", pro: "Mike Torres",       amount: "$350",  status: "pending",  yardSize: "Small",  address: "14 Manatee Ave, Ellenton, FL",             payMethod: "PayPal" },
+  { id: "cp4", orderId: "TL-2026-31456", date: "Mar 14, 2026", service: "Artificial Turf",  pro: "GreenScape Pros",   amount: "$1800", status: "refunded", yardSize: "Large",  address: "8910 45th Ave E, Ellenton, FL",            payMethod: "Debit Card" },
+  { id: "cp5", orderId: "TL-2026-28731", date: "Mar 1, 2026",  service: "Mowing/Edging",    pro: "John Rivera",       amount: "$45",   status: "paid",     yardSize: "Small",  address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "In Person" },
+  { id: "cp6", orderId: "TL-2026-21043", date: "Feb 18, 2026", service: "Weeding/Mulching", pro: "GreenScape Pros",   amount: "$130",  status: "paid",     yardSize: "Medium", address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Cash App" },
 ];
 
 export const LANDSCAPER_PAYMENT_HISTORY: LandscaperPayRecord[] = [
-  { id: "lp1", orderId: "TL-2026-40812", date: "Apr 8, 2026",  service: "Lawn Mowing",    customer: "Alex T.",   earned: "$61.75",  commission: "$3.25", status: "paid",    yardSize: "Medium", address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "Apple Pay" },
-  { id: "lp2", orderId: "TL-2026-40267", date: "Apr 5, 2026",  service: "Hedge Trimming", customer: "Priya N.",  earned: "$52.25",  commission: "$2.75", status: "pending", yardSize: "Small",  address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Venmo" },
-  { id: "lp3", orderId: "TL-2026-32291", date: "Mar 28, 2026", service: "Clean Up",       customer: "Marcus R.", earned: "$38.00",  commission: "$2.00", status: "paid",    yardSize: "Small",  address: "14 Manatee Ave, Ellenton, FL",             payMethod: "PayPal" },
-  { id: "lp4", orderId: "TL-2026-31456", date: "Mar 15, 2026", service: "Mulching",       customer: "Diane W.",  earned: "$171.50", commission: "$8.50", status: "paid",    yardSize: "Large",  address: "8910 45th Ave E, Ellenton, FL",            payMethod: "Debit Card" },
-  { id: "lp5", orderId: "TL-2026-28731", date: "Mar 1, 2026",  service: "Lawn Mowing",    customer: "Zamire S.", earned: "$43.50",  commission: "$1.50", status: "paid",    yardSize: "Small",  address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "In Person" },
-  { id: "lp6", orderId: "TL-2026-21043", date: "Feb 18, 2026", service: "Hedge Trimming", customer: "Tasha B.",  earned: "$71.25",  commission: "$3.75", status: "paid",    yardSize: "Medium", address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Cash App" },
+  { id: "lp1", orderId: "TL-2026-40812", date: "Apr 8, 2026",  service: "Mowing/Edging",    customer: "Alex T.",   earned: "$66.50",   commission: "$3.50",  status: "paid",    yardSize: "Medium", address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "Apple Pay" },
+  { id: "lp2", orderId: "TL-2026-40267", date: "Apr 5, 2026",  service: "Weeding/Mulching", customer: "Priya N.",  earned: "$85.50",   commission: "$4.50",  status: "pending", yardSize: "Small",  address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Venmo" },
+  { id: "lp3", orderId: "TL-2026-32291", date: "Mar 28, 2026", service: "Sod Installation", customer: "Marcus R.", earned: "$332.50",  commission: "$17.50", status: "paid",    yardSize: "Small",  address: "14 Manatee Ave, Ellenton, FL",             payMethod: "PayPal" },
+  { id: "lp4", orderId: "TL-2026-31456", date: "Mar 15, 2026", service: "Artificial Turf",  customer: "Diane W.",  earned: "$1708.00", commission: "$92.00", status: "paid",    yardSize: "Large",  address: "8910 45th Ave E, Ellenton, FL",            payMethod: "Debit Card" },
+  { id: "lp5", orderId: "TL-2026-28731", date: "Mar 1, 2026",  service: "Mowing/Edging",    customer: "Zamire S.", earned: "$42.75",   commission: "$2.25",  status: "paid",    yardSize: "Small",  address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "In Person" },
+  { id: "lp6", orderId: "TL-2026-21043", date: "Feb 18, 2026", service: "Weeding/Mulching", customer: "Tasha B.",  earned: "$123.50",  commission: "$6.50",  status: "paid",    yardSize: "Medium", address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Cash App" },
 ];
 
 export default function PaymentHistoryModal({

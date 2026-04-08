@@ -497,7 +497,7 @@ export default function PayScreen() {
                 {proName}
               </Text>
               <Text style={[styles.proSummaryService, { fontFamily: "Inter_400Regular" }]}>
-                Lawn Mowing · ${basePrice}/hr
+                Mowing/Edging · ${basePrice}/hr
               </Text>
             </View>
           </View>
@@ -966,7 +966,7 @@ export default function PayScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.summaryService, { fontFamily: "Inter_600SemiBold" }]}>
-              {selectedServices.size > 0 ? [...selectedServices].join(" + ") : "Lawn Mowing"}{selectedYardSize ? ` · ${selectedYardSize} yard` : ""}
+              {selectedServices.size > 0 ? [...selectedServices].join(" + ") : "Mowing/Edging"}{selectedYardSize ? ` · ${selectedYardSize} yard` : ""}
             </Text>
             {recurring && (
               <View style={styles.recurringBadge}>
@@ -1831,6 +1831,7 @@ const styles = StyleSheet.create({
   },
   serviceLabel: { fontSize: 13, color: "#FFFFFF", textAlign: "center" },
   serviceLabelActive: { color: "#34FF7A" },
+  serviceEstTime: { fontSize: 10, color: "#888", textAlign: "center", marginTop: 2 },
   serviceTilePrice: { fontSize: 16, color: "#999", marginTop: 2 },
   multiServiceTotal: {
     backgroundColor: "#0d2e18",

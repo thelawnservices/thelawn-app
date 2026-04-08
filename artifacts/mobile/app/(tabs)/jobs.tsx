@@ -26,7 +26,7 @@ type JobStatus = "pending" | "arrived" | "started" | "completed";
 const SHARED_ACTIVE_JOBS = [
   {
     id: "a1",
-    service: "Lawn Mowing",
+    service: "Mowing/Edging",
     customer: "Zamire Smith",
     landscaper: "GreenScape Pros",
     address: "8910 45th Ave E, Ellenton, FL",
@@ -47,7 +47,7 @@ const SHARED_COMPLETED_JOBS = [
   },
   {
     id: "c2",
-    service: "Mulching",
+    service: "Weeding/Mulching",
     customer: "Alex T.",
     landscaper: "GreenScape Pros",
     address: "22 Oak St, Ellenton, FL",
@@ -59,7 +59,7 @@ const SHARED_COMPLETED_JOBS = [
 const SERVICE_HISTORY = [
   {
     id: "h1",
-    service: "Lawn Mowing",
+    service: "Mowing/Edging",
     customer: "Zamire Smith",
     landscaper: "GreenScape Pros",
     date: "Apr 7, 2026",
@@ -75,7 +75,7 @@ const SERVICE_HISTORY = [
   },
   {
     id: "h3",
-    service: "Mulching",
+    service: "Weeding/Mulching",
     customer: "Alex T.",
     landscaper: "GreenScape Pros",
     date: "Mar 15, 2026",
@@ -83,7 +83,7 @@ const SERVICE_HISTORY = [
   },
   {
     id: "h4",
-    service: "Lawn Mowing",
+    service: "Mowing/Edging",
     customer: "Priya N.",
     landscaper: "GreenScape Pros",
     date: "Feb 22, 2026",

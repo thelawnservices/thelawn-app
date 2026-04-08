@@ -29,7 +29,7 @@ export default function ReviewScreen() {
   const topPadding = isWeb ? 67 : insets.top;
   const bottomPadding = isWeb ? 34 : insets.bottom;
 
-  const serviceName = params.serviceName || "Lawn Mowing";
+  const serviceName = params.serviceName || "Mowing/Edging";
   const price = parseFloat(params.price || "45");
   const tip = Math.round(price * TIP_OPTIONS[tipIdx].value * 100) / 100;
   const fee = Math.round(price * 0.03 * 100) / 100;

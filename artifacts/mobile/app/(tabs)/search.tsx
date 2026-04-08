@@ -17,7 +17,7 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 
-const FILTERS = ["All", "Lawn Mowing", "Hedge Trimming", "Mulching", "Cleanup"];
+const FILTERS = ["All", "Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf"];
 
 const PROS = [
   {
@@ -28,7 +28,7 @@ const PROS = [
     reviews: 128,
     price: 45,
     distance: "0.8 mi",
-    tags: ["Lawn Mowing"],
+    tags: ["Mowing/Edging"],
     initials: "JR",
     color: "#FFFFFF",
     trusted: true,
@@ -41,7 +41,7 @@ const PROS = [
     reviews: 84,
     price: 65,
     distance: "1.2 mi",
-    tags: ["Lawn Mowing", "Hedge Trimming", "Mulching"],
+    tags: ["Mowing/Edging", "Weeding/Mulching", "Sod Installation"],
     initials: "GP",
     color: "#166D42",
     trusted: true,
@@ -54,7 +54,7 @@ const PROS = [
     reviews: 61,
     price: 40,
     distance: "2.1 mi",
-    tags: ["Hedge Trimming", "Cleanup"],
+    tags: ["Weeding/Mulching", "Mowing/Edging"],
     initials: "MS",
     color: "#4CAF50",
     trusted: false,
@@ -62,12 +62,12 @@ const PROS = [
   {
     id: "4",
     name: "EcoGreen Services",
-    specialty: "Mulching & Yard Care",
+    specialty: "Sod & Turf Specialists",
     rating: 4.6,
     reviews: 43,
-    price: 50,
+    price: 350,
     distance: "2.8 mi",
-    tags: ["Mulching", "Cleanup"],
+    tags: ["Sod Installation", "Artificial Turf"],
     initials: "EG",
     color: "#2E7D32",
     trusted: false,
@@ -77,11 +77,11 @@ const PROS = [
 const SORT_OPTIONS = ["Recommended", "Closest", "Highest Rated"];
 
 const SERVICE_REQUESTS = [
-  { id: "r1", service: "Lawn Mowing", size: "Medium", customer: "Alex T.", distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible", budget: "$65", description: "Medium yard, front and back. Nothing special, straightforward job.", address: "8910 45th Ave E, Ellenton, FL" },
-  { id: "r2", service: "Hedge Trimming", size: "Small", customer: "Priya N.", distance: "3.1 mi", zip: "34208", date: "Apr 16", time: "Morning preferred", budget: "$55", description: "Small hedges along fence line. Should take about 1 hour.", address: "22 Palmetto Dr, Bradenton, FL" },
-  { id: "r3", service: "Mulching", size: "Large", customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM", budget: "$180", description: "Large backyard needs fresh mulch around all flower beds and trees.", address: "4400 53rd Ave E, Bradenton, FL" },
-  { id: "r4", service: "Clean Up", size: "Small", customer: "Sarah B.", distance: "0.9 mi", zip: "34219", date: "Apr 17", time: "10:00 AM", budget: "$30", description: "Light cleanup — leaves and debris in driveway and side yard.", address: "712 Riviera Dunes Way, Palmetto, FL" },
-  { id: "r5", service: "Lawn Mowing", size: "Large", customer: "James W.", distance: "4.5 mi", zip: "34211", date: "Apr 18", time: "7:30 AM", budget: "$120", description: "Large corner lot. Needs edging along sidewalk and driveway too.", address: "6021 Greenfield Way, Lakewood Ranch, FL" },
+  { id: "r1", service: "Mowing/Edging",    size: "Medium", customer: "Alex T.",   distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible",          budget: "$70",   description: "Front and back yard, medium lot. Edge along the driveway and sidewalk.",              address: "8910 45th Ave E, Ellenton, FL" },
+  { id: "r2", service: "Weeding/Mulching", size: "Small",  customer: "Priya N.",  distance: "3.1 mi", zip: "34208", date: "Apr 16", time: "Morning preferred",  budget: "$90",   description: "Flower beds need weeding and about 2 yards of fresh mulch around shrubs.",            address: "22 Palmetto Dr, Bradenton, FL" },
+  { id: "r3", service: "Sod Installation", size: "Large",  customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM",            budget: "$850",  description: "Large back yard needs full sod replacement — approx 1,000 sq ft.",                   address: "4400 53rd Ave E, Bradenton, FL" },
+  { id: "r4", service: "Artificial Turf",  size: "Small",  customer: "Sarah B.",  distance: "0.9 mi", zip: "34219", date: "Apr 17", time: "10:00 AM",           budget: "$1200", description: "Small side yard conversion to artificial turf. Pet-friendly material preferred.",      address: "712 Riviera Dunes Way, Palmetto, FL" },
+  { id: "r5", service: "Mowing/Edging",    size: "Large",  customer: "James W.",  distance: "4.5 mi", zip: "34211", date: "Apr 18", time: "7:30 AM",            budget: "$100",  description: "Large corner lot, front and back. Edge along sidewalk and entire driveway perimeter.", address: "6021 Greenfield Way, Lakewood Ranch, FL" },
 ];
 
 export default function SearchScreen() {

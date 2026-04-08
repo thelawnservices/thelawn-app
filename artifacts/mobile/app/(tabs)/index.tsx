@@ -730,16 +730,16 @@ const helpStyles = StyleSheet.create({
 });
 
 const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const AVAIL_SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up"];
+const AVAIL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf"];
 
 type ServiceAvail = { days: string[]; startTime: string; endTime: string };
 type AvailState = Record<string, ServiceAvail>;
 
 const DEFAULT_AVAIL: AvailState = {
-  "Lawn Mowing": { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "08:00", endTime: "18:00" },
-  "Hedge Trimming": { days: ["Tue", "Thu"], startTime: "09:00", endTime: "17:00" },
-  "Mulching": { days: ["Mon", "Wed", "Fri"], startTime: "08:00", endTime: "16:00" },
-  "Clean Up": { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "07:00", endTime: "17:00" },
+  "Mowing/Edging":    { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "08:00", endTime: "18:00" },
+  "Weeding/Mulching": { days: ["Tue", "Thu"], startTime: "09:00", endTime: "17:00" },
+  "Sod Installation": { days: ["Mon", "Wed", "Fri"], startTime: "07:00", endTime: "17:00" },
+  "Artificial Turf":  { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "07:00", endTime: "16:00" },
 };
 
 function ServiceAvailabilityModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -1182,10 +1182,10 @@ export default function HomeScreen() {
             </Text>
             <View style={styles.servicesGrid}>
               {[
-                { name: "Lawn\nMowing",    icon: "leaf" as const,   avg: "Avg $52" },
-                { name: "Hedge\nTrimming", icon: "cut" as const,    avg: "Avg $68" },
-                { name: "Mulching",        icon: "flower" as const, avg: "Avg $135" },
-                { name: "Clean Up",        icon: "trash" as const,  avg: "Avg $38" },
+                { name: "Mowing/\nEdging",    icon: "cut-outline" as const,    avg: "Avg $70",   est: "1–2 hrs" },
+                { name: "Weeding/\nMulching", icon: "flower-outline" as const, avg: "Avg $130",  est: "2–4 hrs" },
+                { name: "Sod\nInstallation", icon: "grid-outline" as const,   avg: "Avg $550",  est: "4–8 hrs" },
+                { name: "Artificial\nTurf",  icon: "layers-outline" as const, avg: "Avg $1,800", est: "10–20 hrs" },
               ].map((svc) => (
                 <TouchableOpacity
                   key={svc.name}
@@ -1203,7 +1203,7 @@ export default function HomeScreen() {
                     {svc.avg}
                   </Text>
                   <Text style={[styles.svcGridUpdated, { fontFamily: "Inter_400Regular" }]}>
-                    Updated daily
+                    Est. {svc.est}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -1468,7 +1468,7 @@ function LandscaperProfileViewModal({
             {/* About */}
             <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>ABOUT</Text>
             <Text style={[fsStyles.aboutText, { fontFamily: "Inter_400Regular" }]}>
-              Professional landscaping services with outstanding reviews. Specializing in lawn mowing, hedge trimming, mulching, and clean-up for residential properties in the Sarasota / Ellenton area.
+              Professional landscaping services with outstanding reviews. Specializing in mowing/edging, weeding/mulching, sod installation, and artificial turf for residential properties in the Sarasota / Ellenton area.
             </Text>
 
             {/* Services & Pricing */}

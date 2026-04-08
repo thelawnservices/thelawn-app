@@ -123,7 +123,7 @@ function NewRequestModal({
   const [desc, setDesc] = useState("");
   const [budget, setBudget] = useState("");
 
-  const SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up", "Fertilization", "Landscaping", "Other"];
+  const SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf"];
 
   function handleSubmit() {
     if (!service || !desc.trim()) {
