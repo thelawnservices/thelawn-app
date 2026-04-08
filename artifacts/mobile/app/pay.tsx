@@ -167,7 +167,7 @@ export default function PayScreen() {
   const [serviceAddress, setServiceAddress] = useState("");
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<PhotoIcon[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<"applepay" | "debit" | "venmo" | "paypal" | "cashapp">("applepay");
+  const [paymentMethod, setPaymentMethod] = useState<"applepay" | "debit" | "venmo" | "paypal" | "cashapp" | "inperson">("applepay");
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvv, setCardCvv] = useState("");
@@ -197,7 +197,7 @@ export default function PayScreen() {
       : tipPresetIdx !== null
       ? TIP_OPTIONS[tipPresetIdx].label
       : "–";
-  const fee = Math.round(basePrice * 0.03 * 100) / 100;
+  const fee = paymentMethod === "inperson" ? 0 : Math.round(basePrice * 0.03 * 100) / 100;
   const total = (basePrice + tip + fee).toFixed(2);
 
   const canContinueFromAvailability = selectedDateIdx !== null && selectedTime !== null;
@@ -230,6 +230,7 @@ export default function PayScreen() {
   };
 
   const validatePayment = (): string | true => {
+    if (paymentMethod === "inperson") return true;
     if (paymentMethod === "applepay") return true;
     if (paymentMethod === "debit") {
       const raw = cardNumber.replace(/\s/g, "");
@@ -261,7 +262,10 @@ export default function PayScreen() {
     venmo: "Venmo",
     paypal: "PayPal",
     cashapp: "Cash App",
+    inperson: "In Person",
   };
+
+  const isInPerson = paymentMethod === "inperson";
 
   const handleAuthorize = () => {
     const valid = validatePayment();
@@ -272,6 +276,11 @@ export default function PayScreen() {
     if (selectedDateLabel && selectedTime) {
       const primaryService = [...selectedServices][0] ?? "Service";
       addBookedSlot(selectedDateLabel, selectedTime, bookingDurationMinutes, primaryService);
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (isInPerson) {
+      setPayState("success");
+      return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setPayState("processing");
@@ -300,6 +309,69 @@ export default function PayScreen() {
 
   // ─── Success ──────────────────────────────────────────────────
   if (payState === "success") {
+    if (isInPerson) {
+      return (
+        <View style={[styles.fullCenter, { backgroundColor: "#0A0A0A", paddingBottom: bottomPadding + 20 }]}>
+          <View style={[styles.lockIconBox, { backgroundColor: "#0d2e18" }]}>
+            <Ionicons name="handshake-outline" size={52} color="#34FF7A" />
+          </View>
+          <Text style={[styles.successTitle, { fontFamily: "Inter_700Bold" }]}>
+            Booking Confirmed!
+          </Text>
+          <Text style={[styles.successSub, { fontFamily: "Inter_400Regular" }]}>
+            Your appointment with {proName.split(" ")[0]} is scheduled. Pay them directly when they arrive — no funds are held online.
+          </Text>
+
+          <View style={styles.escrowInfoBox}>
+            <View style={styles.escrowStep}>
+              <View style={[styles.escrowStepNum, { backgroundColor: "#0d2e18" }]}>
+                <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>1</Text>
+              </View>
+              <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
+                {proName.split(" ")[0]} arrives on {selectedDateLabel} at {selectedTime}
+              </Text>
+            </View>
+            <View style={styles.escrowStep}>
+              <View style={[styles.escrowStepNum, { backgroundColor: "#0d2e18" }]}>
+                <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>2</Text>
+              </View>
+              <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
+                Work is completed to your satisfaction
+              </Text>
+            </View>
+            <View style={styles.escrowStep}>
+              <View style={[styles.escrowStepNum, { backgroundColor: "#0d2e18" }]}>
+                <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>3</Text>
+              </View>
+              <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
+                Pay ${total} directly to {proName.split(" ")[0]} in person
+              </Text>
+            </View>
+          </View>
+
+          <View style={inPersonStyles.noEscrowBadge}>
+            <Ionicons name="checkmark-circle" size={16} color="#34FF7A" />
+            <Text style={[inPersonStyles.noEscrowText, { fontFamily: "Inter_500Medium" }]}>
+              No payment held · No confirmation required from either side
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={[styles.successBtn, { width: "100%" }]}
+            onPress={() => { router.dismiss(); router.navigate("/(tabs)/appointments"); }}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.successBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+              View Appointment
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.dismiss()} style={styles.doneLink}>
+            <Text style={[styles.doneLinkText, { fontFamily: "Inter_400Regular" }]}>Done</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
     return (
       <View style={[styles.fullCenter, { backgroundColor: "#0A0A0A", paddingBottom: bottomPadding + 20 }]}>
         <View style={styles.lockIconBox}>
