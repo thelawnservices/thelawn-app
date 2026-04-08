@@ -253,7 +253,7 @@ export default function RequestsScreen() {
         {isLandscaper && (
           <View style={styles.radiusBadge}>
             <Ionicons name="location-outline" size={12} color="#34FF7A" />
-            <Text style={[styles.radiusText, { fontFamily: "Inter_500Medium" }]}>Within 50 mi</Text>
+            <Text style={[styles.radiusText, { fontFamily: "Inter_500Medium" }]}>Within 25 mi</Text>
           </View>
         )}
       </View>

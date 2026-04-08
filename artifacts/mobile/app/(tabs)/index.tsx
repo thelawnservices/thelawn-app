@@ -1086,7 +1086,7 @@ export default function HomeScreen() {
           </Text>
           <Text style={[styles.greetingZip, { fontFamily: "Inter_400Regular" }]}>
             {role === "landscaper"
-              ? "Pending requests within 50 mi · ZIP 34222"
+              ? "Pending requests within 25 mi · ZIP 34222"
               : "Landscapers near you · ZIP 34222"}
           </Text>
         </View>
@@ -1211,13 +1211,49 @@ export default function HomeScreen() {
           </>
         )}
 
-        {/* Pending Customer Requests — landscapers only */}
+        {/* Quick Stats — landscapers only, shown first */}
+        {role === "landscaper" && (
+          <View style={styles.statsRow}>
+            {LANDSCAPER_QUICK_STATS.map((s, i) => (
+              <AnimatedStatCard key={s.label} stat={s} delay={i * 120} />
+            ))}
+          </View>
+        )}
+
+        {/* Upcoming Appointment — landscapers only, shown second */}
+        {role === "landscaper" && (
+          <>
+            <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
+              Upcoming Appointment
+            </Text>
+            <TouchableOpacity
+              style={styles.appointmentCard}
+              onPress={() => router.navigate("/(tabs)/appointments")}
+              activeOpacity={0.8}
+            >
+              <View style={styles.apptIcon}>
+                <Ionicons name="leaf" size={22} color="#34FF7A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
+                  Lawn Mowing
+                </Text>
+                <Text style={[styles.apptSub, { fontFamily: "Inter_400Regular" }]}>
+                  April 12 • 10:30 AM • John Rivera
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
+            </TouchableOpacity>
+          </>
+        )}
+
+        {/* Pending Customer Requests — landscapers only, shown third */}
         {role === "landscaper" && (() => {
           const visible = HOME_PENDING_REQUESTS.filter((r) => !acceptedOnHome.includes(r.id));
           return (
             <>
               <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-                Pending Requests Within 50 Miles
+                Pending Requests Within 25 Miles
               </Text>
               {visible.length === 0 ? (
                 <View style={styles.pendingEmptyBox}>
@@ -1283,40 +1319,19 @@ export default function HomeScreen() {
           );
         })()}
 
-        {/* Upcoming */}
-        <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-          Upcoming Appointment
-        </Text>
-        <TouchableOpacity
-          style={styles.appointmentCard}
-          onPress={() => router.navigate("/(tabs)/appointments")}
-          activeOpacity={0.8}
-        >
-          <View style={styles.apptIcon}>
-            <Ionicons name="leaf" size={22} color="#34FF7A" />
+        {/* Quick Stats — customers only */}
+        {role !== "landscaper" && (
+          <View style={styles.statsRow}>
+            {customerQuickStats.map((s, i) => (
+              <AnimatedStatCard
+                key={s.label}
+                stat={s}
+                delay={i * 120}
+                onPress={s.label === "Favorites" ? () => setFavoritesModalVisible(true) : undefined}
+              />
+            ))}
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
-              Lawn Mowing
-            </Text>
-            <Text style={[styles.apptSub, { fontFamily: "Inter_400Regular" }]}>
-              April 12 • 10:30 AM • John Rivera
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
-        </TouchableOpacity>
-
-        {/* Quick Stats — staggered entrance, role-aware */}
-        <View style={styles.statsRow}>
-          {(role === "landscaper" ? LANDSCAPER_QUICK_STATS : customerQuickStats).map((s, i) => (
-            <AnimatedStatCard
-              key={s.label}
-              stat={s}
-              delay={i * 120}
-              onPress={role === "customer" && s.label === "Favorites" ? () => setFavoritesModalVisible(true) : undefined}
-            />
-          ))}
-        </View>
+        )}
 
       </ScrollView>
 
