@@ -127,13 +127,17 @@ export default function PayScreen() {
   }, [availability.days]);
 
   const timeSlots = useMemo(() => {
-    const startMin = parseTimeToMinutes(availability.startTime || "9:00 AM");
+    const startMin = parseTimeToMinutes(availability.startTime || "8:00 AM");
     const endMin = parseTimeToMinutes(availability.endTime || "6:00 PM");
     const slots: string[] = [];
-    for (let t = startMin; t + 60 <= endMin; t += 90) {
+    for (let t = startMin; t < endMin; t += 30) {
       slots.push(minutesToTimeString(t));
     }
-    return slots.length > 0 ? slots : ["9:00 AM", "10:30 AM", "1:00 PM", "2:30 PM", "4:00 PM"];
+    return slots.length > 0 ? slots : [
+      "8:00 AM","8:30 AM","9:00 AM","9:30 AM","10:00 AM","10:30 AM",
+      "11:00 AM","11:30 AM","12:00 PM","12:30 PM","1:00 PM","1:30 PM",
+      "2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM","4:30 PM","5:00 PM",
+    ];
   }, [availability.startTime, availability.endTime]);
 
   const [payState, setPayState] = useState<PayState>("availability");
@@ -159,19 +163,42 @@ export default function PayScreen() {
   );
 
   const availableTimeSlotsForDate = useMemo(() => {
-    if (selectedDateIdx === null || !rollingDates[selectedDateIdx]) return timeSlots;
-    const dateKey = `${rollingDates[selectedDateIdx].month} ${rollingDates[selectedDateIdx].dateNum}, ${rollingDates[selectedDateIdx].year}`;
-    const slotsTaken = bookedSlots[dateKey] ?? [];
+    const endMin = parseTimeToMinutes(availability.endTime || "6:00 PM");
+    const slotsTaken =
+      selectedDateIdx !== null && rollingDates[selectedDateIdx]
+        ? (bookedSlots[
+            `${rollingDates[selectedDateIdx].month} ${rollingDates[selectedDateIdx].dateNum}, ${rollingDates[selectedDateIdx].year}`
+          ] ?? [])
+        : [];
     return timeSlots.filter((slot) => {
       const slotStart = parseTimeToMinutes(slot);
+      const slotEnd = slotStart + bookingDurationMinutes;
+      if (slotEnd > endMin) return false;
       return !slotsTaken.some(({ time, durationMinutes }) => {
         const bookedStart = parseTimeToMinutes(time);
         const bookedEnd = bookedStart + durationMinutes;
-        const slotEnd = slotStart + bookingDurationMinutes;
         return slotStart < bookedEnd && slotEnd > bookedStart;
       });
     });
-  }, [selectedDateIdx, timeSlots, bookedSlots, rollingDates, bookingDurationMinutes]);
+  }, [selectedDateIdx, timeSlots, bookedSlots, rollingDates, bookingDurationMinutes, availability.endTime]);
+
+  const getBlockingService = useMemo(() => {
+    if (selectedDateIdx === null || !rollingDates[selectedDateIdx]) return (_slot: string): string | null => null;
+    const dateKey = `${rollingDates[selectedDateIdx].month} ${rollingDates[selectedDateIdx].dateNum}, ${rollingDates[selectedDateIdx].year}`;
+    const slotsTaken = bookedSlots[dateKey] ?? [];
+    const endMin = parseTimeToMinutes(availability.endTime || "6:00 PM");
+    return (slot: string): string | null => {
+      const slotStart = parseTimeToMinutes(slot);
+      const slotEnd = slotStart + bookingDurationMinutes;
+      if (slotEnd > endMin) return "Outside hours";
+      const conflict = slotsTaken.find(({ time, durationMinutes }) => {
+        const bookedStart = parseTimeToMinutes(time);
+        const bookedEnd = bookedStart + durationMinutes;
+        return slotStart < bookedEnd && slotEnd > bookedStart;
+      });
+      return conflict ? conflict.service : null;
+    };
+  }, [selectedDateIdx, bookedSlots, rollingDates, bookingDurationMinutes, availability.endTime]);
   const [recurring, setRecurring] = useState(false);
   const [recurringFreq, setRecurringFreq] = useState<"Weekly" | "Bi-weekly" | "Monthly">("Weekly");
   const [recurringStart, setRecurringStart] = useState("Apr 7, 2026");
@@ -580,6 +607,7 @@ export default function PayScreen() {
             {timeSlots.map((t) => {
               const isAvail = availableTimeSlotsForDate.includes(t);
               const isBooked = !isAvail;
+              const blockingService = isBooked ? getBlockingService(t) : null;
               const isSelected = selectedTime === t;
               const isDisabled = selectedDateIdx === null || isBooked;
               return (
@@ -609,8 +637,15 @@ export default function PayScreen() {
                   >
                     {t}
                   </Text>
-                  {isBooked && (
-                    <Text style={[styles.timeTileBookedLabel, { fontFamily: "Inter_400Regular" }]}>Booked</Text>
+                  {isBooked && blockingService && blockingService !== "Outside hours" && (
+                    <Text style={[styles.timeTileBookedLabel, { fontFamily: "Inter_400Regular" }]} numberOfLines={1}>
+                      {blockingService}
+                    </Text>
+                  )}
+                  {isBooked && blockingService === "Outside hours" && (
+                    <Text style={[styles.timeTileBookedLabel, { fontFamily: "Inter_400Regular", color: "#555" }]}>
+                      Outside hrs
+                    </Text>
                   )}
                 </TouchableOpacity>
               );
@@ -621,6 +656,22 @@ export default function PayScreen() {
             <Text style={[styles.hintText, { fontFamily: "Inter_400Regular" }]}>
               Select a date above to see available times
             </Text>
+          )}
+          {selectedDateIdx !== null && (
+            <View style={{ flexDirection: "row", gap: 16, marginTop: 8, paddingHorizontal: 2, flexWrap: "wrap" }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: "#34FF7A" }} />
+                <Text style={{ fontSize: 11, color: "#999", fontFamily: "Inter_400Regular" }}>Available</Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: "#2a0a0a" }} />
+                <Text style={{ fontSize: 11, color: "#999", fontFamily: "Inter_400Regular" }}>Booked</Text>
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: "#1a1a1a" }} />
+                <Text style={{ fontSize: 11, color: "#999", fontFamily: "Inter_400Regular" }}>Outside hours</Text>
+              </View>
+            </View>
           )}
 
           {/* Recurring Appointment */}
