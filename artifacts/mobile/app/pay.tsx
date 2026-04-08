@@ -74,8 +74,18 @@ export default function PayScreen() {
   const proColor = params.proColor || "#34FF7A";
 
   const [payState, setPayState] = useState<PayState>("availability");
-  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
   const [selectedYardSize, setSelectedYardSize] = useState<string | null>(null);
+
+  const toggleService = (name: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedServices((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
   const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [recurring, setRecurring] = useState(false);
@@ -98,8 +108,8 @@ export default function PayScreen() {
   const spinValue = useRef(new Animated.Value(0)).current;
 
   const basePrice =
-    selectedService && selectedYardSize
-      ? (PRICE_MATRIX[selectedService]?.[selectedYardSize] ?? 45)
+    selectedServices.size > 0 && selectedYardSize
+      ? [...selectedServices].reduce((sum, svc) => sum + (PRICE_MATRIX[svc]?.[selectedYardSize] ?? 0), 0)
       : 45;
 
   const tip =
@@ -122,7 +132,7 @@ export default function PayScreen() {
   const total = (basePrice + tip + fee).toFixed(2);
 
   const canContinueFromAvailability = selectedDateIdx !== null && selectedTime !== null;
-  const canContinueFromDetails = selectedService !== null && serviceAddress.trim().length > 0 && selectedYardSize !== null;
+  const canContinueFromDetails = selectedServices.size > 0 && serviceAddress.trim().length > 0 && selectedYardSize !== null;
 
   useEffect(() => {
     if (payState === "processing") {
@@ -265,7 +275,7 @@ export default function PayScreen() {
           activeOpacity={0.85}
         >
           <Text style={[styles.successBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-            View in My Jobs
+            View in My Service
           </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => router.dismiss()} style={styles.doneLink}>
@@ -533,28 +543,51 @@ export default function PayScreen() {
             Service Type{" "}
             <Text style={{ color: "#ef4444" }}>*</Text>
           </Text>
+          <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+            Select one or more services
+          </Text>
           <View style={styles.serviceGrid}>
-            {SERVICE_OPTIONS.map((svc) => (
-              <TouchableOpacity
-                key={svc.label}
-                style={[styles.serviceTile, selectedService === svc.label && styles.serviceTileActive]}
-                onPress={() => {
-                  setSelectedService(svc.label);
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.serviceEmoji}>{svc.emoji}</Text>
-                <Text style={[
-                  styles.serviceLabel,
-                  { fontFamily: "Inter_600SemiBold" },
-                  selectedService === svc.label && styles.serviceLabelActive,
-                ]}>
-                  {svc.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {SERVICE_OPTIONS.map((svc) => {
+              const isSelected = selectedServices.has(svc.label);
+              return (
+                <TouchableOpacity
+                  key={svc.label}
+                  style={[styles.serviceTile, isSelected && styles.serviceTileActive]}
+                  onPress={() => toggleService(svc.label)}
+                  activeOpacity={0.8}
+                >
+                  {isSelected && (
+                    <View style={styles.serviceCheckBadge}>
+                      <Ionicons name="checkmark" size={13} color="#000" />
+                    </View>
+                  )}
+                  <Text style={styles.serviceEmoji}>{svc.emoji}</Text>
+                  <Text style={[
+                    styles.serviceLabel,
+                    { fontFamily: "Inter_600SemiBold" },
+                    isSelected && styles.serviceLabelActive,
+                  ]}>
+                    {svc.label}
+                  </Text>
+                  {selectedYardSize && (
+                    <Text style={[styles.serviceTilePrice, { fontFamily: "Inter_600SemiBold" }, isSelected && { color: "#34FF7A" }]}>
+                      ${PRICE_MATRIX[svc.label]?.[selectedYardSize] ?? "–"}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
+          {selectedServices.size > 1 && selectedYardSize && (
+            <View style={styles.multiServiceTotal}>
+              <Text style={[{ color: "#888", fontSize: 13 }, { fontFamily: "Inter_400Regular" }]}>
+                {[...selectedServices].join(" + ")}
+              </Text>
+              <Text style={[{ color: "#34FF7A", fontSize: 15 }, { fontFamily: "Inter_700Bold" }]}>
+                ${[...selectedServices].reduce((s, n) => s + (PRICE_MATRIX[n]?.[selectedYardSize] ?? 0), 0)} total
+              </Text>
+            </View>
+          )}
 
           {/* Service Address */}
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 8 }]}>
@@ -603,9 +636,9 @@ export default function PayScreen() {
                 <Text style={[styles.yardChipSub, { fontFamily: "Inter_400Regular" }, selectedYardSize === ys.key && styles.yardChipSubActive]}>
                   {ys.sub}
                 </Text>
-                {selectedYardSize === ys.key && selectedService && (
-                  <Text style={[styles.yardChipPrice, { fontFamily: "Inter_700Bold" }]}>
-                    ${PRICE_MATRIX[selectedService]?.[ys.key] ?? "–"}
+                {selectedServices.size > 0 && (
+                  <Text style={[styles.yardChipPrice, { fontFamily: "Inter_700Bold" }, selectedYardSize === ys.key && { color: "#34FF7A" }]}>
+                    ${[...selectedServices].reduce((s, n) => s + (PRICE_MATRIX[n]?.[ys.key] ?? 0), 0)}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -671,7 +704,9 @@ export default function PayScreen() {
             activeOpacity={canContinueFromDetails ? 0.85 : 1}
           >
             <Text style={[styles.continueBtnText, { fontFamily: "Inter_700Bold" }]}>
-              {!serviceAddress.trim()
+              {selectedServices.size === 0
+                ? "Select a service type"
+                : !serviceAddress.trim()
                 ? "Enter a service address"
                 : !selectedYardSize
                 ? "Select your yard size"
@@ -708,7 +743,7 @@ export default function PayScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.summaryService, { fontFamily: "Inter_600SemiBold" }]}>
-              {selectedService ?? "Lawn Mowing"}{selectedYardSize ? ` · ${selectedYardSize} yard` : ""}
+              {selectedServices.size > 0 ? [...selectedServices].join(" + ") : "Lawn Mowing"}{selectedYardSize ? ` · ${selectedYardSize} yard` : ""}
             </Text>
             {recurring && (
               <View style={styles.recurringBadge}>
@@ -1496,15 +1531,41 @@ const styles = StyleSheet.create({
     borderColor: "#222222",
     padding: 24,
     alignItems: "center",
-    gap: 10,
+    gap: 8,
+    position: "relative",
   },
   serviceTileActive: {
     backgroundColor: "#0d2e18",
     borderColor: "#34FF7A",
+    borderWidth: 2,
+  },
+  serviceCheckBadge: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#34FF7A",
+    alignItems: "center",
+    justifyContent: "center",
   },
   serviceEmoji: { fontSize: 44 },
   serviceLabel: { fontSize: 14, color: "#FFFFFF", textAlign: "center" },
   serviceLabelActive: { color: "#34FF7A" },
+  serviceTilePrice: { fontSize: 15, color: "#888", marginTop: 2 },
+  multiServiceTotal: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#0d2e18",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: "rgba(52,255,122,0.25)",
+  },
 
   yardSizeRow: { flexDirection: "row", gap: 10, marginBottom: 4 },
   yardChip: {
