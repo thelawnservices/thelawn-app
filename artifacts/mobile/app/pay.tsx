@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 
 type PayState = "availability" | "details" | "review" | "processing" | "success";
 
@@ -46,16 +47,24 @@ const PRICE_MATRIX: Record<string, Record<string, number>> = {
 const PHOTO_ICONS = ["tree-outline", "camera-outline", "home-outline", "flower-outline", "leaf-outline", "leaf"] as const;
 type PhotoIcon = typeof PHOTO_ICONS[number];
 
-const DATES = [
-  { label: "Mon", date: "Apr 7" },
-  { label: "Tue", date: "Apr 8" },
-  { label: "Wed", date: "Apr 9" },
-  { label: "Thu", date: "Apr 10" },
-  { label: "Fri", date: "Apr 11" },
-  { label: "Sat", date: "Apr 12" },
-];
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-const TIME_SLOTS = ["9:00 AM", "10:30 AM", "1:00 PM", "2:30 PM", "4:00 PM", "5:30 PM"];
+function parseTimeToMinutes(t: string): number {
+  const [timePart, period] = t.split(" ");
+  let [h, m] = timePart.split(":").map(Number);
+  if (period === "PM" && h !== 12) h += 12;
+  if (period === "AM" && h === 12) h = 0;
+  return h * 60 + (m || 0);
+}
+
+function minutesToTimeString(minutes: number): string {
+  const h24 = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  const period = h24 >= 12 ? "PM" : "AM";
+  const h12 = h24 % 12 || 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+}
 
 export default function PayScreen() {
   const insets = useSafeAreaInsets();
@@ -73,6 +82,37 @@ export default function PayScreen() {
   const proName = params.proName || "John Rivera";
   const proInitials = params.proInitials || "JR";
   const proColor = params.proColor || "#34FF7A";
+
+  const { availability } = useLandscaperProfile();
+
+  const rollingDates = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const result = [];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const dayName = DAY_LABELS[d.getDay()];
+      result.push({
+        label: dayName,
+        dateNum: String(d.getDate()),
+        month: MONTH_NAMES[d.getMonth()],
+        year: d.getFullYear(),
+        available: availability.days[dayName] !== false,
+      });
+    }
+    return result;
+  }, [availability.days]);
+
+  const timeSlots = useMemo(() => {
+    const startMin = parseTimeToMinutes(availability.startTime || "9:00 AM");
+    const endMin = parseTimeToMinutes(availability.endTime || "6:00 PM");
+    const slots: string[] = [];
+    for (let t = startMin; t + 60 <= endMin; t += 90) {
+      slots.push(minutesToTimeString(t));
+    }
+    return slots.length > 0 ? slots : ["9:00 AM", "10:30 AM", "1:00 PM", "2:30 PM", "4:00 PM"];
+  }, [availability.startTime, availability.endTime]);
 
   const [payState, setPayState] = useState<PayState>("availability");
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
@@ -210,8 +250,8 @@ export default function PayScreen() {
   };
 
   const selectedDateLabel =
-    selectedDateIdx !== null
-      ? `${DATES[selectedDateIdx].date}, 2026`
+    selectedDateIdx !== null && rollingDates[selectedDateIdx]
+      ? `${rollingDates[selectedDateIdx].month} ${rollingDates[selectedDateIdx].dateNum}, ${rollingDates[selectedDateIdx].year}`
       : null;
 
   // ─── Processing ───────────────────────────────────────────────
@@ -323,59 +363,75 @@ export default function PayScreen() {
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 24 }}>
             <View style={{ flexDirection: "row", gap: 10, paddingRight: 4 }}>
-              {DATES.map((d, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={[
-                    styles.dateTile,
-                    selectedDateIdx === i && styles.dateTileActive,
-                  ]}
-                  onPress={() => {
-                    setSelectedDateIdx(i);
-                    setSelectedTime(null);
-                    Haptics.selectionAsync();
-                  }}
-                >
-                  <Text
+              {rollingDates.map((d, i) => {
+                const isSelected = selectedDateIdx === i;
+                const isUnavailable = !d.available;
+                return (
+                  <TouchableOpacity
+                    key={i}
                     style={[
-                      styles.dateTileDay,
-                      { fontFamily: "Inter_400Regular" },
-                      selectedDateIdx === i && { color: "rgba(255,255,255,0.8)" },
+                      styles.dateTile,
+                      isSelected && styles.dateTileActive,
+                      isUnavailable && styles.dateTileUnavailable,
                     ]}
+                    onPress={() => {
+                      if (isUnavailable) return;
+                      setSelectedDateIdx(i);
+                      setSelectedTime(null);
+                      Haptics.selectionAsync();
+                    }}
+                    disabled={isUnavailable}
+                    activeOpacity={isUnavailable ? 1 : 0.8}
                   >
-                    {d.label}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dateTileDate,
-                      { fontFamily: "Inter_700Bold" },
-                      selectedDateIdx === i && { color: "#fff" },
-                    ]}
-                  >
-                    {d.date.split(" ")[1]}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.dateTileMonth,
-                      { fontFamily: "Inter_400Regular" },
-                      selectedDateIdx === i && { color: "rgba(255,255,255,0.8)" },
-                    ]}
-                  >
-                    {d.date.split(" ")[0]}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      style={[
+                        styles.dateTileDay,
+                        { fontFamily: "Inter_400Regular" },
+                        isUnavailable && styles.dateTileUnavailableText,
+                        isSelected && { color: "rgba(255,255,255,0.8)" },
+                      ]}
+                    >
+                      {d.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.dateTileDate,
+                        { fontFamily: "Inter_700Bold" },
+                        isUnavailable && styles.dateTileUnavailableText,
+                        isSelected && { color: "#fff" },
+                      ]}
+                    >
+                      {d.dateNum}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.dateTileMonth,
+                        { fontFamily: "Inter_400Regular" },
+                        isUnavailable && styles.dateTileUnavailableText,
+                        isSelected && { color: "rgba(255,255,255,0.8)" },
+                      ]}
+                    >
+                      {d.month}
+                    </Text>
+                    {isUnavailable && (
+                      <View style={styles.dateTileX}>
+                        <Ionicons name="close" size={12} color="#444" />
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </ScrollView>
 
           {/* Time slots */}
           <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>
-            {selectedDateIdx !== null
-              ? `Available Times — ${DATES[selectedDateIdx].date}`
+            {selectedDateIdx !== null && rollingDates[selectedDateIdx]
+              ? `Available Times — ${rollingDates[selectedDateIdx].label}, ${rollingDates[selectedDateIdx].month} ${rollingDates[selectedDateIdx].dateNum}`
               : "Available Times"}
           </Text>
           <View style={styles.timeGrid}>
-            {TIME_SLOTS.map((t) => (
+            {timeSlots.map((t) => (
               <TouchableOpacity
                 key={t}
                 style={[
@@ -1151,6 +1207,9 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   dateTileActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  dateTileUnavailable: { backgroundColor: "#111111", borderColor: "#1a1a1a", opacity: 0.45 },
+  dateTileUnavailableText: { color: "#333333" },
+  dateTileX: { position: "absolute", top: 6, right: 6 },
   dateTileDay: { fontSize: 11, color: "#555" },
   dateTileDate: { fontSize: 20, color: "#FFFFFF" },
   dateTileMonth: { fontSize: 11, color: "#555" },
