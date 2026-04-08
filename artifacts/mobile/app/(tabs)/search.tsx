@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
+import { useNotifications } from "@/contexts/notifications";
 
 const FILTERS = ["All", "Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf"];
 
@@ -110,6 +111,7 @@ export default function SearchScreen() {
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
   const [selectedPro, setSelectedPro] = useState<(typeof PROS)[0] | null>(null);
   const { acceptJob, knownCustomers } = useJobs();
+  const { getDiscountForPro } = useNotifications();
 
   const filtered = PROS.filter((p) => {
     const matchesQuery =
@@ -131,6 +133,7 @@ export default function SearchScreen() {
 
   const handleBook = (pro: (typeof PROS)[0], jobAccepted = false) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const disc = getDiscountForPro(pro.name);
     router.push({
       pathname: "/pay",
       params: {
@@ -140,6 +143,10 @@ export default function SearchScreen() {
         price: pro.price.toString(),
         proAcceptedPayments: pro.acceptedPayments.join(","),
         jobAccepted: jobAccepted ? "true" : "false",
+        discountPct: disc?.discountPct != null ? disc.discountPct.toString() : "",
+        discountAmt: disc?.discountAmt != null ? disc.discountAmt.toString() : "",
+        discountLabel: disc?.label ?? "",
+        discountTitle: disc?.announcementTitle ?? "",
       },
     });
   };
@@ -490,13 +497,27 @@ export default function SearchScreen() {
                   </Text>
                 </View>
 
+                {/* Active discount banner */}
+                {(() => {
+                  const disc = getDiscountForPro(pro.name);
+                  if (!disc) return null;
+                  return (
+                    <View style={styles.discountBanner}>
+                      <Ionicons name="pricetag-outline" size={13} color="#FFAA00" />
+                      <Text style={[styles.discountBannerText, { fontFamily: "Inter_600SemiBold" }]}>
+                        {disc.label} — {disc.announcementTitle}
+                      </Text>
+                    </View>
+                  );
+                })()}
+
                 <TouchableOpacity
-                  style={styles.bookBtn}
+                  style={[styles.bookBtn, getDiscountForPro(pro.name) ? styles.bookBtnDiscount : null]}
                   onPress={() => handleBook(pro)}
                   activeOpacity={0.85}
                 >
                   <Text style={[styles.bookBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-                    Book Now
+                    {getDiscountForPro(pro.name) ? `Book Now · ${getDiscountForPro(pro.name)!.label}` : "Book Now"}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -509,6 +530,7 @@ export default function SearchScreen() {
         pro={selectedPro}
         onClose={() => setSelectedPro(null)}
         onBook={(pro) => {
+          const disc = getDiscountForPro(pro.name);
           setSelectedPro(null);
           router.push({
             pathname: "/pay",
@@ -519,6 +541,10 @@ export default function SearchScreen() {
               price: pro.price.toString(),
               proAcceptedPayments: pro.acceptedPayments.join(","),
               jobAccepted: "false",
+              discountPct: disc?.discountPct != null ? disc.discountPct.toString() : "",
+              discountAmt: disc?.discountAmt != null ? disc.discountAmt.toString() : "",
+              discountLabel: disc?.label ?? "",
+              discountTitle: disc?.announcementTitle ?? "",
             },
           });
         }}
@@ -1349,4 +1375,19 @@ const styles = StyleSheet.create({
   },
   payAcceptLabel: { fontSize: 11, color: "#777" },
   payAcceptMethods: { fontSize: 11, color: "#CCCCCC", flex: 1 },
+
+  discountBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#1A1200",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FFAA0030",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    marginBottom: 8,
+  },
+  discountBannerText: { fontSize: 12, color: "#FFAA00", flex: 1 },
+  bookBtnDiscount: { backgroundColor: "#1A6B35", borderWidth: 1, borderColor: "#34FF7A55" },
 });

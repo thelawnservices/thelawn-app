@@ -111,12 +111,22 @@ export default function PayScreen() {
     price: string;
     proAcceptedPayments: string;
     jobAccepted: string;
+    discountPct: string;
+    discountAmt: string;
+    discountLabel: string;
+    discountTitle: string;
   }>();
 
   const proName = params.proName || "John Rivera";
   const proInitials = params.proInitials || "JR";
   const proColor = params.proColor || "#34FF7A";
   const jobAccepted = params.jobAccepted === "true";
+
+  const discountPct = params.discountPct ? parseFloat(params.discountPct) : null;
+  const discountAmt = params.discountAmt ? parseFloat(params.discountAmt) : null;
+  const discountLabel = params.discountLabel || "";
+  const discountTitle = params.discountTitle || "";
+  const hasDiscount = !!(discountPct || discountAmt);
 
   const proAcceptedPayments: PayKey[] = params.proAcceptedPayments
     ? params.proAcceptedPayments.split(",").map((p) => PROFILE_TO_PAY_KEY[p.trim()]).filter(Boolean) as PayKey[]
@@ -247,13 +257,21 @@ export default function PayScreen() {
       ? [...selectedServices].reduce((sum, svc) => sum + (PRICE_MATRIX[svc]?.[selectedYardSize] ?? 0), 0)
       : 45;
 
+  const discountSavings: number = (() => {
+    if (!hasDiscount) return 0;
+    if (discountPct) return Math.round(basePrice * (discountPct / 100) * 100) / 100;
+    if (discountAmt) return Math.min(discountAmt, basePrice);
+    return 0;
+  })();
+  const discountedBase = Math.max(0, basePrice - discountSavings);
+
   const tip =
     tipMode === "none"
       ? 0
       : tipMode === "custom"
       ? Math.max(0, parseFloat(customTipAmount) || 0)
       : tipPresetIdx !== null
-      ? Math.round(basePrice * TIP_OPTIONS[tipPresetIdx].value * 100) / 100
+      ? Math.round(discountedBase * TIP_OPTIONS[tipPresetIdx].value * 100) / 100
       : 0;
   const tipLabel =
     tipMode === "none"
@@ -263,8 +281,8 @@ export default function PayScreen() {
       : tipPresetIdx !== null
       ? TIP_OPTIONS[tipPresetIdx].label
       : "–";
-  const fee = paymentMethod === "inperson" ? 0 : Math.round(basePrice * 0.03 * 100) / 100;
-  const total = (basePrice + tip + fee).toFixed(2);
+  const fee = paymentMethod === "inperson" ? 0 : Math.round(discountedBase * 0.03 * 100) / 100;
+  const total = (discountedBase + tip + fee).toFixed(2);
 
   const canContinueFromAvailability = selectedDateIdx !== null && selectedTime !== null;
   const canContinueFromDetails = selectedServices.size > 0 && serviceAddress.trim().length > 0 && selectedYardSize !== null;
@@ -1100,6 +1118,30 @@ export default function PayScreen() {
           </View>
         )}
 
+        {/* Active discount banner */}
+        {hasDiscount && (
+          <View style={payDiscStyles.discountBanner}>
+            <View style={payDiscStyles.discountBannerLeft}>
+              <Ionicons name="pricetag" size={18} color="#FFAA00" />
+              <View>
+                <Text style={[payDiscStyles.discountBannerTitle, { fontFamily: "Inter_700Bold" }]}>
+                  🎉 Discount Applied: {discountLabel}
+                </Text>
+                {discountTitle ? (
+                  <Text style={[payDiscStyles.discountBannerSub, { fontFamily: "Inter_400Regular" }]}>
+                    {discountTitle}
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+            <View style={payDiscStyles.discountSavingsPill}>
+              <Text style={[payDiscStyles.discountSavingsText, { fontFamily: "Inter_700Bold" }]}>
+                −${discountSavings.toFixed(2)}
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Tip */}
         <Text style={[styles.tipLabel, { fontFamily: "Inter_600SemiBold" }]}>
           Add a tip for {proName.split(" ")[0].toUpperCase()}
@@ -1182,6 +1224,16 @@ export default function PayScreen() {
             <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>Subtotal</Text>
             <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${basePrice.toFixed(2)}</Text>
           </View>
+          {hasDiscount && discountSavings > 0 && (
+            <View style={styles.lineItem}>
+              <Text style={[styles.lineLabel, { fontFamily: "Inter_500Medium", color: "#FFAA00" }]}>
+                Discount ({discountLabel})
+              </Text>
+              <Text style={[styles.lineValue, { fontFamily: "Inter_600SemiBold", color: "#FFAA00" }]}>
+                −${discountSavings.toFixed(2)}
+              </Text>
+            </View>
+          )}
           <View style={styles.lineItem}>
             <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>Tip ({tipLabel})</Text>
             <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${tip.toFixed(2)}</Text>
@@ -2102,5 +2154,48 @@ const successStyles = StyleSheet.create({
   receiptNoteText: {
     fontSize: 12,
     color: "#BBBBBB",
+  },
+});
+
+const payDiscStyles = StyleSheet.create({
+  discountBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1A1200",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#FFAA0040",
+    padding: 14,
+    marginBottom: 16,
+    gap: 12,
+  },
+  discountBannerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+  },
+  discountBannerTitle: {
+    fontSize: 14,
+    color: "#FFAA00",
+    marginBottom: 2,
+  },
+  discountBannerSub: {
+    fontSize: 12,
+    color: "#AA8800",
+    lineHeight: 16,
+  },
+  discountSavingsPill: {
+    backgroundColor: "#2A1A00",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "#FFAA0050",
+  },
+  discountSavingsText: {
+    fontSize: 14,
+    color: "#FFAA00",
   },
 });
