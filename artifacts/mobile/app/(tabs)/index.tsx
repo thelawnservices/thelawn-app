@@ -35,9 +35,9 @@ const LANDSCAPER_QUICK_STATS = [
 ];
 
 const HOME_PENDING_REQUESTS = [
-  { id: "h1", service: "Lawn Mowing", size: "Medium", customer: "Alex T.", distance: "1.2 mi", zip: "34221", date: "Apr 14", time: "9:00 AM", budget: "$65" },
-  { id: "h2", service: "Hedge Trimming", size: "Small", customer: "Maria K.", distance: "2.4 mi", zip: "34222", date: "Apr 15", time: "11:00 AM", budget: "$55" },
-  { id: "h3", service: "Mulching", size: "Large", customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM", budget: "$180" },
+  { id: "h1", service: "Mowing/Edging",    size: "Medium", customer: "Alex T.",    distance: "1.2 mi", zip: "34221", date: "Apr 14", time: "9:00 AM",  budget: "$70"  },
+  { id: "h2", service: "Weeding/Mulching", size: "Small",  customer: "Maria K.",   distance: "2.4 mi", zip: "34222", date: "Apr 15", time: "11:00 AM", budget: "$90"  },
+  { id: "h3", service: "Sod Installation", size: "Large",  customer: "Carlos R.",  distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM",  budget: "$850" },
 ];
 
 function AnimatedStatCard({ stat, delay, onPress }: { stat: { label: string; value: string; icon: "checkmark-circle" | "star" | "heart" | "cash"; iconColor: string }; delay: number; onPress?: () => void }) {

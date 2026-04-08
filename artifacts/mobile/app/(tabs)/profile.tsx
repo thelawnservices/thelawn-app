@@ -46,17 +46,17 @@ const LANDSCAPER_PAY_OPTIONS = [
 
 type PriceMatrix = Record<string, Record<string, string>>;
 
-const PRICE_SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up"];
+const PRICE_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf"];
 const YARD_COLS = [
   { key: "Small",  label: "Small",  sub: "< 5k sq ft" },
   { key: "Medium", label: "Medium", sub: "5–10k sq ft" },
   { key: "Large",  label: "Large",  sub: "10k+ sq ft" },
 ];
 const DEFAULT_PRICE_MATRIX: Record<string, Record<string, string>> = {
-  "Lawn Mowing":    { Small: "45",  Medium: "65",  Large: "120" },
-  "Hedge Trimming": { Small: "55",  Medium: "75",  Large: "95"  },
-  "Mulching":       { Small: "110", Medium: "140", Large: "180" },
-  "Clean Up":       { Small: "30",  Medium: "40",  Large: "55"  },
+  "Mowing/Edging":    { Small: "45",   Medium: "70",   Large: "100"  },
+  "Weeding/Mulching": { Small: "90",   Medium: "130",  Large: "175"  },
+  "Sod Installation": { Small: "350",  Medium: "550",  Large: "850"  },
+  "Artificial Turf":  { Small: "1200", Medium: "1800", Large: "2800" },
 };
 
 export default function ProfileScreen() {

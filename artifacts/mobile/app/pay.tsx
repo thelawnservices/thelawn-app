@@ -36,11 +36,11 @@ const TIP_OPTIONS = [
   { label: "20%", value: 0.2 },
 ];
 
-const SERVICE_OPTIONS: { label: string; icon: "leaf" | "cut" | "flower" | "trash" }[] = [
-  { label: "Lawn Mowing",    icon: "leaf"   },
-  { label: "Hedge Trimming", icon: "cut"    },
-  { label: "Mulching",       icon: "flower" },
-  { label: "Clean Up",       icon: "trash"  },
+const SERVICE_OPTIONS: { label: string; icon: "cut-outline" | "flower-outline" | "grid-outline" | "layers-outline"; estTime: string }[] = [
+  { label: "Mowing/Edging",     icon: "cut-outline",    estTime: "1–2 hrs" },
+  { label: "Weeding/Mulching",  icon: "flower-outline", estTime: "2–4 hrs" },
+  { label: "Sod Installation",  icon: "grid-outline",   estTime: "4–8 hrs" },
+  { label: "Artificial Turf",   icon: "layers-outline", estTime: "10–20 hrs" },
 ];
 
 const YARD_SIZE_OPTIONS = [
@@ -50,10 +50,10 @@ const YARD_SIZE_OPTIONS = [
 ];
 
 const PRICE_MATRIX: Record<string, Record<string, number>> = {
-  "Lawn Mowing":    { Small: 45,  Medium: 65,  Large: 120 },
-  "Hedge Trimming": { Small: 55,  Medium: 75,  Large: 95  },
-  "Mulching":       { Small: 110, Medium: 140, Large: 180 },
-  "Clean Up":       { Small: 30,  Medium: 40,  Large: 55  },
+  "Mowing/Edging":    { Small: 45,   Medium: 70,   Large: 100  },
+  "Weeding/Mulching": { Small: 90,   Medium: 130,  Large: 175  },
+  "Sod Installation": { Small: 350,  Medium: 550,  Large: 850  },
+  "Artificial Turf":  { Small: 1200, Medium: 1800, Large: 2800 },
 };
 
 const PHOTO_ICONS = ["tree-outline", "camera-outline", "home-outline", "flower-outline", "leaf-outline", "leaf"] as const;
@@ -63,11 +63,11 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const SERVICE_DURATIONS: Record<string, number> = {
-  "Lawn Mowing":    120,
-  "Hedge Trimming":  60,
-  "Mulching":        90,
-  "Clean Up":        60,
-  "Full Service":   150,
+  "Mowing/Edging":    90,
+  "Weeding/Mulching": 180,
+  "Sod Installation": 360,
+  "Artificial Turf":  900,
+  "Full Service":     240,
 };
 
 function parseTimeToMinutes(t: string): number {
@@ -783,6 +783,9 @@ export default function PayScreen() {
                     isSelected && styles.serviceLabelActive,
                   ]}>
                     {svc.label}
+                  </Text>
+                  <Text style={[styles.serviceEstTime, { fontFamily: "Inter_400Regular" }, isSelected && { color: "#34FF7A88" }]}>
+                    Est. {svc.estTime}
                   </Text>
                   {selectedYardSize && (
                     <Text style={[styles.serviceTilePrice, { fontFamily: "Inter_600SemiBold" }, isSelected && { color: "#34FF7A" }]}>
