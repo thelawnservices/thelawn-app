@@ -1288,9 +1288,12 @@ export default function HomeScreen() {
                           {req.service}
                         </Text>
                       </View>
-                      <Text style={[styles.pendingBudget, { fontFamily: "Inter_700Bold" }]}>
-                        {req.budget}
-                      </Text>
+                      <View style={{ alignItems: "flex-end" }}>
+                        <Text style={{ fontSize: 10, color: "#888", fontFamily: "Inter_400Regular" }}>Customer's Offer</Text>
+                        <Text style={[styles.pendingBudget, { fontFamily: "Inter_700Bold" }]}>
+                          {req.budget}
+                        </Text>
+                      </View>
                     </View>
                     <View style={styles.pendingMeta}>
                       <Ionicons name="person-outline" size={12} color="#CCCCCC" />
@@ -1318,16 +1321,29 @@ export default function HomeScreen() {
                       style={styles.pendingAcceptBtn}
                       activeOpacity={0.85}
                       onPress={() => {
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                        setAcceptedOnHome((prev) => [...prev, req.id]);
-                        acceptJob({ id: req.id, service: req.service, size: req.size, customer: req.customer, date: req.date, time: req.time, budget: req.budget, distance: req.distance, zip: req.zip });
-                        const blockMins = SERVICE_BLOCK_MINUTES[req.service] ?? 120;
-                        addBookedSlot(normalizeDateKey(req.date), normalizeTime(req.time), blockMins, req.service);
-                        Alert.alert("Job Accepted", `${req.customer}'s ${req.service} job added to your Appointments.`);
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        Alert.alert(
+                          "Agree to Customer's Price?",
+                          `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer.\n\nThis overrides your standard service rates for this job. No counter-offers.\n\nDo you want to accept?`,
+                          [
+                            { text: "Cancel", style: "cancel" },
+                            {
+                              text: `Accept at ${req.budget}`,
+                              onPress: () => {
+                                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                setAcceptedOnHome((prev) => [...prev, req.id]);
+                                acceptJob({ id: req.id, service: req.service, size: req.size, customer: req.customer, date: req.date, time: req.time, budget: req.budget, distance: req.distance, zip: req.zip });
+                                const blockMins = SERVICE_BLOCK_MINUTES[req.service] ?? 120;
+                                addBookedSlot(normalizeDateKey(req.date), normalizeTime(req.time), blockMins, req.service);
+                                Alert.alert("Job Accepted", `${req.customer}'s ${req.service} job for ${req.budget} has been added to your Appointments.`);
+                              },
+                            },
+                          ]
+                        );
                       }}
                     >
                       <Text style={[styles.pendingAcceptText, { fontFamily: "Inter_600SemiBold" }]}>
-                        Accept Request
+                        Accept at {req.budget}
                       </Text>
                     </TouchableOpacity>
                   </View>

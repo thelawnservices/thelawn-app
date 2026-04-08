@@ -168,8 +168,12 @@ function NewRequestModal({
       Alert.alert("Zip Code Required", "Please enter a valid 5-digit zip code.");
       return;
     }
+    if (!budget.trim()) {
+      Alert.alert("Offer Required", "Please enter the amount you're willing to pay. This becomes the locked price if a landscaper accepts your request — it cannot be changed later.");
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    onSubmit(service, desc, budget, address.trim(), zip.trim());
+    onSubmit(service, desc, budget.trim(), address.trim(), zip.trim());
     setService("");
     setDesc("");
     setBudget("");
@@ -242,11 +246,12 @@ function NewRequestModal({
               returnKeyType="done"
             />
 
-            <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }, { marginTop: 10 }]}>Budget Range (optional)</Text>
+            <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }, { marginTop: 10 }]}>Your Offer — Amount You'll Pay <Text style={{ color: "#34FF7A" }}>*</Text></Text>
             <TextInput
               style={[modalStyles.input, { fontFamily: "Inter_400Regular" }]}
-              placeholder="e.g. $40 – $60"
+              placeholder="e.g. $75"
               placeholderTextColor="#666"
+              keyboardType="numeric"
               value={budget}
               onChangeText={setBudget}
             />
@@ -254,7 +259,7 @@ function NewRequestModal({
             <View style={modalStyles.requiredNote}>
               <Ionicons name="information-circle-outline" size={13} color="#888" />
               <Text style={[modalStyles.requiredNoteText, { fontFamily: "Inter_400Regular" }]}>
-                Address and zip code are required so landscapers can locate your property.
+                Your offer becomes the locked price if a landscaper accepts — it overrides their standard rates and cannot be changed later. Address and zip code are required so landscapers can locate your property.
               </Text>
             </View>
 
@@ -306,7 +311,7 @@ export default function RequestsScreen() {
       zip,
       date: "TBD",
       time: "TBD",
-      budget: budget || "Open to quotes",
+      budget,
       status: "pending" as RequestStatus,
       pro: null,
       postedAgo: "Just now",
@@ -379,8 +384,10 @@ export default function RequestsScreen() {
                     <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{req.date} · {req.time}</Text>
                   </View>
                   <View style={styles.metaRow}>
-                    <Ionicons name="cash-outline" size={12} color="#CCCCCC" />
-                    <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{req.budget}</Text>
+                    <Ionicons name="cash-outline" size={12} color="#34FF7A" />
+                    <Text style={[styles.metaText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>
+                      Customer's Offer: {req.budget}
+                    </Text>
                   </View>
 
                   <View style={styles.incomingFooter}>
@@ -398,7 +405,7 @@ export default function RequestsScreen() {
                         onPress={() => {
                           Alert.alert(
                             "Agree to Customer's Price?",
-                            `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer. No counter-offers.\n\nDo you want to accept?`,
+                            `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer.\n\nThis overrides your standard service rates for this job. No counter-offers.\n\nDo you want to accept?`,
                             [
                               { text: "Cancel", style: "cancel" },
                               {
@@ -451,8 +458,10 @@ export default function RequestsScreen() {
                   </View>
                   {req.budget ? (
                     <View style={styles.metaRow}>
-                      <Ionicons name="cash-outline" size={12} color="#CCCCCC" />
-                      <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{req.budget}</Text>
+                      <Ionicons name="cash-outline" size={12} color="#34FF7A" />
+                      <Text style={[styles.metaText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>
+                        Your Offer: {req.budget}
+                      </Text>
                     </View>
                   ) : null}
 
