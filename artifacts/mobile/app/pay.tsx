@@ -137,6 +137,7 @@ export default function PayScreen() {
   }, [availability.startTime, availability.endTime]);
 
   const [payState, setPayState] = useState<PayState>("availability");
+  const [orderId, setOrderId] = useState<string>("");
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
   const [selectedYardSize, setSelectedYardSize] = useState<string | null>(null);
   const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
@@ -291,6 +292,8 @@ export default function PayScreen() {
       const primaryService = [...selectedServices][0] ?? "Service";
       addBookedSlot(selectedDateLabel, selectedTime, bookingDurationMinutes, primaryService);
     }
+    const newOrderId = `TL-2026-${String(Math.floor(10000 + Math.random() * 89999)).padStart(5, "0")}`;
+    setOrderId(newOrderId);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (isInPerson) {
       setPayState("success");
@@ -370,6 +373,18 @@ export default function PayScreen() {
             </Text>
           </View>
 
+          {/* Order ID */}
+          <View style={successStyles.orderIdRow}>
+            <Ionicons name="receipt-outline" size={14} color="#34FF7A" />
+            <Text style={[successStyles.orderIdText, { fontFamily: "Inter_500Medium" }]}>Order {orderId}</Text>
+          </View>
+          <View style={successStyles.receiptNote}>
+            <Ionicons name="mail-outline" size={13} color="#BBBBBB" />
+            <Text style={[successStyles.receiptNoteText, { fontFamily: "Inter_400Regular" }]}>
+              Receipt sent to TheLawnServices@gmail.com
+            </Text>
+          </View>
+
           <TouchableOpacity
             style={[styles.successBtn, { width: "100%" }]}
             onPress={() => { router.dismiss(); router.navigate("/(tabs)/appointments"); }}
@@ -423,6 +438,18 @@ export default function PayScreen() {
               ${total} is released to {proName.split(" ")[0]}
             </Text>
           </View>
+        </View>
+
+        {/* Order ID */}
+        <View style={successStyles.orderIdRow}>
+          <Ionicons name="receipt-outline" size={14} color="#34FF7A" />
+          <Text style={[successStyles.orderIdText, { fontFamily: "Inter_500Medium" }]}>Order {orderId}</Text>
+        </View>
+        <View style={successStyles.receiptNote}>
+          <Ionicons name="mail-outline" size={13} color="#BBBBBB" />
+          <Text style={[successStyles.receiptNoteText, { fontFamily: "Inter_400Regular" }]}>
+            Receipt sent to TheLawnServices@gmail.com
+          </Text>
         </View>
 
         <TouchableOpacity
@@ -1922,5 +1949,36 @@ const inPersonStyles = StyleSheet.create({
     fontSize: 13,
     color: "#34FF7A",
     flex: 1,
+  },
+});
+
+const successStyles = StyleSheet.create({
+  orderIdRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 14,
+    marginBottom: 4,
+    backgroundColor: "#0d2e18",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    width: "100%",
+  },
+  orderIdText: {
+    fontSize: 13,
+    color: "#34FF7A",
+    letterSpacing: 0.5,
+  },
+  receiptNote: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  receiptNoteText: {
+    fontSize: 12,
+    color: "#BBBBBB",
   },
 });
