@@ -755,13 +755,12 @@ const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
 
 const ACCEPTED_PAYMENT_OPTIONS = [
-  { value: "Cash",      icon: "cash-outline" as const },
+  { value: "In Person", icon: "people-circle-outline" as const },
   { value: "Venmo",     icon: "phone-portrait-outline" as const },
   { value: "PayPal",    icon: "card-outline" as const },
-  { value: "Cash App",  icon: "logo-buffer" as const },
+  { value: "Cash App",  icon: "phone-portrait-outline" as const },
   { value: "Zelle",     icon: "swap-horizontal-outline" as const },
   { value: "Check",     icon: "document-outline" as const },
-  { value: "In Person", icon: "handshake-outline" as const },
 ];
 
 type ServiceAvail = { days: string[]; startTime: string; endTime: string };
@@ -966,27 +965,28 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
                   </TouchableOpacity>
                 </View>
 
-                {/* Pricing per service */}
+                {/* Pricing per service — 3-column compact grid */}
                 <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium" }]}>BASE RATE BY YARD SIZE</Text>
-                {(pricing[service] ?? BASE_TIERS).map((tier, ti) => (
-                  <View key={tier.label} style={svcStyles.pricingRow}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={[svcStyles.pricingSize, { fontFamily: "Inter_600SemiBold" }]}>
-                        {tier.label} Yard
+                <View style={{ flexDirection: "row", gap: 8, marginBottom: 6 }}>
+                  {(pricing[service] ?? BASE_TIERS).map((tier, ti) => (
+                    <View key={tier.label} style={svcStyles.tierCell}>
+                      <Text style={[svcStyles.tierCellLabel, { fontFamily: "Inter_600SemiBold" }]}>{tier.label}</Text>
+                      <Text style={[svcStyles.tierCellRange, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
+                        {tier.range}
                       </Text>
-                      <Text style={[svcStyles.pricingDesc, { fontFamily: "Inter_400Regular" }]}>{tier.range}</Text>
+                      <TextInput
+                        style={[svcStyles.tierCellInput, { fontFamily: "Inter_700Bold" }]}
+                        value={tier.price}
+                        onChangeText={(v) => updatePrice(service, ti, v)}
+                        keyboardType="default"
+                        maxLength={8}
+                        selectTextOnFocus
+                        placeholderTextColor="#555"
+                        textAlign="center"
+                      />
                     </View>
-                    <TextInput
-                      style={[svcStyles.priceInput, { fontFamily: "Inter_700Bold" }]}
-                      value={tier.price}
-                      onChangeText={(v) => updatePrice(service, ti, v)}
-                      keyboardType="default"
-                      maxLength={8}
-                      selectTextOnFocus
-                      placeholderTextColor="#555"
-                    />
-                  </View>
-                ))}
+                  ))}
+                </View>
 
               </View>
             ))}
@@ -1157,6 +1157,27 @@ const svcStyles = StyleSheet.create({
     borderWidth: 1, borderColor: "#34FF7A44",
     paddingHorizontal: 10, paddingVertical: 7,
     minWidth: 64, textAlign: "center",
+  },
+  tierCell: {
+    flex: 1,
+    backgroundColor: "#111",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#222",
+    paddingHorizontal: 8,
+    paddingTop: 10,
+    paddingBottom: 8,
+    alignItems: "center",
+  },
+  tierCellLabel: { fontSize: 12, color: "#FFFFFF", marginBottom: 3, textAlign: "center" },
+  tierCellRange: { fontSize: 9, color: "#666", textAlign: "center", marginBottom: 8, lineHeight: 13 },
+  tierCellInput: {
+    fontSize: 16, color: "#34FF7A",
+    backgroundColor: "#0A0A0A",
+    borderRadius: 8,
+    borderWidth: 1, borderColor: "#34FF7A44",
+    paddingHorizontal: 6, paddingVertical: 6,
+    width: "100%", textAlign: "center",
   },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
@@ -1556,6 +1577,15 @@ export default function HomeScreen() {
                 key={s.label}
                 stat={s}
                 delay={i * 120}
+                onPress={
+                  s.label === "Jobs Accepted"
+                    ? () => router.navigate("/(tabs)/appointments")
+                    : s.label === "Avg Rating"
+                    ? () => router.navigate("/(tabs)/profile")
+                    : s.label === "This Week"
+                    ? () => router.navigate("/(tabs)/wallet")
+                    : undefined
+                }
               />
             ))}
           </View>

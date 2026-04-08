@@ -31,7 +31,7 @@ const PAYMENT_METHODS = [
   { label: "PayPal",     value: "PayPal",      ionIcon: "card-outline" as const,          shortLabel: "PayPal" },
   { label: "Debit Card", value: "Debit Card",  ionIcon: "card" as const,                  shortLabel: "Debit" },
   { label: "Cash App",   value: "Cash App",    ionIcon: "phone-portrait-outline" as const, shortLabel: "Cash App" },
-  { label: "In Person",  value: "In Person",   ionIcon: "handshake-outline" as const,     shortLabel: "In Person" },
+  { label: "In Person",  value: "In Person",   ionIcon: "people-circle-outline" as const, shortLabel: "In Person" },
 ];
 
 export default function ProfileScreen() {
@@ -210,8 +210,6 @@ function LandscaperProfile({
     { text: '"Reliable, on time, and the yard looks fantastic every time. Highly recommend."', author: "Marcus T.", date: "2 weeks ago", stars: 5, avatarInitials: "MT", avatarColor: "#2C5282", replies: [] },
     { text: '"Great hedge trimming, left the property spotless. Will book again."', author: "Alex R.", date: "3 weeks ago", stars: 5, avatarInitials: "AR", avatarColor: "#6B21A8", replies: [] },
   ]);
-  const [newReviewText, setNewReviewText] = useState("");
-
   async function pickAvatar() {
     Haptics.selectionAsync();
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -247,18 +245,6 @@ function LandscaperProfile({
     if (!result.canceled) {
       setServicePhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
     }
-  }
-
-  function submitReview() {
-    const text = newReviewText.trim();
-    if (!text) { Alert.alert("Please write a review before posting."); return; }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setReviews((prev) => [
-      { text: `"${text}"`, author: "You", date: "Just now", stars: 5, avatarInitials: "YO", avatarColor: "#34FF7A", replies: [] },
-      ...prev,
-    ]);
-    setNewReviewText("");
-    Alert.alert("Review Posted");
   }
 
   return (
@@ -618,24 +604,6 @@ function LandscaperProfile({
         {/* ── REVIEWS TAB ── */}
         {activeTab === "reviews" && (
           <>
-            {/* Write-a-review form */}
-            <View style={cutStyles.card}>
-              <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold", marginBottom: 10 }]}>WRITE A REVIEW</Text>
-              <TextInput
-                style={[cutStyles.reviewInput, { fontFamily: "Inter_400Regular" }]}
-                value={newReviewText}
-                onChangeText={setNewReviewText}
-                placeholder="What did you think of the service?"
-                placeholderTextColor="#777"
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-              <TouchableOpacity style={cutStyles.postReviewBtn} onPress={submitReview} activeOpacity={0.85}>
-                <Text style={[cutStyles.postReviewBtnText, { fontFamily: "Inter_600SemiBold" }]}>Post Review</Text>
-              </TouchableOpacity>
-            </View>
-
             {/* Rating overview */}
             <View style={cutStyles.ratingHeader}>
               <Text style={[cutStyles.ratingBig, { fontFamily: "Inter_700Bold" }]}>4.9</Text>
