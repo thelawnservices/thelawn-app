@@ -693,32 +693,38 @@ function SettingsModal({
 
           <View style={settStyles.divider} />
 
-          <Text style={[settStyles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 4 }]}>Change Service Address</Text>
+          <Text style={[settStyles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 4 }]}>Change ZIP Code</Text>
           <Text style={[settStyles.codeHint, { fontFamily: "Inter_400Regular", marginBottom: 14 }]}>
-            Recently Moved? Change service address here
+            Update your service area ZIP code here
           </Text>
           <TextInput
             style={[settStyles.input, { fontFamily: "Inter_400Regular" }]}
             value={newAddress}
             onChangeText={setNewAddress}
-            placeholder="New service address"
+            placeholder="New ZIP code (e.g. 34222)"
             placeholderTextColor="#777"
+            keyboardType="numeric"
+            maxLength={5}
           />
           <TouchableOpacity
             style={settStyles.primaryBtn}
             onPress={() => {
               if (!newAddress.trim()) {
-                Alert.alert("Missing field", "Please enter a new service address.");
+                Alert.alert("Missing field", "Please enter a ZIP code.");
                 return;
               }
-              Alert.alert("Address Saved", "Your service address has been updated.");
+              if (newAddress.trim().length < 5) {
+                Alert.alert("Invalid ZIP", "Please enter a valid 5-digit ZIP code.");
+                return;
+              }
+              Alert.alert("ZIP Code Saved", "Your service area ZIP code has been updated.");
               setNewAddress("");
               onClose();
             }}
             activeOpacity={0.85}
           >
             <Text style={[settStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-              Save New Address
+              Save ZIP Code
             </Text>
           </TouchableOpacity>
         </Pressable>
