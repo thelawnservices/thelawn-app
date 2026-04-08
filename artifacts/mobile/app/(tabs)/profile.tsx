@@ -15,6 +15,7 @@ import {
   Pressable,
   Switch,
   Share,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -461,8 +462,17 @@ function LandscaperProfile({
 
         {/* ── Announcement Compose Modal ─────────────────────── */}
         <Modal visible={announceVisible} transparent animationType="slide" onRequestClose={() => { if (announceState !== "sending") setAnnounceVisible(false); }}>
-          <View style={announceStyles.overlay}>
-            <View style={announceStyles.sheet}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={announceStyles.overlay}
+          >
+            <ScrollView
+              style={announceStyles.sheet}
+              contentContainerStyle={announceStyles.sheetContent}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
 
               {/* Header */}
               <View style={announceStyles.header}>
@@ -601,8 +611,8 @@ function LandscaperProfile({
                   </Text>
                 </>
               )}
-            </View>
-          </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         </Modal>
 
         {/* Edit Banner — top left, below status bar */}
@@ -2117,7 +2127,11 @@ const announceStyles = StyleSheet.create({
     backgroundColor: "#111111",
     borderTopLeftRadius: 28, borderTopRightRadius: 28,
     borderWidth: 1, borderColor: "#1E1E1E",
-    padding: 24, paddingBottom: 40,
+    maxHeight: "90%",
+  },
+  sheetContent: {
+    padding: 24,
+    paddingBottom: 48,
   },
   header: {
     flexDirection: "row", alignItems: "center",
