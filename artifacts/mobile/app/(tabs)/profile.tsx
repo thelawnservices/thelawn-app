@@ -23,6 +23,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import TermsModal from "@/components/TermsModal";
+import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 
 const PAYMENT_METHODS = [
   { label: "Apple Pay",  value: "Apple Pay",  ionIcon: "logo-apple" as const,            shortLabel: "Apple Pay" },
@@ -43,42 +44,6 @@ const LANDSCAPER_PAY_OPTIONS = [
   { value: "In Person",icon: "handshake-outline" as const },
 ];
 
-type PayStatus = "paid" | "pending" | "refunded" | "failed";
-
-const PAY_STATUS_CONFIG: Record<PayStatus, { label: string; color: string; bg: string }> = {
-  paid:     { label: "Paid",     color: "#34FF7A", bg: "#0d2e18" },
-  pending:  { label: "Pending",  color: "#FFAA00", bg: "#2A1F00" },
-  refunded: { label: "Refunded", color: "#60a5fa", bg: "#0d1f3c" },
-  failed:   { label: "Failed",   color: "#ef4444", bg: "#2A0808" },
-};
-
-type CustomerPayRecord = {
-  id: string; orderId: string; date: string; service: string; pro: string;
-  amount: string; status: PayStatus; yardSize: string; address: string; payMethod: string;
-};
-type LandscaperPayRecord = {
-  id: string; orderId: string; date: string; service: string; customer: string;
-  earned: string; commission: string; status: PayStatus; yardSize: string; address: string; payMethod: string;
-};
-
-const CUSTOMER_PAYMENT_HISTORY: CustomerPayRecord[] = [
-  { id: "cp1", orderId: "TL-2026-40812", date: "Apr 8, 2026",  service: "Lawn Mowing",    pro: "John Rivera",      amount: "$65",  status: "paid",     yardSize: "Medium", address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "Apple Pay" },
-  { id: "cp2", orderId: "TL-2026-40267", date: "Apr 2, 2026",  service: "Hedge Trimming", pro: "EcoGreen Services", amount: "$55",  status: "paid",     yardSize: "Small",  address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Venmo" },
-  { id: "cp3", orderId: "TL-2026-32291", date: "Mar 22, 2026", service: "Clean Up",       pro: "Mike Torres",      amount: "$40",  status: "pending",  yardSize: "Small",  address: "14 Manatee Ave, Ellenton, FL",             payMethod: "PayPal" },
-  { id: "cp4", orderId: "TL-2026-31456", date: "Mar 14, 2026", service: "Mulching",       pro: "GreenScape Pros",  amount: "$180", status: "refunded", yardSize: "Large",  address: "8910 45th Ave E, Ellenton, FL",            payMethod: "Debit Card" },
-  { id: "cp5", orderId: "TL-2026-28731", date: "Mar 1, 2026",  service: "Lawn Mowing",    pro: "John Rivera",      amount: "$45",  status: "paid",     yardSize: "Small",  address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "In Person" },
-  { id: "cp6", orderId: "TL-2026-21043", date: "Feb 18, 2026", service: "Hedge Trimming", pro: "GreenScape Pros",  amount: "$75",  status: "paid",     yardSize: "Medium", address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Cash App" },
-];
-
-const LANDSCAPER_PAYMENT_HISTORY: LandscaperPayRecord[] = [
-  { id: "lp1", orderId: "TL-2026-40812", date: "Apr 8, 2026",  service: "Lawn Mowing",    customer: "Alex T.",   earned: "$61.75",  commission: "$3.25",  status: "paid",    yardSize: "Medium", address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "Apple Pay" },
-  { id: "lp2", orderId: "TL-2026-40267", date: "Apr 5, 2026",  service: "Hedge Trimming", customer: "Priya N.",  earned: "$52.25",  commission: "$2.75",  status: "pending", yardSize: "Small",  address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Venmo" },
-  { id: "lp3", orderId: "TL-2026-32291", date: "Mar 28, 2026", service: "Clean Up",       customer: "Marcus R.", earned: "$38.00",  commission: "$2.00",  status: "paid",    yardSize: "Small",  address: "14 Manatee Ave, Ellenton, FL",             payMethod: "PayPal" },
-  { id: "lp4", orderId: "TL-2026-31456", date: "Mar 15, 2026", service: "Mulching",       customer: "Diane W.",  earned: "$171.50", commission: "$8.50",  status: "paid",    yardSize: "Large",  address: "8910 45th Ave E, Ellenton, FL",            payMethod: "Debit Card" },
-  { id: "lp5", orderId: "TL-2026-28731", date: "Mar 1, 2026",  service: "Lawn Mowing",    customer: "Zamire S.", earned: "$43.50",  commission: "$1.50",  status: "paid",    yardSize: "Small",  address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "In Person" },
-  { id: "lp6", orderId: "TL-2026-21043", date: "Feb 18, 2026", service: "Hedge Trimming", customer: "Tasha B.",  earned: "$71.25",  commission: "$3.75",  status: "paid",    yardSize: "Medium", address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Cash App" },
-];
-
 type PriceMatrix = Record<string, Record<string, string>>;
 
 const PRICE_SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up"];
@@ -94,155 +59,6 @@ const DEFAULT_PRICE_MATRIX: Record<string, Record<string, string>> = {
   "Clean Up":       { Small: "30",  Medium: "40",  Large: "55"  },
 };
 
-// ── Payment History Modal (shared by both roles) ──────────────────────────────
-function PaymentHistoryModal({
-  visible,
-  onClose,
-  role,
-}: {
-  visible: boolean;
-  onClose: () => void;
-  role: "customer" | "landscaper";
-}) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={phModalStyles.overlay} onPress={onClose}>
-        <Pressable style={phModalStyles.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={phModalStyles.handle} />
-          <View style={phModalStyles.header}>
-            <TouchableOpacity onPress={onClose} style={phModalStyles.closeBtn} activeOpacity={0.7}>
-              <Ionicons name="close" size={22} color="#fff" />
-            </TouchableOpacity>
-            <Text style={[phModalStyles.title, { fontFamily: "Inter_700Bold" }]}>
-              {role === "customer" ? "Payment History" : "Earnings History"}
-            </Text>
-            <View style={{ width: 36 }} />
-          </View>
-
-          <View style={phModalStyles.emailNote}>
-            <Ionicons name="mail-outline" size={13} color="#34FF7A" />
-            <Text style={[phModalStyles.emailNoteText, { fontFamily: "Inter_400Regular" }]}>
-              All transactions are logged and sent to TheLawnServices@gmail.com for dispute resolution.
-            </Text>
-          </View>
-
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-            {role === "customer"
-              ? CUSTOMER_PAYMENT_HISTORY.map((item) => {
-                  const cfg = PAY_STATUS_CONFIG[item.status];
-                  const isExp = expandedId === item.id;
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={phModalStyles.record}
-                      activeOpacity={0.85}
-                      onPress={() => { setExpandedId(isExp ? null : item.id); Haptics.selectionAsync(); }}
-                    >
-                      <View style={phModalStyles.recordTop}>
-                        <View style={{ flex: 1, gap: 3 }}>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                            <Text style={[phModalStyles.recordService, { fontFamily: "Inter_600SemiBold" }]}>{item.service}</Text>
-                            <View style={[phModalStyles.statusBadge, { backgroundColor: cfg.bg }]}>
-                              <Text style={[phModalStyles.statusText, { fontFamily: "Inter_600SemiBold", color: cfg.color }]}>{cfg.label}</Text>
-                            </View>
-                          </View>
-                          <Text style={[phModalStyles.recordSub, { fontFamily: "Inter_400Regular" }]}>{item.pro} · {item.date}</Text>
-                          <Text style={[phModalStyles.recordOrderId, { fontFamily: "Inter_500Medium" }]}>Order {item.orderId}</Text>
-                        </View>
-                        <View style={{ alignItems: "flex-end", gap: 4 }}>
-                          <Text style={[phModalStyles.recordAmount, { fontFamily: "Inter_700Bold" }]}>{item.amount}</Text>
-                          <Ionicons name={isExp ? "chevron-up" : "chevron-down"} size={15} color="#CCCCCC" />
-                        </View>
-                      </View>
-                      {isExp && (
-                        <View style={phModalStyles.recordDetails}>
-                          <View style={phModalStyles.detailRow}>
-                            <Ionicons name="resize-outline" size={13} color="#34FF7A" />
-                            <Text style={[phModalStyles.detailText, { fontFamily: "Inter_400Regular" }]}>Yard size: {item.yardSize}</Text>
-                          </View>
-                          <View style={phModalStyles.detailRow}>
-                            <Ionicons name="location-outline" size={13} color="#34FF7A" />
-                            <Text style={[phModalStyles.detailText, { fontFamily: "Inter_400Regular" }]}>{item.address}</Text>
-                          </View>
-                          <View style={phModalStyles.detailRow}>
-                            <Ionicons name="card-outline" size={13} color="#34FF7A" />
-                            <Text style={[phModalStyles.detailText, { fontFamily: "Inter_400Regular" }]}>Paid via {item.payMethod}</Text>
-                          </View>
-                          <View style={phModalStyles.disputeNote}>
-                            <Ionicons name="shield-checkmark-outline" size={13} color="#FFAA00" />
-                            <Text style={[phModalStyles.disputeNoteText, { fontFamily: "Inter_400Regular" }]}>
-                              For disputes, reference Order ID {item.orderId} when contacting TheLawnServices@gmail.com
-                            </Text>
-                          </View>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })
-              : LANDSCAPER_PAYMENT_HISTORY.map((item) => {
-                  const cfg = PAY_STATUS_CONFIG[item.status];
-                  const isExp = expandedId === item.id;
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={phModalStyles.record}
-                      activeOpacity={0.85}
-                      onPress={() => { setExpandedId(isExp ? null : item.id); Haptics.selectionAsync(); }}
-                    >
-                      <View style={phModalStyles.recordTop}>
-                        <View style={{ flex: 1, gap: 3 }}>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                            <Text style={[phModalStyles.recordService, { fontFamily: "Inter_600SemiBold" }]}>{item.service}</Text>
-                            <View style={[phModalStyles.statusBadge, { backgroundColor: cfg.bg }]}>
-                              <Text style={[phModalStyles.statusText, { fontFamily: "Inter_600SemiBold", color: cfg.color }]}>{cfg.label}</Text>
-                            </View>
-                          </View>
-                          <Text style={[phModalStyles.recordSub, { fontFamily: "Inter_400Regular" }]}>{item.customer} · {item.date}</Text>
-                          <Text style={[phModalStyles.recordOrderId, { fontFamily: "Inter_500Medium" }]}>Order {item.orderId}</Text>
-                        </View>
-                        <View style={{ alignItems: "flex-end", gap: 4 }}>
-                          <Text style={[phModalStyles.recordAmount, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>{item.earned}</Text>
-                          <Ionicons name={isExp ? "chevron-up" : "chevron-down"} size={15} color="#CCCCCC" />
-                        </View>
-                      </View>
-                      {isExp && (
-                        <View style={phModalStyles.recordDetails}>
-                          <View style={phModalStyles.detailRow}>
-                            <Ionicons name="resize-outline" size={13} color="#34FF7A" />
-                            <Text style={[phModalStyles.detailText, { fontFamily: "Inter_400Regular" }]}>Yard size: {item.yardSize}</Text>
-                          </View>
-                          <View style={phModalStyles.detailRow}>
-                            <Ionicons name="location-outline" size={13} color="#34FF7A" />
-                            <Text style={[phModalStyles.detailText, { fontFamily: "Inter_400Regular" }]}>{item.address}</Text>
-                          </View>
-                          <View style={phModalStyles.detailRow}>
-                            <Ionicons name="card-outline" size={13} color="#34FF7A" />
-                            <Text style={[phModalStyles.detailText, { fontFamily: "Inter_400Regular" }]}>Customer paid via {item.payMethod}</Text>
-                          </View>
-                          <View style={phModalStyles.detailRow}>
-                            <Ionicons name="remove-circle-outline" size={13} color="#FFAA00" />
-                            <Text style={[phModalStyles.detailText, { fontFamily: "Inter_400Regular" }]}>Platform fee: {item.commission}</Text>
-                          </View>
-                          <View style={phModalStyles.disputeNote}>
-                            <Ionicons name="shield-checkmark-outline" size={13} color="#FFAA00" />
-                            <Text style={[phModalStyles.disputeNoteText, { fontFamily: "Inter_400Regular" }]}>
-                              For disputes, reference Order ID {item.orderId} when contacting TheLawnServices@gmail.com
-                            </Text>
-                          </View>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
-
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
@@ -253,7 +69,6 @@ export default function ProfileScreen() {
     JSON.parse(JSON.stringify(DEFAULT_PRICE_MATRIX))
   );
   const [custMenuVisible, setCustMenuVisible] = useState(false);
-  const [custHistoryVisible, setCustHistoryVisible] = useState(false);
 
   const toggle = () => {
     Haptics.selectionAsync();
@@ -295,11 +110,6 @@ export default function ProfileScreen() {
       <Modal visible={custMenuVisible} transparent animationType="fade" onRequestClose={() => setCustMenuVisible(false)}>
         <Pressable style={menuStyles.overlay} onPress={() => setCustMenuVisible(false)}>
           <View style={[menuStyles.dropdown, { top: topPadding + 56, right: 16 }]}>
-            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); setCustHistoryVisible(true); }}>
-              <Ionicons name="receipt-outline" size={18} color="#34FF7A" />
-              <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Payment History</Text>
-            </TouchableOpacity>
-            <View style={menuStyles.divider} />
             <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); Alert.alert("Edit Profile", "Profile editor coming soon."); }}>
               <Ionicons name="person-outline" size={18} color="#CCCCCC" />
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Edit Profile</Text>
@@ -317,8 +127,6 @@ export default function ProfileScreen() {
           </View>
         </Pressable>
       </Modal>
-
-      <PaymentHistoryModal visible={custHistoryVisible} onClose={() => setCustHistoryVisible(false)} role="customer" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <CustomerProfile logout={logout} />
@@ -363,7 +171,6 @@ function LandscaperProfile({
   const [acceptedPayments, setAcceptedPayments] = useState<string[]>(["Cash", "Venmo", "In Person"]);
   const [primaryPayout, setPrimaryPayout] = useState<string | null>("Venmo");
   const [lsMenuVisible, setLsMenuVisible] = useState(false);
-  const [lsHistoryVisible, setLsHistoryVisible] = useState(false);
   const [replyingToIdx, setReplyingToIdx] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
 
@@ -551,11 +358,6 @@ function LandscaperProfile({
         <Modal visible={lsMenuVisible} transparent animationType="fade" onRequestClose={() => setLsMenuVisible(false)}>
           <Pressable style={menuStyles.overlay} onPress={() => setLsMenuVisible(false)}>
             <View style={[menuStyles.dropdown, { top: topPadding + 62, right: 16 }]}>
-              <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setLsHistoryVisible(true); }}>
-                <Ionicons name="wallet-outline" size={18} color="#34FF7A" />
-                <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Earnings History</Text>
-              </TouchableOpacity>
-              <View style={menuStyles.divider} />
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setPrivacyVisible(true); }}>
                 <Ionicons name="lock-closed-outline" size={18} color="#CCCCCC" />
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Privacy Settings</Text>
@@ -573,8 +375,6 @@ function LandscaperProfile({
             </View>
           </Pressable>
         </Modal>
-
-        <PaymentHistoryModal visible={lsHistoryVisible} onClose={() => setLsHistoryVisible(false)} role="landscaper" />
 
         {/* Edit Banner — top left, below status bar */}
         <TouchableOpacity style={[cutStyles.editBannerBtn, { top: topPadding + 14 }]} onPress={pickHeroBackground} activeOpacity={0.8}>
@@ -2094,54 +1894,3 @@ const menuStyles = StyleSheet.create({
   divider: { height: 1, backgroundColor: "#252525" },
 });
 
-// ── Payment History Modal styles ──────────────────────────────────────────────
-const phModalStyles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.8)", justifyContent: "flex-end" },
-  sheet: {
-    backgroundColor: "#111111", borderTopLeftRadius: 32, borderTopRightRadius: 32,
-    paddingTop: 12, paddingBottom: 40,
-    borderTopWidth: 1, borderColor: "#222",
-    maxHeight: "90%",
-  },
-  handle: { width: 40, height: 4, backgroundColor: "#333", borderRadius: 2, alignSelf: "center", marginBottom: 12 },
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: "#1E1E1E",
-  },
-  title: { fontSize: 18, color: "#FFFFFF" },
-  closeBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: "#1A1A1A", alignItems: "center", justifyContent: "center",
-  },
-  emailNote: {
-    flexDirection: "row", alignItems: "flex-start", gap: 8,
-    backgroundColor: "#0d2e18", margin: 16, marginTop: 14,
-    borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10,
-    borderWidth: 1, borderColor: "#1a4a2a",
-  },
-  emailNoteText: { fontSize: 12, color: "#BBBBBB", flex: 1, lineHeight: 18 },
-  record: {
-    marginHorizontal: 16, marginBottom: 10,
-    backgroundColor: "#1A1A1A", borderRadius: 18,
-    padding: 16, borderWidth: 1, borderColor: "#222",
-  },
-  recordTop: { flexDirection: "row", alignItems: "flex-start", gap: 12 },
-  recordService: { fontSize: 14, color: "#FFFFFF" },
-  recordSub: { fontSize: 12, color: "#CCCCCC" },
-  recordOrderId: { fontSize: 11, color: "#34FF7A", letterSpacing: 0.4 },
-  recordAmount: { fontSize: 17, color: "#FFFFFF" },
-  statusBadge: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
-  statusText: { fontSize: 11 },
-  recordDetails: {
-    marginTop: 14, paddingTop: 14,
-    borderTopWidth: 1, borderColor: "#222", gap: 8,
-  },
-  detailRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
-  detailText: { fontSize: 13, color: "#CCCCCC", flex: 1 },
-  disputeNote: {
-    flexDirection: "row", alignItems: "flex-start", gap: 8,
-    backgroundColor: "#1C1500", borderRadius: 12,
-    padding: 10, marginTop: 4,
-  },
-  disputeNoteText: { fontSize: 12, color: "#FFAA00", flex: 1, lineHeight: 18 },
-});

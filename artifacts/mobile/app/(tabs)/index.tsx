@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
+import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 
 
 const LANDSCAPER_QUICK_STATS = [
@@ -260,6 +261,7 @@ function ProfileDropdownModal({
   onSettings,
   onShare,
   onPaymentMethod,
+  onPaymentHistory,
   onVouchers,
   onHelp,
   onAvailability,
@@ -273,6 +275,7 @@ function ProfileDropdownModal({
   onSettings: () => void;
   onShare: () => void;
   onPaymentMethod: () => void;
+  onPaymentHistory: () => void;
   onVouchers: () => void;
   onHelp: () => void;
   onAvailability: () => void;
@@ -308,6 +311,10 @@ function ProfileDropdownModal({
           <TouchableOpacity style={dropStyles.item} onPress={onPaymentMethod} activeOpacity={0.7}>
             <Ionicons name="card-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Payment Method</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={dropStyles.item} onPress={onPaymentHistory} activeOpacity={0.7}>
+            <Ionicons name="receipt-outline" size={20} color="#34FF7A" />
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Payment History</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onVouchers} activeOpacity={0.7}>
             <Ionicons name="pricetag-outline" size={20} color="#CCCCCC" />
@@ -894,6 +901,7 @@ export default function HomeScreen() {
   const [vouchersVisible, setVouchersVisible] = useState(false);
   const [helpVisible, setHelpVisible] = useState(false);
   const [availabilityVisible, setAvailabilityVisible] = useState(false);
+  const [paymentHistoryVisible, setPaymentHistoryVisible] = useState(false);
   const notifEnabledRef = React.useRef(notifEnabled);
   notifEnabledRef.current = notifEnabled;
 
@@ -961,11 +969,17 @@ export default function HomeScreen() {
           }).catch(() => {});
         }}
         onPaymentMethod={() => { setDropdownVisible(false); setPaymentVisible(true); }}
+        onPaymentHistory={() => { setDropdownVisible(false); setPaymentHistoryVisible(true); }}
         onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
         onAvailability={() => { setDropdownVisible(false); setAvailabilityVisible(true); }}
         isLandscaper={role === "landscaper"}
         onSignOut={() => { setDropdownVisible(false); logout(); }}
+      />
+      <PaymentHistoryModal
+        visible={paymentHistoryVisible}
+        onClose={() => setPaymentHistoryVisible(false)}
+        role={role === "landscaper" ? "landscaper" : "customer"}
       />
       <SettingsModal
         visible={settingsVisible}
