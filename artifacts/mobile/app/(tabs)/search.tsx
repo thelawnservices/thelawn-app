@@ -8,11 +8,8 @@ import {
   TextInput,
   Platform,
   Alert,
-  Modal,
-  Image,
   Linking,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -79,27 +76,6 @@ const PROS = [
 
 const SORT_OPTIONS = ["Recommended", "Closest", "Highest Rated"];
 
-type RequestStatus = "pending" | "offered" | "accepted" | "declined";
-
-const NEW_REQUEST_SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up"];
-const NEW_REQUEST_SIZES = ["Small", "Medium", "Large"];
-
-const MY_REQUESTS: {
-  id: string;
-  service: string;
-  size: string;
-  date: string;
-  time: string;
-  status: RequestStatus;
-  offerPrice?: number;
-  pro?: string;
-  proRating?: number;
-}[] = [
-  { id: "mq1", service: "Lawn Mowing", size: "Medium", date: "Apr 14", time: "9:00 AM", status: "pending" },
-  { id: "mq2", service: "Hedge Trimming", size: "Small", date: "Apr 15", time: "11:00 AM", status: "offered", offerPrice: 75, pro: "John Rivera", proRating: 4.9 },
-  { id: "mq3", service: "Clean Up", size: "Small", date: "Apr 10", time: "10:00 AM", status: "declined" },
-];
-
 const SERVICE_REQUESTS = [
   { id: "r1", service: "Lawn Mowing", size: "Medium", customer: "Alex T.", distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible", budget: "$65", description: "Medium yard, front and back. Nothing special, straightforward job.", address: "8910 45th Ave E, Ellenton, FL" },
   { id: "r2", service: "Hedge Trimming", size: "Small", customer: "Priya N.", distance: "3.1 mi", zip: "34208", date: "Apr 16", time: "Morning preferred", budget: "$55", description: "Small hedges along fence line. Should take about 1 hour.", address: "22 Palmetto Dr, Bradenton, FL" },
@@ -119,14 +95,6 @@ export default function SearchScreen() {
   const [showSort, setShowSort] = useState(false);
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
   const { acceptJob } = useJobs();
-  const [customerTab, setCustomerTab] = useState<"find" | "requests">("find");
-  const [myRequests, setMyRequests] = useState(MY_REQUESTS);
-  const [showNewReqModal, setShowNewReqModal] = useState(false);
-  const [newReqService, setNewReqService] = useState("");
-  const [newReqSize, setNewReqSize] = useState("");
-  const [newReqNotes, setNewReqNotes] = useState("");
-  const [newReqBudget, setNewReqBudget] = useState("");
-  const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
 
   const filtered = PROS.filter((p) => {
     const matchesQuery =
@@ -229,26 +197,38 @@ export default function SearchScreen() {
                   style={styles.acceptBtn}
                   activeOpacity={0.85}
                   onPress={() => {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    setAcceptedIds((prev) => [...prev, req.id]);
-                    acceptJob({
-                      id: req.id,
-                      service: req.service,
-                      size: req.size,
-                      customer: req.customer,
-                      date: req.date,
-                      time: req.time,
-                      budget: req.budget,
-                      distance: req.distance,
-                      zip: req.zip,
-                    });
                     Alert.alert(
-                      "Request Accepted",
-                      `${req.customer}'s ${req.service} job (${req.date} at ${req.time}) has been added to your Appointments.`
+                      "Agree to Customer's Price?",
+                      `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer. No counter-offers.\n\nDo you want to accept?`,
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Accept at " + req.budget,
+                          onPress: () => {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            setAcceptedIds((prev) => [...prev, req.id]);
+                            acceptJob({
+                              id: req.id,
+                              service: req.service,
+                              size: req.size,
+                              customer: req.customer,
+                              date: req.date,
+                              time: req.time,
+                              budget: req.budget,
+                              distance: req.distance,
+                              zip: req.zip,
+                            });
+                            Alert.alert(
+                              "Job Accepted ✓",
+                              `You agreed to ${req.customer}'s ${req.service} job for ${req.budget}. It's been added to your Appointments.`
+                            );
+                          },
+                        },
+                      ]
                     );
                   }}
                 >
-                  <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>Accept Job</Text>
+                  <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>Accept at {req.budget}</Text>
                 </TouchableOpacity>
               </View>
             ))
@@ -263,317 +243,26 @@ export default function SearchScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>
-          {customerTab === "find" ? "Find Landscapers" : "My Requests"}
+          Find Landscapers
         </Text>
-
-        {/* Inner tab toggle */}
-        <View style={styles.innerTabRow}>
-          <TouchableOpacity
-            style={[styles.innerTab, customerTab === "find" && styles.innerTabActive]}
-            onPress={() => { setCustomerTab("find"); Haptics.selectionAsync(); }}
-          >
-            <Text style={[styles.innerTabText, { fontFamily: "Inter_500Medium" }, customerTab === "find" && styles.innerTabTextActive]}>
-              Find Pros
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.innerTab, customerTab === "requests" && styles.innerTabActive]}
-            onPress={() => { setCustomerTab("requests"); Haptics.selectionAsync(); }}
-          >
-            <Text style={[styles.innerTabText, { fontFamily: "Inter_500Medium" }, customerTab === "requests" && styles.innerTabTextActive]}>
-              My Requests
-            </Text>
-            {myRequests.some((r) => r.status === "offered") && (
-              <View style={styles.notifDot} />
-            )}
-          </TouchableOpacity>
+        <View style={styles.searchBar}>
+          <Feather name="search" size={16} color="#555" />
+          <TextInput
+            style={[styles.searchInput, { fontFamily: "Inter_400Regular" }]}
+            placeholder="Search by name, service, or location..."
+            placeholderTextColor="#555"
+            value={query}
+            onChangeText={setQuery}
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery("")}>
+              <Ionicons name="close-circle" size={18} color="#555" />
+            </TouchableOpacity>
+          )}
         </View>
-
-        {customerTab === "find" && (
-          <View style={styles.searchBar}>
-            <Feather name="search" size={16} color="#555" />
-            <TextInput
-              style={[styles.searchInput, { fontFamily: "Inter_400Regular" }]}
-              placeholder="Search by name, service, or location..."
-              placeholderTextColor="#555"
-              value={query}
-              onChangeText={setQuery}
-            />
-            {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery("")}>
-                <Ionicons name="close-circle" size={18} color="#555" />
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
       </View>
 
-      {/* New Request Modal */}
-      <Modal visible={showNewReqModal} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <ScrollView contentContainerStyle={styles.modalScrollOuter} keyboardShouldPersistTaps="handled">
-            <View style={styles.modalSheet}>
-              <View style={styles.modalHandle} />
-              <Text style={[styles.modalTitle, { fontFamily: "Inter_700Bold" }]}>Request New Service</Text>
-
-              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Service Type</Text>
-              <View style={styles.modalChipRow}>
-                {NEW_REQUEST_SERVICES.map((s) => (
-                  <TouchableOpacity
-                    key={s}
-                    style={[styles.modalChip, newReqService === s && styles.modalChipActive]}
-                    onPress={() => { setNewReqService(s); Haptics.selectionAsync(); }}
-                  >
-                    <Text style={[styles.modalChipText, { fontFamily: "Inter_500Medium" }, newReqService === s && { color: "#000" }]}>{s}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Yard Size</Text>
-              <View style={styles.modalChipRow}>
-                {NEW_REQUEST_SIZES.map((sz) => (
-                  <TouchableOpacity
-                    key={sz}
-                    style={[styles.modalChip, newReqSize === sz && styles.modalChipActive]}
-                    onPress={() => { setNewReqSize(sz); Haptics.selectionAsync(); }}
-                  >
-                    <Text style={[styles.modalChipText, { fontFamily: "Inter_500Medium" }, newReqSize === sz && { color: "#000" }]}>{sz}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Specific Needs / Instructions</Text>
-              <TextInput
-                style={[styles.modalTextArea, { fontFamily: "Inter_400Regular" }]}
-                placeholder="Describe exactly what you need (e.g., mow front & back, trim hedges, remove debris...)"
-                placeholderTextColor="#555"
-                value={newReqNotes}
-                onChangeText={setNewReqNotes}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-
-              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>
-                Your Budget / Amount Willing to Pay{" "}
-                <Text style={{ color: "#ef4444" }}>*</Text>
-              </Text>
-              <View style={styles.budgetInputRow}>
-                <Text style={[styles.budgetDollar, { fontFamily: "Inter_700Bold" }]}>$</Text>
-                <TextInput
-                  style={[styles.budgetInput, { fontFamily: "Inter_500Medium" }]}
-                  placeholder="85"
-                  placeholderTextColor="#444"
-                  keyboardType="decimal-pad"
-                  value={newReqBudget}
-                  onChangeText={setNewReqBudget}
-                  returnKeyType="done"
-                />
-              </View>
-
-              <Text style={[styles.modalSubLabel, { fontFamily: "Inter_500Medium" }]}>Attach Photos (optional)</Text>
-              <TouchableOpacity
-                style={styles.uploadZone}
-                activeOpacity={0.8}
-                onPress={async () => {
-                  const result = await ImagePicker.launchImageLibraryAsync({
-                    mediaTypes: ["images"],
-                    allowsMultipleSelection: true,
-                    quality: 0.7,
-                    selectionLimit: 5,
-                  });
-                  if (!result.canceled) {
-                    setNewReqPhotos((prev) => [
-                      ...prev,
-                      ...result.assets.map((a) => a.uri),
-                    ].slice(0, 5));
-                    Haptics.selectionAsync();
-                  }
-                }}
-              >
-                <Ionicons name="camera-outline" size={28} color="#34FF7A" />
-                <Text style={[styles.uploadZoneText, { fontFamily: "Inter_500Medium" }]}>Tap to attach photos</Text>
-                <Text style={[styles.uploadZoneSubText, { fontFamily: "Inter_400Regular" }]}>Up to 5 photos · {newReqPhotos.length} selected</Text>
-              </TouchableOpacity>
-
-              {newReqPhotos.length > 0 && (
-                <View style={styles.photoPreviewRow}>
-                  {newReqPhotos.map((uri, idx) => (
-                    <View key={uri} style={styles.photoThumb}>
-                      <Image source={{ uri }} style={styles.photoThumbImg} />
-                      <TouchableOpacity
-                        style={styles.photoRemoveBtn}
-                        onPress={() => setNewReqPhotos((prev) => prev.filter((_, i) => i !== idx))}
-                      >
-                        <Ionicons name="close" size={12} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              <TouchableOpacity
-                style={[styles.modalSubmitBtn, (!newReqService || !newReqSize) && { opacity: 0.4 }]}
-                activeOpacity={0.85}
-                disabled={!newReqService || !newReqSize}
-                onPress={() => {
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  const today = new Date();
-                  const futureDate = new Date(today.setDate(today.getDate() + 3));
-                  const label = futureDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                  const budgetLabel = newReqBudget.trim() ? `$${parseFloat(newReqBudget).toFixed(0)}` : undefined;
-                  setMyRequests((prev) => [
-                    { id: `mq${Date.now()}`, service: newReqService, size: newReqSize, date: label, time: "TBD", status: "pending", offerPrice: budgetLabel ? parseFloat(newReqBudget) : undefined },
-                    ...prev,
-                  ]);
-                  setNewReqService("");
-                  setNewReqSize("");
-                  setNewReqNotes("");
-                  setNewReqBudget("");
-                  setNewReqPhotos([]);
-                  setShowNewReqModal(false);
-                  Alert.alert(
-                    "Request Submitted!",
-                    budgetLabel
-                      ? `Budget: ${budgetLabel} · Landscapers in your area will review and send offers.`
-                      : "Landscapers in your area will review your request and send offers."
-                  );
-                }}
-              >
-                <Text style={[styles.modalSubmitText, { fontFamily: "Inter_600SemiBold" }]}>Submit Request</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => {
-                setNewReqService(""); setNewReqSize(""); setNewReqNotes(""); setNewReqBudget(""); setNewReqPhotos([]);
-                setShowNewReqModal(false);
-              }}>
-                <Text style={[styles.modalCancelText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
-      </Modal>
-
-      {/* My Requests view */}
-      {customerTab === "requests" && (
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 12 }}>
-
-          {/* Request New Service card */}
-          <TouchableOpacity
-            style={styles.newReqCard}
-            activeOpacity={0.85}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowNewReqModal(true); }}
-          >
-            <View style={styles.newReqIconBox}>
-              <Ionicons name="add-circle" size={28} color="#34FF7A" />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.newReqTitle, { fontFamily: "Inter_600SemiBold" }]}>Request New Service</Text>
-              <Text style={[styles.newReqSub, { fontFamily: "Inter_400Regular" }]}>Can't find what you need? Request it!</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#555" />
-          </TouchableOpacity>
-
-          {myRequests.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Ionicons name="clipboard-outline" size={40} color="#333" />
-              <Text style={[styles.emptyText, { fontFamily: "Inter_500Medium" }]}>No requests yet</Text>
-              <Text style={[styles.emptySubText, { fontFamily: "Inter_400Regular" }]}>Tap above to request a service</Text>
-            </View>
-          ) : (
-            myRequests.map((req) => {
-              const isOffered = req.status === "offered";
-              const isDeclined = req.status === "declined";
-              const isAccepted = req.status === "accepted";
-              return (
-                <View key={req.id} style={[styles.myReqCard, isDeclined && styles.myReqCardFaded]}>
-                  <View style={styles.reqTopRow}>
-                    <View style={styles.reqServiceBadge}>
-                      <Ionicons name="leaf" size={14} color="#34FF7A" />
-                      <Text style={[styles.reqServiceText, { fontFamily: "Inter_600SemiBold" }]}>{req.service}</Text>
-                    </View>
-                    <View style={[
-                      styles.statusPill,
-                      isOffered && styles.statusPillOffered,
-                      isDeclined && styles.statusPillDeclined,
-                      isAccepted && styles.statusPillAccepted,
-                    ]}>
-                      <Text style={[
-                        styles.statusPillText,
-                        { fontFamily: "Inter_600SemiBold" },
-                        isOffered && { color: "#000" },
-                        isDeclined && { color: "#ff6b6b" },
-                        isAccepted && { color: "#34FF7A" },
-                      ]}>
-                        {isOffered ? "Offer Received" : isDeclined ? "Declined" : isAccepted ? "Accepted" : "Pending..."}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.reqMeta}>
-                    <Ionicons name="calendar-outline" size={13} color="#555" />
-                    <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.date} at {req.time}</Text>
-                    <Text style={styles.metaDot}>·</Text>
-                    <Ionicons name="resize-outline" size={13} color="#555" />
-                    <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.size} yard</Text>
-                  </View>
-
-                  {isOffered && req.pro && (
-                    <View style={styles.offerBox}>
-                      <View style={styles.offerBoxLeft}>
-                        <View style={styles.offerProRow}>
-                          <Text style={[styles.offerLabel, { fontFamily: "Inter_500Medium" }]}>{req.pro}</Text>
-                          {req.proRating && (
-                            <View style={styles.ratingPill}>
-                              <Ionicons name="star" size={11} color="#f59e0b" />
-                              <Text style={[styles.ratingText, { fontFamily: "Inter_600SemiBold" }]}>{req.proRating}</Text>
-                            </View>
-                          )}
-                        </View>
-                        <Text style={[styles.offerPrice, { fontFamily: "Inter_700Bold" }]}>${req.offerPrice}</Text>
-                        <TouchableOpacity
-                          onPress={() => Alert.alert(`${req.pro}`, `Rating: ${req.proRating} ★\n\nReviews:\n• "Great service and on time!"\n• "Professional and clean work"`)}
-                        >
-                          <Text style={[styles.viewProfileLink, { fontFamily: "Inter_500Medium" }]}>View Profile →</Text>
-                        </TouchableOpacity>
-                      </View>
-                      <View style={styles.offerActions}>
-                        <TouchableOpacity
-                          style={styles.acceptOfferBtn}
-                          activeOpacity={0.85}
-                          onPress={() => {
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            setMyRequests((prev) =>
-                              prev.map((r) => r.id === req.id ? { ...r, status: "accepted" as RequestStatus } : r)
-                            );
-                            Alert.alert("Offer Accepted!", `${req.pro} will arrive on ${req.date} at ${req.time}.`);
-                          }}
-                        >
-                          <Text style={[styles.acceptOfferText, { fontFamily: "Inter_600SemiBold" }]}>Accept</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.declineOfferBtn}
-                          activeOpacity={0.8}
-                          onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            setMyRequests((prev) =>
-                              prev.map((r) => r.id === req.id ? { ...r, status: "declined" as RequestStatus } : r)
-                            );
-                          }}
-                        >
-                          <Text style={[styles.declineOfferText, { fontFamily: "Inter_500Medium" }]}>Decline</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  )}
-                </View>
-              );
-            })
-          )}
-        </ScrollView>
-      )}
-
-      {/* Find Pros view */}
-      {customerTab === "find" && (
+      {/* Find Pros */}
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Filter Chips */}
         <ScrollView
@@ -716,7 +405,6 @@ export default function SearchScreen() {
           )}
         </View>
       </ScrollView>
-      )}
     </View>
   );
 }

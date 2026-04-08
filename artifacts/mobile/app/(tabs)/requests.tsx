@@ -206,11 +206,14 @@ export default function RequestsScreen() {
   const [newModalVisible, setNewModalVisible] = useState(false);
   const [extraRequests, setExtraRequests] = useState<typeof CUSTOMER_REQUESTS>([]);
 
-  function handleAccept(id: string, service: string, customer: string) {
+  function handleAccept(id: string, service: string, customer: string, budget: string) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setAccepted((prev) => [...prev, id]);
-    acceptJob({ id, service, customer, address: "", date: "", time: "" });
-    Alert.alert("Request Accepted", `You accepted the ${service} job from ${customer}.`);
+    acceptJob({ id, service, customer, address: "", date: "", time: "", budget });
+    Alert.alert(
+      "Job Accepted ✓",
+      `You agreed to complete ${customer}'s ${service} job for ${budget} — the price the customer set.`
+    );
   }
 
   function handlePostRequest(service: string, desc: string, budget: string) {
@@ -304,15 +307,27 @@ export default function RequestsScreen() {
                     {isAccepted ? (
                       <View style={styles.acceptedBadge}>
                         <Ionicons name="checkmark" size={12} color="#34FF7A" />
-                        <Text style={[styles.acceptedBadgeText, { fontFamily: "Inter_600SemiBold" }]}>Accepted</Text>
+                        <Text style={[styles.acceptedBadgeText, { fontFamily: "Inter_600SemiBold" }]}>Accepted · {req.budget}</Text>
                       </View>
                     ) : (
                       <TouchableOpacity
                         style={styles.acceptBtn}
-                        onPress={() => handleAccept(req.id, req.service, req.customer)}
+                        onPress={() => {
+                          Alert.alert(
+                            "Agree to Customer's Price?",
+                            `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer. No counter-offers.\n\nDo you want to accept?`,
+                            [
+                              { text: "Cancel", style: "cancel" },
+                              {
+                                text: `Accept at ${req.budget}`,
+                                onPress: () => handleAccept(req.id, req.service, req.customer, req.budget),
+                              },
+                            ]
+                          );
+                        }}
                         activeOpacity={0.85}
                       >
-                        <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>Accept Job</Text>
+                        <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>Accept at {req.budget}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
