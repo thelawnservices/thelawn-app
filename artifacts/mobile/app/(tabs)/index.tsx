@@ -27,6 +27,7 @@ import { useNotifications, type ServiceNotification } from "@/contexts/notificat
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import WalletModal from "@/components/WalletModal";
+import { useWallet } from "@/contexts/wallet";
 
 type FeedPost = {
   id: string; customerName: string; customerInitials: string; customerColor: string;
@@ -776,6 +777,13 @@ const DEFAULT_AVAIL: AvailState = {
 
 function ServiceAvailabilityModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [avail, setAvail] = useState<AvailState>(() => JSON.parse(JSON.stringify(DEFAULT_AVAIL)));
+  const [offered, setOffered] = useState<string[]>([...AVAIL_SERVICES]);
+
+  function toggleOffered(service: string) {
+    setOffered((prev) =>
+      prev.includes(service) ? prev.filter((s) => s !== service) : [...prev, service]
+    );
+  }
 
   function toggleDay(service: string, day: string) {
     setAvail((prev) => {
@@ -805,7 +813,33 @@ function ServiceAvailabilityModal({ visible, onClose }: { visible: boolean; onCl
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-            {AVAIL_SERVICES.map((service, si) => (
+
+            {/* ── Services I Offer ─────────────────────────── */}
+            <Text style={[avStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>Services I Offer</Text>
+            <Text style={[avStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
+              Uncheck any service you don't provide — it will be hidden from your schedule and profile.
+            </Text>
+            <View style={avStyles.offeredRow}>
+              {AVAIL_SERVICES.map((svc) => {
+                const on = offered.includes(svc);
+                return (
+                  <TouchableOpacity
+                    key={svc}
+                    style={[avStyles.offeredChip, on && avStyles.offeredChipOn]}
+                    onPress={() => { toggleOffered(svc); Haptics.selectionAsync(); }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name={on ? "checkmark-circle" : "ellipse-outline"} size={16} color={on ? "#000" : "#555"} />
+                    <Text style={[avStyles.offeredChipText, { fontFamily: "Inter_500Medium" }, on && avStyles.offeredChipTextOn]}>{svc}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <View style={avStyles.divider} />
+
+            {/* ── Per-service schedule (offered only) ─────── */}
+            {AVAIL_SERVICES.filter((s) => offered.includes(s)).map((service, si) => (
               <View key={service} style={si > 0 ? { marginTop: 28 } : undefined}>
                 <Text style={[avStyles.serviceLabel, { fontFamily: "Inter_600SemiBold" }]}>{service}</Text>
 
@@ -870,6 +904,19 @@ function ServiceAvailabilityModal({ visible, onClose }: { visible: boolean; onCl
 }
 
 const avStyles = StyleSheet.create({
+  sectionHeading: { fontSize: 16, color: "#FFFFFF", marginBottom: 6 },
+  sectionHint: { fontSize: 12, color: "#888", marginBottom: 14, lineHeight: 18 },
+  offeredRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
+  offeredChip: {
+    flexDirection: "row", alignItems: "center", gap: 7,
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderRadius: 14, backgroundColor: "#1A1A1A",
+    borderWidth: 1, borderColor: "#333",
+  },
+  offeredChipOn: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  offeredChipText: { fontSize: 13, color: "#666" },
+  offeredChipTextOn: { color: "#000" },
+  divider: { height: 1, backgroundColor: "#222", marginBottom: 24 },
   serviceLabel: { fontSize: 15, color: "#FFFFFF", marginBottom: 12 },
   daysRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
   dayChip: {
@@ -906,6 +953,7 @@ export default function HomeScreen() {
   const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "G" : "Z");
   const { acceptJob } = useJobs();
   const { addBookedSlot } = useLandscaperProfile();
+  const { balance } = useWallet();
   const [prosLoaded, setProsLoaded] = useState(false);
   const [selectedPro, setSelectedPro] = useState<TrustedPro | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -1126,6 +1174,21 @@ export default function HomeScreen() {
       >
         {/* Greeting */}
         <View style={styles.greetingRow}>
+          {/* Wallet balance chip — landscapers only, top left */}
+          {role === "landscaper" && (
+            <TouchableOpacity
+              style={styles.walletChip}
+              onPress={() => setWalletVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="wallet-outline" size={16} color="#34FF7A" />
+              <Text style={[styles.walletChipAmount, { fontFamily: "Inter_700Bold" }]}>
+                ${balance.toFixed(2)}
+              </Text>
+              <Ionicons name="chevron-forward" size={13} color="#34FF7A" />
+            </TouchableOpacity>
+          )}
+
           <Text style={[styles.greetingText, { fontFamily: "Inter_600SemiBold" }]}>
             {(() => {
               const h = new Date().getHours();
@@ -1136,7 +1199,7 @@ export default function HomeScreen() {
           </Text>
           <Text style={[styles.greetingZip, { fontFamily: "Inter_400Regular" }]}>
             {role === "landscaper"
-              ? "Pending requests within 25 mi · ZIP 34222"
+              ? "Your dashboard · ZIP 34222"
               : "Landscapers near you · ZIP 34222"}
           </Text>
         </View>
@@ -1261,7 +1324,12 @@ export default function HomeScreen() {
         {role === "landscaper" && (
           <View style={styles.statsRow}>
             {LANDSCAPER_QUICK_STATS.map((s, i) => (
-              <AnimatedStatCard key={s.label} stat={s} delay={i * 120} />
+              <AnimatedStatCard
+                key={s.label}
+                stat={s}
+                delay={i * 120}
+                onPress={s.label === "This Week" ? () => setWalletVisible(true) : undefined}
+              />
             ))}
           </View>
         )}
@@ -1869,6 +1937,15 @@ const styles = StyleSheet.create({
   greetingRow: { marginBottom: 20 },
   greetingText: { fontSize: 22, color: "#FFFFFF", marginBottom: 4 },
   greetingZip: { fontSize: 13, color: "#CCCCCC" },
+  walletChip: {
+    flexDirection: "row", alignItems: "center", gap: 7,
+    alignSelf: "flex-start",
+    backgroundColor: "#0d2e18", borderRadius: 20,
+    borderWidth: 1, borderColor: "#34FF7A55",
+    paddingHorizontal: 14, paddingVertical: 8,
+    marginBottom: 14,
+  },
+  walletChipAmount: { fontSize: 16, color: "#34FF7A" },
   ctaBtn: {
     backgroundColor: "#34C759",
     flexDirection: "row",
