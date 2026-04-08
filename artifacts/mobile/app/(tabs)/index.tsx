@@ -1129,7 +1129,6 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginBottom: 0 }]}>
               Recommended Landscapers
             </Text>
-            <Text style={[styles.seeAllLink, { fontFamily: "Inter_400Regular" }]}>See all</Text>
           </View>
           <ScrollView
             horizontal

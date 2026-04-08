@@ -74,7 +74,13 @@ const PROS = [
   },
 ];
 
-const SORT_OPTIONS = ["Recommended", "Closest", "Highest Rated"];
+const SORT_OPTIONS = ["Recommended", "Closest", "Highest Rated", "Price: Low to High", "Price: High to Low"];
+const PRICE_RANGES = [
+  { label: "Any Price", min: 0,   max: Infinity },
+  { label: "Under $50", min: 0,   max: 50 },
+  { label: "$50 – $100", min: 50, max: 100 },
+  { label: "$100+",      min: 100, max: Infinity },
+];
 
 const SERVICE_REQUESTS = [
   { id: "r1", service: "Mowing/Edging",    size: "Medium", customer: "Alex T.",   distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible",          budget: "$70",   description: "Front and back yard, medium lot. Edge along the driveway and sidewalk.",              address: "8910 45th Ave E, Ellenton, FL" },
@@ -93,8 +99,11 @@ export default function SearchScreen() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [sortIdx, setSortIdx] = useState(0);
   const [showSort, setShowSort] = useState(false);
+  const [priceRangeIdx, setPriceRangeIdx] = useState(0);
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
   const { acceptJob } = useJobs();
+
+  const priceRange = PRICE_RANGES[priceRangeIdx];
 
   const filtered = PROS.filter((p) => {
     const matchesQuery =
@@ -103,12 +112,15 @@ export default function SearchScreen() {
       p.specialty.toLowerCase().includes(query.toLowerCase());
     const matchesFilter =
       activeFilter === "All" || p.tags.includes(activeFilter);
-    return matchesQuery && matchesFilter;
+    const matchesPrice = p.price >= priceRange.min && p.price < priceRange.max;
+    return matchesQuery && matchesFilter && matchesPrice;
   });
 
   const sorted = [...filtered].sort((a, b) => {
     if (sortIdx === 1) return parseFloat(a.distance) - parseFloat(b.distance);
     if (sortIdx === 2) return b.rating - a.rating;
+    if (sortIdx === 3) return a.price - b.price;
+    if (sortIdx === 4) return b.price - a.price;
     return 0;
   });
 
@@ -289,6 +301,37 @@ export default function SearchScreen() {
           ))}
         </ScrollView>
 
+        {/* Price Range Filter Row */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.filtersRow, { paddingTop: 0 }]}
+        >
+          {PRICE_RANGES.map((pr, i) => (
+            <TouchableOpacity
+              key={pr.label}
+              style={[styles.filterChip, styles.priceFilterChip, priceRangeIdx === i && styles.priceChipActive]}
+              onPress={() => { setPriceRangeIdx(i); Haptics.selectionAsync(); }}
+            >
+              <Ionicons
+                name="cash-outline"
+                size={12}
+                color={priceRangeIdx === i ? "#000" : "#34FF7A"}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.filterChipText,
+                  { fontFamily: "Inter_500Medium" },
+                  priceRangeIdx === i && styles.priceChipTextActive,
+                ]}
+              >
+                {pr.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
         {/* Sort Row */}
         <View style={styles.sortRow}>
           <Text style={[styles.resultCount, { fontFamily: "Inter_400Regular" }]}>
@@ -443,6 +486,9 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   filterChipText: { fontSize: 13, color: "#FFFFFF" },
   filterChipTextActive: { color: "#000" },
+  priceChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  priceChipTextActive: { color: "#000" },
+  priceFilterChip: { flexDirection: "row", alignItems: "center" },
   sortRow: {
     flexDirection: "row",
     alignItems: "center",
