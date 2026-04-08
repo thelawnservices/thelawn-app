@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/auth";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import TermsModal from "@/components/TermsModal";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
+import { validateText, simulatePhotoReview } from "@/utils/moderation";
 
 const PAYMENT_METHODS = [
   { label: "Apple Pay",  value: "Apple Pay",  ionIcon: "logo-apple" as const,            shortLabel: "Apple Pay" },
@@ -131,6 +132,7 @@ function LandscaperProfile({
   const [heroBackground, setHeroBackground] = useState<string | null>(null);
   const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const [servicePhotos, setServicePhotos] = useState<string[]>([]);
+  const [pendingPhotoUris, setPendingPhotoUris] = useState<Set<string>>(new Set());
   const [privacyVisible, setPrivacyVisible] = useState(false);
   const [privVisible, setPrivVisible] = useState(true);
   const [privPrices, setPrivPrices] = useState(false);
@@ -243,7 +245,22 @@ function LandscaperProfile({
       quality: 0.8,
     });
     if (!result.canceled) {
-      setServicePhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)]);
+      const newUris = result.assets.map((a) => a.uri);
+      setServicePhotos((prev) => [...prev, ...newUris]);
+      setPendingPhotoUris((prev) => new Set([...prev, ...newUris]));
+      newUris.forEach((uri) => {
+        simulatePhotoReview({ uri, id: uri }).then((managed) => {
+          setPendingPhotoUris((prev) => {
+            const next = new Set(prev);
+            next.delete(uri);
+            return next;
+          });
+          if (managed.status === "rejected") {
+            setServicePhotos((prev) => prev.filter((p) => p !== uri));
+            Alert.alert("Photo Removed", "One of your photos didn't meet our community guidelines and was removed.");
+          }
+        });
+      });
     }
   }
 
@@ -514,11 +531,22 @@ function LandscaperProfile({
                       <Ionicons name={icon} size={30} color="#34FF7A" />
                     </View>
                   ))
-                : servicePhotos.map((uri, i) => (
-                    <View key={i} style={cutStyles.photoCell}>
-                      <Image source={{ uri }} style={cutStyles.photoImage} />
-                    </View>
-                  ))
+                : servicePhotos.map((uri, i) => {
+                    const isPending = pendingPhotoUris.has(uri);
+                    return (
+                      <View key={i} style={cutStyles.photoCell}>
+                        <Image source={{ uri }} style={[cutStyles.photoImage, isPending && { opacity: 0.45 }]} />
+                        {isPending && (
+                          <View style={cutStyles.photoPendingOverlay}>
+                            <Ionicons name="time-outline" size={14} color="#FFFFFF" />
+                            <Text style={[{ fontSize: 9, color: "#FFFFFF", textAlign: "center", marginTop: 2 }, { fontFamily: "Inter_600SemiBold" }]}>
+                              Pending{"\n"}Review
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })
               }
             </View>
 
@@ -666,6 +694,11 @@ function LandscaperProfile({
                         onPress={() => {
                           const t = replyText.trim();
                           if (!t) return;
+                          const v = validateText(t, 280);
+                          if (!v.valid) {
+                            Alert.alert("Reply Not Posted", v.error ?? "Please revise your reply before posting.");
+                            return;
+                          }
                           setReviews((prev) => prev.map((rev, idx) =>
                             idx === i
                               ? { ...rev, replies: [...rev.replies, { text: t, author: "GreenScape Pros", date: "Just now" }] }
@@ -1145,7 +1178,8 @@ const cutStyles = StyleSheet.create({
   photosSectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10, marginTop: 4 },
   addPhotosLink: { fontSize: 13, color: "#34FF7A" },
   photosGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 8 },
-  photoCell: { width: "47%", aspectRatio: 16 / 9, backgroundColor: "#1A1A1A", borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#222222", overflow: "hidden" },
+  photoCell: { width: "47%", aspectRatio: 16 / 9, backgroundColor: "#1A1A1A", borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#222222", overflow: "hidden", position: "relative" },
+  photoPendingOverlay: { position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", borderRadius: 20 },
   photoEmoji: { fontSize: 36 },
   photoImage: { width: "100%", height: "100%" },
 

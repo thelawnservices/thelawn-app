@@ -34,6 +34,7 @@ const PROS = [
     initials: "JR",
     color: "#FFFFFF",
     trusted: true,
+    acceptedPayments: ["Venmo", "PayPal", "In Person"],
   },
   {
     id: "2",
@@ -47,6 +48,7 @@ const PROS = [
     initials: "GP",
     color: "#166D42",
     trusted: true,
+    acceptedPayments: ["Venmo", "Zelle", "Cash App", "In Person"],
   },
   {
     id: "3",
@@ -60,6 +62,7 @@ const PROS = [
     initials: "MS",
     color: "#4CAF50",
     trusted: false,
+    acceptedPayments: ["Cash App", "In Person"],
   },
   {
     id: "4",
@@ -73,6 +76,7 @@ const PROS = [
     initials: "EG",
     color: "#2E7D32",
     trusted: false,
+    acceptedPayments: ["Venmo", "PayPal", "Zelle", "In Person"],
   },
 ];
 
@@ -123,11 +127,18 @@ export default function SearchScreen() {
     return 0;
   });
 
-  const handleBook = (pro: (typeof PROS)[0]) => {
+  const handleBook = (pro: (typeof PROS)[0], jobAccepted = false) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: "/pay",
-      params: { proName: pro.name, proInitials: pro.initials, proColor: pro.color, price: pro.price.toString() },
+      params: {
+        proName: pro.name,
+        proInitials: pro.initials,
+        proColor: pro.color,
+        price: pro.price.toString(),
+        proAcceptedPayments: pro.acceptedPayments.join(","),
+        jobAccepted: jobAccepted ? "true" : "false",
+      },
     });
   };
 
@@ -409,6 +420,15 @@ export default function SearchScreen() {
                   ))}
                 </View>
 
+                {/* Payment accepted row */}
+                <View style={styles.payAcceptRow}>
+                  <Ionicons name="wallet-outline" size={12} color="#888" />
+                  <Text style={[styles.payAcceptLabel, { fontFamily: "Inter_400Regular" }]}>Accepts:</Text>
+                  <Text style={[styles.payAcceptMethods, { fontFamily: "Inter_500Medium" }]}>
+                    {pro.acceptedPayments.join("  ·  ")}
+                  </Text>
+                </View>
+
                 <TouchableOpacity
                   style={styles.bookBtn}
                   onPress={() => handleBook(pro)}
@@ -431,7 +451,14 @@ export default function SearchScreen() {
           setSelectedPro(null);
           router.push({
             pathname: "/pay",
-            params: { proName: pro.name, proInitials: pro.initials, proColor: pro.color, price: pro.price.toString() },
+            params: {
+              proName: pro.name,
+              proInitials: pro.initials,
+              proColor: pro.color,
+              price: pro.price.toString(),
+              proAcceptedPayments: pro.acceptedPayments.join(","),
+              jobAccepted: "false",
+            },
           });
         }}
       />
@@ -535,6 +562,24 @@ function SearchProProfileModal({
                 <Ionicons name="chatbubble-outline" size={22} color="#34FF7A" />
                 <Text style={[proStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
               </TouchableOpacity>
+            </View>
+
+            {/* Payment methods — visible BEFORE booking */}
+            <View style={proStyles.payInfoCard}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <Ionicons name="wallet-outline" size={16} color="#34FF7A" />
+                <Text style={[proStyles.payInfoTitle, { fontFamily: "Inter_600SemiBold" }]}>Accepted Payment Methods</Text>
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {pro.acceptedPayments.map((method) => (
+                  <View key={method} style={proStyles.payMethodChip}>
+                    <Text style={[proStyles.payMethodChipText, { fontFamily: "Inter_500Medium" }]}>{method}</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={[proStyles.payInfoNote, { fontFamily: "Inter_400Regular" }]}>
+                Payment is only processed after work is completed and approved.
+              </Text>
             </View>
 
             {/* Book Now */}
@@ -798,6 +843,20 @@ const proStyles = StyleSheet.create({
   dayChipOn: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   dayChipText: { fontSize: 11, color: "#999" },
   dayChipTextOn: { color: "#000" },
+
+  payInfoCard: {
+    backgroundColor: "#111",
+    borderRadius: 16, borderWidth: 1, borderColor: "#262626",
+    padding: 16, marginBottom: 16,
+  },
+  payInfoTitle: { fontSize: 14, color: "#FFFFFF" },
+  payMethodChip: {
+    backgroundColor: "#1A1A1A", borderRadius: 20,
+    borderWidth: 1, borderColor: "#2A2A2A",
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  payMethodChipText: { fontSize: 12, color: "#FFFFFF" },
+  payInfoNote: { fontSize: 11, color: "#666", marginTop: 12, lineHeight: 16 },
 });
 
 const styles = StyleSheet.create({
@@ -1183,4 +1242,11 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   acceptBtnText: { color: "#000", fontSize: 15 },
+
+  payAcceptRow: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    marginBottom: 10, flexWrap: "wrap",
+  },
+  payAcceptLabel: { fontSize: 11, color: "#777" },
+  payAcceptMethods: { fontSize: 11, color: "#CCCCCC", flex: 1 },
 });

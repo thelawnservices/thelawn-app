@@ -16,10 +16,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import { useAuth } from "@/contexts/auth";
+import { validateText } from "@/utils/moderation";
 
 type PayState = "availability" | "details" | "review" | "processing" | "success";
 
-type PayKey = "applepay" | "debit" | "venmo" | "paypal" | "cashapp" | "inperson";
+type PayKey = "applepay" | "debit" | "venmo" | "paypal" | "cashapp" | "zelle" | "inperson";
 
 const PROFILE_TO_PAY_KEY: Record<string, PayKey> = {
   "Apple Pay":  "applepay",
@@ -27,8 +28,20 @@ const PROFILE_TO_PAY_KEY: Record<string, PayKey> = {
   "PayPal":     "paypal",
   "Debit Card": "debit",
   "Cash App":   "cashapp",
+  "Zelle":      "zelle",
   "In Person":  "inperson",
+  "Check":      "inperson",
 };
+
+const ALL_PAY_OPTIONS: { key: PayKey; label: string; ionIcon: string; displayName: string }[] = [
+  { key: "applepay", label: "Apple Pay",             ionIcon: "logo-apple",           displayName: "Apple Pay" },
+  { key: "venmo",    label: "Venmo",                  ionIcon: "cash-outline",          displayName: "Venmo" },
+  { key: "paypal",   label: "PayPal",                 ionIcon: "card-outline",          displayName: "PayPal" },
+  { key: "cashapp",  label: "Cash App",               ionIcon: "phone-portrait-outline",displayName: "Cash App" },
+  { key: "zelle",    label: "Zelle",                  ionIcon: "flash-outline",         displayName: "Zelle" },
+  { key: "debit",    label: "Debit / Credit Card",    ionIcon: "card",                  displayName: "Debit / Credit Card" },
+  { key: "inperson", label: "Pay In Person",          ionIcon: "people-circle-outline", displayName: "Pay In Person (Cash · Check · Other)" },
+];
 
 const TIP_OPTIONS = [
   { label: "10%", value: 0.1 },
@@ -97,15 +110,29 @@ export default function PayScreen() {
     proInitials: string;
     proColor: string;
     price: string;
+    proAcceptedPayments: string;
+    jobAccepted: string;
   }>();
 
   const proName = params.proName || "John Rivera";
   const proInitials = params.proInitials || "JR";
   const proColor = params.proColor || "#34FF7A";
+  const jobAccepted = params.jobAccepted === "true";
+
+  const proAcceptedPayments: PayKey[] = params.proAcceptedPayments
+    ? params.proAcceptedPayments.split(",").map((p) => PROFILE_TO_PAY_KEY[p.trim()]).filter(Boolean) as PayKey[]
+    : [];
+
+  const allowedPayOptions = jobAccepted || proAcceptedPayments.length === 0
+    ? ALL_PAY_OPTIONS
+    : ALL_PAY_OPTIONS.filter((opt) => proAcceptedPayments.includes(opt.key));
 
   const { availability, bookedSlots, addBookedSlot } = useLandscaperProfile();
   const { preferredPayment } = useAuth();
-  const defaultPayKey: PayKey = (preferredPayment && PROFILE_TO_PAY_KEY[preferredPayment]) || "applepay";
+  const rawDefaultKey = (preferredPayment && PROFILE_TO_PAY_KEY[preferredPayment]) || "applepay";
+  const defaultPayKey: PayKey = allowedPayOptions.some((o) => o.key === rawDefaultKey)
+    ? rawDefaultKey
+    : (allowedPayOptions[0]?.key ?? "inperson");
 
   const rollingDates = useMemo(() => {
     const today = new Date();
@@ -216,6 +243,8 @@ export default function PayScreen() {
   const [venmoUser, setVenmoUser] = useState("");
   const [paypalEmail, setPaypalEmail] = useState("");
   const [cashTag, setCashTag] = useState("");
+  const [zellePhone, setZellePhone] = useState("");
+  const [instrErr, setInstrErr] = useState<string | null>(null);
   const spinValue = useRef(new Animated.Value(0)).current;
 
   const basePrice =
@@ -293,6 +322,13 @@ export default function PayScreen() {
     if (paymentMethod === "cashapp") {
       if (!cashTag.trim() || !cashTag.trim().startsWith("$"))
         return "Cash App $cashtag must start with $";
+      return true;
+    }
+    if (paymentMethod === "zelle") {
+      const z = zellePhone.trim();
+      if (!z) return "Please enter a phone number or email for Zelle.";
+      if (!/^\d{10,}$/.test(z.replace(/\D/g, "")) && !z.includes("@"))
+        return "Enter a valid 10-digit phone number or email for Zelle.";
       return true;
     }
     return true;
@@ -927,15 +963,21 @@ export default function PayScreen() {
             Tell the landscaper exactly what you want done
           </Text>
           <TextInput
-            style={[styles.textArea, { fontFamily: "Inter_400Regular" }]}
+            style={[styles.textArea, { fontFamily: "Inter_400Regular" }, instrErr ? { borderColor: "#FF4444", borderWidth: 1 } : {}]}
             placeholder="Example: Please edge the driveway, remove weeds from flower beds, trim around the fence..."
             placeholderTextColor="#9ca3af"
             multiline
             numberOfLines={5}
             value={instructions}
-            onChangeText={setInstructions}
+            onChangeText={(t) => { setInstructions(t); if (instrErr) setInstrErr(null); }}
             textAlignVertical="top"
           />
+          {instrErr && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
+              <Ionicons name="alert-circle-outline" size={14} color="#FF4444" />
+              <Text style={[{ fontSize: 12, color: "#FF4444" }, { fontFamily: "Inter_400Regular" }]}>{instrErr}</Text>
+            </View>
+          )}
 
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 8 }]}>
             Attach Photos
@@ -973,6 +1015,14 @@ export default function PayScreen() {
             ]}
             onPress={() => {
               if (!canContinueFromDetails) return;
+              if (instructions.trim()) {
+                const v = validateText(instructions, 500);
+                if (!v.valid) {
+                  setInstrErr(v.error ?? "Please revise your instructions.");
+                  return;
+                }
+              }
+              setInstrErr(null);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setPayState("review");
             }}
@@ -1194,7 +1244,19 @@ export default function PayScreen() {
         <Text style={[styles.payMethodLabel, { fontFamily: "Inter_600SemiBold" }]}>
           Payment Method
         </Text>
-        {preferredPayment && PROFILE_TO_PAY_KEY[preferredPayment] && (
+
+        {/* Accepted-payment enforcement banner */}
+        {!jobAccepted && proAcceptedPayments.length > 0 && (
+          <View style={styles.acceptedPayBanner}>
+            <Ionicons name="wallet-outline" size={15} color="#34FF7A" />
+            <Text style={[styles.acceptedPayBannerText, { fontFamily: "Inter_400Regular" }]}>
+              <Text style={{ fontFamily: "Inter_600SemiBold" }}>This landscaper accepts: </Text>
+              {allowedPayOptions.map((o) => o.displayName).join(" · ")}
+            </Text>
+          </View>
+        )}
+
+        {preferredPayment && PROFILE_TO_PAY_KEY[preferredPayment] && allowedPayOptions.some((o) => o.key === PROFILE_TO_PAY_KEY[preferredPayment!]) && (
           <View style={styles.preferredPayBanner}>
             <Ionicons name="star" size={14} color="#34FF7A" />
             <Text style={[styles.preferredPayBannerText, { fontFamily: "Inter_500Medium" }]}>
@@ -1202,48 +1264,37 @@ export default function PayScreen() {
             </Text>
           </View>
         )}
+
+        {/* Dynamic payment tiles — small tiles for options 1-4, full-width for rest */}
         <View style={styles.payMethodGrid}>
-          {(
-            [
-              { key: "applepay", ionIcon: "logo-apple" as const,          label: "Apple Pay" },
-              { key: "venmo",    ionIcon: "cash-outline" as const,         label: "Venmo" },
-              { key: "paypal",   ionIcon: "card-outline" as const,         label: "PayPal" },
-              { key: "cashapp",  ionIcon: "phone-portrait-outline" as const, label: "Cash App" },
-            ] as const
-          ).map((m) => (
+          {allowedPayOptions.filter((o) => !["debit","inperson"].includes(o.key)).map((m) => (
             <TouchableOpacity
               key={m.key}
               style={[styles.payMethodTile, paymentMethod === m.key && styles.payMethodTileActive]}
-              onPress={() => { setPaymentMethod(m.key); Haptics.selectionAsync(); }}
+              onPress={() => { setPaymentMethod(m.key as PayKey); Haptics.selectionAsync(); }}
               activeOpacity={0.8}
             >
-              <Ionicons name={m.ionIcon} size={28} color={paymentMethod === m.key ? "#34FF7A" : "#888"} />
+              <Ionicons name={m.ionIcon as any} size={28} color={paymentMethod === m.key ? "#34FF7A" : "#888"} />
               <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === m.key && styles.payMethodTileTextActive]}>
                 {m.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-        <TouchableOpacity
-          style={[styles.payMethodTileFull, paymentMethod === "debit" && styles.payMethodTileActive]}
-          onPress={() => { setPaymentMethod("debit"); Haptics.selectionAsync(); }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="card" size={28} color={paymentMethod === "debit" ? "#34FF7A" : "#888"} />
-          <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === "debit" && styles.payMethodTileTextActive]}>
-            Debit / Credit Card
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.payMethodTileFull, paymentMethod === "inperson" && styles.payMethodTileActive]}
-          onPress={() => { setPaymentMethod("inperson"); Haptics.selectionAsync(); }}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="wallet-outline" size={28} color={paymentMethod === "inperson" ? "#34FF7A" : "#888"} />
-          <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === "inperson" && styles.payMethodTileTextActive]}>
-            Pay In Person (Cash / Check / Other)
-          </Text>
-        </TouchableOpacity>
+
+        {allowedPayOptions.filter((o) => ["debit","inperson"].includes(o.key)).map((m) => (
+          <TouchableOpacity
+            key={m.key}
+            style={[styles.payMethodTileFull, paymentMethod === m.key && styles.payMethodTileActive]}
+            onPress={() => { setPaymentMethod(m.key as PayKey); Haptics.selectionAsync(); }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name={m.ionIcon as any} size={28} color={paymentMethod === m.key ? "#34FF7A" : "#888"} />
+            <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === m.key && styles.payMethodTileTextActive]}>
+              {m.displayName}
+            </Text>
+          </TouchableOpacity>
+        ))}
 
         {paymentMethod === "applepay" && (
           <View style={styles.payFieldReady}>
@@ -1315,6 +1366,17 @@ export default function PayScreen() {
             placeholderTextColor="#777"
             value={cashTag}
             onChangeText={setCashTag}
+            autoCapitalize="none"
+          />
+        )}
+        {paymentMethod === "zelle" && (
+          <TextInput
+            style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
+            placeholder="Phone number or email"
+            placeholderTextColor="#777"
+            value={zellePhone}
+            onChangeText={setZellePhone}
+            keyboardType="email-address"
             autoCapitalize="none"
           />
         )}
@@ -1987,6 +2049,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#34FF7A",
     flex: 1,
+  },
+  acceptedPayBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: "#0A1A0F",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#1a3a22",
+  },
+  acceptedPayBannerText: {
+    fontSize: 13,
+    color: "#CCCCCC",
+    flex: 1,
+    lineHeight: 20,
   },
 });
 

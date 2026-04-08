@@ -20,6 +20,7 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
 import { useNotifications } from "@/contexts/notifications";
+import { simulatePhotoReview } from "@/utils/moderation";
 
 type JobStatus = "pending" | "arrived" | "started" | "completed";
 
@@ -332,6 +333,7 @@ export default function JobsScreen() {
   const [completionPhotos, setCompletionPhotos] = useState<Record<string, string[]>>({});
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
   const [photoModalJobId, setPhotoModalJobId] = useState<string | null>(null);
+  const [pendingCompletionUris, setPendingCompletionUris] = useState<Set<string>>(new Set());
   // Customer side: track approval per jobId
   const [customerApproved, setCustomerApproved] = useState<Record<string, "approved" | "disputed" | null>>({});
 
@@ -364,7 +366,25 @@ export default function JobsScreen() {
   function submitCompletion(jobId: string, photos: string[]) {
     setJobStatuses((prev) => ({ ...prev, [jobId]: "completed" }));
     setCompletedAt((prev) => ({ ...prev, [jobId]: Date.now() }));
-    if (photos.length > 0) setCompletionPhotos((prev) => ({ ...prev, [jobId]: photos }));
+    if (photos.length > 0) {
+      setCompletionPhotos((prev) => ({ ...prev, [jobId]: photos }));
+      setPendingCompletionUris((prev) => new Set([...prev, ...photos]));
+      photos.forEach((uri) => {
+        simulatePhotoReview({ uri, id: `${jobId}-${uri}` }).then((managed) => {
+          setPendingCompletionUris((prev) => {
+            const next = new Set(prev);
+            next.delete(uri);
+            return next;
+          });
+          if (managed.status === "rejected") {
+            setCompletionPhotos((prev) => ({
+              ...prev,
+              [jobId]: (prev[jobId] ?? []).filter((p) => p !== uri),
+            }));
+          }
+        });
+      });
+    }
     const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
     addNotification({
       icon: "checkmark-circle",
@@ -475,9 +495,22 @@ export default function JobsScreen() {
                     </Text>
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
-                    {(completionPhotos[job.id] ?? []).map((uri, pi) => (
-                      <Image key={pi} source={{ uri }} style={jobPhotoStyles.photoThumb} />
-                    ))}
+                    {(completionPhotos[job.id] ?? []).map((uri, pi) => {
+                      const isPending = pendingCompletionUris.has(uri);
+                      return (
+                        <View key={pi} style={{ position: "relative" }}>
+                          <Image source={{ uri }} style={[jobPhotoStyles.photoThumb, isPending && { opacity: 0.45 }]} />
+                          {isPending && (
+                            <View style={jobPhotoStyles.pendingOverlay}>
+                              <Ionicons name="time-outline" size={12} color="#FFFFFF" />
+                              <Text style={[{ fontSize: 8, color: "#FFFFFF", textAlign: "center", marginTop: 2 }, { fontFamily: "Inter_600SemiBold" }]}>
+                                Pending{"\n"}Review
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })}
                   </ScrollView>
                 </View>
               )}
@@ -981,6 +1014,11 @@ const jobPhotoStyles = StyleSheet.create({
   photoHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
   photoHeaderText: { fontSize: 12, color: "#34FF7A" },
   photoThumb: { width: 72, height: 72, borderRadius: 10, marginRight: 8, backgroundColor: "#222" },
+  pendingOverlay: {
+    position: "absolute", top: 0, left: 0, width: 72, height: 72,
+    borderRadius: 10, backgroundColor: "rgba(0,0,0,0.6)",
+    alignItems: "center", justifyContent: "center",
+  },
   approvalBanner: {
     backgroundColor: "#1C1200", borderRadius: 14,
     borderWidth: 1, borderColor: "#FFAA0033",
