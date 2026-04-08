@@ -190,7 +190,7 @@ function ChatModal({
               value={input}
               onChangeText={setInput}
               placeholder="Type a message..."
-              placeholderTextColor="#555"
+              placeholderTextColor="#777"
               returnKeyType="send"
               onSubmitEditing={sendMessage}
             />
@@ -319,11 +319,11 @@ export default function JobsScreen() {
               </View>
 
               <View style={styles.metaRow}>
-                <Ionicons name="location-outline" size={12} color="#888" />
+                <Ionicons name="location-outline" size={12} color="#CCCCCC" />
                 <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{job.address}</Text>
               </View>
               <View style={styles.metaRow}>
-                <Ionicons name="time-outline" size={12} color="#888" />
+                <Ionicons name="time-outline" size={12} color="#CCCCCC" />
                 <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{job.date} · {job.time}</Text>
               </View>
 
@@ -377,8 +377,8 @@ export default function JobsScreen() {
                 </View>
               </View>
               <View style={[styles.metaRow, { marginTop: 6 }]}>
-                <Ionicons name="time-outline" size={12} color="#555" />
-                <Text style={[styles.metaText, { fontFamily: "Inter_400Regular", color: "#555" }]}>{job.date} · {job.time}</Text>
+                <Ionicons name="time-outline" size={12} color="#CCCCCC" />
+                <Text style={[styles.metaText, { fontFamily: "Inter_400Regular", color: "#BBBBBB" }]}>{job.date} · {job.time}</Text>
               </View>
             </View>
           ))
@@ -412,7 +412,7 @@ export default function JobsScreen() {
 
         {/* All sales are final notice */}
         <View style={styles.finalSaleNotice}>
-          <Ionicons name="information-circle-outline" size={14} color="#555" />
+          <Ionicons name="information-circle-outline" size={14} color="#CCCCCC" />
           <Text style={[styles.finalSaleText, { fontFamily: "Inter_400Regular" }]}>
             All sales are final. No refunds after completion confirmation.
           </Text>
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
 
   sectionLabel: {
     fontSize: 11,
-    color: "#AAAAAA",
+    color: "#CCCCCC",
     textTransform: "uppercase",
     letterSpacing: 1.2,
     marginBottom: 6,
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   jobTitle: { fontSize: 15, color: "#FFFFFF", marginBottom: 2 },
-  jobSub: { fontSize: 13, color: "#888888", marginBottom: 3 },
+  jobSub: { fontSize: 13, color: "#BBBBBB", marginBottom: 3 },
   jobStatus: { fontSize: 13, color: "#34FF7A" },
 
   actionBtns: { flexDirection: "row", gap: 8, alignItems: "center" },
@@ -500,7 +500,7 @@ const styles = StyleSheet.create({
   btnIcon: { fontSize: 18 },
 
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  metaText: { fontSize: 12, color: "#888888", flex: 1 },
+  metaText: { fontSize: 12, color: "#BBBBBB", flex: 1 },
 
   statusRow: { flexDirection: "row", gap: 8, marginTop: 6 },
   stepBtn: {
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
   completedBadgeText: { fontSize: 11, color: "#34FF7A" },
 
   emptyRow: { paddingVertical: 24, alignItems: "center" },
-  emptyText: { fontSize: 14, color: "#555" },
+  emptyText: { fontSize: 14, color: "#BBBBBB" },
 
   historyCard: {
     flexDirection: "row",
@@ -574,8 +574,8 @@ const styles = StyleSheet.create({
   },
   historyService: { fontSize: 14, color: "#FFFFFF" },
   historyAmount: { fontSize: 14, color: "#34FF7A" },
-  historyPerson: { fontSize: 12, color: "#888888", marginBottom: 2 },
-  historyDate: { fontSize: 11, color: "#555555" },
+  historyPerson: { fontSize: 12, color: "#BBBBBB", marginBottom: 2 },
+  historyDate: { fontSize: 11, color: "#BBBBBB" },
 
   finalSaleNotice: {
     flexDirection: "row",
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
   },
   finalSaleText: {
     fontSize: 11,
-    color: "#555555",
+    color: "#BBBBBB",
     flex: 1,
     lineHeight: 16,
   },

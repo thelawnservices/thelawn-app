@@ -360,7 +360,7 @@ function LandscaperProfile({
           <Text style={[cutStyles.jobsText, { fontFamily: "Inter_400Regular" }]}>142 jobs</Text>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
-          <Ionicons name="location-outline" size={13} color="#888" />
+          <Ionicons name="location-outline" size={13} color="#CCCCCC" />
           <Text style={[cutStyles.heroLocation, { fontFamily: "Inter_400Regular" }]}>
             {profileCity}, {profileState} {profileZip}
           </Text>
@@ -448,7 +448,7 @@ function LandscaperProfile({
             {/* Accepted Payments */}
             <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>ACCEPTED PAYMENTS</Text>
             <View style={cutStyles.card}>
-              <Text style={[{ fontSize: 12, color: "#666", marginBottom: 12 }, { fontFamily: "Inter_400Regular" }]}>
+              <Text style={[{ fontSize: 12, color: "#999", marginBottom: 12 }, { fontFamily: "Inter_400Regular" }]}>
                 Select all payment types you accept from customers
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -478,7 +478,7 @@ function LandscaperProfile({
                 })}
               </View>
               {acceptedPayments.length > 0 && (
-                <Text style={[{ fontSize: 11, color: "#555", marginTop: 12 }, { fontFamily: "Inter_400Regular" }]}>
+                <Text style={[{ fontSize: 11, color: "#BBBBBB", marginTop: 12 }, { fontFamily: "Inter_400Regular" }]}>
                   Customers will see: {acceptedPayments.join(" · ")}
                 </Text>
               )}
@@ -489,7 +489,7 @@ function LandscaperProfile({
             <View style={cutStyles.card}>
               {/* Location row */}
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 18 }}>
-                <Ionicons name="location-outline" size={18} color="#888" />
+                <Ionicons name="location-outline" size={18} color="#CCCCCC" />
                 <Text style={[cutStyles.addrLine, { fontFamily: "Inter_500Medium", color: "#fff" }]}>
                   {profileCity}, {profileState} {profileZip}
                 </Text>
@@ -522,7 +522,7 @@ function LandscaperProfile({
                     value={availStart}
                     onChangeText={setAvailStart}
                     placeholder="8:00 AM"
-                    placeholderTextColor="#555"
+                    placeholderTextColor="#777"
                   />
                 </View>
                 <Text style={[availStyles.hoursSep, { fontFamily: "Inter_400Regular" }]}>to</Text>
@@ -533,7 +533,7 @@ function LandscaperProfile({
                     value={availEnd}
                     onChangeText={setAvailEnd}
                     placeholder="6:00 PM"
-                    placeholderTextColor="#555"
+                    placeholderTextColor="#777"
                   />
                 </View>
               </View>
@@ -558,10 +558,10 @@ function LandscaperProfile({
                       onPress={() => setCalendarSelectedDate(isCalSelected ? null : dateKey)}
                       activeOpacity={0.75}
                     >
-                      <Text style={[availStyles.calCellLabel, { fontFamily: "Inter_400Regular" }, isAvail ? { color: "rgba(0,0,0,0.6)" } : { color: "#444" }]}>
+                      <Text style={[availStyles.calCellLabel, { fontFamily: "Inter_400Regular" }, isAvail ? { color: "rgba(0,0,0,0.6)" } : { color: "#777" }]}>
                         {d.label.slice(0, 2)}
                       </Text>
-                      <Text style={[availStyles.calCellDate, { fontFamily: "Inter_700Bold" }, isAvail ? { color: "#000" } : { color: "#444" }]}>
+                      <Text style={[availStyles.calCellDate, { fontFamily: "Inter_700Bold" }, isAvail ? { color: "#000" } : { color: "#777" }]}>
                         {d.dateNum}
                       </Text>
                       {hasBookings && <View style={availStyles.calDot} />}
@@ -575,7 +575,7 @@ function LandscaperProfile({
                     {calendarSelectedDate}
                   </Text>
                   {(bookedSlots[calendarSelectedDate] ?? []).length === 0 ? (
-                    <Text style={[{ fontSize: 13, color: "#555" }, { fontFamily: "Inter_400Regular" }]}>No bookings this day.</Text>
+                    <Text style={[{ fontSize: 13, color: "#BBBBBB" }, { fontFamily: "Inter_400Regular" }]}>No bookings this day.</Text>
                   ) : (
                     (bookedSlots[calendarSelectedDate] ?? []).map((slot, i) => (
                       <View key={i} style={availStyles.calSlotRow}>
@@ -622,15 +622,15 @@ function LandscaperProfile({
             <View style={[styles.legalCard, { marginTop: 24 }]}>
               <Text style={[styles.legalCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Legal</Text>
               <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
-                <Ionicons name="document-text-outline" size={18} color="#AAAAAA" />
+                <Ionicons name="document-text-outline" size={18} color="#CCCCCC" />
                 <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Terms of Service</Text>
-                <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+                <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
               </TouchableOpacity>
               <View style={styles.legalDivider} />
               <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
-                <Ionicons name="shield-checkmark-outline" size={18} color="#AAAAAA" />
+                <Ionicons name="shield-checkmark-outline" size={18} color="#CCCCCC" />
                 <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Privacy Policy</Text>
-                <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+                <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
               </TouchableOpacity>
               <View style={styles.legalDivider} />
               <Text style={[styles.legalDisclaimer, { fontFamily: "Inter_400Regular" }]}>
@@ -645,9 +645,9 @@ function LandscaperProfile({
                 onPress={() => { Haptics.selectionAsync(); setPrivacyVisible(true); }}
                 activeOpacity={0.8}
               >
-                <Ionicons name="lock-closed-outline" size={18} color="#AAAAAA" />
+                <Ionicons name="lock-closed-outline" size={18} color="#CCCCCC" />
                 <Text style={[styles.legalRowText, { fontFamily: "Inter_500Medium" }]}>Privacy Settings</Text>
-                <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+                <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
               </TouchableOpacity>
             </View>
 
@@ -737,7 +737,7 @@ function LandscaperProfile({
                 value={newReviewText}
                 onChangeText={setNewReviewText}
                 placeholder="What did you think of the service?"
-                placeholderTextColor="#555"
+                placeholderTextColor="#777"
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -822,7 +822,7 @@ function LandscaperProfile({
                     value={field.value}
                     onChangeText={field.onChange}
                     placeholder={field.placeholder}
-                    placeholderTextColor="#555"
+                    placeholderTextColor="#777"
                     multiline={field.multiline}
                     autoCapitalize={field.label === "State" ? "characters" : "sentences"}
                     maxLength={field.label === "State" ? 2 : field.label === "ZIP Code" ? 5 : undefined}
@@ -902,7 +902,7 @@ function PriceMatrixEditor({
                       keyboardType="numeric"
                       maxLength={5}
                       selectTextOnFocus
-                      placeholderTextColor="#555"
+                      placeholderTextColor="#777"
                     />
                   </View>
                 </View>
@@ -1084,15 +1084,15 @@ function CustomerProfile({ logout }: { logout: () => void }) {
       <View style={styles.legalCard}>
         <Text style={[styles.legalCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Legal</Text>
         <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
-          <Ionicons name="document-text-outline" size={18} color="#AAAAAA" />
+          <Ionicons name="document-text-outline" size={18} color="#CCCCCC" />
           <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Terms of Service</Text>
-          <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+          <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
         </TouchableOpacity>
         <View style={styles.legalDivider} />
         <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
-          <Ionicons name="shield-checkmark-outline" size={18} color="#AAAAAA" />
+          <Ionicons name="shield-checkmark-outline" size={18} color="#CCCCCC" />
           <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Privacy Policy</Text>
-          <Ionicons name="chevron-forward" size={16} color="#444" style={{ marginLeft: "auto" }} />
+          <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
         </TouchableOpacity>
         <View style={styles.legalDivider} />
         <Text style={[styles.legalDisclaimer, { fontFamily: "Inter_400Regular" }]}>
@@ -1240,7 +1240,7 @@ const cutStyles = StyleSheet.create({
   },
   tabItem: { flex: 1, alignItems: "center", paddingVertical: 14, borderBottomWidth: 3, borderBottomColor: "transparent" },
   tabItemActive: { borderBottomColor: "#34FF7A" },
-  tabText: { fontSize: 12, color: "#888888", letterSpacing: 0.8 },
+  tabText: { fontSize: 12, color: "#BBBBBB", letterSpacing: 0.8 },
   tabTextActive: { color: "#34FF7A" },
 
   tabContent: { padding: 20, paddingBottom: 60 },
@@ -1250,7 +1250,7 @@ const cutStyles = StyleSheet.create({
   actionChipIcon: { fontSize: 18 },
   actionChipLabel: { fontSize: 10, color: "#FFFFFF", letterSpacing: 0.5 },
 
-  sectionHeading: { fontSize: 12, color: "#AAAAAA", letterSpacing: 1.4, marginBottom: 10, marginTop: 4 },
+  sectionHeading: { fontSize: 12, color: "#CCCCCC", letterSpacing: 1.4, marginBottom: 10, marginTop: 4 },
 
   card: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 18, borderWidth: 1, borderColor: "#222222", marginBottom: 20 },
   aboutText: { fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 22 },
@@ -1288,13 +1288,13 @@ const cutStyles = StyleSheet.create({
   ratingSubtext: { fontSize: 13, color: "rgba(255,255,255,0.5)" },
   reviewStars: { fontSize: 15, color: "#f59e0b", marginBottom: 6 },
   reviewText: { fontSize: 14, color: "#FFFFFF", lineHeight: 22 },
-  reviewAuthor: { fontSize: 12, color: "#555", marginTop: 8 },
+  reviewAuthor: { fontSize: 12, color: "#BBBBBB", marginTop: 8 },
 
   svcCardName: { fontSize: 15, color: "#FFFFFF", marginBottom: 14 },
   svcPriceRow: { flexDirection: "row", gap: 8 },
   svcPriceCell: { flex: 1, alignItems: "center", gap: 3 },
-  svcColLabel: { fontSize: 11, color: "#AAAAAA" },
-  svcColSub: { fontSize: 9, color: "#555" },
+  svcColLabel: { fontSize: 11, color: "#CCCCCC" },
+  svcColSub: { fontSize: 9, color: "#BBBBBB" },
   svcPrice: { fontSize: 20, color: "#34FF7A", marginTop: 4 },
 });
 
@@ -1323,7 +1323,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 20, borderWidth: 1, borderColor: "#222222", marginBottom: 12 },
   divider: { height: 1, backgroundColor: "#222222", marginVertical: 10 },
   infoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 4 },
-  infoKey: { fontSize: 13, color: "#555" },
+  infoKey: { fontSize: 13, color: "#BBBBBB" },
   infoVal: { fontSize: 14, color: "#FFFFFF" },
   paymentCard: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 20, borderWidth: 1, borderColor: "#222222", marginBottom: 12 },
   paymentLabel: { fontSize: 13, color: "#FFFFFF", marginBottom: 14 },
@@ -1336,7 +1336,7 @@ const styles = StyleSheet.create({
   paymentCardError: { borderColor: "#ef4444" },
   errorMsg: { fontSize: 12, color: "#ef4444", marginTop: 6, marginBottom: 2 },
   priceCard: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 20, borderWidth: 1, borderColor: "#222222", marginBottom: 12 },
-  priceCardTitle: { fontSize: 13, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 16 },
+  priceCardTitle: { fontSize: 13, color: "#CCCCCC", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 16 },
   priceServiceLabel: { fontSize: 15, color: "#FFFFFF" },
   priceInputWrapper: { flexDirection: "row", alignItems: "center", justifyContent: "center", backgroundColor: "#222222", borderRadius: 9999, paddingHorizontal: 10, paddingVertical: 12, marginTop: 6, alignSelf: "stretch", gap: 2, borderWidth: 1, borderColor: "transparent" },
   priceInputWrapperFocused: { backgroundColor: "#1a1a1a", borderColor: "#34FF7A" },
@@ -1357,14 +1357,14 @@ const styles = StyleSheet.create({
   priceMatrixCard: { backgroundColor: "#0a0a0a", borderRadius: 18, padding: 14, borderWidth: 1, borderColor: "#222222" },
   priceMatrixRow: { flexDirection: "row", gap: 8, marginTop: 10 },
   priceMatrixCell: { flex: 1, alignItems: "center", gap: 3 },
-  priceMatrixColLabel: { fontSize: 11, color: "#AAAAAA" },
-  priceMatrixColSub: { fontSize: 9, color: "#555555", marginBottom: 2 },
+  priceMatrixColLabel: { fontSize: 11, color: "#CCCCCC" },
+  priceMatrixColSub: { fontSize: 9, color: "#BBBBBB", marginBottom: 2 },
   legalCard: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 20, borderWidth: 1, borderColor: "#222222", marginBottom: 12, marginTop: 8 },
-  legalCardTitle: { fontSize: 13, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 14 },
+  legalCardTitle: { fontSize: 13, color: "#CCCCCC", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 14 },
   legalRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10 },
   legalRowText: { fontSize: 14, color: "#FFFFFF", flex: 1 },
   legalDivider: { height: 1, backgroundColor: "#2A2A2A", marginVertical: 2 },
-  legalDisclaimer: { fontSize: 11, color: "#555", lineHeight: 17, marginTop: 10 },
+  legalDisclaimer: { fontSize: 11, color: "#BBBBBB", lineHeight: 17, marginTop: 10 },
 });
 
 const privModalStyles = StyleSheet.create({
@@ -1429,12 +1429,12 @@ const availStyles = StyleSheet.create({
     borderColor: "#333333",
   },
   dayChipOn: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
-  dayChipText: { fontSize: 13, color: "#888888" },
+  dayChipText: { fontSize: 13, color: "#BBBBBB" },
   dayChipTextOn: { color: "#000000" },
 
   hoursRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   hoursField: { flex: 1 },
-  hoursLabel: { fontSize: 11, color: "#888888", marginBottom: 6, letterSpacing: 0.8 },
+  hoursLabel: { fontSize: 11, color: "#BBBBBB", marginBottom: 6, letterSpacing: 0.8 },
   hoursInput: {
     backgroundColor: "#222222",
     borderRadius: 12,
@@ -1445,7 +1445,7 @@ const availStyles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 15,
   },
-  hoursSep: { fontSize: 13, color: "#888888", marginTop: 18 },
+  hoursSep: { fontSize: 13, color: "#BBBBBB", marginTop: 18 },
 
   addDateRow: { flexDirection: "row", gap: 10, alignItems: "center", marginBottom: 16 },
   addDateInput: {
@@ -1524,7 +1524,7 @@ const availStyles = StyleSheet.create({
     borderBottomColor: "#1e1e1e",
   },
   calSlotText: { fontSize: 14, color: "#FFFFFF" },
-  calSlotDur: { fontSize: 12, color: "#888888", flex: 1, textAlign: "right" },
+  calSlotDur: { fontSize: 12, color: "#BBBBBB", flex: 1, textAlign: "right" },
 
   saveAvailBtn: {
     backgroundColor: "#34FF7A",
@@ -1541,7 +1541,7 @@ const availStyles = StyleSheet.create({
   saveAvailBtnText: { fontSize: 16, color: "#000000" },
 
   editField: { marginBottom: 16 },
-  editFieldLabel: { fontSize: 12, color: "#AAAAAA", letterSpacing: 0.8, marginBottom: 6 },
+  editFieldLabel: { fontSize: 12, color: "#CCCCCC", letterSpacing: 0.8, marginBottom: 6 },
   editFieldInput: {
     backgroundColor: "#222222",
     borderRadius: 12,
@@ -1590,8 +1590,8 @@ const phStyles = StyleSheet.create({
   rowLeft: { flex: 1, gap: 3 },
   rowRight: { alignItems: "flex-end", gap: 6 },
   rowService: { fontSize: 14, color: "#FFFFFF" },
-  rowSub: { fontSize: 12, color: "#666666" },
-  rowCommission: { fontSize: 11, color: "#444444" },
+  rowSub: { fontSize: 12, color: "#999999" },
+  rowCommission: { fontSize: 11, color: "#777777" },
   rowAmount: { fontSize: 15, color: "#FFFFFF" },
   statusBadge: {
     paddingHorizontal: 10,
@@ -1617,6 +1617,6 @@ const payPrefStyles = StyleSheet.create({
     backgroundColor: "#34FF7A",
     borderColor: "#34FF7A",
   },
-  chipText: { fontSize: 13, color: "#888" },
+  chipText: { fontSize: 13, color: "#BBBBBB" },
   chipTextOn: { color: "#000" },
 });

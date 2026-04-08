@@ -519,7 +519,7 @@ export default function PayScreen() {
                     </Text>
                     {isUnavailable && (
                       <View style={styles.dateTileX}>
-                        <Ionicons name="close" size={12} color="#444" />
+                        <Ionicons name="close" size={12} color="#777" />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -562,7 +562,7 @@ export default function PayScreen() {
                       styles.timeTileText,
                       { fontFamily: "Inter_500Medium" },
                       isSelected && { color: "#fff" },
-                      isDisabled && { color: "#444" },
+                      isDisabled && { color: "#777" },
                     ]}
                   >
                     {t}
@@ -636,7 +636,7 @@ export default function PayScreen() {
                     value={recurringStart}
                     onChangeText={setRecurringStart}
                     placeholder="Apr 7, 2026"
-                    placeholderTextColor="#555"
+                    placeholderTextColor="#777"
                   />
                 </View>
                 <View style={{ flex: 1 }}>
@@ -648,7 +648,7 @@ export default function PayScreen() {
                     value={recurringEnd}
                     onChangeText={setRecurringEnd}
                     placeholder="Apr 7, 2027"
-                    placeholderTextColor="#555"
+                    placeholderTextColor="#777"
                   />
                 </View>
               </View>
@@ -1018,7 +1018,7 @@ export default function PayScreen() {
               <TextInput
                 style={[styles.customTipInput, { fontFamily: "Inter_400Regular" }]}
                 placeholder="0.00"
-                placeholderTextColor="#555"
+                placeholderTextColor="#777"
                 keyboardType="decimal-pad"
                 value={customTipAmount}
                 onChangeText={setCustomTipAmount}
@@ -1154,7 +1154,7 @@ export default function PayScreen() {
             <TextInput
               style={[styles.payFieldInput, { fontFamily: "Inter_400Regular" }]}
               placeholder="Card Number"
-              placeholderTextColor="#555"
+              placeholderTextColor="#777"
               keyboardType="number-pad"
               value={cardNumber}
               onChangeText={setCardNumber}
@@ -1164,7 +1164,7 @@ export default function PayScreen() {
               <TextInput
                 style={[styles.payFieldInput, { flex: 1, fontFamily: "Inter_400Regular" }]}
                 placeholder="MM / YY"
-                placeholderTextColor="#555"
+                placeholderTextColor="#777"
                 keyboardType="number-pad"
                 value={cardExpiry}
                 onChangeText={setCardExpiry}
@@ -1173,7 +1173,7 @@ export default function PayScreen() {
               <TextInput
                 style={[styles.payFieldInput, { flex: 1, fontFamily: "Inter_400Regular" }]}
                 placeholder="CVV"
-                placeholderTextColor="#555"
+                placeholderTextColor="#777"
                 keyboardType="number-pad"
                 secureTextEntry
                 value={cardCvv}
@@ -1187,7 +1187,7 @@ export default function PayScreen() {
           <TextInput
             style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
             placeholder="Venmo Username"
-            placeholderTextColor="#555"
+            placeholderTextColor="#777"
             value={venmoUser}
             onChangeText={setVenmoUser}
             autoCapitalize="none"
@@ -1197,7 +1197,7 @@ export default function PayScreen() {
           <TextInput
             style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
             placeholder="PayPal Email"
-            placeholderTextColor="#555"
+            placeholderTextColor="#777"
             keyboardType="email-address"
             value={paypalEmail}
             onChangeText={setPaypalEmail}
@@ -1208,7 +1208,7 @@ export default function PayScreen() {
           <TextInput
             style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
             placeholder="$Cashtag"
-            placeholderTextColor="#555"
+            placeholderTextColor="#777"
             value={cashTag}
             onChangeText={setCashTag}
             autoCapitalize="none"
@@ -1265,7 +1265,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   successTitle: { fontSize: 26, color: "#FFFFFF", textAlign: "center" },
-  successSub: { fontSize: 14, color: "#888888", textAlign: "center", lineHeight: 22 },
+  successSub: { fontSize: 14, color: "#BBBBBB", textAlign: "center", lineHeight: 22 },
   escrowInfoBox: {
     width: "100%",
     backgroundColor: "#1A1A1A",
@@ -1298,7 +1298,7 @@ const styles = StyleSheet.create({
   },
   successBtnText: { color: "#000", fontSize: 16 },
   doneLink: { padding: 8 },
-  doneLinkText: { color: "#888888", fontSize: 14 },
+  doneLinkText: { color: "#BBBBBB", fontSize: 14 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -1341,8 +1341,8 @@ const styles = StyleSheet.create({
   },
   proAvatarText: { color: "#fff", fontWeight: "700", fontSize: 18 },
   proSummaryName: { fontSize: 15, color: "#FFFFFF", marginBottom: 2 },
-  proSummaryService: { fontSize: 13, color: "#888888" },
-  sectionLabel: { fontSize: 11, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 },
+  proSummaryService: { fontSize: 13, color: "#BBBBBB" },
+  sectionLabel: { fontSize: 11, color: "#CCCCCC", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 },
   dateTile: {
     width: 62,
     paddingVertical: 14,
@@ -1355,11 +1355,11 @@ const styles = StyleSheet.create({
   },
   dateTileActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   dateTileUnavailable: { backgroundColor: "#111111", borderColor: "#1a1a1a", opacity: 0.45 },
-  dateTileUnavailableText: { color: "#333333" },
+  dateTileUnavailableText: { color: "#555555" },
   dateTileX: { position: "absolute", top: 6, right: 6 },
-  dateTileDay: { fontSize: 11, color: "#555" },
+  dateTileDay: { fontSize: 11, color: "#BBBBBB" },
   dateTileDate: { fontSize: 20, color: "#FFFFFF" },
-  dateTileMonth: { fontSize: 11, color: "#555" },
+  dateTileMonth: { fontSize: 11, color: "#BBBBBB" },
   timeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1379,11 +1379,11 @@ const styles = StyleSheet.create({
   timeTileActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   timeTileDisabled: { backgroundColor: "#0d0d0d", borderColor: "#1a1a1a" },
   timeTileBooked: { opacity: 0.38, borderColor: "#1a1a1a" },
-  timeTileBookedLabel: { fontSize: 10, color: "#555", marginTop: 1 },
+  timeTileBookedLabel: { fontSize: 10, color: "#BBBBBB", marginTop: 1 },
   timeTileText: { fontSize: 14, color: "#FFFFFF" },
-  hintText: { fontSize: 13, color: "#888888", textAlign: "center", marginTop: 8 },
+  hintText: { fontSize: 13, color: "#BBBBBB", textAlign: "center", marginTop: 8 },
   fieldLabel: { fontSize: 15, color: "#34FF7A", marginBottom: 4 },
-  fieldHint: { fontSize: 13, color: "#888888", marginBottom: 12 },
+  fieldHint: { fontSize: 13, color: "#BBBBBB", marginBottom: 12 },
   addressInput: {
     backgroundColor: "#1A1A1A",
     borderWidth: 1,
@@ -1479,10 +1479,10 @@ const styles = StyleSheet.create({
   },
   summaryAvatarText: { color: "#fff", fontWeight: "700", fontSize: 20 },
   summaryService: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
-  summaryDate: { fontSize: 13, color: "#888888", marginBottom: 2 },
-  summaryPro: { fontSize: 13, color: "#888888" },
+  summaryDate: { fontSize: 13, color: "#BBBBBB", marginBottom: 2 },
+  summaryPro: { fontSize: 13, color: "#BBBBBB" },
   summaryAddressRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
-  summaryAddress: { fontSize: 12, color: "#888888", flex: 1 },
+  summaryAddress: { fontSize: 12, color: "#BBBBBB", flex: 1 },
   instructionsPreview: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -1497,7 +1497,7 @@ const styles = StyleSheet.create({
   instructionsPreviewText: { flex: 1, fontSize: 13, color: "#FFFFFF" },
   tipLabel: {
     fontSize: 11,
-    color: "#AAAAAA",
+    color: "#CCCCCC",
     textTransform: "uppercase",
     letterSpacing: 1.2,
     marginBottom: 10,
@@ -1514,7 +1514,7 @@ const styles = StyleSheet.create({
   },
   tipBtnActive: { backgroundColor: "#1A1A1A", borderColor: "#34FF7A", borderWidth: 2 },
   tipBtnLabel: { fontSize: 16, color: "#FFFFFF" },
-  tipBtnAmount: { fontSize: 12, color: "#888888", marginTop: 2 },
+  tipBtnAmount: { fontSize: 12, color: "#BBBBBB", marginTop: 2 },
   breakdown: {
     backgroundColor: "#1A1A1A",
     borderRadius: 20,
@@ -1525,7 +1525,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   lineItem: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  lineLabel: { fontSize: 14, color: "#888888" },
+  lineLabel: { fontSize: 14, color: "#BBBBBB" },
   lineValue: { fontSize: 14, color: "#FFFFFF" },
   totalRow: { borderTopWidth: 1, borderTopColor: "#333", paddingTop: 12, marginTop: 4 },
   totalLabel: { fontSize: 17, color: "#FFFFFF" },
@@ -1614,7 +1614,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   recurringDateRow: { flexDirection: "row", gap: 12 },
-  recurringDateLabel: { fontSize: 11, color: "#AAAAAA", marginBottom: 6 },
+  recurringDateLabel: { fontSize: 11, color: "#CCCCCC", marginBottom: 6 },
   recurringDateInput: {
     backgroundColor: "#1A1A1A",
     borderWidth: 1,
@@ -1624,7 +1624,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#FFFFFF",
   },
-  recurringNote: { fontSize: 11, color: "#666666", lineHeight: 16 },
+  recurringNote: { fontSize: 11, color: "#999999", lineHeight: 16 },
 
   recurringBadge: {
     flexDirection: "row",
@@ -1654,9 +1654,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   savedCardNumber: { fontSize: 15, color: "#FFFFFF" },
-  savedCardSub: { fontSize: 12, color: "#888888", marginTop: 2 },
+  savedCardSub: { fontSize: 12, color: "#BBBBBB", marginTop: 2 },
 
-  payMethodLabel: { fontSize: 11, color: "#AAAAAA", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10 },
+  payMethodLabel: { fontSize: 11, color: "#CCCCCC", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 10 },
   payMethodGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 10 },
   payMethodTile: {
     flexDirection: "row",
@@ -1689,7 +1689,7 @@ const styles = StyleSheet.create({
   payMethodTileTextActive: { color: "#34FF7A" },
   escrowDisclaimer: {
     fontSize: 11,
-    color: "#555555",
+    color: "#BBBBBB",
     textAlign: "center",
     marginTop: 10,
     lineHeight: 18,
@@ -1779,7 +1779,7 @@ const styles = StyleSheet.create({
   },
   serviceLabel: { fontSize: 13, color: "#FFFFFF", textAlign: "center" },
   serviceLabelActive: { color: "#34FF7A" },
-  serviceTilePrice: { fontSize: 16, color: "#666", marginTop: 2 },
+  serviceTilePrice: { fontSize: 16, color: "#999", marginTop: 2 },
   multiServiceTotal: {
     backgroundColor: "#0d2e18",
     borderRadius: 16,
@@ -1797,7 +1797,7 @@ const styles = StyleSheet.create({
   },
   multiServiceTotalLabel: { fontSize: 13, color: "rgba(255,255,255,0.6)" },
   multiServiceTotalPrice: { fontSize: 22, color: "#34FF7A" },
-  multiServiceTotalNames: { fontSize: 12, color: "#666", lineHeight: 18 },
+  multiServiceTotalNames: { fontSize: 12, color: "#999", lineHeight: 18 },
 
   yardSizeRow: { flexDirection: "row", gap: 10, marginBottom: 4 },
   yardChip: {
@@ -1814,7 +1814,7 @@ const styles = StyleSheet.create({
   yardChipActive: { backgroundColor: "#0d2e18", borderColor: "#34FF7A" },
   yardChipLabel: { fontSize: 14, color: "#FFFFFF" },
   yardChipLabelActive: { color: "#34FF7A" },
-  yardChipSub: { fontSize: 9, color: "#666666", textAlign: "center" },
+  yardChipSub: { fontSize: 9, color: "#999999", textAlign: "center" },
   yardChipSubActive: { color: "#34FF7A" },
   yardChipPrice: { fontSize: 16, color: "#34FF7A", marginTop: 4 },
 
@@ -1833,7 +1833,7 @@ const styles = StyleSheet.create({
   },
   tipExtraBtnCustom: {},
   tipExtraBtnNone: { flex: 0.55 },
-  tipExtraLabel: { fontSize: 13, color: "#AAAAAA" },
+  tipExtraLabel: { fontSize: 13, color: "#CCCCCC" },
 
   customTipBox: {
     backgroundColor: "#1A1A1A",

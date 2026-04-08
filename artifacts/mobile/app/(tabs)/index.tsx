@@ -143,8 +143,8 @@ function NotificationsPanel({
             <View style={styles.notifList}>
               {items.length === 0 ? (
                 <View style={{ alignItems: "center", paddingVertical: 28 }}>
-                  <Ionicons name="notifications-outline" size={42} color="#444" style={{ marginBottom: 10 }} />
-                  <Text style={[{ color: "#888", fontSize: 14, textAlign: "center" }, { fontFamily: "Inter_400Regular" }]}>
+                  <Ionicons name="notifications-outline" size={42} color="#777" style={{ marginBottom: 10 }} />
+                  <Text style={[{ color: "#BBBBBB", fontSize: 14, textAlign: "center" }, { fontFamily: "Inter_400Regular" }]}>
                     No alerts yet.{"\n"}Alerts appear when work starts, a message is sent, or a job is complete.
                   </Text>
                 </View>
@@ -284,37 +284,37 @@ function ProfileDropdownModal({
       <Pressable style={dropStyles.overlay} onPress={onClose}>
         <Pressable style={dropStyles.sheet} onPress={(e) => e.stopPropagation()}>
           <TouchableOpacity style={dropStyles.item} onPress={onViewProfile} activeOpacity={0.7}>
-            <Ionicons name="person-outline" size={20} color="#888" />
+            <Ionicons name="person-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>View Profile</Text>
           </TouchableOpacity>
           {isLandscaper && (
             <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
-              <Ionicons name="calendar-outline" size={20} color="#888" />
+              <Ionicons name="calendar-outline" size={20} color="#CCCCCC" />
               <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity style={dropStyles.item} onPress={onAppointments} activeOpacity={0.7}>
-            <Ionicons name="calendar" size={20} color="#888" />
+            <Ionicons name="calendar" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Appointments</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onSettings} activeOpacity={0.7}>
-            <Ionicons name="settings-outline" size={20} color="#888" />
+            <Ionicons name="settings-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Settings</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onShare} activeOpacity={0.7}>
-            <Ionicons name="share-social-outline" size={20} color="#888" />
+            <Ionicons name="share-social-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Share with friends</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onPaymentMethod} activeOpacity={0.7}>
-            <Ionicons name="card-outline" size={20} color="#888" />
+            <Ionicons name="card-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Payment Method</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onVouchers} activeOpacity={0.7}>
-            <Ionicons name="pricetag-outline" size={20} color="#888" />
+            <Ionicons name="pricetag-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Vouchers</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onHelp} activeOpacity={0.7}>
-            <Ionicons name="help-circle-outline" size={20} color="#888" />
+            <Ionicons name="help-circle-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Help and Resources</Text>
           </TouchableOpacity>
           <View style={dropStyles.divider} />
@@ -438,7 +438,7 @@ function SettingsModal({
             value={newPassword}
             onChangeText={setNewPassword}
             placeholder="New Password"
-            placeholderTextColor="#555"
+            placeholderTextColor="#777"
             secureTextEntry
           />
 
@@ -466,7 +466,7 @@ function SettingsModal({
                 value={enteredCode}
                 onChangeText={setEnteredCode}
                 placeholder="Enter 6-digit code"
-                placeholderTextColor="#555"
+                placeholderTextColor="#777"
                 keyboardType="number-pad"
                 maxLength={6}
               />
@@ -497,7 +497,7 @@ function SettingsModal({
             value={newAddress}
             onChangeText={setNewAddress}
             placeholder="New service address"
-            placeholderTextColor="#555"
+            placeholderTextColor="#777"
           />
           <TouchableOpacity
             style={settStyles.primaryBtn}
@@ -612,7 +612,7 @@ function PaymentMethodModal({ visible, onClose }: { visible: boolean; onClose: (
               <Ionicons name="close" size={22} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
-          <Text style={[{ fontSize: 15, color: "#AAAAAA", textAlign: "center", marginBottom: 20, fontFamily: "Inter_400Regular" }]}>
+          <Text style={[{ fontSize: 15, color: "#CCCCCC", textAlign: "center", marginBottom: 20, fontFamily: "Inter_400Regular" }]}>
             Add a Payment Method
           </Text>
           {PAYMENT_OPTIONS.map((opt) => (
@@ -796,7 +796,7 @@ function ServiceAvailabilityModal({ visible, onClose }: { visible: boolean; onCl
                       value={avail[service].startTime}
                       onChangeText={(v) => setTime(service, "startTime", v)}
                       placeholder="08:00"
-                      placeholderTextColor="#555"
+                      placeholderTextColor="#777"
                     />
                   </View>
                   <View style={avStyles.timeCol}>
@@ -806,7 +806,7 @@ function ServiceAvailabilityModal({ visible, onClose }: { visible: boolean; onCl
                       value={avail[service].endTime}
                       onChangeText={(v) => setTime(service, "endTime", v)}
                       placeholder="17:00"
-                      placeholderTextColor="#555"
+                      placeholderTextColor="#777"
                     />
                   </View>
                 </View>
@@ -842,11 +842,11 @@ const avStyles = StyleSheet.create({
     borderColor: "#333333",
   },
   dayChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
-  dayChipText: { fontSize: 13, color: "#AAAAAA" },
+  dayChipText: { fontSize: 13, color: "#CCCCCC" },
   dayChipTextActive: { color: "#000000" },
   timesRow: { flexDirection: "row", gap: 12 },
   timeCol: { flex: 1 },
-  timeLabel: { fontSize: 11, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 },
+  timeLabel: { fontSize: 11, color: "#CCCCCC", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 },
   timeInput: {
     backgroundColor: "#222222",
     borderWidth: 1,
@@ -1227,23 +1227,23 @@ export default function HomeScreen() {
                       </Text>
                     </View>
                     <View style={styles.pendingMeta}>
-                      <Ionicons name="person-outline" size={12} color="#555" />
+                      <Ionicons name="person-outline" size={12} color="#CCCCCC" />
                       <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
                         {req.customer}
                       </Text>
                       <Text style={styles.pendingDot}>·</Text>
-                      <Ionicons name="location-outline" size={12} color="#555" />
+                      <Ionicons name="location-outline" size={12} color="#CCCCCC" />
                       <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
                         {req.distance}
                       </Text>
                     </View>
                     <View style={styles.pendingMeta}>
-                      <Ionicons name="calendar-outline" size={12} color="#555" />
+                      <Ionicons name="calendar-outline" size={12} color="#CCCCCC" />
                       <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
                         {req.date} at {req.time}
                       </Text>
                       <Text style={styles.pendingDot}>·</Text>
-                      <Ionicons name="resize-outline" size={12} color="#555" />
+                      <Ionicons name="resize-outline" size={12} color="#CCCCCC" />
                       <Text style={[styles.pendingMetaText, { fontFamily: "Inter_400Regular" }]}>
                         {req.size} yard
                       </Text>
@@ -1320,13 +1320,13 @@ export default function HomeScreen() {
                 Favorites <Text style={{ color: "#34FF7A" }}>({favorites.size})</Text>
               </Text>
               <TouchableOpacity onPress={() => setFavoritesModalVisible(false)} activeOpacity={0.7}>
-                <Ionicons name="close" size={24} color="#888" />
+                <Ionicons name="close" size={24} color="#CCCCCC" />
               </TouchableOpacity>
             </View>
             {favorites.size === 0 ? (
               <View style={{ alignItems: "center", paddingVertical: 40, gap: 12 }}>
                 <Ionicons name="heart-outline" size={48} color="#333" />
-                <Text style={{ color: "#888", fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" }}>
+                <Text style={{ color: "#BBBBBB", fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" }}>
                   Tap the heart on any landscaper{"\n"}to save them here.
                 </Text>
               </View>
@@ -1344,7 +1344,7 @@ export default function HomeScreen() {
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: "#fff", fontSize: 15, fontFamily: "Inter_600SemiBold" }}>{pro.name}</Text>
-                      <Text style={{ color: "#888", fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 }}>★ {pro.rating} · {pro.jobs} jobs</Text>
+                      <Text style={{ color: "#BBBBBB", fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 }}>★ {pro.rating} · {pro.jobs} jobs</Text>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
                   </TouchableOpacity>
@@ -1426,7 +1426,7 @@ function LandscaperProfileViewModal({
               <Text style={[fsStyles.jobsText, { fontFamily: "Inter_400Regular" }]}>{pro.jobs} jobs</Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name="location-outline" size={14} color="#888" />
+              <Ionicons name="location-outline" size={14} color="#CCCCCC" />
               <Text style={[fsStyles.location, { fontFamily: "Inter_400Regular" }]}>
                 Sarasota / Ellenton, FL · {pro.meta.split("•")[0].trim()}
               </Text>
@@ -1495,7 +1495,7 @@ function LandscaperProfileViewModal({
                   </View>
                   {/* Hours */}
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
-                    <Ionicons name="time-outline" size={14} color="#888" />
+                    <Ionicons name="time-outline" size={14} color="#CCCCCC" />
                     <Text style={[fsStyles.availHours, { fontFamily: "Inter_400Regular" }]}>
                       {availability.startTime} – {availability.endTime}
                     </Text>
@@ -1503,7 +1503,7 @@ function LandscaperProfileViewModal({
                   {/* Upcoming dates */}
                   {availability.upcomingDates.length > 0 && (
                     <View style={{ marginTop: 10 }}>
-                      <Text style={[{ color: "#888", fontSize: 11, letterSpacing: 0.8, marginBottom: 6 }, { fontFamily: "Inter_500Medium" }]}>
+                      <Text style={[{ color: "#BBBBBB", fontSize: 11, letterSpacing: 0.8, marginBottom: 6 }, { fontFamily: "Inter_500Medium" }]}>
                         UPCOMING DATES
                       </Text>
                       {availability.upcomingDates.map((date, i) => (
@@ -1612,7 +1612,7 @@ const fsStyles = StyleSheet.create({
   jobsText: { fontSize: 14, color: "rgba(255,255,255,0.6)" },
   location: { fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", marginTop: 4 },
   body: { paddingHorizontal: 20, paddingTop: 28 },
-  sectionLabel: { fontSize: 11, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 },
+  sectionLabel: { fontSize: 11, color: "#CCCCCC", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 12 },
   aboutText: { fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 22, marginBottom: 28 },
   pricingCard: {
     backgroundColor: "#161616",
@@ -1630,7 +1630,7 @@ const fsStyles = StyleSheet.create({
   },
   pricingRowBorder: { borderBottomWidth: 1, borderBottomColor: "#222222" },
   pricingSize: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
-  pricingDesc: { fontSize: 12, color: "#555555" },
+  pricingDesc: { fontSize: 12, color: "#BBBBBB" },
   pricingPrice: { fontSize: 20, color: "#34FF7A" },
   photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 28 },
   photoTile: {
@@ -1685,7 +1685,7 @@ const fsStyles = StyleSheet.create({
   availDaysRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 12 },
   availDayChip: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: "#222222", borderWidth: 1, borderColor: "#333" },
   availDayChipOn: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
-  availDayText: { fontSize: 11, color: "#666" },
+  availDayText: { fontSize: 11, color: "#999" },
   availDayTextOn: { color: "#000" },
   availHours: { fontSize: 14, color: "rgba(255,255,255,0.75)" },
 });
@@ -1743,7 +1743,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: 40 },
   greetingRow: { marginBottom: 20 },
   greetingText: { fontSize: 22, color: "#FFFFFF", marginBottom: 4 },
-  greetingZip: { fontSize: 13, color: "#AAAAAA" },
+  greetingZip: { fontSize: 13, color: "#CCCCCC" },
   ctaBtn: {
     backgroundColor: "#34C759",
     flexDirection: "row",
@@ -1774,7 +1774,7 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 20, color: "#FFFFFF" },
   statLabel: { fontSize: 11, color: "#FFFFFF" },
   sectionTitle: { fontSize: 17, color: "#FFFFFF", marginBottom: 12 },
-  sectionSubtitle: { fontSize: 12, color: "#666666", marginBottom: 10, marginTop: -4 },
+  sectionSubtitle: { fontSize: 12, color: "#999999", marginBottom: 10, marginTop: -4 },
   recRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 12, paddingHorizontal: 20 },
   seeAllLink: { fontSize: 13, color: "#34FF7A" },
   appointmentCard: {
@@ -1825,7 +1825,7 @@ const styles = StyleSheet.create({
   },
   svcGridName: { fontSize: 10, color: "#FFFFFF", textAlign: "center", lineHeight: 14 },
   svcGridPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
-  svcGridUpdated: { fontSize: 9, color: "#555555", textAlign: "center", marginTop: 1 },
+  svcGridUpdated: { fontSize: 9, color: "#BBBBBB", textAlign: "center", marginTop: 1 },
   proRow: { marginTop: 20, marginBottom: 24, marginHorizontal: -20 },
   proRowContent: { paddingHorizontal: 20, gap: 12 },
   proHCard: {
@@ -1847,7 +1847,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   proHName: { fontSize: 13, color: "#FFFFFF", lineHeight: 18 },
-  proHMeta: { fontSize: 11, color: "#888888" },
+  proHMeta: { fontSize: 11, color: "#BBBBBB" },
   trustedBadge: {
     backgroundColor: "#0d2e18",
     borderWidth: 1,
@@ -1942,7 +1942,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1a1a1a",
   },
   notifTogglePillOn: { backgroundColor: "#0d2e18", borderColor: "#34FF7A" },
-  notifToggleText: { fontSize: 11, color: "#666666" },
+  notifToggleText: { fontSize: 11, color: "#999999" },
   notifToggleTextOn: { color: "#34FF7A" },
   notifList: { gap: 12 },
   notifItem: {
@@ -1957,7 +1957,7 @@ const styles = StyleSheet.create({
   },
   notifItemIcon: { fontSize: 32 },
   notifItemTitle: { fontSize: 14, color: "#FFFFFF", marginBottom: 4 },
-  notifItemSub: { fontSize: 12, color: "#888888" },
+  notifItemSub: { fontSize: 12, color: "#BBBBBB" },
   offlineBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -2015,7 +2015,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   favRowName: { fontSize: 14, color: "#fff", marginBottom: 2 },
-  favRowMeta: { fontSize: 12, color: "#888" },
+  favRowMeta: { fontSize: 12, color: "#BBBBBB" },
 
   pendingCard: {
     backgroundColor: "#1A1A1A",
@@ -2048,8 +2048,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 5,
   },
-  pendingMetaText: { fontSize: 12, color: "#888888" },
-  pendingDot: { color: "#333333", fontSize: 12 },
+  pendingMetaText: { fontSize: 12, color: "#BBBBBB" },
+  pendingDot: { color: "#555555", fontSize: 12 },
   pendingAcceptBtn: {
     backgroundColor: "#34FF7A",
     borderRadius: 28,
@@ -2063,7 +2063,7 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
     gap: 10,
   },
-  pendingEmptyText: { fontSize: 14, color: "#555555" },
+  pendingEmptyText: { fontSize: 14, color: "#BBBBBB" },
 });
 
 const pushStyles = StyleSheet.create({

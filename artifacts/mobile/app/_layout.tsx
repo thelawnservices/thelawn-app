@@ -19,6 +19,7 @@ import { AuthProvider, useAuth } from "@/contexts/auth";
 import { JobsProvider } from "@/contexts/jobs";
 import { NotificationsProvider } from "@/contexts/notifications";
 import { LandscaperProfileProvider } from "@/contexts/landscaperProfile";
+import { RecurringProvider } from "@/contexts/recurring";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -57,6 +58,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <JobsProvider>
+              <RecurringProvider>
               <NotificationsProvider>
               <LandscaperProfileProvider>
               <GestureHandlerRootView>
@@ -66,6 +68,7 @@ export default function RootLayout() {
               </GestureHandlerRootView>
               </LandscaperProfileProvider>
               </NotificationsProvider>
+              </RecurringProvider>
             </JobsProvider>
           </AuthProvider>
         </QueryClientProvider>

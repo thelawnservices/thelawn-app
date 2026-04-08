@@ -180,17 +180,17 @@ export default function SearchScreen() {
                 </TouchableOpacity>
 
                 <View style={styles.reqMeta}>
-                  <Ionicons name="resize-outline" size={13} color="#555" />
+                  <Ionicons name="resize-outline" size={13} color="#CCCCCC" />
                   <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.size} yard</Text>
                   <Text style={styles.metaDot}>·</Text>
-                  <Ionicons name="navigate-outline" size={13} color="#555" />
+                  <Ionicons name="navigate-outline" size={13} color="#CCCCCC" />
                   <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.distance} · ZIP {req.zip}</Text>
                 </View>
                 <View style={styles.reqMeta}>
-                  <Ionicons name="calendar-outline" size={13} color="#555" />
+                  <Ionicons name="calendar-outline" size={13} color="#CCCCCC" />
                   <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.date} · {req.time}</Text>
                   <Text style={styles.metaDot}>·</Text>
-                  <Ionicons name="person-outline" size={13} color="#555" />
+                  <Ionicons name="person-outline" size={13} color="#CCCCCC" />
                   <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.customer}</Text>
                 </View>
                 <TouchableOpacity
@@ -246,17 +246,17 @@ export default function SearchScreen() {
           Find Landscapers
         </Text>
         <View style={styles.searchBar}>
-          <Feather name="search" size={16} color="#555" />
+          <Feather name="search" size={16} color="#CCCCCC" />
           <TextInput
             style={[styles.searchInput, { fontFamily: "Inter_400Regular" }]}
             placeholder="Search by name, service, or location..."
-            placeholderTextColor="#555"
+            placeholderTextColor="#777"
             value={query}
             onChangeText={setQuery}
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => setQuery("")}>
-              <Ionicons name="close-circle" size={18} color="#555" />
+              <Ionicons name="close-circle" size={18} color="#CCCCCC" />
             </TouchableOpacity>
           )}
         </View>
@@ -371,7 +371,7 @@ export default function SearchScreen() {
                         ({pro.reviews})
                       </Text>
                       <Text style={styles.metaDot}>·</Text>
-                      <Ionicons name="location-outline" size={12} color="#555" />
+                      <Ionicons name="location-outline" size={12} color="#CCCCCC" />
                       <Text style={[styles.proDist, { fontFamily: "Inter_400Regular" }]}>
                         {pro.distance}
                       </Text>
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 4,
   },
-  resultCount: { fontSize: 13, color: "#555" },
+  resultCount: { fontSize: 13, color: "#BBBBBB" },
   sortBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -486,8 +486,8 @@ const styles = StyleSheet.create({
   sortOptionText: { fontSize: 14, color: "#FFFFFF" },
   results: { padding: 16, gap: 12 },
   emptyState: { paddingVertical: 60, alignItems: "center", gap: 10 },
-  emptyText: { fontSize: 16, color: "#555" },
-  emptySubText: { fontSize: 13, color: "#444" },
+  emptyText: { fontSize: 16, color: "#BBBBBB" },
+  emptySubText: { fontSize: 13, color: "#777" },
   proCard: {
     backgroundColor: "#161616",
     borderRadius: 22,
@@ -516,14 +516,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   trustedText: { fontSize: 11, color: "#34FF7A" },
-  proSpec: { fontSize: 13, color: "#555", marginBottom: 5 },
+  proSpec: { fontSize: 13, color: "#BBBBBB", marginBottom: 5 },
   proMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
   proRating: { fontSize: 12, color: "#FFFFFF" },
-  proReviews: { fontSize: 12, color: "#555" },
-  metaDot: { color: "#333", fontSize: 12 },
-  proDist: { fontSize: 12, color: "#555" },
+  proReviews: { fontSize: 12, color: "#BBBBBB" },
+  metaDot: { color: "#555", fontSize: 12 },
+  proDist: { fontSize: 12, color: "#BBBBBB" },
   proPrice: { fontSize: 20, color: "#FFFFFF" },
-  pricePer: { fontSize: 12, color: "#555" },
+  pricePer: { fontSize: 12, color: "#BBBBBB" },
   tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 14 },
   tag: {
     backgroundColor: "#0d2e18",
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   innerTabActive: { backgroundColor: "#1A1A1A" },
-  innerTabText: { fontSize: 13, color: "#555" },
+  innerTabText: { fontSize: 13, color: "#BBBBBB" },
   innerTabTextActive: { color: "#FFFFFF" },
   notifDot: {
     width: 7,
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
   statusPillOffered: { backgroundColor: "#34FF7A" },
   statusPillDeclined: { backgroundColor: "#2d0a0a" },
   statusPillAccepted: { backgroundColor: "#0d2e18" },
-  statusPillText: { fontSize: 11, color: "#888" },
+  statusPillText: { fontSize: 11, color: "#BBBBBB" },
   offerBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   offerBoxLeft: { gap: 2 },
-  offerLabel: { fontSize: 12, color: "#AAAAAA" },
+  offerLabel: { fontSize: 12, color: "#CCCCCC" },
   offerPrice: { fontSize: 22, color: "#FFFFFF" },
   offerActions: { flexDirection: "row", gap: 8 },
   acceptOfferBtn: {
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
   },
-  declineOfferText: { fontSize: 13, color: "#888" },
+  declineOfferText: { fontSize: 13, color: "#BBBBBB" },
   offerProRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
   ratingPill: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "#1a1200", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
   ratingText: { fontSize: 11, color: "#f59e0b" },
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   newReqTitle: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
-  newReqSub: { fontSize: 12, color: "#AAAAAA" },
+  newReqSub: { fontSize: 12, color: "#CCCCCC" },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.75)",
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   modalTitle: { fontSize: 20, color: "#FFFFFF", marginBottom: 4 },
-  modalSubLabel: { fontSize: 12, color: "#AAAAAA", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
+  modalSubLabel: { fontSize: 12, color: "#CCCCCC", textTransform: "uppercase", letterSpacing: 1, marginTop: 4 },
   modalChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   modalChip: {
     paddingHorizontal: 16,
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
   },
   modalSubmitText: { fontSize: 16, color: "#000" },
   modalCancelBtn: { paddingVertical: 12, alignItems: "center" },
-  modalCancelText: { fontSize: 14, color: "#555" },
+  modalCancelText: { fontSize: 14, color: "#BBBBBB" },
   modalScrollOuter: { flexGrow: 1, justifyContent: "flex-end" },
   modalTextArea: {
     backgroundColor: "#111",
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#0d2e1822",
   },
   uploadZoneText: { fontSize: 14, color: "#FFFFFF" },
-  uploadZoneSubText: { fontSize: 12, color: "#AAAAAA" },
+  uploadZoneSubText: { fontSize: 12, color: "#CCCCCC" },
   photoPreviewRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 2 },
   photoThumb: { width: 72, height: 72, borderRadius: 14, overflow: "hidden", position: "relative" },
   photoThumbImg: { width: "100%", height: "100%" },
@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  reqSubtitle: { fontSize: 13, color: "#AAAAAA", marginTop: 4 },
+  reqSubtitle: { fontSize: 13, color: "#CCCCCC", marginTop: 4 },
   reqCard: {
     backgroundColor: "#1A1A1A",
     borderRadius: 22,
@@ -763,7 +763,7 @@ const styles = StyleSheet.create({
   reqBudget: { fontSize: 20, color: "#FFFFFF" },
   reqDescription: {
     fontSize: 13,
-    color: "#AAAAAA",
+    color: "#CCCCCC",
     lineHeight: 19,
     marginBottom: 8,
   },
@@ -783,7 +783,7 @@ const styles = StyleSheet.create({
     color: "#34FF7A",
   },
   reqMeta: { flexDirection: "row", alignItems: "center", gap: 5 },
-  reqMetaText: { fontSize: 13, color: "#AAAAAA" },
+  reqMetaText: { fontSize: 13, color: "#CCCCCC" },
   acceptBtn: {
     backgroundColor: "#34FF7A",
     paddingVertical: 13,

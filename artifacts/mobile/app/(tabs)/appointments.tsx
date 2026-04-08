@@ -330,19 +330,19 @@ export default function AppointmentsScreen() {
                     <Text style={[styles.lsBudget, { fontFamily: "Inter_700Bold" }]}>{job.budget}</Text>
                   </View>
                   <View style={styles.lsMetaRow}>
-                    <Ionicons name="calendar-outline" size={13} color="#555" />
+                    <Ionicons name="calendar-outline" size={13} color="#CCCCCC" />
                     <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium" }]}>{job.date} at {job.time}</Text>
                     <Text style={styles.metaDot}>·</Text>
-                    <Ionicons name="resize-outline" size={13} color="#555" />
+                    <Ionicons name="resize-outline" size={13} color="#CCCCCC" />
                     <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>{job.size} yard</Text>
                   </View>
                   <View style={styles.lsMetaRow}>
-                    <Ionicons name="person-outline" size={13} color="#555" />
+                    <Ionicons name="person-outline" size={13} color="#CCCCCC" />
                     <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>{job.customer}</Text>
                     {job.distance && (
                       <>
                         <Text style={styles.metaDot}>·</Text>
-                        <Ionicons name="location-outline" size={13} color="#555" />
+                        <Ionicons name="location-outline" size={13} color="#CCCCCC" />
                         <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>{job.distance}</Text>
                       </>
                     )}
@@ -401,19 +401,19 @@ export default function AppointmentsScreen() {
                 </View>
 
                 <View style={styles.lsMetaRow}>
-                  <Ionicons name="calendar-outline" size={13} color="#555" />
+                  <Ionicons name="calendar-outline" size={13} color="#CCCCCC" />
                   <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium" }]}>
                     {appt.date} at {appt.time}
                   </Text>
                   <Text style={styles.metaDot}>·</Text>
-                  <Ionicons name="resize-outline" size={13} color="#555" />
+                  <Ionicons name="resize-outline" size={13} color="#CCCCCC" />
                   <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>
                     {appt.size} yard
                   </Text>
                 </View>
 
                 <View style={styles.lsMetaRow}>
-                  <Ionicons name="person-outline" size={13} color="#555" />
+                  <Ionicons name="person-outline" size={13} color="#CCCCCC" />
                   <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>
                     {appt.customer}
                   </Text>
@@ -432,7 +432,7 @@ export default function AppointmentsScreen() {
                 </TouchableOpacity>
 
                 <View style={styles.lsMetaRow}>
-                  <Ionicons name="call-outline" size={13} color="#555" />
+                  <Ionicons name="call-outline" size={13} color="#CCCCCC" />
                   <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>
                     {appt.phone}
                   </Text>
@@ -476,43 +476,43 @@ export default function AppointmentsScreen() {
                         Cancelled
                       </Text>
                     </View>
-                    <Text style={[styles.lsBudget, { fontFamily: "Inter_700Bold", color: "#555", fontSize: 16 }]}>
+                    <Text style={[styles.lsBudget, { fontFamily: "Inter_700Bold", color: "#BBBBBB", fontSize: 16 }]}>
                       {appt.budget}
                     </Text>
                   </View>
 
                   <View style={styles.lsTopRow}>
                     <View style={[styles.lsServiceBadge, { backgroundColor: "#1A1A1A" }]}>
-                      <Ionicons name="leaf" size={14} color="#555" />
-                      <Text style={[styles.lsServiceText, { fontFamily: "Inter_600SemiBold", color: "#555" }]}>
+                      <Ionicons name="leaf" size={14} color="#CCCCCC" />
+                      <Text style={[styles.lsServiceText, { fontFamily: "Inter_600SemiBold", color: "#BBBBBB" }]}>
                         {appt.service}
                       </Text>
                     </View>
                   </View>
 
                   <View style={styles.lsMetaRow}>
-                    <Ionicons name="calendar-outline" size={13} color="#444" />
-                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium", color: "#555" }]}>
+                    <Ionicons name="calendar-outline" size={13} color="#777" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium", color: "#BBBBBB" }]}>
                       {appt.date} at {appt.time}
                     </Text>
                     <Text style={styles.metaDot}>·</Text>
-                    <Ionicons name="resize-outline" size={13} color="#444" />
-                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular", color: "#555" }]}>
+                    <Ionicons name="resize-outline" size={13} color="#777" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular", color: "#BBBBBB" }]}>
                       {appt.size} yard
                     </Text>
                   </View>
 
                   <View style={styles.lsMetaRow}>
-                    <Ionicons name="person-outline" size={13} color="#444" />
-                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular", color: "#555" }]}>
+                    <Ionicons name="person-outline" size={13} color="#777" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular", color: "#BBBBBB" }]}>
                       {appt.customer}
                     </Text>
                   </View>
 
                   {appt.note && (
                     <View style={[styles.notePill, { backgroundColor: "#1A1A1A" }]}>
-                      <Ionicons name="information-circle-outline" size={13} color="#555" />
-                      <Text style={[styles.noteText, { fontFamily: "Inter_400Regular", color: "#555" }]}>
+                      <Ionicons name="information-circle-outline" size={13} color="#CCCCCC" />
+                      <Text style={[styles.noteText, { fontFamily: "Inter_400Regular", color: "#BBBBBB" }]}>
                         {appt.note}
                       </Text>
                     </View>
@@ -612,11 +612,11 @@ export default function AppointmentsScreen() {
                 {cancelledCustomerAppts.map((appt) => (
                   <View key={appt.id} style={[styles.card, styles.cancelledCustomerCard]}>
                     <View style={[styles.avatar, { backgroundColor: appt.color + "40" }]}>
-                      <Text style={[styles.avatarText, { color: "#555" }]}>{appt.initials}</Text>
+                      <Text style={[styles.avatarText, { color: "#BBBBBB" }]}>{appt.initials}</Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={styles.cardTopRow}>
-                        <Text style={[styles.serviceText, { fontFamily: "Inter_600SemiBold", color: "#555" }]}>
+                        <Text style={[styles.serviceText, { fontFamily: "Inter_600SemiBold", color: "#BBBBBB" }]}>
                           {appt.service}
                         </Text>
                         <View style={styles.cancelledBadge}>
@@ -654,11 +654,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "#222222",
   },
   headerTitle: { fontSize: 22, color: "#FFFFFF" },
-  headerSub: { fontSize: 13, color: "#AAAAAA", marginTop: 4 },
+  headerSub: { fontSize: 13, color: "#CCCCCC", marginTop: 4 },
   scrollContent: { padding: 16, paddingBottom: 40, gap: 10 },
   sectionLabel: {
     fontSize: 11,
-    color: "#AAAAAA",
+    color: "#CCCCCC",
     textTransform: "uppercase",
     letterSpacing: 1.2,
     marginBottom: 8,
@@ -669,8 +669,8 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   emptyState: { paddingVertical: 80, alignItems: "center", gap: 10 },
-  emptyText: { fontSize: 16, color: "#555" },
-  emptySub: { fontSize: 13, color: "#444" },
+  emptyText: { fontSize: 16, color: "#BBBBBB" },
+  emptySub: { fontSize: 13, color: "#777" },
   newJobCard: {
     borderColor: "#34FF7A33",
     borderWidth: 1.5,
@@ -728,9 +728,9 @@ const styles = StyleSheet.create({
   lsServiceText: { fontSize: 14, color: "#34FF7A" },
   lsBudget: { fontSize: 20, color: "#FFFFFF" },
   lsMetaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  lsMetaText: { fontSize: 13, color: "#AAAAAA", flex: 1 },
+  lsMetaText: { fontSize: 13, color: "#CCCCCC", flex: 1 },
   mapAddressLink: { color: "#34FF7A", textDecorationLine: "underline", flex: 1 },
-  metaDot: { color: "#333", fontSize: 12 },
+  metaDot: { color: "#555", fontSize: 12 },
   notePill: {
     flexDirection: "row",
     alignItems: "center",
@@ -794,8 +794,8 @@ const styles = StyleSheet.create({
   },
   serviceText: { fontSize: 15, color: "#FFFFFF" },
   priceText: { fontSize: 15, color: "#FFFFFF" },
-  subText: { fontSize: 12, color: "#555", marginBottom: 3 },
-  proText: { fontSize: 12, color: "#555" },
+  subText: { fontSize: 12, color: "#BBBBBB", marginBottom: 3 },
+  proText: { fontSize: 12, color: "#BBBBBB" },
 });
 
 const jdStyles = StyleSheet.create({
@@ -872,10 +872,10 @@ const jdStyles = StyleSheet.create({
     justifyContent: "center",
   },
   proInitials: { fontSize: 16, color: "#000" },
-  proLabel: { fontSize: 11, color: "#888", marginBottom: 2 },
+  proLabel: { fontSize: 11, color: "#BBBBBB", marginBottom: 2 },
   proName: { fontSize: 16, color: "#FFFFFF" },
   priceTag: { fontSize: 20, color: "#34FF7A", marginLeft: "auto" },
-  sectionLabel: { fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: 1 },
+  sectionLabel: { fontSize: 11, color: "#BBBBBB", textTransform: "uppercase", letterSpacing: 1 },
   addressCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -887,7 +887,7 @@ const jdStyles = StyleSheet.create({
     borderColor: "#222",
   },
   addressText: { flex: 1, fontSize: 14, color: "#FFFFFF" },
-  addressHint: { fontSize: 11, color: "#555", textAlign: "center" },
+  addressHint: { fontSize: 11, color: "#BBBBBB", textAlign: "center" },
   payBtn: {
     backgroundColor: "#34FF7A",
     borderRadius: 20,

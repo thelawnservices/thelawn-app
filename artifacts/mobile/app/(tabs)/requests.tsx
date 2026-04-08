@@ -106,7 +106,7 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; bg: s
   pending: { label: "Pending", color: "#FFAA00", bg: "#2A1F00", icon: "time-outline" },
   accepted: { label: "Accepted", color: "#34FF7A", bg: "#0d2e18", icon: "checkmark-circle-outline" },
   in_progress: { label: "In Progress", color: "#34FF7A", bg: "#0d2e18", icon: "reload-outline" },
-  completed: { label: "Completed", color: "#888888", bg: "#1A1A1A", icon: "checkmark-circle-outline" },
+  completed: { label: "Completed", color: "#BBBBBB", bg: "#1A1A1A", icon: "checkmark-circle-outline" },
   cancelled: { label: "Cancelled", color: "#EF4444", bg: "#2A0808", icon: "close-circle-outline" },
 };
 
@@ -167,7 +167,7 @@ function NewRequestModal({
           <TextInput
             style={[modalStyles.textArea, { fontFamily: "Inter_400Regular" }]}
             placeholder="Describe the job — yard size, specific needs, gate codes, etc."
-            placeholderTextColor="#444"
+            placeholderTextColor="#666"
             multiline
             numberOfLines={4}
             value={desc}
@@ -178,7 +178,7 @@ function NewRequestModal({
           <TextInput
             style={[modalStyles.input, { fontFamily: "Inter_400Regular" }]}
             placeholder="e.g. $40 – $60"
-            placeholderTextColor="#444"
+            placeholderTextColor="#666"
             value={budget}
             onChangeText={setBudget}
           />
@@ -278,7 +278,7 @@ export default function RequestsScreen() {
                       <Text style={[styles.servicePillText, { fontFamily: "Inter_600SemiBold" }]}>{req.service}</Text>
                     </View>
                     <View style={styles.distPill}>
-                      <Ionicons name="navigate-outline" size={11} color="#888" />
+                      <Ionicons name="navigate-outline" size={11} color="#CCCCCC" />
                       <Text style={[styles.distText, { fontFamily: "Inter_400Regular" }]}>{req.distance}</Text>
                     </View>
                   </View>
@@ -288,15 +288,15 @@ export default function RequestsScreen() {
                   </Text>
 
                   <View style={styles.metaRow}>
-                    <Ionicons name="location-outline" size={12} color="#555" />
+                    <Ionicons name="location-outline" size={12} color="#CCCCCC" />
                     <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{req.address}</Text>
                   </View>
                   <View style={styles.metaRow}>
-                    <Ionicons name="calendar-outline" size={12} color="#555" />
+                    <Ionicons name="calendar-outline" size={12} color="#CCCCCC" />
                     <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{req.date} · {req.time}</Text>
                   </View>
                   <View style={styles.metaRow}>
-                    <Ionicons name="cash-outline" size={12} color="#555" />
+                    <Ionicons name="cash-outline" size={12} color="#CCCCCC" />
                     <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{req.budget}</Text>
                   </View>
 
@@ -363,12 +363,12 @@ export default function RequestsScreen() {
                   </Text>
 
                   <View style={styles.metaRow}>
-                    <Ionicons name="calendar-outline" size={12} color="#555" />
+                    <Ionicons name="calendar-outline" size={12} color="#CCCCCC" />
                     <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{req.date} · {req.time}</Text>
                   </View>
                   {req.budget ? (
                     <View style={styles.metaRow}>
-                      <Ionicons name="cash-outline" size={12} color="#555" />
+                      <Ionicons name="cash-outline" size={12} color="#CCCCCC" />
                       <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{req.budget}</Text>
                     </View>
                   ) : null}
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 20, gap: 12 },
   sectionLabel: {
     fontSize: 12,
-    color: "#555555",
+    color: "#BBBBBB",
     marginBottom: 4,
   },
 
@@ -479,12 +479,12 @@ const styles = StyleSheet.create({
   },
   servicePillText: { fontSize: 12, color: "#34FF7A" },
   distPill: { flexDirection: "row", alignItems: "center", gap: 4 },
-  distText: { fontSize: 12, color: "#888888" },
+  distText: { fontSize: 12, color: "#BBBBBB" },
 
   incomingDesc: { fontSize: 13, color: "rgba(255,255,255,0.65)", lineHeight: 19 },
 
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  metaText: { fontSize: 12, color: "#666666", flex: 1 },
+  metaText: { fontSize: 12, color: "#999999", flex: 1 },
 
   incomingFooter: {
     flexDirection: "row",
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 4,
   },
-  customerLabel: { fontSize: 12, color: "#888888" },
+  customerLabel: { fontSize: 12, color: "#BBBBBB" },
   acceptBtn: {
     backgroundColor: "#34FF7A",
     paddingHorizontal: 18,
@@ -537,14 +537,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 2,
   },
-  postedAgo: { fontSize: 11, color: "#555555" },
+  postedAgo: { fontSize: 11, color: "#BBBBBB" },
   proAssigned: { flexDirection: "row", alignItems: "center", gap: 5 },
   proAssignedText: { fontSize: 12, color: "#34FF7A" },
-  awaitingText: { fontSize: 12, color: "#555555", fontStyle: "italic" },
+  awaitingText: { fontSize: 12, color: "#BBBBBB", fontStyle: "italic" },
 
   emptyState: { paddingVertical: 60, alignItems: "center", gap: 12 },
   emptyTitle: { fontSize: 17, color: "#FFFFFF" },
-  emptySubtitle: { fontSize: 13, color: "#555555", textAlign: "center" },
+  emptySubtitle: { fontSize: 13, color: "#BBBBBB", textAlign: "center" },
 });
 
 const modalStyles = StyleSheet.create({
@@ -571,7 +571,7 @@ const modalStyles = StyleSheet.create({
     marginBottom: 20,
   },
   title: { fontSize: 20, color: "#FFFFFF", marginBottom: 20 },
-  label: { fontSize: 13, color: "#AAAAAA", marginBottom: 8 },
+  label: { fontSize: 13, color: "#CCCCCC", marginBottom: 8 },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,

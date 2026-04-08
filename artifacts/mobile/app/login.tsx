@@ -298,10 +298,10 @@ export default function LoginScreen() {
           </View>
           {errors && <ErrorBanner message={errors} />}
           <Field label="Username">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={custUsername} onChangeText={setCustUsername} placeholder="your_username" placeholderTextColor="#555" autoCapitalize="none" autoCorrect={false} />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={custUsername} onChangeText={setCustUsername} placeholder="your_username" placeholderTextColor="#777" autoCapitalize="none" autoCorrect={false} />
           </Field>
           <Field label="Password">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={password} onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#555" secureTextEntry />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={password} onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#777" secureTextEntry />
           </Field>
 
           <View style={styles.rememberForgotRow}>
@@ -361,10 +361,10 @@ export default function LoginScreen() {
           </View>
           {errors && <ErrorBanner message={errors} />}
           <Field label="Username">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={landUsername} onChangeText={setLandUsername} placeholder="your_username" placeholderTextColor="#555" autoCapitalize="none" autoCorrect={false} />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={landUsername} onChangeText={setLandUsername} placeholder="your_username" placeholderTextColor="#777" autoCapitalize="none" autoCorrect={false} />
           </Field>
           <Field label="Password">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={password} onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#555" secureTextEntry />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={password} onChangeText={setPassword} placeholder="••••••••" placeholderTextColor="#777" secureTextEntry />
           </Field>
 
           <View style={styles.rememberForgotRow}>
@@ -424,34 +424,34 @@ export default function LoginScreen() {
           </View>
           {errors && <ErrorBanner message={errors} />}
           <Field label="Username (required for login)">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={regUsername} onChangeText={setRegUsername} placeholder="choose_a_username" placeholderTextColor="#555" autoCapitalize="none" autoCorrect={false} />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={regUsername} onChangeText={setRegUsername} placeholder="choose_a_username" placeholderTextColor="#777" autoCapitalize="none" autoCorrect={false} />
           </Field>
           <View style={styles.rowFields}>
             <View style={{ flex: 1 }}>
               <Field label="First Name">
-                <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={firstName} onChangeText={setFirstName} placeholder="Jane" placeholderTextColor="#555" autoCapitalize="words" />
+                <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={firstName} onChangeText={setFirstName} placeholder="Jane" placeholderTextColor="#777" autoCapitalize="words" />
               </Field>
             </View>
             <View style={{ flex: 1 }}>
               <Field label="Last Name">
-                <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lastName} onChangeText={setLastName} placeholder="Smith" placeholderTextColor="#555" autoCapitalize="words" />
+                <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lastName} onChangeText={setLastName} placeholder="Smith" placeholderTextColor="#777" autoCapitalize="words" />
               </Field>
             </View>
           </View>
           <Field label="Email">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={email} onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor="#555" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={email} onChangeText={setEmail} placeholder="your@email.com" placeholderTextColor="#777" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
           </Field>
           <Field label="Password">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={regPassword} onChangeText={setRegPassword} placeholder="••••••••" placeholderTextColor="#555" secureTextEntry />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={regPassword} onChangeText={setRegPassword} placeholder="••••••••" placeholderTextColor="#777" secureTextEntry />
           </Field>
           <Field label="Phone Number">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={phone} onChangeText={setPhone} placeholder="(555) 000-0000" placeholderTextColor="#555" keyboardType="phone-pad" />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={phone} onChangeText={setPhone} placeholder="(555) 000-0000" placeholderTextColor="#777" keyboardType="phone-pad" />
           </Field>
           <Field label="Service Address (private)">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={address} onChangeText={setAddress} placeholder="8910 45th Ave E, Ellenton, FL" placeholderTextColor="#555" autoCapitalize="words" />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={address} onChangeText={setAddress} placeholder="8910 45th Ave E, Ellenton, FL" placeholderTextColor="#777" autoCapitalize="words" />
           </Field>
           <Field label="ZIP Code (required)">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={zipCode} onChangeText={setZipCode} placeholder="34222" placeholderTextColor="#555" keyboardType="numeric" maxLength={5} />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={zipCode} onChangeText={setZipCode} placeholder="34222" placeholderTextColor="#777" keyboardType="numeric" maxLength={5} />
           </Field>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleCustomerRegister} activeOpacity={0.88}>
             <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Account</Text>
@@ -490,19 +490,19 @@ export default function LoginScreen() {
         </View>
         {errors && <ErrorBanner message={errors} />}
         <Field label="Username (required for login)">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lRegUsername} onChangeText={setLRegUsername} placeholder="choose_a_username" placeholderTextColor="#555" autoCapitalize="none" autoCorrect={false} />
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lRegUsername} onChangeText={setLRegUsername} placeholder="choose_a_username" placeholderTextColor="#777" autoCapitalize="none" autoCorrect={false} />
         </Field>
         <Field label="Landscaping or Business Name">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={businessName} onChangeText={setBusinessName} placeholder="Rivera Landscaping" placeholderTextColor="#555" autoCapitalize="words" />
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={businessName} onChangeText={setBusinessName} placeholder="Rivera Landscaping" placeholderTextColor="#777" autoCapitalize="words" />
         </Field>
         <Field label="Email">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lEmail} onChangeText={setLEmail} placeholder="your@email.com" placeholderTextColor="#555" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lEmail} onChangeText={setLEmail} placeholder="your@email.com" placeholderTextColor="#777" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
         </Field>
         <Field label="Password">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lPassword} onChangeText={setLPassword} placeholder="••••••••" placeholderTextColor="#555" secureTextEntry />
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lPassword} onChangeText={setLPassword} placeholder="••••••••" placeholderTextColor="#777" secureTextEntry />
         </Field>
         <Field label="Phone Number">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lPhone} onChangeText={setLPhone} placeholder="(555) 000-0000" placeholderTextColor="#555" keyboardType="phone-pad" />
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lPhone} onChangeText={setLPhone} placeholder="(555) 000-0000" placeholderTextColor="#777" keyboardType="phone-pad" />
         </Field>
         <Field label="Specialty Service">
           <View style={styles.specialtyGrid}>
@@ -514,22 +514,22 @@ export default function LoginScreen() {
           </View>
         </Field>
         <Field label="City (primary service area)">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lCity} onChangeText={setLCity} placeholder="Ellenton" placeholderTextColor="#555" autoCapitalize="words" />
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lCity} onChangeText={setLCity} placeholder="Ellenton" placeholderTextColor="#777" autoCapitalize="words" />
         </Field>
         <View style={styles.rowFields}>
           <View style={{ flex: 1 }}>
             <Field label="State">
-              <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={state} onChangeText={setState} placeholder="FL" placeholderTextColor="#555" autoCapitalize="characters" maxLength={2} />
+              <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={state} onChangeText={setState} placeholder="FL" placeholderTextColor="#777" autoCapitalize="characters" maxLength={2} />
             </Field>
           </View>
           <View style={{ flex: 1 }}>
             <Field label="ZIP Code">
-              <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lZipCode} onChangeText={setLZipCode} placeholder="34222" placeholderTextColor="#555" keyboardType="numeric" maxLength={5} />
+              <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lZipCode} onChangeText={setLZipCode} placeholder="34222" placeholderTextColor="#777" keyboardType="numeric" maxLength={5} />
             </Field>
           </View>
         </View>
         <Field label="Years of Experience">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={setYears} placeholder="e.g. 5" placeholderTextColor="#555" keyboardType="numeric" maxLength={2} />
+          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={setYears} placeholder="e.g. 5" placeholderTextColor="#777" keyboardType="numeric" maxLength={2} />
         </Field>
 
         <Field label="Receive Payment Preference">
@@ -696,7 +696,7 @@ function ForgotModal({
             value={value}
             onChangeText={onChangeValue}
             placeholder="Email or Username"
-            placeholderTextColor="#555"
+            placeholderTextColor="#777"
             autoCapitalize="none"
             autoCorrect={false}
           />
