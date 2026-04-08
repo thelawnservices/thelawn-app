@@ -1128,6 +1128,45 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
 
             <View style={svcStyles.divider} />
 
+            {/* ── Accepted Payments ─────────────────────────── */}
+            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Accepted Payments</Text>
+            <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
+              Customers will see your accepted payment methods before booking. Select all that apply.
+            </Text>
+            <View style={svcStyles.chipsRow}>
+              {ACCEPTED_PAYMENT_OPTIONS.map((opt) => {
+                const on = acceptedPayments.includes(opt.value);
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[svcStyles.chip, on && svcStyles.chipOn]}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setAcceptedPayments((prev) =>
+                        on ? prev.filter((v) => v !== opt.value) : [...prev, opt.value]
+                      );
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name={opt.icon} size={14} color={on ? "#000" : "#555"} />
+                    <Text style={[svcStyles.chipText, { fontFamily: "Inter_500Medium" }, on && svcStyles.chipTextOn]}>
+                      {opt.value}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {acceptedPayments.length > 0 && (
+              <View style={svcStyles.paymentNote}>
+                <Ionicons name="eye-outline" size={13} color="#34FF7A" />
+                <Text style={[svcStyles.paymentNoteText, { fontFamily: "Inter_400Regular" }]}>
+                  Customers will see: <Text style={{ fontFamily: "Inter_600SemiBold", color: "#FFFFFF" }}>{acceptedPayments.join("  ·  ")}</Text>
+                </Text>
+              </View>
+            )}
+
+            <View style={svcStyles.divider} />
+
             {/* ── Per-Service: Availability + Pricing ───────── */}
             <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Availability & Pricing</Text>
             <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
@@ -1304,45 +1343,6 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
             )}
 
             <View style={[svcStyles.divider, { marginTop: 20 }]} />
-
-            {/* ── Accepted Payments ─────────────────────────── */}
-            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Accepted Payments</Text>
-            <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
-              Customers will see your accepted payment methods before booking. Select all that apply.
-            </Text>
-            <View style={svcStyles.chipsRow}>
-              {ACCEPTED_PAYMENT_OPTIONS.map((opt) => {
-                const on = acceptedPayments.includes(opt.value);
-                return (
-                  <TouchableOpacity
-                    key={opt.value}
-                    style={[svcStyles.chip, on && svcStyles.chipOn]}
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      setAcceptedPayments((prev) =>
-                        on ? prev.filter((v) => v !== opt.value) : [...prev, opt.value]
-                      );
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name={opt.icon} size={14} color={on ? "#000" : "#555"} />
-                    <Text style={[svcStyles.chipText, { fontFamily: "Inter_500Medium" }, on && svcStyles.chipTextOn]}>
-                      {opt.value}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-            {acceptedPayments.length > 0 && (
-              <View style={svcStyles.paymentNote}>
-                <Ionicons name="eye-outline" size={13} color="#34FF7A" />
-                <Text style={[svcStyles.paymentNoteText, { fontFamily: "Inter_400Regular" }]}>
-                  Customers will see: <Text style={{ fontFamily: "Inter_600SemiBold", color: "#FFFFFF" }}>{acceptedPayments.join("  ·  ")}</Text>
-                </Text>
-              </View>
-            )}
-
-            <View style={[svcStyles.divider, { marginTop: 16 }]} />
 
             {/* ── Save ──────────────────────────────────────── */}
             <TouchableOpacity
