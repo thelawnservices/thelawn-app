@@ -1010,6 +1010,13 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
   const [blockedDates, setBlockedDates] = useState<string[]>(() => [...(myServices.blockedDates ?? [])]);
   const [saved, setSaved] = useState(false);
   const [timePicker, setTimePicker] = useState<{ service: string; field: "startTime" | "endTime" } | null>(null);
+  const [dayDetailPicker, setDayDetailPicker] = useState<{
+    service: string; dateKey: string; dateDisplay: string; isWorkDay: boolean;
+  } | null>(null);
+  const [dayTimeOverrides, setDayTimeOverrides] = useState<{
+    [svcDateKey: string]: { start: string; end: string };
+  }>({});
+  const [ddTimePicker, setDdTimePicker] = useState<"start" | "end" | null>(null);
 
   // Derive which days of week are "active" across all offered services
   const activeDaysOfWeek = useMemo(() => {
@@ -1146,6 +1153,82 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
                   })}
                 </View>
 
+                {/* Per-service monthly calendar */}
+                <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>MONTHLY SCHEDULE — TAP A DAY TO SET DATES</Text>
+                <View style={svcStyles.calHeader}>
+                  {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
+                    <Text key={d} style={[svcStyles.calHeaderCell, { fontFamily: "Inter_600SemiBold" }]}>{d}</Text>
+                  ))}
+                </View>
+                {calRows.map((week, wi) => {
+                  const showLabel = wi === 0 || week.some((day, di) => di > 0 && day.monthLabel !== week[di - 1].monthLabel);
+                  return (
+                    <View key={wi}>
+                      {showLabel && (
+                        <Text style={[svcStyles.calMonthLabel, { fontFamily: "Inter_700Bold" }]}>
+                          {week[0].monthLabel}
+                        </Text>
+                      )}
+                      <View style={svcStyles.calWeekRow}>
+                        {week.map((day) => {
+                          const svcDays = avail[service]?.days ?? [];
+                          const isWorkDay = svcDays.includes(day.dayLabel);
+                          const isBlocked = blockedDates.includes(day.key);
+                          const overrideKey = `${service}||${day.key}`;
+                          const hasOverride = !!dayTimeOverrides[overrideKey];
+                          const cellStyle = isBlocked
+                            ? svcStyles.calCellBlocked
+                            : isWorkDay
+                            ? svcStyles.calCellAvail
+                            : svcStyles.calCellOff;
+                          const textColor = isBlocked ? "#EF4444" : isWorkDay ? "#000" : "#555";
+                          const isInteractive = isWorkDay || isBlocked;
+                          return (
+                            <TouchableOpacity
+                              key={day.key}
+                              style={[svcStyles.calCell, cellStyle]}
+                              onPress={() => {
+                                if (!isInteractive) return;
+                                Haptics.selectionAsync();
+                                setDayDetailPicker({
+                                  service,
+                                  dateKey: day.key,
+                                  dateDisplay: day.key,
+                                  isWorkDay,
+                                });
+                              }}
+                              activeOpacity={isInteractive ? 0.72 : 1}
+                            >
+                              <Text style={[svcStyles.calCellDay, { fontFamily: "Inter_400Regular", color: isBlocked ? "#EF4444" : isWorkDay ? "rgba(0,0,0,0.55)" : "#555" }]}>
+                                {day.dayLabel.slice(0, 2)}
+                              </Text>
+                              <Text style={[svcStyles.calCellNum, { fontFamily: "Inter_700Bold", color: textColor }]}>
+                                {day.dateNum}
+                              </Text>
+                              {isBlocked && <Ionicons name="close" size={8} color="#EF4444" />}
+                              {hasOverride && !isBlocked && <View style={svcStyles.calDot} />}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  );
+                })}
+                <View style={[svcStyles.calLegend, { marginBottom: 10 }]}>
+                  <View style={svcStyles.calLegendItem}>
+                    <View style={[svcStyles.calLegendDot, { backgroundColor: "#34FF7A" }]} />
+                    <Text style={[svcStyles.calLegendText, { fontFamily: "Inter_400Regular" }]}>Open — tap to manage</Text>
+                  </View>
+                  <View style={svcStyles.calLegendItem}>
+                    <View style={[svcStyles.calLegendDot, { backgroundColor: "#3A1A1A", borderWidth: 1, borderColor: "#5A2020" }]} />
+                    <Text style={[svcStyles.calLegendText, { fontFamily: "Inter_400Regular" }]}>Blocked</Text>
+                  </View>
+                  <View style={svcStyles.calLegendItem}>
+                    <View style={[svcStyles.calLegendDot, { backgroundColor: "#141414", borderWidth: 1, borderColor: "#1e1e1e" }]} />
+                    <Text style={[svcStyles.calLegendText, { fontFamily: "Inter_400Regular" }]}>Not scheduled</Text>
+                  </View>
+                </View>
+
                 {/* Time buttons */}
                 <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium" }]}>WORKING HOURS</Text>
                 <View style={svcStyles.timesRow}>
@@ -1253,104 +1336,6 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
 
             <View style={[svcStyles.divider, { marginTop: 16 }]} />
 
-            {/* ── Monthly Availability ──────────────────────── */}
-            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Monthly Availability</Text>
-            <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
-              Tap any{" "}
-              <Text style={{ color: "#34FF7A", fontFamily: "Inter_600SemiBold" }}>green</Text>
-              {" "}day to block it off. Tap a{" "}
-              <Text style={{ color: "#EF4444", fontFamily: "Inter_600SemiBold" }}>red</Text>
-              {" "}day to restore it. Gray days are outside your set schedule.
-            </Text>
-
-            {/* Day-of-week header */}
-            <View style={svcStyles.calHeader}>
-              {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
-                <Text key={d} style={[svcStyles.calHeaderCell, { fontFamily: "Inter_600SemiBold" }]}>{d}</Text>
-              ))}
-            </View>
-
-            {/* 4-week grid */}
-            {calRows.map((week, wi) => {
-              // Month label when the month changes
-              const firstOfWeek = week[0];
-              const showMonthLabel = wi === 0 || week.some((day, di) => di > 0 && day.monthLabel !== week[di - 1].monthLabel);
-              return (
-                <View key={wi}>
-                  {showMonthLabel && (
-                    <Text style={[svcStyles.calMonthLabel, { fontFamily: "Inter_700Bold" }]}>
-                      {firstOfWeek.monthLabel}
-                    </Text>
-                  )}
-                  <View style={svcStyles.calWeekRow}>
-                    {week.map((day) => {
-                      const isWorkDay = activeDaysOfWeek.has(day.dayLabel);
-                      const isBlocked = blockedDates.includes(day.key);
-                      const hasBooking = (bookedSlots[day.key] ?? []).length > 0;
-                      const cellStyle = isBlocked
-                        ? svcStyles.calCellBlocked
-                        : isWorkDay
-                        ? svcStyles.calCellAvail
-                        : svcStyles.calCellOff;
-                      const textColor = isBlocked ? "#EF4444" : isWorkDay ? "#000" : "#555";
-                      return (
-                        <TouchableOpacity
-                          key={day.key}
-                          style={[svcStyles.calCell, cellStyle]}
-                          onPress={() => isWorkDay || isBlocked ? toggleBlockedDate(day.key) : null}
-                          activeOpacity={isWorkDay || isBlocked ? 0.7 : 1}
-                        >
-                          <Text style={[svcStyles.calCellDay, { fontFamily: "Inter_400Regular", color: isBlocked ? "#EF4444" : isWorkDay ? "rgba(0,0,0,0.6)" : "#555" }]}>
-                            {day.dayLabel.slice(0, 2)}
-                          </Text>
-                          <Text style={[svcStyles.calCellNum, { fontFamily: "Inter_700Bold", color: textColor }]}>
-                            {day.dateNum}
-                          </Text>
-                          {isBlocked && (
-                            <Ionicons name="close" size={8} color="#EF4444" />
-                          )}
-                          {hasBooking && !isBlocked && (
-                            <View style={svcStyles.calDot} />
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            })}
-
-            {/* Legend */}
-            <View style={svcStyles.calLegend}>
-              <View style={svcStyles.calLegendItem}>
-                <View style={[svcStyles.calLegendDot, { backgroundColor: "#34FF7A" }]} />
-                <Text style={[svcStyles.calLegendText, { fontFamily: "Inter_400Regular" }]}>Available</Text>
-              </View>
-              <View style={svcStyles.calLegendItem}>
-                <View style={[svcStyles.calLegendDot, { backgroundColor: "#3A1A1A" }]} />
-                <Text style={[svcStyles.calLegendText, { fontFamily: "Inter_400Regular" }]}>Blocked off</Text>
-              </View>
-              <View style={svcStyles.calLegendItem}>
-                <View style={[svcStyles.calLegendDot, { backgroundColor: "#1A1A1A" }]} />
-                <Text style={[svcStyles.calLegendText, { fontFamily: "Inter_400Regular" }]}>Not scheduled</Text>
-              </View>
-            </View>
-
-            {blockedDates.length > 0 && (
-              <TouchableOpacity
-                style={svcStyles.clearBlockedBtn}
-                onPress={() => { Haptics.selectionAsync(); setBlockedDates([]); }}
-                activeOpacity={0.75}
-              >
-                <Ionicons name="refresh-outline" size={14} color="#EF4444" />
-                <Text style={[svcStyles.clearBlockedText, { fontFamily: "Inter_500Medium" }]}>
-                  Clear {blockedDates.length} blocked {blockedDates.length === 1 ? "date" : "dates"}
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            <View style={[svcStyles.divider, { marginTop: 20 }]} />
-
             {/* ── Save ──────────────────────────────────────── */}
             <TouchableOpacity
               style={[svcStyles.saveBtn, saved && svcStyles.saveBtnSuccess]}
@@ -1404,6 +1389,176 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
           </TouchableOpacity>
         </Modal>
       )}
+
+      {/* ── Day Detail Sheet ──────────────────────────────── */}
+      {dayDetailPicker && (() => {
+        const { service: ddSvc, dateKey, dateDisplay, isWorkDay } = dayDetailPicker;
+        const isBlocked = blockedDates.includes(dateKey);
+        const overrideKey = `${ddSvc}||${dateKey}`;
+        const override = dayTimeOverrides[overrideKey];
+        const defaultStart = avail[ddSvc]?.startTime ?? "8:00 AM";
+        const defaultEnd   = avail[ddSvc]?.endTime   ?? "5:00 PM";
+        const displayStart = override?.start ?? defaultStart;
+        const displayEnd   = override?.end   ?? defaultEnd;
+        return (
+          <Modal visible transparent animationType="slide" onRequestClose={() => setDayDetailPicker(null)}>
+            <Pressable style={svcStyles.ddOverlay} onPress={() => setDayDetailPicker(null)}>
+              <Pressable style={svcStyles.ddSheet} onPress={(e) => e.stopPropagation()}>
+
+                {/* Header */}
+                <View style={svcStyles.ddHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[svcStyles.ddDateText, { fontFamily: "Inter_700Bold" }]}>{dateDisplay}</Text>
+                    <Text style={[svcStyles.ddServiceText, { fontFamily: "Inter_400Regular" }]}>{ddSvc}</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setDayDetailPicker(null)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                    <Ionicons name="close" size={22} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Status badge */}
+                <View style={[svcStyles.ddStatusBadge, isBlocked ? svcStyles.ddStatusBadgeBlocked : svcStyles.ddStatusBadgeOpen]}>
+                  <Ionicons name={isBlocked ? "close-circle" : "checkmark-circle"} size={14} color={isBlocked ? "#EF4444" : "#34FF7A"} />
+                  <Text style={[svcStyles.ddStatusText, { fontFamily: "Inter_600SemiBold", color: isBlocked ? "#EF4444" : "#34FF7A" }]}>
+                    {isBlocked ? "Blocked — Unavailable" : "Open for Bookings"}
+                  </Text>
+                </View>
+
+                {/* Custom hours — only if not blocked */}
+                {!isBlocked && (
+                  <>
+                    <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium", marginTop: 18, marginBottom: 10 }]}>
+                      {override ? "CUSTOM HOURS FOR THIS DATE" : "DEFAULT HOURS — TAP TO CUSTOMIZE"}
+                    </Text>
+                    <View style={svcStyles.ddHoursRow}>
+                      {/* Start time */}
+                      <TouchableOpacity
+                        style={svcStyles.ddTimeBtn}
+                        onPress={() => setDdTimePicker("start")}
+                        activeOpacity={0.8}
+                      >
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <Ionicons name="sunny-outline" size={13} color="#34FF7A" />
+                          <Text style={[svcStyles.ddTimeBtnLabel, { fontFamily: "Inter_400Regular" }]}>Start</Text>
+                        </View>
+                        <Text style={[svcStyles.ddTimeBtnValue, { fontFamily: "Inter_700Bold" }]}>{displayStart}</Text>
+                      </TouchableOpacity>
+
+                      <Ionicons name="arrow-forward" size={14} color="#444" />
+
+                      {/* End time */}
+                      <TouchableOpacity
+                        style={svcStyles.ddTimeBtn}
+                        onPress={() => setDdTimePicker("end")}
+                        activeOpacity={0.8}
+                      >
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <Ionicons name="moon-outline" size={13} color="#34FF7A" />
+                          <Text style={[svcStyles.ddTimeBtnLabel, { fontFamily: "Inter_400Regular" }]}>End</Text>
+                        </View>
+                        <Text style={[svcStyles.ddTimeBtnValue, { fontFamily: "Inter_700Bold" }]}>{displayEnd}</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {override && (
+                      <TouchableOpacity
+                        style={svcStyles.ddClearOverride}
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setDayTimeOverrides((prev) => {
+                            const next = { ...prev };
+                            delete next[overrideKey];
+                            return next;
+                          });
+                        }}
+                        activeOpacity={0.75}
+                      >
+                        <Ionicons name="refresh-outline" size={12} color="#777" />
+                        <Text style={[svcStyles.ddClearOverrideText, { fontFamily: "Inter_400Regular" }]}>Reset to default hours</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+
+                <View style={[svcStyles.divider, { marginTop: 20, marginBottom: 16 }]} />
+
+                {/* Block / Restore */}
+                {isBlocked ? (
+                  <TouchableOpacity
+                    style={svcStyles.ddRestoreBtn}
+                    onPress={() => { Haptics.selectionAsync(); toggleBlockedDate(dateKey); }}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="checkmark-circle-outline" size={17} color="#000" />
+                    <Text style={[svcStyles.ddRestoreBtnText, { fontFamily: "Inter_700Bold" }]}>Restore Availability</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={svcStyles.ddBlockBtn}
+                    onPress={() => { Haptics.selectionAsync(); toggleBlockedDate(dateKey); }}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="close-circle-outline" size={17} color="#EF4444" />
+                    <Text style={[svcStyles.ddBlockBtnText, { fontFamily: "Inter_700Bold" }]}>Block This Date</Text>
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                  style={svcStyles.ddDoneBtn}
+                  onPress={() => setDayDetailPicker(null)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[svcStyles.ddDoneBtnText, { fontFamily: "Inter_700Bold" }]}>Done</Text>
+                </TouchableOpacity>
+
+              </Pressable>
+            </Pressable>
+
+            {/* Nested time picker for day-level override */}
+            {ddTimePicker && (
+              <Modal visible transparent animationType="fade" onRequestClose={() => setDdTimePicker(null)}>
+                <TouchableOpacity style={svcStyles.tpOverlay} activeOpacity={1} onPress={() => setDdTimePicker(null)}>
+                  <View style={svcStyles.tpSheet}>
+                    <Text style={[svcStyles.tpTitle, { fontFamily: "Inter_700Bold" }]}>
+                      {ddTimePicker === "start" ? "Custom Start Time" : "Custom End Time"}
+                    </Text>
+                    <Text style={[svcStyles.tpSubtitle, { fontFamily: "Inter_400Regular" }]}>{dateDisplay}</Text>
+                    <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 300 }}>
+                      {TIME_SLOTS.map((slot) => {
+                        const cur = ddTimePicker === "start" ? displayStart : displayEnd;
+                        const selected = slot === cur;
+                        return (
+                          <TouchableOpacity
+                            key={slot}
+                            style={[svcStyles.tpSlot, selected && svcStyles.tpSlotActive]}
+                            onPress={() => {
+                              Haptics.selectionAsync();
+                              setDayTimeOverrides((prev) => ({
+                                ...prev,
+                                [overrideKey]: {
+                                  start: ddTimePicker === "start" ? slot : (prev[overrideKey]?.start ?? defaultStart),
+                                  end:   ddTimePicker === "end"   ? slot : (prev[overrideKey]?.end   ?? defaultEnd),
+                                },
+                              }));
+                              setDdTimePicker(null);
+                            }}
+                            activeOpacity={0.75}
+                          >
+                            <Text style={[svcStyles.tpSlotText, { fontFamily: selected ? "Inter_600SemiBold" : "Inter_400Regular" }, selected && svcStyles.tpSlotTextActive]}>
+                              {slot}
+                            </Text>
+                            {selected && <Ionicons name="checkmark" size={16} color="#000" />}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                </TouchableOpacity>
+              </Modal>
+            )}
+          </Modal>
+        );
+      })()}
     </Modal>
   );
 }
@@ -1555,6 +1710,58 @@ const svcStyles = StyleSheet.create({
     borderWidth: 1, borderColor: "#5A2020",
   },
   clearBlockedText: { fontSize: 12, color: "#EF4444" },
+
+  ddOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
+  ddSheet: {
+    backgroundColor: "#111111",
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    borderWidth: 1, borderColor: "#222",
+    padding: 24, paddingBottom: 36,
+  },
+  ddHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 },
+  ddDateText: { fontSize: 20, color: "#FFFFFF", marginBottom: 4 },
+  ddServiceText: { fontSize: 13, color: "#777" },
+  ddStatusBadge: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10,
+    borderWidth: 1,
+  },
+  ddStatusBadgeOpen:    { backgroundColor: "#0A1F12", borderColor: "#1D4428" },
+  ddStatusBadgeBlocked: { backgroundColor: "#1F0A0A", borderColor: "#5A2020" },
+  ddStatusText: { fontSize: 13 },
+  ddHoursRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+  },
+  ddTimeBtn: {
+    flex: 1, backgroundColor: "#1A1A1A", borderRadius: 14,
+    borderWidth: 1, borderColor: "#2A2A2A",
+    paddingHorizontal: 14, paddingVertical: 12,
+  },
+  ddTimeBtnLabel: { fontSize: 11, color: "#888" },
+  ddTimeBtnValue: { fontSize: 16, color: "#FFFFFF" },
+  ddClearOverride: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    alignSelf: "flex-start", marginTop: 10,
+  },
+  ddClearOverrideText: { fontSize: 11, color: "#666" },
+  ddBlockBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    borderRadius: 16, paddingVertical: 14, marginBottom: 10,
+    backgroundColor: "#1F0A0A", borderWidth: 1, borderColor: "#5A2020",
+  },
+  ddBlockBtnText: { fontSize: 15, color: "#EF4444" },
+  ddRestoreBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    borderRadius: 16, paddingVertical: 14, marginBottom: 10,
+    backgroundColor: "#34FF7A",
+  },
+  ddRestoreBtnText: { fontSize: 15, color: "#000" },
+  ddDoneBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    borderRadius: 16, paddingVertical: 14,
+    backgroundColor: "#1A1A1A", borderWidth: 1, borderColor: "#2A2A2A",
+  },
+  ddDoneBtnText: { fontSize: 15, color: "#FFFFFF" },
 });
 
 
