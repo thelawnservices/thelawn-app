@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/auth";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import TermsModal from "@/components/TermsModal";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
+import HelpSupportModal from "@/components/HelpSupportModal";
 import { validateText, simulatePhotoReview } from "@/utils/moderation";
 import { useNotifications } from "@/contexts/notifications";
 
@@ -42,6 +43,7 @@ export default function ProfileScreen() {
   const topPadding = isWeb ? 67 : insets.top;
   const { role, logout } = useAuth();
   const [isLandscaper, setIsLandscaper] = useState(role === "landscaper");
+  const [helpVisible, setHelpVisible] = useState(false);
   const [custMenuVisible, setCustMenuVisible] = useState(false);
   const [custSettingsVisible, setCustSettingsVisible] = useState(false);
   const [customerAddress, setCustomerAddress] = useState<{ street: string; state: string; zip: string } | null>(null);
@@ -62,6 +64,8 @@ export default function ProfileScreen() {
         topPadding={topPadding}
         toggle={toggle}
         logout={logout}
+        helpVisible={helpVisible}
+        setHelpVisible={setHelpVisible}
       />
     );
   }
@@ -89,6 +93,11 @@ export default function ProfileScreen() {
       <Modal visible={custMenuVisible} transparent animationType="fade" onRequestClose={() => setCustMenuVisible(false)}>
         <Pressable style={menuStyles.overlay} onPress={() => setCustMenuVisible(false)}>
           <View style={[menuStyles.dropdown, { top: topPadding + 56, right: 16 }]}>
+            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); setHelpVisible(true); }}>
+              <Ionicons name="help-circle-outline" size={18} color="#34FF7A" />
+              <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>Help & Support</Text>
+            </TouchableOpacity>
+            <View style={menuStyles.divider} />
             <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); Alert.alert("Edit Profile", "Profile editor coming soon."); }}>
               <Ionicons name="person-outline" size={18} color="#CCCCCC" />
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Edit Profile</Text>
@@ -175,6 +184,8 @@ export default function ProfileScreen() {
         savedAddress={customerAddress}
         onSave={(addr) => { setCustomerAddress(addr); setCustSettingsVisible(false); }}
       />
+
+      <HelpSupportModal visible={helpVisible} onClose={() => setHelpVisible(false)} role="customer" />
     </View>
   );
 }
@@ -193,10 +204,14 @@ function LandscaperProfile({
   topPadding,
   toggle,
   logout,
+  helpVisible,
+  setHelpVisible,
 }: {
   topPadding: number;
   toggle: () => void;
   logout: () => void;
+  helpVisible: boolean;
+  setHelpVisible: (v: boolean) => void;
 }) {
   const { setAvatarUri } = useAuth();
   const { myServices, bookedSlots } = useLandscaperProfile();
@@ -405,6 +420,11 @@ function LandscaperProfile({
         <Modal visible={lsMenuVisible} transparent animationType="fade" onRequestClose={() => setLsMenuVisible(false)}>
           <Pressable style={menuStyles.overlay} onPress={() => setLsMenuVisible(false)}>
             <View style={[menuStyles.dropdown, { top: topPadding + 62, right: 16 }]}>
+              <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setHelpVisible(true); }}>
+                <Ionicons name="help-circle-outline" size={18} color="#34FF7A" />
+                <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>Help & Support</Text>
+              </TouchableOpacity>
+              <View style={menuStyles.divider} />
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setPrivacyVisible(true); }}>
                 <Ionicons name="lock-closed-outline" size={18} color="#CCCCCC" />
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Privacy Settings</Text>
@@ -972,6 +992,8 @@ function LandscaperProfile({
       {termsDoc && (
         <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
       )}
+
+      <HelpSupportModal visible={helpVisible} onClose={() => setHelpVisible(false)} role="landscaper" />
     </View>
   );
 }

@@ -306,7 +306,7 @@ function DisputeModal({
                 <Text style={[dispStyles.toLabel, { fontFamily: "Inter_600SemiBold" }]}>TO</Text>
                 <View style={dispStyles.toEmailBadge}>
                   <Ionicons name="mail-outline" size={13} color="#34FF7A" />
-                  <Text style={[dispStyles.toEmailText, { fontFamily: "Inter_500Medium" }]}>{DISPUTE_EMAIL}</Text>
+                  <Text style={[dispStyles.toEmailText, { fontFamily: "Inter_500Medium" }]}>TheLawnServices</Text>
                 </View>
               </View>
               <Text style={[dispStyles.toNote, { fontFamily: "Inter_400Regular" }]}>
@@ -375,7 +375,7 @@ function DisputeModal({
             <View style={dispStyles.legalNote}>
               <Ionicons name="shield-checkmark-outline" size={14} color="#777" />
               <Text style={[dispStyles.legalText, { fontFamily: "Inter_400Regular" }]}>
-                By submitting, your message will be sent to <Text style={{ color: "#34FF7A" }}>{DISPUTE_EMAIL}</Text> along with your job details. False disputes may result in account review.
+                By submitting, your message will be sent to <Text style={{ color: "#34FF7A" }}>TheLawnServices</Text> along with your job details. False disputes may result in account review.
               </Text>
             </View>
 
@@ -404,7 +404,7 @@ function DisputeModal({
                 <View style={{ flex: 1 }}>
                   <Text style={[dispStyles.sentTitle, { fontFamily: "Inter_700Bold" }]}>Dispute Submitted!</Text>
                   <Text style={[dispStyles.sentSub, { fontFamily: "Inter_400Regular" }]}>
-                    Sent to {DISPUTE_EMAIL} · Our team will respond within 24–48 hours.
+                    Sent to TheLawnServices · Our team will respond within 24–48 hours.
                   </Text>
                 </View>
               </Animated.View>
