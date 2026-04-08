@@ -1167,12 +1167,14 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
                   ))}
                 </View>
                 {calRows.map((week, wi) => {
-                  const showLabel = wi === 0 || week.some((day, di) => di > 0 && day.monthLabel !== week[di - 1].monthLabel);
+                  const monthChangeDay = week.find((day, di) => di > 0 && day.monthLabel !== week[di - 1].monthLabel);
+                  const showLabel = wi === 0 || !!monthChangeDay;
+                  const monthLabelText = (monthChangeDay && wi !== 0) ? monthChangeDay.monthLabel : week[0].monthLabel;
                   return (
                     <View key={wi}>
                       {showLabel && (
                         <Text style={[svcStyles.calMonthLabel, { fontFamily: "Inter_700Bold" }]}>
-                          {week[0].monthLabel}
+                          {monthLabelText}
                         </Text>
                       )}
                       <View style={svcStyles.calWeekRow}>
