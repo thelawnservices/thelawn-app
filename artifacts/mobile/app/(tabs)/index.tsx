@@ -2154,24 +2154,59 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
               Upcoming Appointment
             </Text>
-            <TouchableOpacity
-              style={styles.appointmentCard}
-              onPress={() => router.navigate("/(tabs)/appointments")}
-              activeOpacity={0.8}
-            >
-              <View style={styles.apptIcon}>
-                <Ionicons name="leaf" size={22} color="#34FF7A" />
+            <View style={styles.appointmentCard}>
+              {/* Main info row — taps to open full appointments */}
+              <TouchableOpacity
+                style={styles.apptMainRow}
+                onPress={() => router.navigate("/(tabs)/appointments")}
+                activeOpacity={0.8}
+              >
+                <View style={styles.apptIcon}>
+                  <Ionicons name="leaf" size={22} color="#34FF7A" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
+                    Lawn Mowing
+                  </Text>
+                  <Text style={[styles.apptSub, { fontFamily: "Inter_400Regular" }]}>
+                    April 12 • 10:30 AM • John Rivera
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
+              </TouchableOpacity>
+
+              {/* Divider */}
+              <View style={styles.apptDivider} />
+
+              {/* Call & Text buttons */}
+              <View style={styles.apptContactRow}>
+                <TouchableOpacity
+                  style={styles.apptCallBtn}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    Linking.openURL("tel:+19415550000").catch(() =>
+                      Alert.alert("Calling John Rivera…", "Connecting you to your customer.\n\n(Demo — no real number)")
+                    )
+                  }
+                >
+                  <Ionicons name="call-outline" size={17} color="#000" />
+                  <Text style={[styles.apptCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.apptTextBtn}
+                  activeOpacity={0.8}
+                  onPress={() =>
+                    Linking.openURL("sms:+19415550000").catch(() =>
+                      Alert.alert("Text John Rivera", "Opening messages for your customer.\n\n(Demo — no real number)")
+                    )
+                  }
+                >
+                  <Ionicons name="chatbubble-outline" size={17} color="#34FF7A" />
+                  <Text style={[styles.apptTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+                </TouchableOpacity>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
-                  Lawn Mowing
-                </Text>
-                <Text style={[styles.apptSub, { fontFamily: "Inter_400Regular" }]}>
-                  April 12 • 10:30 AM • John Rivera
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
-            </TouchableOpacity>
+            </View>
           </>
         )}
 
@@ -2840,13 +2875,16 @@ const styles = StyleSheet.create({
   appointmentCard: {
     backgroundColor: "#1A1A1A",
     borderRadius: 20,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
     marginBottom: 28,
     borderWidth: 1,
     borderColor: "#222222",
+    overflow: "hidden",
+  },
+  apptMainRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    padding: 16,
   },
   apptIcon: {
     width: 44,
@@ -2858,6 +2896,35 @@ const styles = StyleSheet.create({
   },
   apptTitle: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
   apptSub: { fontSize: 12, color: "#FFFFFF" },
+  apptDivider: { height: 1, backgroundColor: "#222222", marginHorizontal: 0 },
+  apptContactRow: {
+    flexDirection: "row",
+    gap: 0,
+  },
+  apptCallBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    backgroundColor: "#34FF7A",
+    paddingVertical: 13,
+    borderBottomLeftRadius: 20,
+  },
+  apptCallBtnText: { fontSize: 14, color: "#000" },
+  apptTextBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    backgroundColor: "#141414",
+    paddingVertical: 13,
+    borderBottomRightRadius: 20,
+    borderLeftWidth: 1,
+    borderLeftColor: "#222222",
+  },
+  apptTextBtnText: { fontSize: 14, color: "#34FF7A" },
   servicesGrid: {
     flexDirection: "row",
     gap: 10,
