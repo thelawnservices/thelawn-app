@@ -533,7 +533,7 @@ export default function JobsScreen() {
                             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                             Alert.alert(
                               "Open Dispute?",
-                              "Are you unsatisfied with the work? This will flag the order and send it to TheLawnServices@gmail.com for investigation. Payment will be frozen until resolved.",
+                              "Are you unsatisfied with the work? This will flag the order and send it to TheLawnServices@gmail.com for further review. Payment will be frozen until resolved.",
                               [
                                 { text: "Cancel", style: "cancel" },
                                 {
@@ -555,7 +555,7 @@ export default function JobsScreen() {
                       </View>
                     )}
                     <Text style={[jobPhotoStyles.autoExpireText, { fontFamily: "Inter_400Regular" }]}>
-                      If no action is taken within 24 hours, the order is automatically sent to TheLawnServices@gmail.com for investigation.
+                      If no action is taken within 24 hours, the order is automatically sent to TheLawnServices@gmail.com for further review.
                     </Text>
                   </View>
                 );
@@ -577,7 +577,7 @@ export default function JobsScreen() {
                   <View style={jobPhotoStyles.approvalTop}>
                     <Ionicons name="shield-outline" size={15} color="#FF4444" />
                     <Text style={[jobPhotoStyles.approvalTitle, { fontFamily: "Inter_600SemiBold", color: "#FF4444" }]}>
-                      Dispute Under Investigation
+                      Dispute Under Further Review
                     </Text>
                   </View>
                   <Text style={[{ fontSize: 12, color: "#BBBBBB", lineHeight: 18 }, { fontFamily: "Inter_400Regular" }]}>

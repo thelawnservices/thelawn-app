@@ -402,7 +402,7 @@ function RecurringSeriesCard({
             <View style={rcStyles.expiredBox}>
               <Ionicons name="warning-outline" size={15} color="#FF4444" />
               <Text style={[rcStyles.expiredText, { fontFamily: "Inter_600SemiBold" }]}>
-                Review window expired · Sent to TheLawnServices@gmail.com for investigation
+                Review window expired · Sent to TheLawnServices@gmail.com for further review
               </Text>
             </View>
           ) : (
@@ -462,7 +462,7 @@ function RecurringSeriesCard({
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 Alert.alert(
                   "Dispute This Work?",
-                  `Are you unsatisfied with the ${pendingInst.service} completed on ${pendingInst.date}?\n\nThis will flag the order and send it to TheLawnServices@gmail.com for investigation. Payment will be held until resolved.`,
+                  `Are you unsatisfied with the ${pendingInst.service} completed on ${pendingInst.date}?\n\nThis will flag the order and send it to TheLawnServices@gmail.com for further review. Payment will be held until resolved.`,
                   [
                     { text: "Cancel", style: "cancel" },
                     {
@@ -494,7 +494,7 @@ function RecurringSeriesCard({
             <View style={rcStyles.autoExpireNote}>
               <Ionicons name="mail-outline" size={12} color="#888" />
               <Text style={[rcStyles.autoExpireText, { fontFamily: "Inter_400Regular" }]}>
-                If no action is taken within 24 hours, the order will automatically be sent to TheLawnServices@gmail.com for investigation.
+                If no action is taken within 24 hours, the order will automatically be sent to TheLawnServices@gmail.com for further review.
               </Text>
             </View>
           )}
@@ -506,7 +506,7 @@ function RecurringSeriesCard({
         <View style={rcStyles.disputedBanner}>
           <View style={rcStyles.disputedBannerTop}>
             <Ionicons name="shield-outline" size={16} color="#FF4444" />
-            <Text style={[rcStyles.disputedBannerTitle, { fontFamily: "Inter_700Bold" }]}>Dispute Under Investigation</Text>
+            <Text style={[rcStyles.disputedBannerTitle, { fontFamily: "Inter_700Bold" }]}>Dispute Under Further Review</Text>
           </View>
           <Text style={[rcStyles.disputedBannerSub, { fontFamily: "Inter_400Regular" }]}>
             Our team at TheLawnServices@gmail.com is reviewing your dispute. Payment is frozen. You'll be contacted within 24–48 hours.
