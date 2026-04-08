@@ -570,18 +570,6 @@ function LandscaperProfile({
               </Text>
             </View>
 
-            {/* Call & Text */}
-            <View style={cutStyles.contactRow}>
-              <TouchableOpacity style={cutStyles.contactBtn} onPress={() => Alert.alert("Calling…", "Connecting to GreenScape Pros.\n\n(Demo)")} activeOpacity={0.8}>
-                <Ionicons name="call-outline" size={22} color="#34FF7A" />
-                <Text style={[cutStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={cutStyles.contactBtn} onPress={() => Alert.alert("Texting…", "Opening chat with GreenScape Pros.\n\n(Demo)")} activeOpacity={0.8}>
-                <Ionicons name="chatbubble-outline" size={22} color="#34FF7A" />
-                <Text style={[cutStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
-              </TouchableOpacity>
-            </View>
-
             {/* Service & Availability — read-only, reflects My Services settings */}
             <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>SERVICE & AVAILABILITY</Text>
             <View style={cutStyles.card}>
