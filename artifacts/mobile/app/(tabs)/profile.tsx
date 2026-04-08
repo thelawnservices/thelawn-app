@@ -42,6 +42,8 @@ export default function ProfileScreen() {
   const { role, logout } = useAuth();
   const [isLandscaper, setIsLandscaper] = useState(role === "landscaper");
   const [custMenuVisible, setCustMenuVisible] = useState(false);
+  const [custSettingsVisible, setCustSettingsVisible] = useState(false);
+  const [customerAddress, setCustomerAddress] = useState<{ street: string; state: string; zip: string } | null>(null);
 
   const toggle = () => {
     Haptics.selectionAsync();
@@ -86,7 +88,7 @@ export default function ProfileScreen() {
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Edit Profile</Text>
             </TouchableOpacity>
             <View style={menuStyles.divider} />
-            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); Alert.alert("Settings", "Settings coming soon."); }}>
+            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); setCustSettingsVisible(true); }}>
               <Ionicons name="settings-outline" size={18} color="#CCCCCC" />
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Settings</Text>
             </TouchableOpacity>
@@ -100,8 +102,19 @@ export default function ProfileScreen() {
       </Modal>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <CustomerProfile logout={logout} />
+        <CustomerProfile
+          logout={logout}
+          customerAddress={customerAddress}
+          onAddressChange={setCustomerAddress}
+        />
       </ScrollView>
+
+      <CustomerSettingsModal
+        visible={custSettingsVisible}
+        onClose={() => setCustSettingsVisible(false)}
+        savedAddress={customerAddress}
+        onSave={(addr) => { setCustomerAddress(addr); setCustSettingsVisible(false); }}
+      />
     </View>
   );
 }
@@ -810,9 +823,276 @@ function LandscaperProfile({
   );
 }
 
+// ── Customer Settings Modal ───────────────────────────────────────────────────
+
+const US_STATES = [
+  "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut",
+  "Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa",
+  "Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan",
+  "Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire",
+  "New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma",
+  "Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee",
+  "Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming",
+];
+
+function CustomerSettingsModal({
+  visible,
+  onClose,
+  savedAddress,
+  onSave,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  savedAddress: { street: string; state: string; zip: string } | null;
+  onSave: (addr: { street: string; state: string; zip: string }) => void;
+}) {
+  const [hasMoved, setHasMoved] = useState(false);
+  const [street, setStreet] = useState(savedAddress?.street ?? "");
+  const [stateVal, setStateVal] = useState(savedAddress?.state ?? "");
+  const [zip, setZip] = useState(savedAddress?.zip ?? "");
+  const [errors, setErrors] = useState<{ street?: string; state?: string; zip?: string }>({});
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [stateDropdown, setStateDropdown] = useState(false);
+  const successOpacity = useRef(new Animated.Value(0)).current;
+
+  function reset() {
+    setHasMoved(false);
+    setStreet(savedAddress?.street ?? "");
+    setStateVal(savedAddress?.state ?? "");
+    setZip(savedAddress?.zip ?? "");
+    setErrors({});
+    setSaveState("idle");
+    setStateDropdown(false);
+    successOpacity.setValue(0);
+  }
+
+  function validate(): boolean {
+    const e: typeof errors = {};
+    if (!street.trim()) e.street = "Street address is required.";
+    if (!stateVal.trim()) e.state = "State is required.";
+    if (!/^\d{5}$/.test(zip.trim())) e.zip = "ZIP code must be exactly 5 digits.";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  function handleSave() {
+    if (!validate()) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); return; }
+    setSaveState("saving");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setTimeout(() => {
+      setSaveState("saved");
+      Animated.timing(successOpacity, { toValue: 1, duration: 400, useNativeDriver: false }).start();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setTimeout(() => { onSave({ street: street.trim(), state: stateVal.trim(), zip: zip.trim() }); reset(); }, 1800);
+    }, 1200);
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent={false} onRequestClose={() => { onClose(); reset(); }}>
+      <View style={custSettStyles.container}>
+        {/* Header */}
+        <View style={custSettStyles.header}>
+          <TouchableOpacity onPress={() => { onClose(); reset(); }} style={custSettStyles.closeBtn} activeOpacity={0.7}>
+            <Ionicons name="chevron-down" size={22} color="#CCCCCC" />
+          </TouchableOpacity>
+          <Text style={[custSettStyles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Settings</Text>
+          <View style={{ width: 36 }} />
+        </View>
+
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 60 }}
+          keyboardShouldPersistTaps="handled"
+        >
+
+          {/* Address card — top of settings */}
+          <View style={custSettStyles.sectionCard}>
+            <View style={custSettStyles.sectionHeader}>
+              <View style={custSettStyles.sectionIconBox}>
+                <Ionicons name="home-outline" size={18} color="#34FF7A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[custSettStyles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>Service Address</Text>
+                <Text style={[custSettStyles.sectionSub, { fontFamily: "Inter_400Regular" }]}>
+                  {savedAddress
+                    ? `${savedAddress.street}, ${savedAddress.state} ${savedAddress.zip}`
+                    : "Ellenton, FL (default)"}
+                </Text>
+              </View>
+            </View>
+
+            {/* "Have you moved?" toggle */}
+            <View style={custSettStyles.movedToggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={[custSettStyles.movedToggleLabel, { fontFamily: "Inter_600SemiBold" }]}>Have you moved?</Text>
+                <Text style={[custSettStyles.movedToggleSub, { fontFamily: "Inter_400Regular" }]}>
+                  Update your address so landscapers come to the right place.
+                </Text>
+              </View>
+              <Switch
+                value={hasMoved}
+                onValueChange={(v) => {
+                  setHasMoved(v);
+                  Haptics.selectionAsync();
+                  if (!v) { setErrors({}); }
+                }}
+                trackColor={{ false: "#2A2A2A", true: "#1a4a2a" }}
+                thumbColor={hasMoved ? "#34FF7A" : "#555"}
+              />
+            </View>
+
+            {hasMoved && (
+              <View style={custSettStyles.addressForm}>
+                <View style={custSettStyles.formDivider} />
+
+                {/* Street Address */}
+                <Text style={[custSettStyles.fieldLabel, { fontFamily: "Inter_600SemiBold" }]}>Street Address *</Text>
+                <TextInput
+                  style={[custSettStyles.fieldInput, errors.street ? custSettStyles.fieldInputError : null, { fontFamily: "Inter_400Regular" }]}
+                  placeholder="123 Maple St, Apt 4B"
+                  placeholderTextColor="#555"
+                  value={street}
+                  onChangeText={(t) => { setStreet(t); setErrors((e) => ({ ...e, street: undefined })); }}
+                  autoCapitalize="words"
+                />
+                {errors.street && (
+                  <View style={custSettStyles.errRow}>
+                    <Ionicons name="alert-circle-outline" size={13} color="#FF4444" />
+                    <Text style={[custSettStyles.errText, { fontFamily: "Inter_400Regular" }]}>{errors.street}</Text>
+                  </View>
+                )}
+
+                {/* State */}
+                <Text style={[custSettStyles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 14 }]}>State *</Text>
+                <TouchableOpacity
+                  style={[custSettStyles.fieldInput, custSettStyles.statePickerBtn, errors.state ? custSettStyles.fieldInputError : null]}
+                  onPress={() => { setStateDropdown((v) => !v); Haptics.selectionAsync(); }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[{ fontFamily: "Inter_400Regular", fontSize: 15, color: stateVal ? "#FFFFFF" : "#555" }]}>
+                    {stateVal || "Select your state"}
+                  </Text>
+                  <Ionicons name={stateDropdown ? "chevron-up" : "chevron-down"} size={16} color="#777" />
+                </TouchableOpacity>
+                {errors.state && (
+                  <View style={custSettStyles.errRow}>
+                    <Ionicons name="alert-circle-outline" size={13} color="#FF4444" />
+                    <Text style={[custSettStyles.errText, { fontFamily: "Inter_400Regular" }]}>{errors.state}</Text>
+                  </View>
+                )}
+                {stateDropdown && (
+                  <View style={custSettStyles.stateList}>
+                    <ScrollView nestedScrollEnabled style={{ maxHeight: 200 }} showsVerticalScrollIndicator={true}>
+                      {US_STATES.map((s) => (
+                        <TouchableOpacity
+                          key={s}
+                          style={[custSettStyles.stateItem, stateVal === s && custSettStyles.stateItemSelected]}
+                          onPress={() => {
+                            setStateVal(s);
+                            setStateDropdown(false);
+                            setErrors((e) => ({ ...e, state: undefined }));
+                            Haptics.selectionAsync();
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[custSettStyles.stateItemText, { fontFamily: stateVal === s ? "Inter_600SemiBold" : "Inter_400Regular" }, stateVal === s && { color: "#34FF7A" }]}>
+                            {s}
+                          </Text>
+                          {stateVal === s && <Ionicons name="checkmark" size={14} color="#34FF7A" />}
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+
+                {/* ZIP Code */}
+                <Text style={[custSettStyles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 14 }]}>ZIP Code *</Text>
+                <TextInput
+                  style={[custSettStyles.fieldInput, errors.zip ? custSettStyles.fieldInputError : null, { fontFamily: "Inter_400Regular" }]}
+                  placeholder="34222"
+                  placeholderTextColor="#555"
+                  keyboardType="number-pad"
+                  maxLength={5}
+                  value={zip}
+                  onChangeText={(t) => { setZip(t.replace(/\D/g, "")); setErrors((e) => ({ ...e, zip: undefined })); }}
+                />
+                {errors.zip && (
+                  <View style={custSettStyles.errRow}>
+                    <Ionicons name="alert-circle-outline" size={13} color="#FF4444" />
+                    <Text style={[custSettStyles.errText, { fontFamily: "Inter_400Regular" }]}>{errors.zip}</Text>
+                  </View>
+                )}
+
+                {/* Save button */}
+                {saveState !== "saved" ? (
+                  <TouchableOpacity
+                    style={[custSettStyles.saveBtn, saveState === "saving" && custSettStyles.saveBtnLoading]}
+                    onPress={saveState === "idle" ? handleSave : undefined}
+                    activeOpacity={0.85}
+                  >
+                    {saveState === "saving" ? (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                        <ActivityIndicator size="small" color="#000" />
+                        <Text style={[custSettStyles.saveBtnText, { fontFamily: "Inter_600SemiBold" }]}>Saving...</Text>
+                      </View>
+                    ) : (
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <Ionicons name="location" size={17} color="#000" />
+                        <Text style={[custSettStyles.saveBtnText, { fontFamily: "Inter_700Bold" }]}>Update My Address</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                ) : (
+                  <Animated.View style={[custSettStyles.successBox, { opacity: successOpacity }]}>
+                    <Ionicons name="checkmark-circle" size={28} color="#34FF7A" />
+                    <Text style={[custSettStyles.successText, { fontFamily: "Inter_600SemiBold" }]}>Address updated successfully!</Text>
+                  </Animated.View>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* Notifications card */}
+          <View style={custSettStyles.sectionCard}>
+            <View style={custSettStyles.sectionHeader}>
+              <View style={custSettStyles.sectionIconBox}>
+                <Ionicons name="notifications-outline" size={18} color="#34FF7A" />
+              </View>
+              <Text style={[custSettStyles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>Notifications</Text>
+            </View>
+            <View style={custSettStyles.movedToggleRow}>
+              <Text style={[custSettStyles.movedToggleLabel, { fontFamily: "Inter_500Medium" }]}>Job status updates</Text>
+              <Switch value={true} onValueChange={() => {}} trackColor={{ false: "#2A2A2A", true: "#1a4a2a" }} thumbColor="#34FF7A" />
+            </View>
+            <View style={custSettStyles.itemDivider} />
+            <View style={custSettStyles.movedToggleRow}>
+              <Text style={[custSettStyles.movedToggleLabel, { fontFamily: "Inter_500Medium" }]}>Payment receipts</Text>
+              <Switch value={true} onValueChange={() => {}} trackColor={{ false: "#2A2A2A", true: "#1a4a2a" }} thumbColor="#34FF7A" />
+            </View>
+            <View style={custSettStyles.itemDivider} />
+            <View style={custSettStyles.movedToggleRow}>
+              <Text style={[custSettStyles.movedToggleLabel, { fontFamily: "Inter_500Medium" }]}>Promotional offers</Text>
+              <Switch value={false} onValueChange={() => {}} trackColor={{ false: "#2A2A2A", true: "#1a4a2a" }} thumbColor="#555" />
+            </View>
+          </View>
+
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
 // ── Customer Profile ──────────────────────────────────────────────────────────
 
-function CustomerProfile({ logout }: { logout: () => void }) {
+function CustomerProfile({
+  logout,
+  customerAddress,
+  onAddressChange,
+}: {
+  logout: () => void;
+  customerAddress: { street: string; state: string; zip: string } | null;
+  onAddressChange: (addr: { street: string; state: string; zip: string } | null) => void;
+}) {
   const { setAvatarUri, preferredPayment, setPreferredPayment } = useAuth();
   const [selectedPayment, setSelectedPayment] = useState(preferredPayment ?? "");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
@@ -872,7 +1152,11 @@ function CustomerProfile({ logout }: { logout: () => void }) {
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>Zamire Smith</Text>
-          <Text style={[styles.proSub, { fontFamily: "Inter_400Regular" }]}>Ellenton, FL</Text>
+          <Text style={[styles.proSub, { fontFamily: "Inter_400Regular" }]}>
+            {customerAddress
+              ? `${customerAddress.street}, ${customerAddress.state} ${customerAddress.zip}`
+              : "Ellenton, FL"}
+          </Text>
         </View>
       </View>
 
@@ -1603,5 +1887,87 @@ const menuStyles = StyleSheet.create({
   item: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingVertical: 15 },
   itemText: { fontSize: 15, color: "#FFFFFF" },
   divider: { height: 1, backgroundColor: "#252525" },
+});
+
+const custSettStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#0A0A0A" },
+  header: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingTop: 56, paddingBottom: 16,
+    borderBottomWidth: 1, borderBottomColor: "#1A1A1A",
+  },
+  headerTitle: { fontSize: 18, color: "#FFFFFF" },
+  closeBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+
+  sectionCard: {
+    backgroundColor: "#141414", borderRadius: 20,
+    borderWidth: 1, borderColor: "#222222",
+    padding: 18, marginBottom: 16,
+  },
+  sectionHeader: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
+  sectionIconBox: {
+    width: 36, height: 36, borderRadius: 12,
+    backgroundColor: "#0d2e18", borderWidth: 1, borderColor: "#1a4a2a",
+    alignItems: "center", justifyContent: "center",
+  },
+  sectionTitle: { fontSize: 16, color: "#FFFFFF" },
+  sectionSub: { fontSize: 12, color: "#777", marginTop: 2 },
+
+  movedToggleRow: {
+    flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between", gap: 12,
+    paddingVertical: 4,
+  },
+  movedToggleLabel: { fontSize: 15, color: "#FFFFFF", flex: 1 },
+  movedToggleSub: { fontSize: 12, color: "#777", marginTop: 2, flex: 1 },
+  itemDivider: { height: 1, backgroundColor: "#1E1E1E", marginVertical: 10 },
+
+  formDivider: { height: 1, backgroundColor: "#1E1E1E", marginVertical: 16 },
+  addressForm: {},
+
+  fieldLabel: { fontSize: 12, color: "#AAAAAA", letterSpacing: 0.6, marginBottom: 8 },
+  fieldInput: {
+    backgroundColor: "#1A1A1A", borderRadius: 14,
+    borderWidth: 1, borderColor: "#2A2A2A",
+    paddingHorizontal: 16, paddingVertical: 13,
+    fontSize: 15, color: "#FFFFFF",
+  },
+  fieldInputError: { borderColor: "#FF4444" },
+  statePickerBtn: {
+    flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between",
+  },
+  stateList: {
+    backgroundColor: "#1A1A1A", borderRadius: 14,
+    borderWidth: 1, borderColor: "#2A2A2A",
+    marginTop: 4, overflow: "hidden",
+  },
+  stateItem: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 13,
+    borderBottomWidth: 1, borderBottomColor: "#222",
+  },
+  stateItemSelected: { backgroundColor: "#0d2e18" },
+  stateItemText: { fontSize: 14, color: "#FFFFFF" },
+
+  errRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 },
+  errText: { fontSize: 12, color: "#FF4444" },
+
+  saveBtn: {
+    backgroundColor: "#34FF7A", borderRadius: 16,
+    paddingVertical: 14, alignItems: "center",
+    flexDirection: "row", justifyContent: "center", gap: 8,
+    marginTop: 20,
+  },
+  saveBtnLoading: { backgroundColor: "#34FF7A99" },
+  saveBtnText: { fontSize: 15, color: "#000000" },
+
+  successBox: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    backgroundColor: "#0d2e18", borderRadius: 14,
+    borderWidth: 1, borderColor: "#1a4a2a",
+    padding: 14, marginTop: 20,
+  },
+  successText: { fontSize: 14, color: "#34FF7A", flex: 1 },
 });
 
