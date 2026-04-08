@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,14 +7,17 @@ import {
   TouchableOpacity,
   Platform,
   Modal,
+  Pressable,
   TextInput,
   KeyboardAvoidingView,
   FlatList,
   Alert,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
 import { useNotifications } from "@/contexts/notifications";
 
@@ -204,6 +207,115 @@ function ChatModal({
   );
 }
 
+function JobCompletionPhotoModal({
+  visible,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (photos: string[]) => void;
+}) {
+  const [photos, setPhotos] = useState<string[]>([]);
+
+  async function pickFromLibrary() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { Alert.alert("Permission needed", "Allow photo library access to add completion photos."); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      selectionLimit: 4 - photos.length,
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      setPhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, 4));
+      Haptics.selectionAsync();
+    }
+  }
+
+  async function pickFromCamera() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) { Alert.alert("Permission needed", "Allow camera access to take completion photos."); return; }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    if (!result.canceled) {
+      setPhotos((prev) => [...prev, result.assets[0].uri].slice(0, 4));
+      Haptics.selectionAsync();
+    }
+  }
+
+  function handleSubmit() {
+    onSubmit(photos);
+    setPhotos([]);
+    onClose();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={jcpStyles.overlay} onPress={onClose}>
+        <Pressable style={jcpStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <View style={jcpStyles.handle} />
+          <View style={jcpStyles.headerRow}>
+            <Ionicons name="camera-outline" size={20} color="#34FF7A" />
+            <Text style={[jcpStyles.title, { fontFamily: "Inter_700Bold" }]}>Completion Photos</Text>
+            <TouchableOpacity onPress={onClose} style={jcpStyles.closeBtn} activeOpacity={0.7}>
+              <Ionicons name="close" size={20} color="#CCCCCC" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[jcpStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>
+            Add up to 4 photos of the completed work. The customer will see these when reviewing your submission.
+          </Text>
+
+          {photos.length > 0 && (
+            <View style={jcpStyles.photoGrid}>
+              {photos.map((uri, i) => (
+                <View key={i} style={jcpStyles.photoThumb}>
+                  <Image source={{ uri }} style={jcpStyles.photoThumbImg} />
+                  <TouchableOpacity
+                    style={jcpStyles.photoRemove}
+                    onPress={() => { setPhotos((prev) => prev.filter((_, idx) => idx !== i)); Haptics.selectionAsync(); }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="close-circle" size={20} color="#FF4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {photos.length < 4 && (
+            <View style={jcpStyles.addRow}>
+              <TouchableOpacity style={jcpStyles.addBtn} onPress={pickFromCamera} activeOpacity={0.8}>
+                <Ionicons name="camera-outline" size={18} color="#34FF7A" />
+                <Text style={[jcpStyles.addBtnText, { fontFamily: "Inter_500Medium" }]}>Camera</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={jcpStyles.addBtn} onPress={pickFromLibrary} activeOpacity={0.8}>
+                <Ionicons name="images-outline" size={18} color="#34FF7A" />
+                <Text style={[jcpStyles.addBtnText, { fontFamily: "Inter_500Medium" }]}>Library</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View style={jcpStyles.infoNote}>
+            <Ionicons name="shield-checkmark-outline" size={14} color="#34FF7A" />
+            <Text style={[jcpStyles.infoText, { fontFamily: "Inter_400Regular" }]}>
+              Photos optional. After submitting, the customer has 24 hours to approve or dispute.
+            </Text>
+          </View>
+
+          <TouchableOpacity style={jcpStyles.submitBtn} onPress={handleSubmit} activeOpacity={0.85}>
+            <Ionicons name="checkmark-circle-outline" size={18} color="#000" />
+            <Text style={[jcpStyles.submitBtnText, { fontFamily: "Inter_700Bold" }]}>
+              {photos.length > 0 ? `Submit ${photos.length} Photo${photos.length > 1 ? "s" : ""} & Notify Customer` : "Mark Complete & Notify Customer"}
+            </Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 export default function JobsScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
@@ -217,10 +329,20 @@ export default function JobsScreen() {
     Object.fromEntries(SHARED_ACTIVE_JOBS.map((j) => [j.id, "pending"]))
   );
   const [chatJobData, setChatJobData] = useState<{ landscaper?: string; customer?: string } | null>(null);
+  const [completionPhotos, setCompletionPhotos] = useState<Record<string, string[]>>({});
+  const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
+  const [photoModalJobId, setPhotoModalJobId] = useState<string | null>(null);
+  // Customer side: track approval per jobId
+  const [customerApproved, setCustomerApproved] = useState<Record<string, "approved" | "disputed" | null>>({});
 
   function advanceStatus(jobId: string, next: JobStatus) {
     const current = jobStatuses[jobId];
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (next === "completed") {
+      // Open photo modal instead of advancing directly
+      setPhotoModalJobId(jobId);
+      return;
+    }
     setJobStatuses((prev) => ({ ...prev, [jobId]: next }));
     if (next === "started" && statusOrder(current) < statusOrder("started")) {
       const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
@@ -237,21 +359,25 @@ export default function JobsScreen() {
         );
       }, 300);
     }
-    if (next === "completed") {
-      const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
-      addNotification({
-        icon: "checkmark-circle",
-        title: "Work complete!",
-        sub: `${job?.service ?? "Your job"} has been completed successfully`,
-      });
-      setTimeout(() => {
-        Alert.alert(
-          "Job Complete",
-          "The customer has been notified that work is complete. Payment will be released from escrow within 24 hours.",
-          [{ text: "OK" }]
-        );
-      }, 300);
-    }
+  }
+
+  function submitCompletion(jobId: string, photos: string[]) {
+    setJobStatuses((prev) => ({ ...prev, [jobId]: "completed" }));
+    setCompletedAt((prev) => ({ ...prev, [jobId]: Date.now() }));
+    if (photos.length > 0) setCompletionPhotos((prev) => ({ ...prev, [jobId]: photos }));
+    const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
+    addNotification({
+      icon: "checkmark-circle",
+      title: "Work complete!",
+      sub: `${job?.service ?? "Your job"} has been completed. Awaiting customer approval.`,
+    });
+    setTimeout(() => {
+      Alert.alert(
+        "Customer Notified",
+        `${job?.customer ?? "The customer"} has been notified and has 24 hours to approve or dispute the work. Payment is held in escrow until approved.`,
+        [{ text: "OK" }]
+      );
+    }, 400);
   }
 
   function openChat(data: { landscaper?: string; customer?: string }) {
@@ -269,6 +395,18 @@ export default function JobsScreen() {
       <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>My Jobs</Text>
       </View>
+
+      {/* Completion Photo Modal */}
+      <JobCompletionPhotoModal
+        visible={photoModalJobId !== null}
+        onClose={() => setPhotoModalJobId(null)}
+        onSubmit={(photos) => {
+          if (photoModalJobId) {
+            submitCompletion(photoModalJobId, photos);
+            setPhotoModalJobId(null);
+          }
+        }}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -326,6 +464,127 @@ export default function JobsScreen() {
                 <Ionicons name="time-outline" size={12} color="#CCCCCC" />
                 <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{job.date} · {job.time}</Text>
               </View>
+
+              {/* Completion photos (if landscaper attached) */}
+              {status === "completed" && (completionPhotos[job.id] ?? []).length > 0 && (
+                <View style={jobPhotoStyles.photoSection}>
+                  <View style={jobPhotoStyles.photoHeader}>
+                    <Ionicons name="camera-outline" size={13} color="#34FF7A" />
+                    <Text style={[jobPhotoStyles.photoHeaderText, { fontFamily: "Inter_500Medium" }]}>
+                      Completion Photos · {(completionPhotos[job.id] ?? []).length}
+                    </Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+                    {(completionPhotos[job.id] ?? []).map((uri, pi) => (
+                      <Image key={pi} source={{ uri }} style={jobPhotoStyles.photoThumb} />
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+
+              {/* Customer approval window (when job is completed) */}
+              {!isLandscaper && status === "completed" && !customerApproved[job.id] && (() => {
+                const deadline = (completedAt[job.id] ?? 0) + 24 * 3600 * 1000;
+                const remaining = Math.max(0, deadline - Date.now());
+                const h = Math.floor(remaining / 3600000);
+                const m = Math.floor((remaining % 3600000) / 60000);
+                const expired = remaining === 0 && (completedAt[job.id] ?? 0) > 0;
+                return (
+                  <View style={jobPhotoStyles.approvalBanner}>
+                    <View style={jobPhotoStyles.approvalTop}>
+                      <Ionicons name="notifications" size={15} color="#FFAA00" />
+                      <Text style={[jobPhotoStyles.approvalTitle, { fontFamily: "Inter_700Bold" }]}>
+                        Work Complete — Approve or Dispute
+                      </Text>
+                    </View>
+                    {expired ? (
+                      <View style={jobPhotoStyles.expiredRow}>
+                        <Ionicons name="warning-outline" size={13} color="#FF4444" />
+                        <Text style={[jobPhotoStyles.expiredText, { fontFamily: "Inter_500Medium" }]}>
+                          Review window expired. Sent to TheLawnServices@gmail.com.
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={jobPhotoStyles.timerRow}>
+                        <Ionicons name="time-outline" size={13} color="#FFAA00" />
+                        <Text style={[jobPhotoStyles.timerText, { fontFamily: "Inter_400Regular" }]}>
+                          {String(h).padStart(2, "0")}h {String(m).padStart(2, "0")}m remaining to review
+                        </Text>
+                      </View>
+                    )}
+                    {!expired && (
+                      <View style={jobPhotoStyles.approvalBtns}>
+                        <TouchableOpacity
+                          style={jobPhotoStyles.approveBtn}
+                          activeOpacity={0.85}
+                          onPress={() => {
+                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            setCustomerApproved((prev) => ({ ...prev, [job.id]: "approved" }));
+                            Alert.alert("Work Approved", "Payment has been released to the landscaper. Thank you!");
+                          }}
+                        >
+                          <Ionicons name="checkmark-circle-outline" size={16} color="#000" />
+                          <Text style={[jobPhotoStyles.approveBtnText, { fontFamily: "Inter_700Bold" }]}>Approve Work</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={jobPhotoStyles.disputeBtn}
+                          activeOpacity={0.85}
+                          onPress={() => {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                            Alert.alert(
+                              "Open Dispute?",
+                              "Are you unsatisfied with the work? This will flag the order and send it to TheLawnServices@gmail.com for investigation. Payment will be frozen until resolved.",
+                              [
+                                { text: "Cancel", style: "cancel" },
+                                {
+                                  text: "Yes, Dispute",
+                                  style: "destructive",
+                                  onPress: () => {
+                                    setCustomerApproved((prev) => ({ ...prev, [job.id]: "disputed" }));
+                                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                                    setTimeout(() => Alert.alert("Dispute Filed", "Our team at TheLawnServices@gmail.com will review and respond within 24–48 hours."), 400);
+                                  },
+                                },
+                              ]
+                            );
+                          }}
+                        >
+                          <Ionicons name="alert-circle-outline" size={16} color="#FF4444" />
+                          <Text style={[jobPhotoStyles.disputeBtnText, { fontFamily: "Inter_600SemiBold" }]}>Dispute Work</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                    <Text style={[jobPhotoStyles.autoExpireText, { fontFamily: "Inter_400Regular" }]}>
+                      If no action is taken within 24 hours, the order is automatically sent to TheLawnServices@gmail.com for investigation.
+                    </Text>
+                  </View>
+                );
+              })()}
+
+              {/* Customer approved/disputed result */}
+              {!isLandscaper && customerApproved[job.id] === "approved" && (
+                <View style={[jobPhotoStyles.approvalBanner, { backgroundColor: "#0d2e18", borderColor: "#1a4a2a" }]}>
+                  <View style={jobPhotoStyles.approvalTop}>
+                    <Ionicons name="checkmark-circle" size={15} color="#34FF7A" />
+                    <Text style={[jobPhotoStyles.approvalTitle, { fontFamily: "Inter_600SemiBold", color: "#34FF7A" }]}>
+                      Work Approved — Payment Released
+                    </Text>
+                  </View>
+                </View>
+              )}
+              {!isLandscaper && customerApproved[job.id] === "disputed" && (
+                <View style={[jobPhotoStyles.approvalBanner, { backgroundColor: "#1A0505", borderColor: "#3A1010" }]}>
+                  <View style={jobPhotoStyles.approvalTop}>
+                    <Ionicons name="shield-outline" size={15} color="#FF4444" />
+                    <Text style={[jobPhotoStyles.approvalTitle, { fontFamily: "Inter_600SemiBold", color: "#FF4444" }]}>
+                      Dispute Under Investigation
+                    </Text>
+                  </View>
+                  <Text style={[{ fontSize: 12, color: "#BBBBBB", lineHeight: 18 }, { fontFamily: "Inter_400Regular" }]}>
+                    TheLawnServices@gmail.com is reviewing your case. You'll be contacted within 24–48 hours.
+                  </Text>
+                </View>
+              )}
 
               {/* Landscaper-only: status advance buttons */}
               {isLandscaper && (
@@ -673,4 +932,76 @@ const chatStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+});
+
+const jcpStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.8)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#111111", borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    paddingHorizontal: 22, paddingBottom: 40, paddingTop: 10,
+    borderTopWidth: 1, borderColor: "#222", gap: 16,
+  },
+  handle: { width: 40, height: 4, backgroundColor: "#333", borderRadius: 2, alignSelf: "center", marginBottom: 4 },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  title: { fontSize: 18, color: "#FFFFFF", flex: 1 },
+  closeBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: "#1A1A1A", alignItems: "center", justifyContent: "center",
+  },
+  subtitle: { fontSize: 13, color: "#CCCCCC", lineHeight: 19 },
+  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  photoThumb: { width: 78, height: 78, borderRadius: 12, backgroundColor: "#1A1A1A" },
+  photoThumbImg: { width: 78, height: 78, borderRadius: 12 },
+  photoRemove: { position: "absolute", top: -6, right: -6 },
+  addRow: { flexDirection: "row", gap: 10 },
+  addBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#0d2e18", borderRadius: 16, paddingVertical: 14,
+    borderWidth: 1, borderColor: "#1a4a2a",
+  },
+  addBtnText: { fontSize: 14, color: "#34FF7A" },
+  infoNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#1A1A1A", borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  infoText: { fontSize: 12, color: "#BBBBBB", flex: 1, lineHeight: 18 },
+  submitBtn: {
+    backgroundColor: "#34FF7A", borderRadius: 20, paddingVertical: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+  },
+  submitBtnText: { fontSize: 14, color: "#000" },
+});
+
+const jobPhotoStyles = StyleSheet.create({
+  photoSection: {
+    backgroundColor: "#111", borderRadius: 14,
+    padding: 12, borderWidth: 1, borderColor: "#222",
+  },
+  photoHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+  photoHeaderText: { fontSize: 12, color: "#34FF7A" },
+  photoThumb: { width: 72, height: 72, borderRadius: 10, marginRight: 8, backgroundColor: "#222" },
+  approvalBanner: {
+    backgroundColor: "#1C1200", borderRadius: 14,
+    borderWidth: 1, borderColor: "#FFAA0033",
+    padding: 14, gap: 10,
+  },
+  approvalTop: { flexDirection: "row", alignItems: "center", gap: 8 },
+  approvalTitle: { fontSize: 14, color: "#FFAA00", flex: 1 },
+  timerRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  timerText: { fontSize: 13, color: "#BBBBBB" },
+  expiredRow: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
+  expiredText: { fontSize: 12, color: "#FF4444", flex: 1, lineHeight: 18 },
+  approvalBtns: { flexDirection: "row", gap: 10, marginTop: 2 },
+  approveBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, backgroundColor: "#34FF7A", borderRadius: 16, paddingVertical: 12,
+  },
+  approveBtnText: { fontSize: 13, color: "#000" },
+  disputeBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, borderWidth: 1, borderColor: "#FF4444", borderRadius: 16, paddingVertical: 12,
+  },
+  disputeBtnText: { fontSize: 13, color: "#FF4444" },
+  autoExpireText: { fontSize: 11, color: "#888", lineHeight: 17 },
 });

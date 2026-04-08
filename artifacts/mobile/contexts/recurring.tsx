@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 
-export type InstanceStatus = "upcoming" | "pending_approval" | "completed";
+export type InstanceStatus = "upcoming" | "pending_approval" | "completed" | "disputed";
 
 export type RecurringInstance = {
   id: string;
@@ -18,8 +18,11 @@ export type RecurringInstance = {
 
 type RecurringContextType = {
   instances: RecurringInstance[];
-  markDone: (instanceId: string) => void;
+  completionPhotos: Record<string, string[]>;
+  markedDoneAt: Record<string, number>;
+  markDone: (instanceId: string, photos?: string[]) => void;
   releasePayment: (instanceId: string) => void;
+  disputeInstance: (instanceId: string) => void;
 };
 
 const MONTHS = [
@@ -64,21 +67,35 @@ const INITIAL_INSTANCES: RecurringInstance[] = biWeeklyDates.map((date, i) => ({
   status: i === 0 ? ("pending_approval" as InstanceStatus) : ("upcoming" as InstanceStatus),
 }));
 
+// Simulate instance 0 was marked done 23.5 hours ago (30 min remaining in demo)
+const INITIAL_MARKED_DONE_AT: Record<string, number> = {
+  "r2-inst-0": Date.now() - (23 * 3600 + 30 * 60) * 1000,
+};
+
 const RecurringContext = createContext<RecurringContextType>({
   instances: INITIAL_INSTANCES,
+  completionPhotos: {},
+  markedDoneAt: INITIAL_MARKED_DONE_AT,
   markDone: () => {},
   releasePayment: () => {},
+  disputeInstance: () => {},
 });
 
 export function RecurringProvider({ children }: { children: React.ReactNode }) {
   const [instances, setInstances] = useState<RecurringInstance[]>(INITIAL_INSTANCES);
+  const [completionPhotos, setCompletionPhotos] = useState<Record<string, string[]>>({});
+  const [markedDoneAt, setMarkedDoneAt] = useState<Record<string, number>>(INITIAL_MARKED_DONE_AT);
 
-  function markDone(instanceId: string) {
+  function markDone(instanceId: string, photos?: string[]) {
     setInstances((prev) =>
       prev.map((inst) =>
         inst.id === instanceId ? { ...inst, status: "pending_approval" } : inst
       )
     );
+    setMarkedDoneAt((prev) => ({ ...prev, [instanceId]: Date.now() }));
+    if (photos && photos.length > 0) {
+      setCompletionPhotos((prev) => ({ ...prev, [instanceId]: photos }));
+    }
   }
 
   function releasePayment(instanceId: string) {
@@ -89,8 +106,16 @@ export function RecurringProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
+  function disputeInstance(instanceId: string) {
+    setInstances((prev) =>
+      prev.map((inst) =>
+        inst.id === instanceId ? { ...inst, status: "disputed" } : inst
+      )
+    );
+  }
+
   return (
-    <RecurringContext.Provider value={{ instances, markDone, releasePayment }}>
+    <RecurringContext.Provider value={{ instances, completionPhotos, markedDoneAt, markDone, releasePayment, disputeInstance }}>
       {children}
     </RecurringContext.Provider>
   );

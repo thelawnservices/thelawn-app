@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -10,11 +10,13 @@ import {
   Linking,
   Modal,
   Pressable,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 import { useRecurring, RecurringInstance } from "@/contexts/recurring";
@@ -138,17 +140,153 @@ function JobDetailsModal({
   );
 }
 
+// ── Completion Photo Modal (landscaper) ─────────────────────────────────────
+function CompletionPhotoModal({
+  visible,
+  onClose,
+  onSubmit,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (photos: string[]) => void;
+}) {
+  const [photos, setPhotos] = useState<string[]>([]);
+
+  async function pickFromLibrary() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { Alert.alert("Permission needed", "Allow photo library access to add completion photos."); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      selectionLimit: 4 - photos.length,
+      quality: 0.7,
+    });
+    if (!result.canceled) {
+      setPhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, 4));
+      Haptics.selectionAsync();
+    }
+  }
+
+  async function pickFromCamera() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) { Alert.alert("Permission needed", "Allow camera access to take completion photos."); return; }
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    if (!result.canceled) {
+      setPhotos((prev) => [...prev, result.assets[0].uri].slice(0, 4));
+      Haptics.selectionAsync();
+    }
+  }
+
+  function handleSubmit() {
+    onSubmit(photos);
+    setPhotos([]);
+    onClose();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={cpStyles.overlay} onPress={onClose}>
+        <Pressable style={cpStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <View style={cpStyles.handle} />
+          <View style={cpStyles.headerRow}>
+            <Ionicons name="camera-outline" size={20} color="#34FF7A" />
+            <Text style={[cpStyles.title, { fontFamily: "Inter_700Bold" }]}>Completion Photos</Text>
+            <TouchableOpacity onPress={onClose} style={cpStyles.closeBtn} activeOpacity={0.7}>
+              <Ionicons name="close" size={20} color="#CCCCCC" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[cpStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>
+            Add up to 4 photos showing the completed work. These will be shared with the customer to support their approval.
+          </Text>
+
+          {/* Photo grid */}
+          {photos.length > 0 && (
+            <View style={cpStyles.photoGrid}>
+              {photos.map((uri, i) => (
+                <View key={i} style={cpStyles.photoThumb}>
+                  <Image source={{ uri }} style={cpStyles.photoThumbImg} />
+                  <TouchableOpacity
+                    style={cpStyles.photoRemove}
+                    onPress={() => { setPhotos((prev) => prev.filter((_, idx) => idx !== i)); Haptics.selectionAsync(); }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="close-circle" size={20} color="#FF4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Add photo buttons */}
+          {photos.length < 4 && (
+            <View style={cpStyles.addRow}>
+              <TouchableOpacity style={cpStyles.addBtn} onPress={pickFromCamera} activeOpacity={0.8}>
+                <Ionicons name="camera-outline" size={18} color="#34FF7A" />
+                <Text style={[cpStyles.addBtnText, { fontFamily: "Inter_500Medium" }]}>Camera</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={cpStyles.addBtn} onPress={pickFromLibrary} activeOpacity={0.8}>
+                <Ionicons name="images-outline" size={18} color="#34FF7A" />
+                <Text style={[cpStyles.addBtnText, { fontFamily: "Inter_500Medium" }]}>Library</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View style={cpStyles.infoNote}>
+            <Ionicons name="information-circle-outline" size={14} color="#CCCCCC" />
+            <Text style={[cpStyles.infoText, { fontFamily: "Inter_400Regular" }]}>
+              Photos are optional — tap "Submit" to notify the customer without photos.
+            </Text>
+          </View>
+
+          <TouchableOpacity style={cpStyles.submitBtn} onPress={handleSubmit} activeOpacity={0.85}>
+            <Ionicons name="checkmark-circle-outline" size={18} color="#000" />
+            <Text style={[cpStyles.submitBtnText, { fontFamily: "Inter_700Bold" }]}>
+              {photos.length > 0 ? `Submit ${photos.length} Photo${photos.length > 1 ? "s" : ""} & Notify Customer` : "Submit & Notify Customer"}
+            </Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 // ── Recurring Series Card (customer) ────────────────────────────────────────
+const TWENTY_FOUR_HOURS = 24 * 3600 * 1000;
+
+function useCountdown(targetMs: number | undefined): { h: number; m: number; s: number; expired: boolean } {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (targetMs === undefined) return { h: 0, m: 0, s: 0, expired: false };
+  const remaining = Math.max(0, targetMs - now);
+  const expired = remaining === 0 && targetMs > 0;
+  const totalSecs = Math.floor(remaining / 1000);
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  return { h, m, s, expired };
+}
+
 function RecurringSeriesCard({
   instances,
   preferredPayment,
+  completionPhotos,
+  markedDoneAt,
   onMarkDone,
   onRelease,
+  onDispute,
 }: {
   instances: RecurringInstance[];
   preferredPayment: string | null;
+  completionPhotos: Record<string, string[]>;
+  markedDoneAt: Record<string, number>;
   onMarkDone: (id: string) => void;
   onRelease: (id: string) => void;
+  onDispute: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
   if (instances.length === 0) return null;
@@ -157,7 +295,13 @@ function RecurringSeriesCard({
   const pendingInst = instances.find((i) => i.status === "pending_approval");
   const nextUpcoming = instances.find((i) => i.status === "upcoming");
   const completedCount = instances.filter((i) => i.status === "completed").length;
+  const disputedCount = instances.filter((i) => i.status === "disputed").length;
   const isInPerson = preferredPayment === "In Person";
+
+  // 24h countdown for pending instance
+  const pendingDeadline = pendingInst ? (markedDoneAt[pendingInst.id] ?? 0) + TWENTY_FOUR_HOURS : undefined;
+  const countdown = useCountdown(pendingDeadline);
+  const pendingPhotos = pendingInst ? (completionPhotos[pendingInst.id] ?? []) : [];
 
   function handleConfirm(inst: RecurringInstance) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -242,31 +386,131 @@ function RecurringSeriesCard({
         )}
       </View>
 
-      {/* Pending Approval Banner — always shown if exists */}
+      {/* Pending Approval Banner — always shown if pending or expired */}
       {pendingInst && (
         <View style={rcStyles.pendingBanner}>
+          {/* Title + countdown */}
           <View style={rcStyles.pendingBannerTop}>
             <Ionicons name="notifications" size={16} color="#FFAA00" />
             <Text style={[rcStyles.pendingBannerTitle, { fontFamily: "Inter_700Bold" }]}>
               Work Complete — Your Approval Needed
             </Text>
           </View>
+
+          {/* Countdown timer */}
+          {countdown.expired ? (
+            <View style={rcStyles.expiredBox}>
+              <Ionicons name="warning-outline" size={15} color="#FF4444" />
+              <Text style={[rcStyles.expiredText, { fontFamily: "Inter_600SemiBold" }]}>
+                Review window expired · Sent to TheLawnServices@gmail.com for investigation
+              </Text>
+            </View>
+          ) : (
+            <View style={rcStyles.countdownRow}>
+              <Ionicons name="time-outline" size={14} color="#FFAA00" />
+              <Text style={[rcStyles.countdownLabel, { fontFamily: "Inter_400Regular" }]}>Time remaining to review:</Text>
+              <Text style={[rcStyles.countdownTimer, { fontFamily: "Inter_700Bold" }]}>
+                {String(countdown.h).padStart(2, "0")}:{String(countdown.m).padStart(2, "0")}:{String(countdown.s).padStart(2, "0")}
+              </Text>
+            </View>
+          )}
+
           <Text style={[rcStyles.pendingBannerSub, { fontFamily: "Inter_400Regular" }]}>
             {pendingInst.pro} has marked the {pendingInst.date} appointment as done.
             {isInPerson
               ? " Confirm completion and pay them directly."
-              : ` Confirming will automatically charge ${pendingInst.price} to ${preferredPayment ?? "your saved payment method"}.`}
+              : ` Confirming will charge ${pendingInst.price} to ${preferredPayment ?? "your saved payment method"}.`}
           </Text>
-          <TouchableOpacity
-            style={rcStyles.confirmBtn}
-            activeOpacity={0.85}
-            onPress={() => handleConfirm(pendingInst)}
-          >
-            <Ionicons name={isInPerson ? "handshake-outline" : "lock-open-outline"} size={16} color="#000" />
-            <Text style={[rcStyles.confirmBtnText, { fontFamily: "Inter_700Bold" }]}>
-              {isInPerson ? "Confirm Complete · Pay In Person" : `Confirm & Release ${pendingInst.price}`}
-            </Text>
-          </TouchableOpacity>
+
+          {/* Completion photos (if landscaper attached any) */}
+          {pendingPhotos.length > 0 && (
+            <View style={rcStyles.photosSection}>
+              <View style={rcStyles.photosSectionHeader}>
+                <Ionicons name="camera-outline" size={13} color="#34FF7A" />
+                <Text style={[rcStyles.photosSectionLabel, { fontFamily: "Inter_500Medium" }]}>
+                  Completion Photos ({pendingPhotos.length})
+                </Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={rcStyles.photosScroll}>
+                {pendingPhotos.map((uri, i) => (
+                  <Image key={i} source={{ uri }} style={rcStyles.photoThumb} />
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Approve button */}
+          {!countdown.expired && (
+            <TouchableOpacity
+              style={rcStyles.confirmBtn}
+              activeOpacity={0.85}
+              onPress={() => handleConfirm(pendingInst)}
+            >
+              <Ionicons name={isInPerson ? "handshake-outline" : "lock-open-outline"} size={16} color="#000" />
+              <Text style={[rcStyles.confirmBtnText, { fontFamily: "Inter_700Bold" }]}>
+                {isInPerson ? "Confirm Complete · Pay In Person" : `Confirm & Release ${pendingInst.price}`}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Dispute button */}
+          {!countdown.expired && (
+            <TouchableOpacity
+              style={rcStyles.disputeBtn}
+              activeOpacity={0.85}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                Alert.alert(
+                  "Dispute This Work?",
+                  `Are you unsatisfied with the ${pendingInst.service} completed on ${pendingInst.date}?\n\nThis will flag the order and send it to TheLawnServices@gmail.com for investigation. Payment will be held until resolved.`,
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Yes, Open Dispute",
+                      style: "destructive",
+                      onPress: () => {
+                        onDispute(pendingInst.id);
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                        setTimeout(() => {
+                          Alert.alert(
+                            "Dispute Opened",
+                            "Your dispute has been submitted. Our team at TheLawnServices@gmail.com will review the case and respond within 24–48 hours. Payment is frozen until resolved.",
+                            [{ text: "OK" }]
+                          );
+                        }, 400);
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              <Ionicons name="alert-circle-outline" size={16} color="#FF4444" />
+              <Text style={[rcStyles.disputeBtnText, { fontFamily: "Inter_600SemiBold" }]}>Dispute Work</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Auto-expire note */}
+          {!countdown.expired && (
+            <View style={rcStyles.autoExpireNote}>
+              <Ionicons name="mail-outline" size={12} color="#888" />
+              <Text style={[rcStyles.autoExpireText, { fontFamily: "Inter_400Regular" }]}>
+                If no action is taken within 24 hours, the order will automatically be sent to TheLawnServices@gmail.com for investigation.
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Disputed banner */}
+      {instances.some((i) => i.status === "disputed") && (
+        <View style={rcStyles.disputedBanner}>
+          <View style={rcStyles.disputedBannerTop}>
+            <Ionicons name="shield-outline" size={16} color="#FF4444" />
+            <Text style={[rcStyles.disputedBannerTitle, { fontFamily: "Inter_700Bold" }]}>Dispute Under Investigation</Text>
+          </View>
+          <Text style={[rcStyles.disputedBannerSub, { fontFamily: "Inter_400Regular" }]}>
+            Our team at TheLawnServices@gmail.com is reviewing your dispute. Payment is frozen. You'll be contacted within 24–48 hours.
+          </Text>
         </View>
       )}
 
@@ -305,6 +549,11 @@ function RecurringSeriesCard({
                 {inst.status === "pending_approval" && (
                   <View style={rcStyles.pendingBadge}>
                     <Text style={[rcStyles.pendingBadgeText, { fontFamily: "Inter_600SemiBold" }]}>Awaiting You</Text>
+                  </View>
+                )}
+                {inst.status === "disputed" && (
+                  <View style={[rcStyles.pendingBadge, { backgroundColor: "#2A1010" }]}>
+                    <Text style={[rcStyles.pendingBadgeText, { fontFamily: "Inter_600SemiBold", color: "#FF4444" }]}>Disputed</Text>
                   </View>
                 )}
                 {inst.status === "upcoming" && (
@@ -385,7 +634,10 @@ export default function AppointmentsScreen() {
   const [selectedAppt, setSelectedAppt] = useState<CustomerAppt | null>(null);
 
   const { acceptedJobs, cancelledJobs, cancelAccepted } = useJobs();
-  const { instances, markDone, releasePayment } = useRecurring();
+  const { instances, completionPhotos, markedDoneAt, markDone, releasePayment, disputeInstance } = useRecurring();
+
+  // Landscaper: which instance is awaiting photo modal
+  const [photoModalInstId, setPhotoModalInstId] = useState<string | null>(null);
 
   function openMaps(address: string) {
     const encoded = encodeURIComponent(address);
@@ -564,33 +816,90 @@ export default function AppointmentsScreen() {
               <View style={styles.sectionDivider} />
               <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Recurring Jobs</Text>
 
+              {/* Completion Photo Modal */}
+              <CompletionPhotoModal
+                visible={photoModalInstId !== null}
+                onClose={() => setPhotoModalInstId(null)}
+                onSubmit={(photos) => {
+                  if (photoModalInstId) {
+                    markDone(photoModalInstId, photos);
+                    setPhotoModalInstId(null);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    setTimeout(() => {
+                      Alert.alert(
+                        "Customer Notified",
+                        "Zamire Smith has been notified that the job is complete. They have 24 hours to approve or dispute. Payment will be released upon approval.",
+                        [{ text: "OK" }]
+                      );
+                    }, 400);
+                  }
+                }}
+              />
+
               {/* Awaiting customer approval */}
-              {pendingRecurring.map((inst) => (
-                <View key={inst.id} style={[styles.lsCard, lsRecStyles.awaitingCard]}>
-                  <View style={lsRecStyles.awaitingBadge}>
-                    <Ionicons name="time-outline" size={13} color="#FFAA00" />
-                    <Text style={[lsRecStyles.awaitingBadgeText, { fontFamily: "Inter_600SemiBold" }]}>Awaiting Customer Approval</Text>
-                  </View>
-                  <View style={styles.lsTopRow}>
-                    <View style={styles.lsServiceBadge}>
-                      <Ionicons name="repeat" size={13} color="#34FF7A" />
-                      <Text style={[styles.lsServiceText, { fontFamily: "Inter_600SemiBold" }]}>{inst.service}</Text>
+              {pendingRecurring.map((inst) => {
+                const instPhotos = completionPhotos[inst.id] ?? [];
+                const deadline = (markedDoneAt[inst.id] ?? 0) + TWENTY_FOUR_HOURS;
+                const remaining = Math.max(0, deadline - Date.now());
+                const totalSecs = Math.floor(remaining / 1000);
+                const rh = Math.floor(totalSecs / 3600);
+                const rm = Math.floor((totalSecs % 3600) / 60);
+                const isExpired = remaining === 0 && (markedDoneAt[inst.id] ?? 0) > 0;
+                return (
+                  <View key={inst.id} style={[styles.lsCard, lsRecStyles.awaitingCard]}>
+                    <View style={lsRecStyles.awaitingBadge}>
+                      <Ionicons name="time-outline" size={13} color="#FFAA00" />
+                      <Text style={[lsRecStyles.awaitingBadgeText, { fontFamily: "Inter_600SemiBold" }]}>Awaiting Customer Approval</Text>
                     </View>
-                    <Text style={[styles.lsBudget, { fontFamily: "Inter_700Bold" }]}>{inst.price}</Text>
+                    <View style={styles.lsTopRow}>
+                      <View style={styles.lsServiceBadge}>
+                        <Ionicons name="repeat" size={13} color="#34FF7A" />
+                        <Text style={[styles.lsServiceText, { fontFamily: "Inter_600SemiBold" }]}>{inst.service}</Text>
+                      </View>
+                      <Text style={[styles.lsBudget, { fontFamily: "Inter_700Bold" }]}>{inst.price}</Text>
+                    </View>
+                    <View style={styles.lsMetaRow}>
+                      <Ionicons name="calendar-outline" size={13} color="#CCCCCC" />
+                      <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium" }]}>{inst.date} at {inst.time}</Text>
+                    </View>
+                    <View style={styles.lsMetaRow}>
+                      <Ionicons name="person-outline" size={13} color="#CCCCCC" />
+                      <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>Zamire Smith</Text>
+                    </View>
+
+                    {/* Customer countdown from landscaper's perspective */}
+                    <View style={lsRecStyles.customerTimerRow}>
+                      <Ionicons name="time-outline" size={13} color={isExpired ? "#FF4444" : "#FFAA00"} />
+                      <Text style={[lsRecStyles.customerTimerText, { fontFamily: "Inter_400Regular", color: isExpired ? "#FF4444" : "#BBBBBB" }]}>
+                        {isExpired
+                          ? "Customer window expired · Order sent to dispute team"
+                          : `Customer has ${String(rh).padStart(2, "0")}h ${String(rm).padStart(2, "0")}m to review`}
+                      </Text>
+                    </View>
+
+                    {/* Completion photos the landscaper attached */}
+                    {instPhotos.length > 0 && (
+                      <View>
+                        <View style={[styles.lsMetaRow, { marginBottom: 6 }]}>
+                          <Ionicons name="camera-outline" size={13} color="#34FF7A" />
+                          <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>
+                            {instPhotos.length} completion photo{instPhotos.length > 1 ? "s" : ""} attached
+                          </Text>
+                        </View>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {instPhotos.map((uri, i) => (
+                            <Image key={i} source={{ uri }} style={lsRecStyles.photoThumb} />
+                          ))}
+                        </ScrollView>
+                      </View>
+                    )}
+
+                    <Text style={[lsRecStyles.awaitingNote, { fontFamily: "Inter_400Regular" }]}>
+                      You marked this job complete. Waiting for the customer to confirm and release payment.
+                    </Text>
                   </View>
-                  <View style={styles.lsMetaRow}>
-                    <Ionicons name="calendar-outline" size={13} color="#CCCCCC" />
-                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium" }]}>{inst.date} at {inst.time}</Text>
-                  </View>
-                  <View style={styles.lsMetaRow}>
-                    <Ionicons name="person-outline" size={13} color="#CCCCCC" />
-                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>Zamire Smith</Text>
-                  </View>
-                  <Text style={[lsRecStyles.awaitingNote, { fontFamily: "Inter_400Regular" }]}>
-                    You marked this job complete. Waiting for the customer to confirm and release payment.
-                  </Text>
-                </View>
-              ))}
+                );
+              })}
 
               {/* Upcoming recurring — Mark as Done */}
               {upcomingRecurring.map((inst) => (
@@ -615,20 +924,7 @@ export default function AppointmentsScreen() {
                     activeOpacity={0.85}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      Alert.alert(
-                        "Mark Job as Complete?",
-                        `Notify Zamire Smith that the ${inst.service} on ${inst.date} is finished? They will be prompted to confirm and release payment.`,
-                        [
-                          { text: "Not Yet", style: "cancel" },
-                          {
-                            text: "Yes, Mark Done",
-                            onPress: () => {
-                              markDone(inst.id);
-                              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            },
-                          },
-                        ]
-                      );
+                      setPhotoModalInstId(inst.id);
                     }}
                   >
                     <Ionicons name="checkmark-circle-outline" size={16} color="#000" />
@@ -764,8 +1060,11 @@ export default function AppointmentsScreen() {
                 <RecurringSeriesCard
                   instances={instances}
                   preferredPayment={preferredPayment}
+                  completionPhotos={completionPhotos}
+                  markedDoneAt={markedDoneAt}
                   onMarkDone={markDone}
                   onRelease={releasePayment}
+                  onDispute={disputeInstance}
                 />
               </>
             )}
@@ -963,6 +1262,57 @@ const rcStyles = StyleSheet.create({
     borderTopWidth: 1, borderColor: "#222",
   },
   nextDateText: { fontSize: 13, color: "#34FF7A" },
+
+  // Countdown
+  countdownRow: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#1C1200", borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 8,
+  },
+  countdownLabel: { fontSize: 12, color: "#CCCCCC" },
+  countdownTimer: { fontSize: 14, color: "#FFAA00", marginLeft: "auto", letterSpacing: 0.5 },
+  expiredBox: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#1A0505", borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 10,
+    borderWidth: 1, borderColor: "#3A1010",
+  },
+  expiredText: { fontSize: 13, color: "#FF4444", flex: 1, lineHeight: 18 },
+
+  // Completion photos (customer view)
+  photosSection: {
+    backgroundColor: "#111", borderRadius: 14, padding: 12, gap: 8,
+  },
+  photosSectionHeader: { flexDirection: "row", alignItems: "center", gap: 6 },
+  photosSectionLabel: { fontSize: 12, color: "#34FF7A" },
+  photosScroll: { marginTop: 4 },
+  photoThumb: {
+    width: 72, height: 72, borderRadius: 10,
+    marginRight: 8, backgroundColor: "#1A1A1A",
+  },
+
+  // Dispute button
+  disputeBtn: {
+    borderWidth: 1, borderColor: "#FF4444", borderRadius: 18,
+    paddingVertical: 12, flexDirection: "row",
+    alignItems: "center", justifyContent: "center", gap: 8,
+  },
+  disputeBtnText: { fontSize: 14, color: "#FF4444" },
+
+  // Auto-expire note
+  autoExpireNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 6,
+  },
+  autoExpireText: { fontSize: 11, color: "#888", flex: 1, lineHeight: 17 },
+
+  // Disputed banner
+  disputedBanner: {
+    backgroundColor: "#1A0505", borderTopWidth: 1, borderBottomWidth: 1, borderColor: "#FF444433",
+    padding: 16, gap: 8,
+  },
+  disputedBannerTop: { flexDirection: "row", alignItems: "center", gap: 8 },
+  disputedBannerTitle: { fontSize: 14, color: "#FF4444", flex: 1 },
+  disputedBannerSub: { fontSize: 13, color: "#CCCCCC", lineHeight: 19 },
 });
 
 // ── Landscaper recurring styles ──────────────────────────────────────────────
@@ -976,12 +1326,62 @@ const lsRecStyles = StyleSheet.create({
   },
   awaitingBadgeText: { fontSize: 12, color: "#FFAA00" },
   awaitingNote: { fontSize: 12, color: "#CCCCCC", lineHeight: 18 },
+  customerTimerRow: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#0f0f0f", borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 7,
+  },
+  customerTimerText: { fontSize: 12, flex: 1 },
+  photoThumb: {
+    width: 68, height: 68, borderRadius: 10, marginRight: 8, backgroundColor: "#222",
+  },
   markDoneBtn: {
     backgroundColor: "#34FF7A", borderRadius: 18,
     paddingVertical: 12, flexDirection: "row",
     alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4,
   },
   markDoneBtnText: { fontSize: 14, color: "#000" },
+});
+
+// ── Completion Photo Modal styles ─────────────────────────────────────────────
+const cpStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.8)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#111111", borderTopLeftRadius: 32, borderTopRightRadius: 32,
+    paddingHorizontal: 22, paddingBottom: 40, paddingTop: 10,
+    borderTopWidth: 1, borderColor: "#222",
+    gap: 16,
+  },
+  handle: { width: 40, height: 4, backgroundColor: "#333", borderRadius: 2, alignSelf: "center", marginBottom: 4 },
+  headerRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  title: { fontSize: 18, color: "#FFFFFF", flex: 1 },
+  closeBtn: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: "#1A1A1A", alignItems: "center", justifyContent: "center",
+  },
+  subtitle: { fontSize: 13, color: "#CCCCCC", lineHeight: 19 },
+  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  photoThumb: { width: 78, height: 78, borderRadius: 12, backgroundColor: "#1A1A1A" },
+  photoThumbImg: { width: 78, height: 78, borderRadius: 12 },
+  photoRemove: { position: "absolute", top: -6, right: -6 },
+  addRow: { flexDirection: "row", gap: 10 },
+  addBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#0d2e18", borderRadius: 16, paddingVertical: 14,
+    borderWidth: 1, borderColor: "#1a4a2a",
+  },
+  addBtnText: { fontSize: 14, color: "#34FF7A" },
+  infoNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#1A1A1A", borderRadius: 12,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  infoText: { fontSize: 12, color: "#BBBBBB", flex: 1, lineHeight: 18 },
+  submitBtn: {
+    backgroundColor: "#34FF7A", borderRadius: 20, paddingVertical: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+  },
+  submitBtnText: { fontSize: 15, color: "#000" },
 });
 
 const jdStyles = StyleSheet.create({
