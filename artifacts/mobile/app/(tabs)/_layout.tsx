@@ -84,7 +84,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="jobs"
         options={{
-          title: "My Jobs",
+          title: role === "customer" ? "My Service" : "My Jobs",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="location-outline" size={size} color={color} />
           ),
@@ -94,6 +94,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profile",
+          href: null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),

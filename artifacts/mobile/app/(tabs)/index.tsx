@@ -258,6 +258,7 @@ function AppHeader({
 function ProfileDropdownModal({
   visible,
   onClose,
+  onViewProfile,
   onAppointments,
   onSettings,
   onShare,
@@ -270,6 +271,7 @@ function ProfileDropdownModal({
 }: {
   visible: boolean;
   onClose: () => void;
+  onViewProfile: () => void;
   onAppointments: () => void;
   onSettings: () => void;
   onShare: () => void;
@@ -284,6 +286,10 @@ function ProfileDropdownModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={dropStyles.overlay} onPress={onClose}>
         <Pressable style={dropStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <TouchableOpacity style={dropStyles.item} onPress={onViewProfile} activeOpacity={0.7}>
+            <Text style={dropStyles.itemIcon}>👤</Text>
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>View Profile</Text>
+          </TouchableOpacity>
           {isLandscaper && (
             <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
               <Text style={dropStyles.itemIcon}>🗓️</Text>
@@ -934,6 +940,7 @@ export default function HomeScreen() {
       <ProfileDropdownModal
         visible={dropdownVisible}
         onClose={() => setDropdownVisible(false)}
+        onViewProfile={() => { setDropdownVisible(false); router.navigate("/(tabs)/profile"); }}
         onAppointments={() => { setDropdownVisible(false); router.navigate("/(tabs)/appointments"); }}
         onSettings={() => { setDropdownVisible(false); setSettingsVisible(true); }}
         onShare={() => { setDropdownVisible(false); Alert.alert("Share", "Share link copied to clipboard!"); }}
