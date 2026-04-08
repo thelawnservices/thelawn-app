@@ -25,6 +25,7 @@ import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
+import { validateText } from "@/utils/moderation";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 
 type FeedPost = {
@@ -1843,8 +1844,33 @@ export default function HomeScreen() {
   const notifEnabledRef = React.useRef(notifEnabled);
   notifEnabledRef.current = notifEnabled;
 
-  const { notifications: notifItems } = useNotifications();
+  const { notifications: notifItems, broadcastAnnouncement } = useNotifications();
   const [missedCount, setMissedCount] = useState(0);
+  const [homeAnnounceVisible, setHomeAnnounceVisible] = useState(false);
+  const [homeAnnounceTitle, setHomeAnnounceTitle] = useState("");
+  const [homeAnnounceMsg, setHomeAnnounceMsg] = useState("");
+  const [homeAnnounceState, setHomeAnnounceState] = useState<"idle" | "sending" | "sent">("idle");
+  const HOME_ANNOUNCE_FOLLOWER_COUNT = 12;
+  const openHomeAnnounce = () => {
+    setHomeAnnounceTitle(""); setHomeAnnounceMsg(""); setHomeAnnounceState("idle");
+    setHomeAnnounceVisible(true);
+  };
+  const sendHomeAnnouncement = () => {
+    const titleV = validateText(homeAnnounceTitle.trim());
+    const msgV = validateText(homeAnnounceMsg.trim());
+    if (!homeAnnounceTitle.trim() || !homeAnnounceMsg.trim()) {
+      Alert.alert("Required", "Please fill in both the title and message."); return;
+    }
+    if (!titleV.ok || !msgV.ok) {
+      Alert.alert("Content Blocked", titleV.reason ?? msgV.reason ?? "Message contains disallowed content."); return;
+    }
+    setHomeAnnounceState("sending");
+    setTimeout(() => {
+      broadcastAnnouncement("GreenScape Pros", homeAnnounceTitle.trim(), homeAnnounceMsg.trim());
+      setHomeAnnounceState("sent");
+      setTimeout(() => setHomeAnnounceVisible(false), 2200);
+    }, 1800);
+  };
   const notifVisibleRef = React.useRef(notifVisible);
   notifVisibleRef.current = notifVisible;
   const prevNotifCount = React.useRef(notifItems.length);
@@ -1921,6 +1947,83 @@ export default function HomeScreen() {
         onClose={() => setPaymentHistoryVisible(false)}
         role={role === "landscaper" ? "landscaper" : "customer"}
       />
+
+      {/* Send Announcement Modal */}
+      <Modal visible={homeAnnounceVisible} transparent animationType="slide" onRequestClose={() => setHomeAnnounceVisible(false)}>
+        <Pressable style={styles.announceOverlay} onPress={() => { if (homeAnnounceState === "idle") setHomeAnnounceVisible(false); }}>
+          <Pressable style={styles.announceSheet} onPress={(e) => e.stopPropagation()}>
+            {homeAnnounceState === "sent" ? (
+              <View style={styles.announceSentBox}>
+                <Ionicons name="checkmark-circle" size={52} color="#34FF7A" />
+                <Text style={[styles.announceSentTitle, { fontFamily: "Inter_700Bold" }]}>Announcement Sent!</Text>
+                <Text style={[styles.announceSentSub, { fontFamily: "Inter_400Regular" }]}>
+                  Your message was delivered to {HOME_ANNOUNCE_FOLLOWER_COUNT} followers.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.announceHeader}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <Ionicons name="megaphone-outline" size={22} color="#FFAA00" />
+                    <Text style={[styles.announceSheetTitle, { fontFamily: "Inter_700Bold" }]}>Send Announcement</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setHomeAnnounceVisible(false)} activeOpacity={0.7}>
+                    <Ionicons name="close" size={22} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.announceFollowerPill}>
+                  <Ionicons name="heart" size={13} color="#f87171" />
+                  <Text style={[styles.announceFollowerText, { fontFamily: "Inter_500Medium" }]}>
+                    {HOME_ANNOUNCE_FOLLOWER_COUNT} customers will be notified
+                  </Text>
+                </View>
+                <Text style={[styles.announceFieldLabel, { fontFamily: "Inter_500Medium" }]}>Title</Text>
+                <TextInput
+                  style={[styles.announceTitleInput, !homeAnnounceTitle && homeAnnounceState !== "idle" && styles.announceInputErr]}
+                  placeholder="e.g. Summer Special — 20% Off"
+                  placeholderTextColor="#555"
+                  value={homeAnnounceTitle}
+                  onChangeText={(t) => setHomeAnnounceTitle(t.slice(0, 60))}
+                  maxLength={60}
+                />
+                <Text style={[styles.announceCharCount, { fontFamily: "Inter_400Regular" }]}>{homeAnnounceTitle.length}/60</Text>
+                <Text style={[styles.announceFieldLabel, { fontFamily: "Inter_500Medium", marginTop: 12 }]}>Message</Text>
+                <TextInput
+                  style={[styles.announceMsgInput]}
+                  placeholder="Share a promotion, schedule change, or update…"
+                  placeholderTextColor="#555"
+                  value={homeAnnounceMsg}
+                  onChangeText={(t) => setHomeAnnounceMsg(t.slice(0, 300))}
+                  maxLength={300}
+                  multiline
+                />
+                <Text style={[styles.announceCharCount, { fontFamily: "Inter_400Regular" }]}>{homeAnnounceMsg.length}/300</Text>
+                <TouchableOpacity
+                  style={[styles.announceSendBtn, homeAnnounceState === "sending" && styles.announceSendBtnSending]}
+                  onPress={sendHomeAnnouncement}
+                  activeOpacity={0.85}
+                  disabled={homeAnnounceState === "sending"}
+                >
+                  {homeAnnounceState === "sending" ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <ActivityIndicator size="small" color="#000" />
+                      <Text style={[styles.announceSendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sending to {HOME_ANNOUNCE_FOLLOWER_COUNT} customers…</Text>
+                    </View>
+                  ) : (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Ionicons name="megaphone-outline" size={18} color="#000" />
+                      <Text style={[styles.announceSendBtnText, { fontFamily: "Inter_700Bold" }]}>Send to {HOME_ANNOUNCE_FOLLOWER_COUNT} Followers</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <Text style={[styles.announceDisclaimer, { fontFamily: "Inter_400Regular" }]}>
+                  Only customers who favorited your profile will receive this.
+                </Text>
+              </>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
       <SettingsModal
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
@@ -2227,6 +2330,24 @@ export default function HomeScreen() {
           </>
         )}
 
+
+        {/* Send Announcement — landscapers only */}
+        {role === "landscaper" && (
+          <TouchableOpacity
+            style={styles.announceCard}
+            activeOpacity={0.85}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); openHomeAnnounce(); }}
+          >
+            <View style={styles.announceIconBox}>
+              <Ionicons name="megaphone-outline" size={22} color="#FFAA00" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.announceCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Send Announcement</Text>
+              <Text style={[styles.announceCardSub, { fontFamily: "Inter_400Regular" }]}>Notify your {HOME_ANNOUNCE_FOLLOWER_COUNT} followers</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#FFAA00" />
+          </TouchableOpacity>
+        )}
 
         {/* Quick Stats — customers only */}
         {role !== "landscaper" && (
@@ -3243,6 +3364,57 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   pendingEmptyText: { fontSize: 14, color: "#BBBBBB" },
+
+  announceCard: {
+    flexDirection: "row", alignItems: "center", gap: 14,
+    backgroundColor: "#1A1200", borderRadius: 20,
+    borderWidth: 1, borderColor: "#FFAA0030",
+    padding: 16, marginBottom: 20,
+  },
+  announceIconBox: {
+    width: 44, height: 44, borderRadius: 14,
+    backgroundColor: "#2A1A00", borderWidth: 1, borderColor: "#FFAA0040",
+    alignItems: "center", justifyContent: "center",
+  },
+  announceCardTitle: { fontSize: 15, color: "#FFCC55" },
+  announceCardSub: { fontSize: 12, color: "#BBBBBB", marginTop: 2 },
+
+  announceOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "flex-end" },
+  announceSheet: {
+    backgroundColor: "#111111", borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    borderWidth: 1, borderColor: "#1E1E1E", padding: 24, paddingBottom: 40,
+  },
+  announceHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+  announceSheetTitle: { fontSize: 18, color: "#FFFFFF" },
+  announceFollowerPill: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    backgroundColor: "#1F0A0A", borderWidth: 1, borderColor: "#f8717140",
+    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6,
+    alignSelf: "flex-start", marginBottom: 20,
+  },
+  announceFollowerText: { fontSize: 13, color: "#f87171" },
+  announceFieldLabel: { fontSize: 13, color: "#CCCCCC", marginBottom: 6 },
+  announceTitleInput: {
+    backgroundColor: "#1A1A1A", borderRadius: 12, borderWidth: 1, borderColor: "#2A2A2A",
+    color: "#FFFFFF", fontSize: 14, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 4,
+  },
+  announceMsgInput: {
+    backgroundColor: "#1A1A1A", borderRadius: 12, borderWidth: 1, borderColor: "#2A2A2A",
+    color: "#FFFFFF", fontSize: 14, paddingHorizontal: 14, paddingVertical: 12,
+    minHeight: 110, marginBottom: 4,
+  },
+  announceInputErr: { borderColor: "#f87171" },
+  announceCharCount: { fontSize: 11, color: "#555", textAlign: "right", marginBottom: 4 },
+  announceSendBtn: {
+    backgroundColor: "#FFAA00", borderRadius: 22, paddingVertical: 15,
+    alignItems: "center", justifyContent: "center", marginTop: 16, marginBottom: 12,
+  },
+  announceSendBtnSending: { backgroundColor: "#FFAA0099" },
+  announceSendBtnText: { fontSize: 15, color: "#000" },
+  announceDisclaimer: { fontSize: 11, color: "#555", textAlign: "center", lineHeight: 16 },
+  announceSentBox: { alignItems: "center", paddingVertical: 28, gap: 12 },
+  announceSentTitle: { fontSize: 20, color: "#34FF7A" },
+  announceSentSub: { fontSize: 14, color: "#BBBBBB", textAlign: "center", lineHeight: 20 },
 });
 
 const pushStyles = StyleSheet.create({

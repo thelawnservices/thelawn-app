@@ -45,6 +45,11 @@ export default function ProfileScreen() {
   const [custMenuVisible, setCustMenuVisible] = useState(false);
   const [custSettingsVisible, setCustSettingsVisible] = useState(false);
   const [customerAddress, setCustomerAddress] = useState<{ street: string; state: string; zip: string } | null>(null);
+  const [custTermsDoc, setCustTermsDoc] = useState<"terms" | "privacy" | null>(null);
+  const [custPrivacyVisible, setCustPrivacyVisible] = useState(false);
+  const [custPrivVisible, setCustPrivVisible] = useState(true);
+  const [custPrivPrices, setCustPrivPrices] = useState(false);
+  const [custPrivReviews, setCustPrivReviews] = useState(true);
 
   const toggle = () => {
     Haptics.selectionAsync();
@@ -94,11 +99,65 @@ export default function ProfileScreen() {
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Settings</Text>
             </TouchableOpacity>
             <View style={menuStyles.divider} />
+            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); setCustPrivacyVisible(true); }}>
+              <Ionicons name="lock-closed-outline" size={18} color="#CCCCCC" />
+              <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Privacy Settings</Text>
+            </TouchableOpacity>
+            <View style={menuStyles.divider} />
+            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); setCustTermsDoc("terms"); }}>
+              <Ionicons name="document-text-outline" size={18} color="#CCCCCC" />
+              <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Terms of Service</Text>
+            </TouchableOpacity>
+            <View style={menuStyles.divider} />
+            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); setCustTermsDoc("privacy"); }}>
+              <Ionicons name="shield-checkmark-outline" size={18} color="#CCCCCC" />
+              <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <View style={menuStyles.divider} />
             <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); logout(); }}>
               <Ionicons name="log-out-outline" size={18} color="#ef4444" />
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#ef4444" }]}>Sign Out</Text>
             </TouchableOpacity>
           </View>
+        </Pressable>
+      </Modal>
+
+      {/* Customer Terms Modal */}
+      {custTermsDoc && <TermsModal visible={true} docType={custTermsDoc} onClose={() => setCustTermsDoc(null)} />}
+
+      {/* Customer Privacy Settings Modal */}
+      <Modal visible={custPrivacyVisible} transparent animationType="slide" onRequestClose={() => setCustPrivacyVisible(false)}>
+        <Pressable style={privModalStyles.overlay} onPress={() => setCustPrivacyVisible(false)}>
+          <Pressable style={privModalStyles.sheet} onPress={(e) => e.stopPropagation()}>
+            <View style={privModalStyles.header}>
+              <Text style={[privModalStyles.title, { fontFamily: "Inter_700Bold" }]}>Privacy Settings</Text>
+              <TouchableOpacity onPress={() => setCustPrivacyVisible(false)} style={privModalStyles.closeBtn} activeOpacity={0.7}>
+                <Ionicons name="close" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            {([
+              { label: "Profile visible to landscapers", value: custPrivVisible, onChange: setCustPrivVisible },
+              { label: "Show booking history publicly", value: custPrivPrices, onChange: setCustPrivPrices },
+              { label: "Allow landscapers to see reviews I wrote", value: custPrivReviews, onChange: setCustPrivReviews },
+            ] as const).map((row, idx) => (
+              <View key={idx} style={privModalStyles.row}>
+                <Text style={[privModalStyles.rowLabel, { fontFamily: "Inter_400Regular" }]}>{row.label}</Text>
+                <Switch
+                  value={row.value}
+                  onValueChange={row.onChange}
+                  trackColor={{ false: "#333", true: "#34FF7A" }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            ))}
+            <TouchableOpacity
+              style={privModalStyles.saveBtn}
+              onPress={() => { setCustPrivacyVisible(false); Alert.alert("Privacy Settings Saved"); }}
+              activeOpacity={0.85}
+            >
+              <Text style={[privModalStyles.saveBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Settings</Text>
+            </TouchableOpacity>
+          </Pressable>
         </Pressable>
       </Modal>
 
@@ -175,14 +234,14 @@ function LandscaperProfile({
   }
 
   function sendAnnouncement() {
-    const titleV = validateText(announceTitle.trim(), 60);
-    const msgV = validateText(announceMsg.trim(), 300);
+    const titleV = validateText(announceTitle.trim());
+    const msgV = validateText(announceMsg.trim());
     let hasErr = false;
     if (!announceTitle.trim()) { setAnnounceTitleErr("Please enter a title."); hasErr = true; }
-    else if (titleV.hasProfanity) { setAnnounceTitleErr("Please remove inappropriate language."); hasErr = true; }
+    else if (!titleV.ok) { setAnnounceTitleErr("Please remove inappropriate language."); hasErr = true; }
     else { setAnnounceTitleErr(null); }
     if (!announceMsg.trim()) { setAnnounceMsgErr("Please enter a message."); hasErr = true; }
-    else if (msgV.hasProfanity) { setAnnounceMsgErr("Please remove inappropriate language."); hasErr = true; }
+    else if (!msgV.ok) { setAnnounceMsgErr("Please remove inappropriate language."); hasErr = true; }
     else { setAnnounceMsgErr(null); }
     if (hasErr) { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); return; }
     setAnnounceState("sending");
@@ -346,11 +405,6 @@ function LandscaperProfile({
         <Modal visible={lsMenuVisible} transparent animationType="fade" onRequestClose={() => setLsMenuVisible(false)}>
           <Pressable style={menuStyles.overlay} onPress={() => setLsMenuVisible(false)}>
             <View style={[menuStyles.dropdown, { top: topPadding + 62, right: 16 }]}>
-              <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); openAnnounce(); }}>
-                <Ionicons name="megaphone-outline" size={18} color="#FFAA00" />
-                <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#FFAA00" }]}>Send Announcement</Text>
-              </TouchableOpacity>
-              <View style={menuStyles.divider} />
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setPrivacyVisible(true); }}>
                 <Ionicons name="lock-closed-outline" size={18} color="#CCCCCC" />
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Privacy Settings</Text>
@@ -359,6 +413,11 @@ function LandscaperProfile({
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setTermsDoc("terms"); }}>
                 <Ionicons name="document-text-outline" size={18} color="#CCCCCC" />
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Terms of Service</Text>
+              </TouchableOpacity>
+              <View style={menuStyles.divider} />
+              <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setTermsDoc("privacy"); }}>
+                <Ionicons name="shield-checkmark-outline" size={18} color="#CCCCCC" />
+                <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Privacy Policy</Text>
               </TouchableOpacity>
               <View style={menuStyles.divider} />
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); logout(); }}>
@@ -690,39 +749,6 @@ function LandscaperProfile({
               }
             </View>
 
-            {/* Legal */}
-            <View style={[styles.legalCard, { marginTop: 24 }]}>
-              <Text style={[styles.legalCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Legal</Text>
-              <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
-                <Ionicons name="document-text-outline" size={18} color="#CCCCCC" />
-                <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Terms of Service</Text>
-                <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
-              </TouchableOpacity>
-              <View style={styles.legalDivider} />
-              <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
-                <Ionicons name="shield-checkmark-outline" size={18} color="#CCCCCC" />
-                <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Privacy Policy</Text>
-                <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
-              </TouchableOpacity>
-              <View style={styles.legalDivider} />
-              <Text style={[styles.legalDisclaimer, { fontFamily: "Inter_400Regular" }]}>
-                TheLawn is a marketplace platform. All services are performed by independent contractors.
-              </Text>
-            </View>
-
-            {/* Privacy Settings */}
-            <View style={[styles.legalCard, { marginTop: 0 }]}>
-              <TouchableOpacity
-                style={styles.legalRow}
-                onPress={() => { Haptics.selectionAsync(); setPrivacyVisible(true); }}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="lock-closed-outline" size={18} color="#CCCCCC" />
-                <Text style={[styles.legalRowText, { fontFamily: "Inter_500Medium" }]}>Privacy Settings</Text>
-                <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
-              </TouchableOpacity>
-            </View>
-
             <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.75}>
               <Ionicons name="log-out-outline" size={18} color="#ef4444" />
               <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Sign Out</Text>
@@ -834,9 +860,9 @@ function LandscaperProfile({
                         onPress={() => {
                           const t = replyText.trim();
                           if (!t) return;
-                          const v = validateText(t, 280);
-                          if (!v.valid) {
-                            Alert.alert("Reply Not Posted", v.error ?? "Please revise your reply before posting.");
+                          const v = validateText(t);
+                          if (!v.ok) {
+                            Alert.alert("Reply Not Posted", v.reason ?? "Please revise your reply before posting.");
                             return;
                           }
                           setReviews((prev) => prev.map((rev, idx) =>
@@ -1303,25 +1329,6 @@ function CustomerProfile({
       <TouchableOpacity style={styles.editBtn} onPress={() => Alert.alert("Edit Profile", "Profile editor would open here")} activeOpacity={0.85}>
         <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile Settings</Text>
       </TouchableOpacity>
-
-      <View style={styles.legalCard}>
-        <Text style={[styles.legalCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Legal</Text>
-        <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
-          <Ionicons name="document-text-outline" size={18} color="#CCCCCC" />
-          <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Terms of Service</Text>
-          <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
-        </TouchableOpacity>
-        <View style={styles.legalDivider} />
-        <TouchableOpacity style={styles.legalRow} onPress={() => setTermsDoc("privacy")} activeOpacity={0.7}>
-          <Ionicons name="shield-checkmark-outline" size={18} color="#CCCCCC" />
-          <Text style={[styles.legalRowText, { fontFamily: "Inter_400Regular" }]}>Privacy Policy</Text>
-          <Ionicons name="chevron-forward" size={16} color="#777" style={{ marginLeft: "auto" }} />
-        </TouchableOpacity>
-        <View style={styles.legalDivider} />
-        <Text style={[styles.legalDisclaimer, { fontFamily: "Inter_400Regular" }]}>
-          TheLawn is a marketplace platform. All services are performed by independent contractors. TheLawn is not liable for damages, injuries, or disputes arising from booked services.
-        </Text>
-      </View>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.75}>
         <Ionicons name="log-out-outline" size={18} color="#ef4444" />
