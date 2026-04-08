@@ -170,7 +170,7 @@ function JobDetailsModal({
               );
             }}
           >
-            <Ionicons name="close-circle-outline" size={17} color="#666" />
+            <Ionicons name="close-circle-outline" size={17} color="#FF4444" />
             <Text style={[jdStyles.cancelApptBtnText, { fontFamily: "Inter_500Medium" }]}>
               Cancel Appointment
             </Text>
@@ -744,13 +744,13 @@ const styles = StyleSheet.create({
   noteText: { fontSize: 12, color: "#34FF7A" },
   cancelBtn: {
     borderWidth: 1,
-    borderColor: "#333",
+    borderColor: "#FF4444",
     paddingVertical: 11,
     borderRadius: 20,
     alignItems: "center",
     marginTop: 4,
   },
-  cancelBtnText: { fontSize: 14, color: "#666" },
+  cancelBtnText: { fontSize: 14, color: "#FF4444" },
   card: {
     backgroundColor: "#1A1A1A",
     borderRadius: 22,
@@ -905,7 +905,7 @@ const jdStyles = StyleSheet.create({
   payBtnText: { fontSize: 16, color: "#000" },
   cancelApptBtn: {
     borderWidth: 1,
-    borderColor: "#2A2A2A",
+    borderColor: "#FF4444",
     borderRadius: 20,
     paddingVertical: 14,
     flexDirection: "row",
@@ -913,5 +913,5 @@ const jdStyles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  cancelApptBtnText: { fontSize: 15, color: "#666" },
+  cancelApptBtnText: { fontSize: 15, color: "#FF4444" },
 });
