@@ -235,14 +235,37 @@ export default function PayScreen() {
   const [recurringDays, setRecurringDays] = useState<string[]>([]);
   const [recurringStart, setRecurringStart] = useState("Apr 7, 2026");
   const [recurringEnd, setRecurringEnd] = useState("Apr 7, 2027");
-  const RECURRING_DAY_OPTIONS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
-  function toggleRecurringDay(day: string) {
+
+  // Monthly calendar state
+  const _now = new Date();
+  const [calMonth, setCalMonth] = useState(_now.getMonth());
+  const [calYear, setCalYear] = useState(_now.getFullYear());
+  const calFirstDay = new Date(calYear, calMonth, 1).getDay();
+  const calDaysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const calMonthLabel = new Date(calYear, calMonth, 1).toLocaleString("default", { month: "long" });
+
+  function prevCalMonth() {
+    Haptics.selectionAsync();
+    if (calMonth === 0) { setCalMonth(11); setCalYear((y) => y - 1); }
+    else setCalMonth((m) => m - 1);
+  }
+  function nextCalMonth() {
+    Haptics.selectionAsync();
+    if (calMonth === 11) { setCalMonth(0); setCalYear((y) => y + 1); }
+    else setCalMonth((m) => m + 1);
+  }
+  function toggleCalendarDay(dayStr: string) {
     Haptics.selectionAsync();
     setRecurringDays((prev) => {
-      if (prev.includes(day)) return prev.filter((d) => d !== day);
+      if (prev.includes(dayStr)) return prev.filter((d) => d !== dayStr);
       if (prev.length >= 3) return prev;
-      return [...prev, day];
+      return [...prev, dayStr].sort((a, b) => Number(a) - Number(b));
     });
+  }
+  function ordinal(n: number) {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
   const [tipPresetIdx, setTipPresetIdx] = useState<number | null>(1);
   const [tipMode, setTipMode] = useState<"preset" | "custom" | "none">("preset");
@@ -751,52 +774,87 @@ export default function PayScreen() {
 
           {recurring && (
             <View style={styles.recurringExpandBox}>
-              {/* Day-of-week picker */}
-              <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginBottom: 6 }]}>
-                Service Days (up to 3 per week)
+              {/* Calendar header */}
+              <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginBottom: 4 }]}>
+                Pick Up to 3 Days Per Month
               </Text>
-              <Text style={[styles.recurringNote, { fontFamily: "Inter_400Regular", marginBottom: 10 }]}>
-                Pick up to 3 days per week. The landscaper visits on these days every month.
+              <Text style={[styles.recurringNote, { fontFamily: "Inter_400Regular", marginBottom: 12 }]}>
+                Select up to 3 dates each month. Your landscaper will visit on these dates every month.
               </Text>
-              <View style={styles.dayPickerRow}>
-                {RECURRING_DAY_OPTIONS.map((day) => {
-                  const selected = recurringDays.includes(day);
-                  const maxReached = recurringDays.length >= 3 && !selected;
+
+              {/* Month nav */}
+              <View style={styles.calNavRow}>
+                <TouchableOpacity onPress={prevCalMonth} style={styles.calNavBtn} activeOpacity={0.7}>
+                  <Ionicons name="chevron-back" size={18} color="#CCCCCC" />
+                </TouchableOpacity>
+                <Text style={[styles.calMonthLabel, { fontFamily: "Inter_700Bold" }]}>
+                  {calMonthLabel} {calYear}
+                </Text>
+                <TouchableOpacity onPress={nextCalMonth} style={styles.calNavBtn} activeOpacity={0.7}>
+                  <Ionicons name="chevron-forward" size={18} color="#CCCCCC" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Day-of-week headers */}
+              <View style={styles.calDowRow}>
+                {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
+                  <Text key={d} style={[styles.calDowLabel, { fontFamily: "Inter_500Medium" }]}>{d}</Text>
+                ))}
+              </View>
+
+              {/* Calendar grid */}
+              <View style={styles.calGrid}>
+                {Array.from({ length: calFirstDay }).map((_, i) => (
+                  <View key={`e${i}`} style={styles.calEmptyCell} />
+                ))}
+                {Array.from({ length: calDaysInMonth }, (_, i) => i + 1).map((day) => {
+                  const dayStr = String(day);
+                  const selected = recurringDays.includes(dayStr);
+                  const maxed = recurringDays.length >= 3 && !selected;
                   return (
                     <TouchableOpacity
                       key={day}
                       style={[
-                        styles.dayChip,
-                        selected && styles.dayChipActive,
-                        maxReached && styles.dayChipDisabled,
+                        styles.calDayCell,
+                        selected && styles.calDayCellSelected,
+                        maxed && styles.calDayCellDisabled,
                       ]}
-                      onPress={() => !maxReached && toggleRecurringDay(day)}
-                      activeOpacity={maxReached ? 1 : 0.75}
+                      onPress={() => !maxed && toggleCalendarDay(dayStr)}
+                      activeOpacity={maxed ? 1 : 0.75}
                     >
-                      <Text
-                        style={[
-                          styles.dayChipText,
-                          { fontFamily: selected ? "Inter_700Bold" : "Inter_400Regular" },
-                          selected && styles.dayChipTextActive,
-                          maxReached && styles.dayChipTextDisabled,
-                        ]}
-                      >
+                      <Text style={[
+                        styles.calDayText,
+                        { fontFamily: selected ? "Inter_700Bold" : "Inter_400Regular" },
+                        selected && styles.calDayTextSelected,
+                        maxed && styles.calDayTextDisabled,
+                      ]}>
                         {day}
                       </Text>
                     </TouchableOpacity>
                   );
                 })}
               </View>
-              {recurringDays.length === 0 && (
-                <Text style={[styles.recurringNote, { fontFamily: "Inter_400Regular", color: "#f87171", marginBottom: 8 }]}>
-                  Please select at least one service day.
+
+              {/* Selection count hint */}
+              <View style={styles.calHintRow}>
+                {[0, 1, 2].map((i) => (
+                  <View key={i} style={[styles.calDot, recurringDays.length > i && styles.calDotFilled]} />
+                ))}
+                <Text style={[styles.calHintText, { fontFamily: "Inter_400Regular" }]}>
+                  {recurringDays.length === 0
+                    ? "Tap dates to select (up to 3)"
+                    : recurringDays.length === 3
+                    ? "Max 3 dates selected"
+                    : `${recurringDays.length} of 3 dates chosen`}
                 </Text>
-              )}
+              </View>
+
+              {/* Selected summary pill */}
               {recurringDays.length > 0 && (
                 <View style={styles.selectedDaysPill}>
                   <Ionicons name="repeat" size={12} color="#34FF7A" />
                   <Text style={[styles.selectedDaysText, { fontFamily: "Inter_500Medium" }]}>
-                    {recurringDays.join(" · ")} every month
+                    {recurringDays.map((d) => ordinal(Number(d))).join(" · ")} of every month
                   </Text>
                 </View>
               )}
@@ -1884,6 +1942,90 @@ const styles = StyleSheet.create({
   dayChipText: { fontSize: 12, color: "#CCCCCC" },
   dayChipTextActive: { color: "#000" },
   dayChipTextDisabled: { color: "#555" },
+
+  // Monthly calendar
+  calNavRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+  },
+  calNavBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#1E1E1E",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  calMonthLabel: {
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  calDowRow: {
+    flexDirection: "row",
+    marginBottom: 6,
+  },
+  calDowLabel: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 11,
+    color: "#777",
+    textTransform: "uppercase",
+  },
+  calGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 10,
+  },
+  calEmptyCell: {
+    width: "14.2857%",
+    aspectRatio: 1,
+  },
+  calDayCell: {
+    width: "14.2857%",
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  calDayCellSelected: {
+    backgroundColor: "#34FF7A",
+    borderColor: "#34FF7A",
+  },
+  calDayCellDisabled: {
+    opacity: 0.25,
+  },
+  calDayText: {
+    fontSize: 13,
+    color: "#CCCCCC",
+  },
+  calDayTextSelected: { color: "#000" },
+  calDayTextDisabled: { color: "#444" },
+  calHintRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
+  calDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: "#34FF7A",
+    backgroundColor: "transparent",
+  },
+  calDotFilled: {
+    backgroundColor: "#34FF7A",
+  },
+  calHintText: {
+    fontSize: 12,
+    color: "#777",
+  },
+
   selectedDaysPill: {
     flexDirection: "row",
     alignItems: "center",
