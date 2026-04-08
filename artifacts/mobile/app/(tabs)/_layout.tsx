@@ -73,6 +73,7 @@ export default function TabLayout() {
         name="feed"
         options={{
           title: "Feed",
+          href: null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="images-outline" size={size} color={color} />
           ),

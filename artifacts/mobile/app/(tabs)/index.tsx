@@ -28,6 +28,24 @@ import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscap
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import WalletModal from "@/components/WalletModal";
 
+type FeedPost = {
+  id: string; customerName: string; customerInitials: string; customerColor: string;
+  landscaperName: string; service: string; stars: number; text: string;
+  timestamp: string; hasPhoto: boolean;
+  photoIcon: "leaf-outline" | "cut-outline" | "flower-outline" | "grid-outline" | "layers-outline" | "construct-outline";
+  likes: number;
+};
+const HOME_FEED_POSTS: FeedPost[] = [
+  { id: "f1", customerName: "Sarah M.", customerInitials: "SM", customerColor: "#166D42", landscaperName: "John Rivera Landscaping", service: "Mowing/Edging", stars: 5, text: "John did an incredible job on our front yard. Super clean edges and done in under 2 hours. Highly recommend!", timestamp: "2 hours ago", hasPhoto: true, photoIcon: "cut-outline", likes: 12 },
+  { id: "f2", customerName: "Marcus T.", customerInitials: "MT", customerColor: "#2C5282", landscaperName: "GreenScape Pros", service: "Weeding/Mulching", stars: 5, text: "Flower beds look brand new. They cleared all the weeds and laid fresh mulch — the whole yard smells amazing. Will book again.", timestamp: "5 hours ago", hasPhoto: true, photoIcon: "flower-outline", likes: 8 },
+  { id: "f3", customerName: "Alex R.", customerInitials: "AR", customerColor: "#6B21A8", landscaperName: "Maria Santos", service: "Mowing/Edging", stars: 5, text: "Really professional service. Maria showed up right on time and the lawn looks perfect. Already booked my next appointment.", timestamp: "Yesterday at 4:30 PM", hasPhoto: false, photoIcon: "leaf-outline", likes: 21 },
+  { id: "f4", customerName: "Priya N.", customerInitials: "PN", customerColor: "#B45309", landscaperName: "EcoGreen Services", service: "Sod Installation", stars: 4, text: "Great sod installation — the new grass is already looking lush. Only minor thing was a 15-min late arrival, but quality more than made up for it.", timestamp: "Yesterday at 11:00 AM", hasPhoto: true, photoIcon: "grid-outline", likes: 5 },
+  { id: "f5", customerName: "Carlos R.", customerInitials: "CR", customerColor: "#0F766E", landscaperName: "John Rivera Landscaping", service: "Weeding/Mulching", stars: 5, text: "Completely transformed my back yard. Pulled every weed and the mulch color they chose looks perfect with my house.", timestamp: "2 days ago", hasPhoto: true, photoIcon: "leaf-outline", likes: 34 },
+  { id: "f6", customerName: "James W.", customerInitials: "JW", customerColor: "#1D4ED8", landscaperName: "GreenScape Pros", service: "Artificial Turf", stars: 5, text: "Artificial turf installation was seamless. My dogs love it and it looks better than real grass. Zero maintenance — worth every penny.", timestamp: "3 days ago", hasPhoto: true, photoIcon: "layers-outline", likes: 47 },
+  { id: "f7", customerName: "Diane W.", customerInitials: "DW", customerColor: "#BE185D", landscaperName: "EcoGreen Services", service: "Sod Installation", stars: 4, text: "Good work overall. The sod looks healthy and they cleaned up well afterward. A few small patches need to settle but I'm told that's normal.", timestamp: "4 days ago", hasPhoto: false, photoIcon: "grid-outline", likes: 9 },
+  { id: "f8", customerName: "Tina B.", customerInitials: "TB", customerColor: "#047857", landscaperName: "Maria Santos", service: "Weeding/Mulching", stars: 5, text: "Maria is a gem. She went above and beyond — even trimmed around our mailbox without being asked. The garden has never looked better!", timestamp: "5 days ago", hasPhoto: true, photoIcon: "flower-outline", likes: 18 },
+];
+
 function normalizeDateKey(raw: string): string {
   const parts = raw.trim().split(/\s+/);
   if (parts.length === 3) return raw;
@@ -923,6 +941,19 @@ export default function HomeScreen() {
   const [availabilityVisible, setAvailabilityVisible] = useState(false);
   const [paymentHistoryVisible, setPaymentHistoryVisible] = useState(false);
   const [walletVisible, setWalletVisible] = useState(false);
+  const [feedLiked, setFeedLiked] = useState<Set<string>>(new Set());
+  const [feedCounts, setFeedCounts] = useState<Record<string, number>>(
+    Object.fromEntries(HOME_FEED_POSTS.map((p) => [p.id, p.likes]))
+  );
+  const toggleFeedLike = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFeedLiked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); setFeedCounts((c) => ({ ...c, [id]: c[id] - 1 })); }
+      else { next.add(id); setFeedCounts((c) => ({ ...c, [id]: c[id] + 1 })); }
+      return next;
+    });
+  };
   const notifEnabledRef = React.useRef(notifEnabled);
   notifEnabledRef.current = notifEnabled;
 
@@ -1372,6 +1403,79 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* ── Community Feed ─────────────────────────────────── */}
+        <View style={styles.feedHeaderRow}>
+          <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginBottom: 0 }]}>
+            Community Feed
+          </Text>
+          <View style={styles.feedLiveDot} />
+          <Text style={[styles.feedLiveText, { fontFamily: "Inter_500Medium" }]}>Live</Text>
+        </View>
+        <Text style={[styles.feedSubtitle, { fontFamily: "Inter_400Regular" }]}>
+          Recent reviews & photos from customers
+        </Text>
+
+        {HOME_FEED_POSTS.map((post) => (
+          <View key={post.id} style={styles.feedCard}>
+            {/* Card header */}
+            <View style={styles.feedCardHeader}>
+              <View style={[styles.feedAvatar, { backgroundColor: post.customerColor }]}>
+                <Text style={[styles.feedAvatarText, { fontFamily: "Inter_700Bold" }]}>{post.customerInitials}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                {/* Plain Text — customer names are NOT tappable */}
+                <Text style={[styles.feedCustomerName, { fontFamily: "Inter_600SemiBold" }]}>{post.customerName}</Text>
+                <Text style={[styles.feedTimestamp, { fontFamily: "Inter_400Regular" }]}>{post.timestamp}</Text>
+              </View>
+              <View style={styles.feedServiceTag}>
+                <Ionicons name="leaf" size={10} color="#34FF7A" />
+                <Text style={[styles.feedServiceTagText, { fontFamily: "Inter_500Medium" }]}>{post.service}</Text>
+              </View>
+            </View>
+
+            {/* Landscaper reference */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 6 }}>
+              <Ionicons name="person-circle-outline" size={13} color="#888" />
+              <Text style={[{ fontSize: 12, color: "#888" }, { fontFamily: "Inter_400Regular" }]}>
+                Reviewed{" "}
+                <Text style={{ color: "#34FF7A", fontFamily: "Inter_600SemiBold" }}>{post.landscaperName}</Text>
+              </Text>
+            </View>
+
+            {/* Stars */}
+            <View style={{ flexDirection: "row", gap: 2, marginBottom: 8 }}>
+              {[1,2,3,4,5].map((s) => (
+                <Ionicons key={s} name="star" size={12} color={s <= post.stars ? "#f59e0b" : "#333"} />
+              ))}
+            </View>
+
+            {/* Review text */}
+            <Text style={[styles.feedReviewText, { fontFamily: "Inter_400Regular" }]}>{post.text}</Text>
+
+            {/* Photo placeholder */}
+            {post.hasPhoto && (
+              <View style={styles.feedPhotoTile}>
+                <Ionicons name={post.photoIcon} size={36} color="#34FF7A" />
+                <Text style={[{ fontSize: 11, color: "#555", marginTop: 4 }, { fontFamily: "Inter_400Regular" }]}>Photo attached</Text>
+              </View>
+            )}
+
+            {/* Footer */}
+            <View style={styles.feedCardFooter}>
+              <TouchableOpacity style={{ flexDirection: "row", alignItems: "center", gap: 5 }} onPress={() => toggleFeedLike(post.id)} activeOpacity={0.75}>
+                <Ionicons name={feedLiked.has(post.id) ? "heart" : "heart-outline"} size={17} color={feedLiked.has(post.id) ? "#ef4444" : "#888"} />
+                <Text style={[{ fontSize: 13, color: feedLiked.has(post.id) ? "#ef4444" : "#888" }, { fontFamily: "Inter_400Regular" }]}>
+                  {feedCounts[post.id]}
+                </Text>
+              </TouchableOpacity>
+              <Text style={[{ fontSize: 12, color: "#555" }, { fontFamily: "Inter_400Regular" }]}>
+                {post.stars === 5 ? "Highly recommended" : post.stars >= 4 ? "Recommended" : "Mixed review"}
+              </Text>
+            </View>
+          </View>
+        ))}
+
+        <View style={{ height: 32 }} />
       </ScrollView>
 
       {/* Favorites Modal — customers only */}
@@ -1942,6 +2046,34 @@ const styles = StyleSheet.create({
   svcGridName: { fontSize: 10, color: "#FFFFFF", textAlign: "center", lineHeight: 14 },
   svcGridPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
   svcGridUpdated: { fontSize: 9, color: "#BBBBBB", textAlign: "center", marginTop: 1 },
+  feedHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
+  feedLiveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#34FF7A" },
+  feedLiveText: { fontSize: 12, color: "#34FF7A" },
+  feedSubtitle: { fontSize: 13, color: "#888", marginBottom: 16 },
+  feedCard: {
+    backgroundColor: "#1A1A1A", borderRadius: 20, borderWidth: 1, borderColor: "#222222",
+    padding: 16, marginBottom: 12, gap: 0,
+  },
+  feedCardHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  feedAvatar: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
+  feedAvatarText: { fontSize: 15, color: "#fff" },
+  feedCustomerName: { fontSize: 14, color: "#FFFFFF" },
+  feedTimestamp: { fontSize: 11, color: "#888888", marginTop: 1 },
+  feedServiceTag: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "#0d2e18", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10,
+    borderWidth: 1, borderColor: "#34FF7A33",
+  },
+  feedServiceTagText: { fontSize: 10, color: "#34FF7A" },
+  feedReviewText: { fontSize: 14, color: "rgba(255,255,255,0.8)", lineHeight: 21, marginBottom: 10 },
+  feedPhotoTile: {
+    backgroundColor: "#111", borderRadius: 14, borderWidth: 1, borderColor: "#222",
+    height: 110, alignItems: "center", justifyContent: "center", marginBottom: 10,
+  },
+  feedCardFooter: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    borderTopWidth: 1, borderTopColor: "#222", paddingTop: 10, marginTop: 2,
+  },
   proRow: { marginTop: 20, marginBottom: 24, marginHorizontal: -20 },
   proRowContent: { paddingHorizontal: 20, gap: 12 },
   proHCard: {
