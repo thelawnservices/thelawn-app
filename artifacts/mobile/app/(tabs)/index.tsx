@@ -63,10 +63,186 @@ function normalizeTime(raw: string): string {
 
 
 const LANDSCAPER_QUICK_STATS = [
-  { label: "Jobs Accepted", value: "7", icon: "checkmark-circle" as const, iconColor: "#34C759" },
-  { label: "Avg Rating", value: "4.9", icon: "star" as const, iconColor: "#f59e0b" },
-  { label: "This Week", value: "$420", icon: "cash" as const, iconColor: "#34FF7A" },
+  { label: "Jobs Completed", value: "7", icon: "checkmark-circle" as const, iconColor: "#34C759" },
+  { label: "Avg Rating",     value: "4.9", icon: "star" as const,             iconColor: "#f59e0b" },
+  { label: "This Week",      value: "$420", icon: "cash" as const,             iconColor: "#34FF7A" },
 ];
+
+// ── Completed jobs static demo data ─────────────────────────────────────────
+type CompletedJob = {
+  id: string;
+  service: string;
+  size: "Small" | "Medium" | "Large";
+  customer: string;
+  initials: string;
+  avatarColor: string;
+  date: string;
+  payout: string;
+  stars: number;
+  note?: string;
+};
+
+const COMPLETED_JOBS_DATA: CompletedJob[] = [
+  { id: "c1", service: "Mowing/Edging",    size: "Medium", customer: "Sarah M.",   initials: "SM", avatarColor: "#166D42", date: "Apr 6, 2026",  payout: "$65",  stars: 5 },
+  { id: "c2", service: "Weeding/Mulching", size: "Large",  customer: "Marcus T.",  initials: "MT", avatarColor: "#2C5282", date: "Apr 3, 2026",  payout: "$95",  stars: 5, note: "Left gate open for access. Great work!" },
+  { id: "c3", service: "Full Service",     size: "Medium", customer: "Alex R.",    initials: "AR", avatarColor: "#6B21A8", date: "Mar 30, 2026", payout: "$130", stars: 5 },
+  { id: "c4", service: "Mowing/Edging",    size: "Small",  customer: "Diana L.",   initials: "DL", avatarColor: "#92400E", date: "Mar 27, 2026", payout: "$45",  stars: 4 },
+  { id: "c5", service: "Sod Installation", size: "Large",  customer: "Kevin W.",   initials: "KW", avatarColor: "#1E40AF", date: "Mar 22, 2026", payout: "$120", stars: 5, note: "Professional and efficient. Will book again." },
+  { id: "c6", service: "Artificial Turf",  size: "Medium", customer: "Priya S.",   initials: "PS", avatarColor: "#065F46", date: "Mar 18, 2026", payout: "$95",  stars: 5 },
+  { id: "c7", service: "Mowing/Edging",    size: "Small",  customer: "James B.",   initials: "JB", avatarColor: "#7F1D1D", date: "Mar 14, 2026", payout: "$45",  stars: 4 },
+];
+
+function CompletedJobsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const insets = useSafeAreaInsets();
+  const totalEarned = COMPLETED_JOBS_DATA.reduce((sum, j) => sum + parseInt(j.payout.replace("$", "")), 0);
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={cjStyles.overlay}>
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
+        <View style={[cjStyles.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+
+          {/* Header */}
+          <View style={cjStyles.header}>
+            <View>
+              <Text style={[cjStyles.title, { fontFamily: "Inter_700Bold" }]}>Jobs Completed</Text>
+              <Text style={[cjStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>Your recent service history</Text>
+            </View>
+            <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Summary banner */}
+          <View style={cjStyles.summaryBanner}>
+            <View style={cjStyles.summaryItem}>
+              <Text style={[cjStyles.summaryNum, { fontFamily: "Inter_700Bold" }]}>{COMPLETED_JOBS_DATA.length}</Text>
+              <Text style={[cjStyles.summaryLabel, { fontFamily: "Inter_400Regular" }]}>Jobs</Text>
+            </View>
+            <View style={cjStyles.summaryDivider} />
+            <View style={cjStyles.summaryItem}>
+              <Text style={[cjStyles.summaryNum, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>${totalEarned}</Text>
+              <Text style={[cjStyles.summaryLabel, { fontFamily: "Inter_400Regular" }]}>Total Earned</Text>
+            </View>
+            <View style={cjStyles.summaryDivider} />
+            <View style={cjStyles.summaryItem}>
+              <Text style={[cjStyles.summaryNum, { fontFamily: "Inter_700Bold", color: "#f59e0b" }]}>4.9 ★</Text>
+              <Text style={[cjStyles.summaryLabel, { fontFamily: "Inter_400Regular" }]}>Avg Rating</Text>
+            </View>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}>
+            {COMPLETED_JOBS_DATA.map((job, i) => (
+              <View key={job.id} style={[cjStyles.jobCard, i === COMPLETED_JOBS_DATA.length - 1 && { borderBottomWidth: 0 }]}>
+                {/* Top row: avatar + info */}
+                <View style={cjStyles.jobTopRow}>
+                  <View style={[cjStyles.avatar, { backgroundColor: job.avatarColor }]}>
+                    <Text style={[cjStyles.avatarText, { fontFamily: "Inter_700Bold" }]}>{job.initials}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[cjStyles.customerName, { fontFamily: "Inter_600SemiBold" }]}>{job.customer}</Text>
+                    <View style={cjStyles.metaRow}>
+                      <Ionicons name="calendar-outline" size={11} color="#888" />
+                      <Text style={[cjStyles.metaText, { fontFamily: "Inter_400Regular" }]}>{job.date}</Text>
+                      <Text style={cjStyles.dot}>·</Text>
+                      <Ionicons name="resize-outline" size={11} color="#888" />
+                      <Text style={[cjStyles.metaText, { fontFamily: "Inter_400Regular" }]}>{job.size} Yard</Text>
+                    </View>
+                  </View>
+                  <Text style={[cjStyles.payout, { fontFamily: "Inter_700Bold" }]}>{job.payout}</Text>
+                </View>
+
+                {/* Service badge + stars + note */}
+                <View style={cjStyles.jobBottomRow}>
+                  <View style={cjStyles.serviceBadge}>
+                    <Ionicons name="leaf" size={11} color="#34FF7A" />
+                    <Text style={[cjStyles.serviceBadgeText, { fontFamily: "Inter_600SemiBold" }]}>{job.service}</Text>
+                  </View>
+                  <View style={cjStyles.starsRow}>
+                    {[1,2,3,4,5].map((s) => (
+                      <Ionicons key={s} name="star" size={11} color={s <= job.stars ? "#f59e0b" : "#333"} />
+                    ))}
+                  </View>
+                </View>
+
+                {job.note && (
+                  <View style={cjStyles.noteRow}>
+                    <Ionicons name="chatbubble-outline" size={11} color="#555" />
+                    <Text style={[cjStyles.noteText, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>{job.note}</Text>
+                  </View>
+                )}
+
+                {/* Completed badge */}
+                <View style={cjStyles.completedBadge}>
+                  <Ionicons name="checkmark-circle" size={12} color="#34FF7A" />
+                  <Text style={[cjStyles.completedBadgeText, { fontFamily: "Inter_600SemiBold" }]}>Completed · Payment Released</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const cjStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#111111",
+    borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    borderWidth: 1, borderColor: "#222",
+    maxHeight: "88%",
+    overflow: "hidden",
+  },
+  header: {
+    flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between",
+    paddingHorizontal: 22, paddingTop: 22, paddingBottom: 16,
+  },
+  title: { fontSize: 20, color: "#FFFFFF", marginBottom: 2 },
+  subtitle: { fontSize: 12, color: "#777" },
+  summaryBanner: {
+    flexDirection: "row", alignItems: "center",
+    marginHorizontal: 20, marginBottom: 16,
+    backgroundColor: "#1A1A1A", borderRadius: 16,
+    borderWidth: 1, borderColor: "#262626",
+    paddingVertical: 14,
+  },
+  summaryItem: { flex: 1, alignItems: "center" },
+  summaryNum: { fontSize: 20, color: "#FFFFFF", marginBottom: 2 },
+  summaryLabel: { fontSize: 10, color: "#777", letterSpacing: 0.4 },
+  summaryDivider: { width: 1, height: 32, backgroundColor: "#2A2A2A" },
+  jobCard: {
+    paddingVertical: 16,
+    borderBottomWidth: 1, borderBottomColor: "#1E1E1E",
+  },
+  jobTopRow: { flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: 10 },
+  avatar: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  avatarText: { fontSize: 13, color: "#fff" },
+  customerName: { fontSize: 14, color: "#FFFFFF", marginBottom: 3 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  metaText: { fontSize: 11, color: "#888" },
+  dot: { color: "#555", fontSize: 11 },
+  payout: { fontSize: 18, color: "#34FF7A" },
+  jobBottomRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
+  serviceBadge: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    backgroundColor: "#0d2e18", borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  serviceBadgeText: { fontSize: 11, color: "#34FF7A" },
+  starsRow: { flexDirection: "row", gap: 2 },
+  noteRow: { flexDirection: "row", alignItems: "flex-start", gap: 6, marginBottom: 8, marginTop: 2 },
+  noteText: { fontSize: 11, color: "#666", flex: 1, lineHeight: 16 },
+  completedBadge: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    alignSelf: "flex-start",
+    backgroundColor: "#0A1F12", borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: "#1D4428",
+  },
+  completedBadgeText: { fontSize: 10, color: "#34FF7A", letterSpacing: 0.4 },
+});
 
 
 function AnimatedStatCard({ stat, delay, onPress }: { stat: { label: string; value: string; icon: "checkmark-circle" | "star" | "heart" | "cash"; iconColor: string }; delay: number; onPress?: () => void }) {
@@ -1404,6 +1580,7 @@ export default function HomeScreen() {
     });
   };
 
+  const [completedJobsVisible, setCompletedJobsVisible] = useState(false);
   const [favoritesModalVisible, setFavoritesModalVisible] = useState(false);
   const customerQuickStats = [
     { label: "Favorites", value: String(favorites.size), icon: "heart" as const, iconColor: "#f87171" },
@@ -1743,8 +1920,8 @@ export default function HomeScreen() {
                 stat={s}
                 delay={i * 120}
                 onPress={
-                  s.label === "Jobs Accepted"
-                    ? () => router.navigate("/(tabs)/appointments")
+                  s.label === "Jobs Completed"
+                    ? () => { Haptics.selectionAsync(); setCompletedJobsVisible(true); }
                     : s.label === "Avg Rating"
                     ? () => router.navigate("/(tabs)/profile")
                     : s.label === "This Week"
@@ -1872,6 +2049,12 @@ export default function HomeScreen() {
 
         <View style={{ height: 32 }} />
       </ScrollView>
+
+      {/* Completed Jobs Modal — landscapers only */}
+      <CompletedJobsModal
+        visible={completedJobsVisible}
+        onClose={() => setCompletedJobsVisible(false)}
+      />
 
       {/* Favorites Modal — customers only */}
       <Modal
