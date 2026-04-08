@@ -11,6 +11,9 @@ import {
   Modal,
   Pressable,
   Image,
+  TextInput,
+  KeyboardAvoidingView,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -399,6 +402,60 @@ function RecurringSeriesCard({
   onDispute: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
+
+  // Dispute modal state
+  const [dispModalVisible, setDispModalVisible] = useState(false);
+  const [dispDesc, setDispDesc] = useState("");
+  const [dispDescErr, setDispDescErr] = useState<string | null>(null);
+  const [dispPhotos, setDispPhotos] = useState<string[]>([]);
+  const [dispSubmitting, setDispSubmitting] = useState(false);
+
+  async function pickDisputePhoto() {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+      allowsMultipleSelection: false,
+    });
+    if (!res.canceled && res.assets?.[0]) {
+      setDispPhotos((prev) => [...prev, res.assets[0].uri].slice(0, 4));
+    }
+  }
+
+  function removeDisputePhoto(uri: string) {
+    setDispPhotos((prev) => prev.filter((p) => p !== uri));
+  }
+
+  function openDisputeModal() {
+    setDispDesc("");
+    setDispDescErr(null);
+    setDispPhotos([]);
+    setDispSubmitting(false);
+    setDispModalVisible(true);
+  }
+
+  function submitDispute() {
+    if (!dispDesc.trim() || dispDesc.trim().length < 10) {
+      setDispDescErr("Please describe the issue in at least 10 characters.");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    setDispDescErr(null);
+    setDispSubmitting(true);
+    setTimeout(() => {
+      setDispModalVisible(false);
+      setDispSubmitting(false);
+      onDispute(pendingInst!.id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      setTimeout(() => {
+        Alert.alert(
+          "Dispute Opened",
+          "Your dispute has been submitted. Our team at TheLawnServices will review the case and respond within 24–48 hours. Payment is frozen until resolved.",
+          [{ text: "OK" }]
+        );
+      }, 400);
+    }, 1200);
+  }
+
   if (instances.length === 0) return null;
 
   const parent = instances[0];
@@ -570,28 +627,7 @@ function RecurringSeriesCard({
               activeOpacity={0.85}
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                Alert.alert(
-                  "Dispute This Work?",
-                  `Are you unsatisfied with the ${pendingInst.service} completed on ${pendingInst.date}?\n\nThis will flag the order and send it to TheLawnServices for further review. Payment will be held until resolved.`,
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Yes, Open Dispute",
-                      style: "destructive",
-                      onPress: () => {
-                        onDispute(pendingInst.id);
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                        setTimeout(() => {
-                          Alert.alert(
-                            "Dispute Opened",
-                            "Your dispute has been submitted. Our team at TheLawnServices will review the case and respond within 24–48 hours. Payment is frozen until resolved.",
-                            [{ text: "OK" }]
-                          );
-                        }, 400);
-                      },
-                    },
-                  ]
-                );
+                openDisputeModal();
               }}
             >
               <Ionicons name="alert-circle-outline" size={16} color="#FF4444" />
@@ -684,6 +720,128 @@ function RecurringSeriesCard({
           </Text>
         </View>
       )}
+
+      {/* ── Dispute Detail Modal ─────────────────────────────── */}
+      <Modal
+        visible={dispModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => { if (!dispSubmitting) setDispModalVisible(false); }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={dispStyles.overlay}
+        >
+          <ScrollView
+            style={dispStyles.sheet}
+            contentContainerStyle={dispStyles.sheetContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {/* Header */}
+            <View style={dispStyles.header}>
+              <View style={dispStyles.headerLeft}>
+                <Ionicons name="alert-circle" size={20} color="#FF4444" />
+                <Text style={[dispStyles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Open a Dispute</Text>
+              </View>
+              {!dispSubmitting && (
+                <TouchableOpacity onPress={() => setDispModalVisible(false)} activeOpacity={0.7}>
+                  <Ionicons name="close" size={22} color="#CCCCCC" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Info banner */}
+            <View style={dispStyles.infoBanner}>
+              <Ionicons name="shield-outline" size={14} color="#FFAA00" />
+              <Text style={[dispStyles.infoBannerText, { fontFamily: "Inter_400Regular" }]}>
+                Describe the issue and attach photos as evidence. Payment is held until TheLawnServices resolves the dispute.
+              </Text>
+            </View>
+
+            {/* Description */}
+            <Text style={[dispStyles.fieldLabel, { fontFamily: "Inter_600SemiBold" }]}>
+              Describe the Issue *
+            </Text>
+            <TextInput
+              style={[dispStyles.descInput, dispDescErr && dispStyles.inputErr, { fontFamily: "Inter_400Regular" }]}
+              placeholder="e.g. The lawn was not edged properly and large patches were missed along the driveway…"
+              placeholderTextColor="#555"
+              value={dispDesc}
+              onChangeText={(t) => { setDispDesc(t); if (dispDescErr) setDispDescErr(null); }}
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+              maxLength={500}
+              editable={!dispSubmitting}
+            />
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+              {dispDescErr
+                ? <Text style={[dispStyles.errText, { fontFamily: "Inter_400Regular" }]}>{dispDescErr}</Text>
+                : <Text />}
+              <Text style={[dispStyles.charCount, { fontFamily: "Inter_400Regular" }]}>{dispDesc.length}/500</Text>
+            </View>
+
+            {/* Photo upload */}
+            <Text style={[dispStyles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 14 }]}>
+              Evidence Photos{" "}
+              <Text style={{ color: "#777", fontFamily: "Inter_400Regular" }}>(Optional — up to 4)</Text>
+            </Text>
+            <View style={dispStyles.photoGrid}>
+              {dispPhotos.map((uri) => (
+                <View key={uri} style={dispStyles.photoThumb}>
+                  <Image source={{ uri }} style={dispStyles.photoImg} />
+                  <TouchableOpacity
+                    style={dispStyles.photoRemove}
+                    onPress={() => removeDisputePhoto(uri)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="close-circle" size={22} color="#FF4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {dispPhotos.length < 4 && (
+                <TouchableOpacity
+                  style={dispStyles.photoAddBtn}
+                  onPress={pickDisputePhoto}
+                  activeOpacity={0.75}
+                  disabled={dispSubmitting}
+                >
+                  <Ionicons name="camera-outline" size={24} color="#FFAA00" />
+                  <Text style={[dispStyles.photoAddText, { fontFamily: "Inter_500Medium" }]}>Add Photo</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Submit */}
+            <TouchableOpacity
+              style={[dispStyles.submitBtn, dispSubmitting && dispStyles.submitBtnLoading]}
+              onPress={submitDispute}
+              activeOpacity={0.85}
+              disabled={dispSubmitting}
+            >
+              {dispSubmitting ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Ionicons name="alert-circle-outline" size={18} color="#fff" />
+                  <Text style={[dispStyles.submitBtnText, { fontFamily: "Inter_700Bold" }]}>Submit Dispute</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={dispStyles.cancelBtn}
+              onPress={() => setDispModalVisible(false)}
+              disabled={dispSubmitting}
+              activeOpacity={0.7}
+            >
+              <Text style={[dispStyles.cancelBtnText, { fontFamily: "Inter_400Regular" }]}>Cancel</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -1689,4 +1847,107 @@ const jdStyles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
   },
   cancelApptBtnText: { fontSize: 15, color: "#FF4444" },
+});
+
+const dispStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.82)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: "#111111",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: "#FF444420",
+    maxHeight: "92%",
+  },
+  sheetContent: {
+    padding: 24,
+    paddingBottom: 48,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  headerTitle: { fontSize: 18, color: "#FFFFFF" },
+  infoBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: "#1A1200",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#FFAA0030",
+    padding: 12,
+    marginBottom: 20,
+  },
+  infoBannerText: { fontSize: 13, color: "#CCCCCC", flex: 1, lineHeight: 18 },
+  fieldLabel: { fontSize: 13, color: "#CCCCCC", marginBottom: 8 },
+  descInput: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+    color: "#FFFFFF",
+    fontSize: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    minHeight: 120,
+    marginBottom: 4,
+  },
+  inputErr: { borderColor: "#FF4444" },
+  errText: { fontSize: 12, color: "#FF4444", flex: 1 },
+  charCount: { fontSize: 11, color: "#555", textAlign: "right" },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 20,
+    marginTop: 6,
+  },
+  photoThumb: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    overflow: "hidden",
+    position: "relative",
+  },
+  photoImg: { width: "100%", height: "100%" },
+  photoRemove: {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 11,
+  },
+  photoAddBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#FFAA0060",
+    borderStyle: "dashed",
+    backgroundColor: "#1A1200",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  photoAddText: { fontSize: 10, color: "#FFAA00" },
+  submitBtn: {
+    backgroundColor: "#FF4444",
+    borderRadius: 22,
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  submitBtnLoading: { backgroundColor: "#AA2222" },
+  submitBtnText: { fontSize: 16, color: "#FFFFFF" },
+  cancelBtn: { paddingVertical: 12, alignItems: "center" },
+  cancelBtnText: { fontSize: 14, color: "#BBBBBB" },
 });
