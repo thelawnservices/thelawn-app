@@ -1188,9 +1188,9 @@ export default function PayScreen() {
           onPress={() => { setPaymentMethod("inperson"); Haptics.selectionAsync(); }}
           activeOpacity={0.8}
         >
-          <Ionicons name="handshake-outline" size={28} color={paymentMethod === "inperson" ? "#34FF7A" : "#888"} />
+          <Ionicons name="wallet-outline" size={28} color={paymentMethod === "inperson" ? "#34FF7A" : "#888"} />
           <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === "inperson" && styles.payMethodTileTextActive]}>
-            In Person (Cash / Check / Other)
+            Pay In Person (Cash / Check / Other)
           </Text>
         </TouchableOpacity>
 

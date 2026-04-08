@@ -1198,10 +1198,10 @@ export default function HomeScreen() {
             </Text>
             <View style={styles.servicesGrid}>
               {[
-                { name: "Mowing/\nEdging",    icon: "cut-outline" as const,    avg: "Avg $70",   est: "1–2 hrs" },
-                { name: "Weeding/\nMulching", icon: "flower-outline" as const, avg: "Avg $130",  est: "2–4 hrs" },
-                { name: "Sod\nInstallation", icon: "grid-outline" as const,   avg: "Avg $550",  est: "4–8 hrs" },
-                { name: "Artificial\nTurf",  icon: "layers-outline" as const, avg: "Avg $1,800", est: "10–20 hrs" },
+                { name: "Mowing/\nEdging",    icon: "cut-outline" as const,    est: "1–2 hrs" },
+                { name: "Weeding/\nMulching", icon: "flower-outline" as const, est: "2–4 hrs" },
+                { name: "Sod\nInstallation", icon: "grid-outline" as const,   est: "4–8 hrs" },
+                { name: "Artificial\nTurf",  icon: "layers-outline" as const, est: "10–20 hrs" },
               ].map((svc) => (
                 <TouchableOpacity
                   key={svc.name}
@@ -1214,9 +1214,6 @@ export default function HomeScreen() {
                   </View>
                   <Text style={[styles.svcGridName, { fontFamily: "Inter_500Medium" }]}>
                     {svc.name}
-                  </Text>
-                  <Text style={[styles.svcGridPrice, { fontFamily: "Inter_600SemiBold" }]}>
-                    {svc.avg}
                   </Text>
                   <Text style={[styles.svcGridUpdated, { fontFamily: "Inter_400Regular" }]}>
                     Est. {svc.est}
@@ -1499,8 +1496,42 @@ function LandscaperProfileViewModal({
           {/* ── Body ── */}
           <View style={fsStyles.body}>
 
+            {/* Call / Text */}
+            <View style={fsStyles.contactRow}>
+              <TouchableOpacity
+                style={fsStyles.contactBtn}
+                activeOpacity={0.8}
+                onPress={() =>
+                  Linking.openURL("tel:+19415550000").catch(() =>
+                    Alert.alert("Calling", pro.name)
+                  )
+                }
+              >
+                <Ionicons name="call-outline" size={22} color="#34FF7A" />
+                <Text style={[fsStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={fsStyles.contactBtn}
+                activeOpacity={0.8}
+                onPress={() =>
+                  Linking.openURL("sms:+19415550000").catch(() =>
+                    Alert.alert("Message", "Texting " + pro.name)
+                  )
+                }
+              >
+                <Ionicons name="chatbubble-outline" size={22} color="#34FF7A" />
+                <Text style={[fsStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Book Now */}
+            <TouchableOpacity style={fsStyles.bookBtn} activeOpacity={0.85} onPress={onBook}>
+              <Ionicons name="calendar-outline" size={20} color="#000" />
+              <Text style={[fsStyles.bookBtnText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
+            </TouchableOpacity>
+
             {/* About */}
-            <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>ABOUT</Text>
+            <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 28 }]}>ABOUT</Text>
             <Text style={[fsStyles.aboutText, { fontFamily: "Inter_400Regular" }]}>
               Professional landscaping services with outstanding reviews. Specializing in mowing/edging, weeding/mulching, sod installation, and artificial turf for residential properties in the Sarasota / Ellenton area.
             </Text>
@@ -1583,39 +1614,6 @@ function LandscaperProfileViewModal({
               </>
             )}
 
-            {/* Call / Text */}
-            <View style={fsStyles.contactRow}>
-              <TouchableOpacity
-                style={fsStyles.contactBtn}
-                activeOpacity={0.8}
-                onPress={() =>
-                  Linking.openURL("tel:+19415550000").catch(() =>
-                    Alert.alert("Calling", pro.name)
-                  )
-                }
-              >
-                <Ionicons name="call-outline" size={22} color="#34FF7A" />
-                <Text style={[fsStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={fsStyles.contactBtn}
-                activeOpacity={0.8}
-                onPress={() =>
-                  Linking.openURL("sms:+19415550000").catch(() =>
-                    Alert.alert("Message", "Texting " + pro.name)
-                  )
-                }
-              >
-                <Ionicons name="chatbubble-outline" size={22} color="#34FF7A" />
-                <Text style={[fsStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Book Now */}
-            <TouchableOpacity style={fsStyles.bookBtn} activeOpacity={0.85} onPress={onBook}>
-              <Ionicons name="calendar-outline" size={20} color="#000" />
-              <Text style={[fsStyles.bookBtnText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </View>
