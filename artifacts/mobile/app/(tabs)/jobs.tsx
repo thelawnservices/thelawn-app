@@ -312,7 +312,7 @@ export default function JobsScreen() {
                       onPress={() => simulateCall(isLandscaper ? job.customer : job.landscaper)}
                       activeOpacity={0.8}
                     >
-                      <Ionicons name="call-outline" size={20} color="#34FF7A" />
+                      <Ionicons name="call" size={20} color="#000" />
                     </TouchableOpacity>
                   </View>
                 )}
