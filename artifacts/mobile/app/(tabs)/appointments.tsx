@@ -107,14 +107,25 @@ function JobDetailsModal({
             Tap address to open directions
           </Text>
 
-          <TouchableOpacity
-            style={jdStyles.payBtn}
-            activeOpacity={0.85}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onClose(); router.navigate("/pay"); }}
-          >
-            <Ionicons name="card-outline" size={18} color="#000" />
-            <Text style={[jdStyles.payBtnText, { fontFamily: "Inter_600SemiBold" }]}>Confirm &amp; Pay</Text>
-          </TouchableOpacity>
+          {/* Confirmed status — no action needed from customer */}
+          <View style={jdStyles.confirmedBanner}>
+            <View style={jdStyles.confirmedBannerTop}>
+              <Ionicons name="checkmark-circle" size={18} color="#34FF7A" />
+              <Text style={[jdStyles.confirmedBannerTitle, { fontFamily: "Inter_700Bold" }]}>
+                Appointment Confirmed
+              </Text>
+            </View>
+            <Text style={[jdStyles.confirmedBannerSub, { fontFamily: "Inter_400Regular" }]}>
+              {appt.pro} has accepted your request. No further action needed — just be available on {appt.date} at {appt.time}. Payment is only charged once you approve the completed work.
+            </Text>
+          </View>
+
+          <View style={jdStyles.waitingRow}>
+            <Ionicons name="time-outline" size={14} color="#FFAA00" />
+            <Text style={[jdStyles.waitingText, { fontFamily: "Inter_400Regular" }]}>
+              Waiting for {appt.pro} to arrive and mark the job complete
+            </Text>
+          </View>
 
           <TouchableOpacity
             style={jdStyles.cancelApptBtn}
@@ -1044,6 +1055,10 @@ export default function AppointmentsScreen() {
                       </View>
                       <Text style={[styles.subText, { fontFamily: "Inter_400Regular" }]}>{appt.date} · {appt.time}</Text>
                       <Text style={[styles.proText, { fontFamily: "Inter_400Regular" }]}>with {appt.pro}</Text>
+                      <View style={styles.confirmedPill}>
+                        <Ionicons name="checkmark-circle" size={11} color="#34FF7A" />
+                        <Text style={[styles.confirmedPillText, { fontFamily: "Inter_600SemiBold" }]}>Confirmed</Text>
+                      </View>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color="#34FF7A" />
                   </TouchableOpacity>
@@ -1184,6 +1199,14 @@ const styles = StyleSheet.create({
   priceText: { fontSize: 15, color: "#FFFFFF" },
   subText: { fontSize: 12, color: "#888", marginBottom: 3 },
   proText: { fontSize: 12, color: "#888" },
+  confirmedPill: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    alignSelf: "flex-start", marginTop: 6,
+    backgroundColor: "#0d2e18", borderRadius: 20,
+    paddingHorizontal: 8, paddingVertical: 3,
+    borderWidth: 1, borderColor: "#1a4a2a",
+  },
+  confirmedPillText: { fontSize: 11, color: "#34FF7A" },
 });
 
 // ── Recurring series card styles ─────────────────────────────────────────────
@@ -1413,12 +1436,21 @@ const jdStyles = StyleSheet.create({
   },
   addressText: { flex: 1, fontSize: 14, color: "#FFFFFF" },
   addressHint: { fontSize: 11, color: "#888", textAlign: "center" },
-  payBtn: {
-    backgroundColor: "#34FF7A", borderRadius: 20, paddingVertical: 16,
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
-    shadowColor: "#34FF7A", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 10, elevation: 4,
+  confirmedBanner: {
+    backgroundColor: "#0d2e18", borderRadius: 18,
+    borderWidth: 1, borderColor: "#1a4a2a",
+    padding: 16, gap: 8,
   },
-  payBtnText: { fontSize: 16, color: "#000" },
+  confirmedBannerTop: { flexDirection: "row", alignItems: "center", gap: 8 },
+  confirmedBannerTitle: { fontSize: 15, color: "#34FF7A" },
+  confirmedBannerSub: { fontSize: 13, color: "#BBBBBB", lineHeight: 19 },
+  waitingRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#1C1200", borderRadius: 14,
+    paddingHorizontal: 14, paddingVertical: 10,
+    borderWidth: 1, borderColor: "#FFAA0022",
+  },
+  waitingText: { fontSize: 13, color: "#BBBBBB", flex: 1, lineHeight: 18 },
   cancelApptBtn: {
     borderWidth: 1, borderColor: "#FF4444", borderRadius: 20, paddingVertical: 14,
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
