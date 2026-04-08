@@ -15,8 +15,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
+import { useAuth } from "@/contexts/auth";
 
 type PayState = "availability" | "details" | "review" | "processing" | "success";
+
+type PayKey = "applepay" | "debit" | "venmo" | "paypal" | "cashapp" | "inperson";
+
+const PROFILE_TO_PAY_KEY: Record<string, PayKey> = {
+  "Apple Pay":  "applepay",
+  "Venmo":      "venmo",
+  "PayPal":     "paypal",
+  "Debit Card": "debit",
+  "Cash App":   "cashapp",
+  "In Person":  "inperson",
+};
 
 const TIP_OPTIONS = [
   { label: "10%", value: 0.1 },
@@ -92,6 +104,8 @@ export default function PayScreen() {
   const proColor = params.proColor || "#34FF7A";
 
   const { availability, bookedSlots, addBookedSlot } = useLandscaperProfile();
+  const { preferredPayment } = useAuth();
+  const defaultPayKey: PayKey = (preferredPayment && PROFILE_TO_PAY_KEY[preferredPayment]) || "applepay";
 
   const rollingDates = useMemo(() => {
     const today = new Date();
@@ -167,7 +181,7 @@ export default function PayScreen() {
   const [serviceAddress, setServiceAddress] = useState("");
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<PhotoIcon[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<"applepay" | "debit" | "venmo" | "paypal" | "cashapp" | "inperson">("applepay");
+  const [paymentMethod, setPaymentMethod] = useState<PayKey>(defaultPayKey);
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvv, setCardCvv] = useState("");
@@ -1098,6 +1112,14 @@ export default function PayScreen() {
         <Text style={[styles.payMethodLabel, { fontFamily: "Inter_600SemiBold" }]}>
           Payment Method
         </Text>
+        {preferredPayment && PROFILE_TO_PAY_KEY[preferredPayment] && (
+          <View style={styles.preferredPayBanner}>
+            <Ionicons name="star" size={14} color="#34FF7A" />
+            <Text style={[styles.preferredPayBannerText, { fontFamily: "Inter_500Medium" }]}>
+              {preferredPayment} auto-selected from your saved preference
+            </Text>
+          </View>
+        )}
         <View style={styles.payMethodGrid}>
           {(
             [
@@ -1866,6 +1888,23 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   customTipApplyText: { fontSize: 13, color: "#000" },
+  preferredPayBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#0d2e18",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#1a4a2a",
+  },
+  preferredPayBannerText: {
+    fontSize: 13,
+    color: "#34FF7A",
+    flex: 1,
+  },
 });
 
 const inPersonStyles = StyleSheet.create({

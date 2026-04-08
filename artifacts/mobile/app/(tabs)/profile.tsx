@@ -30,7 +30,7 @@ const PAYMENT_METHODS = [
   { label: "PayPal",     value: "PayPal",      ionIcon: "card-outline" as const,          shortLabel: "PayPal" },
   { label: "Debit Card", value: "Debit Card",  ionIcon: "card" as const,                  shortLabel: "Debit" },
   { label: "Cash App",   value: "Cash App",    ionIcon: "phone-portrait-outline" as const, shortLabel: "Cash App" },
-  { label: "In Person",  value: "In Person",   ionIcon: "hand-left-outline" as const,     shortLabel: "In Person" },
+  { label: "In Person",  value: "In Person",   ionIcon: "handshake-outline" as const,     shortLabel: "In Person" },
 ];
 
 const LANDSCAPER_PAY_OPTIONS = [
@@ -40,7 +40,7 @@ const LANDSCAPER_PAY_OPTIONS = [
   { value: "Cash App", icon: "phone-portrait-outline" as const },
   { value: "Zelle",    icon: "swap-horizontal-outline" as const },
   { value: "Check",    icon: "document-outline" as const },
-  { value: "In Person",icon: "hand-left-outline" as const },
+  { value: "In Person",icon: "handshake-outline" as const },
 ];
 
 type PayStatus = "paid" | "pending" | "refunded" | "failed";
@@ -154,6 +154,7 @@ function LandscaperProfile({
   const [privPrices, setPrivPrices] = useState(false);
   const [privReviews, setPrivReviews] = useState(true);
   const [acceptedPayments, setAcceptedPayments] = useState<string[]>(["Cash", "Venmo", "In Person"]);
+  const [primaryPayout, setPrimaryPayout] = useState<string | null>("Venmo");
 
   // Editable profile fields
   const [editVisible, setEditVisible] = useState(false);
@@ -481,6 +482,54 @@ function LandscaperProfile({
                 <Text style={[{ fontSize: 11, color: "#BBBBBB", marginTop: 12 }, { fontFamily: "Inter_400Regular" }]}>
                   Customers will see: {acceptedPayments.join(" · ")}
                 </Text>
+              )}
+              <View style={custPayStyles.inPersonNote}>
+                <Ionicons name="handshake-outline" size={14} color="#34FF7A" />
+                <Text style={[custPayStyles.inPersonNoteText, { fontFamily: "Inter_400Regular" }]}>
+                  <Text style={{ fontFamily: "Inter_600SemiBold", color: "#34FF7A" }}>In Person</Text>
+                  {" "}— customers pay you directly on site. No escrow or platform processing required.
+                </Text>
+              </View>
+            </View>
+
+            {/* Primary Payout Method */}
+            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>PRIMARY PAYOUT METHOD</Text>
+            <View style={cutStyles.card}>
+              <Text style={[{ fontSize: 12, color: "#999", marginBottom: 12 }, { fontFamily: "Inter_400Regular" }]}>
+                Your main preferred way to receive payment from customers
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {(acceptedPayments.length > 0 ? acceptedPayments : LANDSCAPER_PAY_OPTIONS.map((o) => o.value)).map((val) => {
+                  const opt = LANDSCAPER_PAY_OPTIONS.find((o) => o.value === val);
+                  const isPrimary = primaryPayout === val;
+                  return (
+                    <TouchableOpacity
+                      key={val}
+                      style={[
+                        payPrefStyles.chip,
+                        isPrimary && payPrefStyles.chipPrimary,
+                      ]}
+                      onPress={() => { Haptics.selectionAsync(); setPrimaryPayout(isPrimary ? null : val); }}
+                      activeOpacity={0.75}
+                    >
+                      {opt && <Ionicons name={opt.icon} size={14} color={isPrimary ? "#000" : "#888"} />}
+                      <Text style={[payPrefStyles.chipText, { fontFamily: "Inter_600SemiBold" }, isPrimary && payPrefStyles.chipTextOn]}>
+                        {val}
+                      </Text>
+                      {isPrimary && (
+                        <Text style={[{ fontSize: 10, color: "#000", fontFamily: "Inter_700Bold" }]}>★</Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              {primaryPayout && (
+                <View style={lsPayStyles.primaryActiveBanner}>
+                  <Ionicons name="checkmark-circle" size={14} color="#34FF7A" />
+                  <Text style={[{ fontSize: 12, color: "#34FF7A" }, { fontFamily: "Inter_500Medium" }]}>
+                    {primaryPayout} is your primary payout — customers will be prompted to use this first
+                  </Text>
+                </View>
               )}
             </View>
 
@@ -940,8 +989,8 @@ function PriceMatrixEditor({
 // ── Customer Profile ──────────────────────────────────────────────────────────
 
 function CustomerProfile({ logout }: { logout: () => void }) {
-  const { setAvatarUri } = useAuth();
-  const [selectedPayment, setSelectedPayment] = useState("");
+  const { setAvatarUri, preferredPayment, setPreferredPayment } = useAuth();
+  const [selectedPayment, setSelectedPayment] = useState(preferredPayment ?? "");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
   const [error, setError] = useState(false);
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
@@ -974,6 +1023,7 @@ function CustomerProfile({ logout }: { logout: () => void }) {
     setError(false);
     setPaymentState("loading");
     setTimeout(() => {
+      setPreferredPayment(selectedPayment);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setPaymentState("success");
       showSuccess();
@@ -1014,19 +1064,53 @@ function CustomerProfile({ logout }: { logout: () => void }) {
         </View>
       </View>
 
+      {preferredPayment && (
+        <View style={custPayStyles.preferredBanner}>
+          <Ionicons name="checkmark-circle" size={16} color="#34FF7A" />
+          <View style={{ flex: 1 }}>
+            <Text style={[custPayStyles.preferredBannerTitle, { fontFamily: "Inter_600SemiBold" }]}>
+              Preferred Payment Active
+            </Text>
+            <Text style={[custPayStyles.preferredBannerSub, { fontFamily: "Inter_400Regular" }]}>
+              {preferredPayment} · Auto-selected at checkout
+            </Text>
+          </View>
+        </View>
+      )}
+
       <View style={[styles.paymentCard, error && styles.paymentCardError]}>
-        <Text style={[styles.paymentLabel, { fontFamily: "Inter_500Medium" }]}>Choose Payment Method</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <Text style={[styles.paymentLabel, { fontFamily: "Inter_500Medium", marginBottom: 0 }]}>Preferred Payment Method</Text>
+          {preferredPayment && (
+            <View style={custPayStyles.activePill}>
+              <Text style={[custPayStyles.activePillText, { fontFamily: "Inter_700Bold" }]}>ACTIVE</Text>
+            </View>
+          )}
+        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.paymentTilesRow} style={{ marginHorizontal: -6 }}>
           {PAYMENT_METHODS.map((method) => {
             const isSelected = selectedPayment === method.value;
+            const isPreferred = preferredPayment === method.value;
             return (
               <TouchableOpacity key={method.value} style={[styles.paymentTile, isSelected && styles.paymentTileActive]} onPress={() => { setSelectedPayment(method.value); setError(false); Haptics.selectionAsync(); }} activeOpacity={0.75}>
                 <Ionicons name={method.ionIcon} size={28} color={isSelected ? "#34FF7A" : "#888"} />
                 <Text style={[styles.paymentTileLabel, { fontFamily: isSelected ? "Inter_600SemiBold" : "Inter_400Regular" }, isSelected && styles.paymentTileLabelActive]}>{method.shortLabel}</Text>
+                {isPreferred && (
+                  <View style={custPayStyles.preferredPip}>
+                    <Text style={[custPayStyles.preferredPipText, { fontFamily: "Inter_700Bold" }]}>★</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
         </ScrollView>
+        <View style={custPayStyles.inPersonNote}>
+          <Ionicons name="handshake-outline" size={14} color="#34FF7A" />
+          <Text style={[custPayStyles.inPersonNoteText, { fontFamily: "Inter_400Regular" }]}>
+            <Text style={{ fontFamily: "Inter_600SemiBold", color: "#34FF7A" }}>In Person</Text>
+            {" "}— pay your landscaper directly on the day of service. No funds held online.
+          </Text>
+        </View>
         {error && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
             <Ionicons name="warning-outline" size={15} color="#f87171" />
@@ -1617,6 +1701,90 @@ const payPrefStyles = StyleSheet.create({
     backgroundColor: "#34FF7A",
     borderColor: "#34FF7A",
   },
+  chipPrimary: {
+    backgroundColor: "#34FF7A",
+    borderColor: "#34FF7A",
+  },
   chipText: { fontSize: 13, color: "#BBBBBB" },
   chipTextOn: { color: "#000" },
+});
+
+const lsPayStyles = StyleSheet.create({
+  primaryActiveBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#0d2e18",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 14,
+  },
+});
+
+const custPayStyles = StyleSheet.create({
+  preferredBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#0d2e18",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#1a4a2a",
+    padding: 16,
+    marginBottom: 12,
+  },
+  preferredBannerTitle: {
+    fontSize: 14,
+    color: "#34FF7A",
+    marginBottom: 2,
+  },
+  preferredBannerSub: {
+    fontSize: 12,
+    color: "#BBBBBB",
+  },
+  activePill: {
+    backgroundColor: "#34FF7A",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  activePillText: {
+    fontSize: 10,
+    color: "#000",
+    letterSpacing: 0.8,
+  },
+  preferredPip: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#34FF7A",
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  preferredPipText: {
+    fontSize: 9,
+    color: "#000",
+  },
+  inPersonNote: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: "#0d2e18",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#1a3a22",
+  },
+  inPersonNoteText: {
+    fontSize: 12,
+    color: "#BBBBBB",
+    flex: 1,
+    lineHeight: 18,
+  },
 });
