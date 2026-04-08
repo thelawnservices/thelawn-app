@@ -20,6 +20,28 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 import { useRecurring, RecurringInstance } from "@/contexts/recurring";
+import { useNotifications } from "@/contexts/notifications";
+
+function parseApptDateTime(date: string, time: string): Date | null {
+  let full = date.trim();
+  if (!full.match(/\d{4}/)) full = `${full}, ${new Date().getFullYear()}`;
+  const d = new Date(`${full} ${time}`);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function canCancelAppt(date: string, time: string): { ok: boolean; reason: string } {
+  const apptTime = parseApptDateTime(date, time);
+  if (!apptTime) return { ok: true, reason: "" };
+  const now = Date.now();
+  const apptMs = apptTime.getTime();
+  if (now >= apptMs) {
+    return { ok: false, reason: "This job has already started. Once a job is in progress it cannot be cancelled — it must be completed." };
+  }
+  if (now >= apptMs - 2 * 3600 * 1000) {
+    return { ok: false, reason: "Appointments can only be cancelled up to 2 hours before the service begins. This appointment is too close to cancel." };
+  }
+  return { ok: true, reason: "" };
+}
 
 // ── Static demo data ────────────────────────────────────────────────────────
 const SINGLE_UPCOMING = [
@@ -46,10 +68,12 @@ function JobDetailsModal({
   appt,
   onClose,
   onCancel,
+  addNotification,
 }: {
   appt: CustomerAppt | null;
   onClose: () => void;
   onCancel: (id: string) => void;
+  addNotification: (n: { icon: string; title: string; sub: string }) => void;
 }) {
   if (!appt) return null;
 
@@ -188,12 +212,29 @@ function JobDetailsModal({
             activeOpacity={0.8}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const { ok, reason } = canCancelAppt(appt.date, appt.time);
+              if (!ok) {
+                Alert.alert("Cannot Cancel", reason);
+                return;
+              }
               Alert.alert(
                 "Cancel Appointment?",
-                `Cancel ${appt.service} with ${appt.pro} on ${appt.date}? This action cannot be undone.`,
+                `Cancel ${appt.service} with ${appt.pro} on ${appt.date}?\n\nYour payment will be fully refunded and released immediately. This action cannot be undone.`,
                 [
                   { text: "Keep Appointment", style: "cancel" },
-                  { text: "Yes, Cancel", style: "destructive", onPress: () => { onCancel(appt.id); onClose(); } },
+                  {
+                    text: "Yes, Cancel & Refund",
+                    style: "destructive",
+                    onPress: () => {
+                      onCancel(appt.id);
+                      addNotification({
+                        icon: "close-circle",
+                        title: "Appointment Cancelled",
+                        sub: `Your ${appt.service} with ${appt.pro} on ${appt.date} was cancelled by you. A full refund has been issued instantly to your payment method.`,
+                      });
+                      onClose();
+                    },
+                  },
                 ]
               );
             }}
@@ -703,6 +744,7 @@ export default function AppointmentsScreen() {
 
   const { acceptedJobs, cancelledJobs, cancelAccepted } = useJobs();
   const { instances, completionPhotos, markedDoneAt, markDone, releasePayment, disputeInstance } = useRecurring();
+  const { addNotification } = useNotifications();
 
   // Landscaper: which instance is awaiting photo modal
   const [photoModalInstId, setPhotoModalInstId] = useState<string | null>(null);
@@ -719,9 +761,14 @@ export default function AppointmentsScreen() {
 
   function handleCancelLsAppt(appt: LsAppt) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const { ok, reason } = canCancelAppt(appt.date, appt.time);
+    if (!ok) {
+      Alert.alert("Cannot Cancel", reason);
+      return;
+    }
     Alert.alert(
       "Cancel Appointment?",
-      `Cancel ${appt.service} with ${appt.customer} on ${appt.date}?`,
+      `Cancel ${appt.service} with ${appt.customer} on ${appt.date}?\n\nThe customer will be notified immediately and their payment will be refunded in full.`,
       [
         { text: "Keep", style: "cancel" },
         {
@@ -730,6 +777,11 @@ export default function AppointmentsScreen() {
           onPress: () => {
             setCancelledLsAppts((prev) => [appt, ...prev]);
             setCancelledIds((prev) => [...prev, appt.id]);
+            addNotification({
+              icon: "close-circle",
+              title: "Appointment Cancelled",
+              sub: `${appt.customer}'s ${appt.service} on ${appt.date} was cancelled by you. Their payment has been refunded in full immediately.`,
+            });
           },
         },
       ]
@@ -809,10 +861,30 @@ export default function AppointmentsScreen() {
                     activeOpacity={0.8}
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      Alert.alert("Cancel Appointment?", `Cancel ${job.service} with ${job.customer} on ${job.date}?`, [
-                        { text: "Keep", style: "cancel" },
-                        { text: "Cancel Job", style: "destructive", onPress: () => cancelAccepted(job.id) },
-                      ]);
+                      const { ok, reason } = canCancelAppt(job.date, job.time);
+                      if (!ok) {
+                        Alert.alert("Cannot Cancel", reason);
+                        return;
+                      }
+                      Alert.alert(
+                        "Cancel Appointment?",
+                        `Cancel ${job.service} with ${job.customer} on ${job.date}?\n\nThe customer will be notified and their payment refunded in full immediately.`,
+                        [
+                          { text: "Keep", style: "cancel" },
+                          {
+                            text: "Cancel Job",
+                            style: "destructive",
+                            onPress: () => {
+                              cancelAccepted(job.id);
+                              addNotification({
+                                icon: "close-circle",
+                                title: "Appointment Cancelled",
+                                sub: `${job.customer}'s ${job.service} on ${job.date} was cancelled by you. Their payment has been refunded in full immediately.`,
+                              });
+                            },
+                          },
+                        ]
+                      );
                     }}
                   >
                     <Text style={[styles.cancelBtnText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
@@ -1080,6 +1152,7 @@ export default function AppointmentsScreen() {
         appt={selectedAppt}
         onClose={() => setSelectedAppt(null)}
         onCancel={(id) => setCustomerCancelledIds((prev) => [...prev, id])}
+        addNotification={addNotification}
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
