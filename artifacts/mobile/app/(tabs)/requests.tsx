@@ -141,24 +141,40 @@ function NewRequestModal({
 }: {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (service: string, desc: string, budget: string) => void;
+  onSubmit: (service: string, desc: string, budget: string, address: string, zip: string) => void;
 }) {
   const [service, setService] = useState("");
   const [desc, setDesc] = useState("");
   const [budget, setBudget] = useState("");
+  const [address, setAddress] = useState("");
+  const [zip, setZip] = useState("");
 
   const SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf"];
 
   function handleSubmit() {
-    if (!service || !desc.trim()) {
-      Alert.alert("Required Fields", "Please select a service and add a description.");
+    if (!service) {
+      Alert.alert("Service Required", "Please select a service type.");
+      return;
+    }
+    if (!desc.trim()) {
+      Alert.alert("Description Required", "Please describe the job so landscapers know what to expect.");
+      return;
+    }
+    if (!address.trim()) {
+      Alert.alert("Address Required", "Please enter the service address so a landscaper can find you.");
+      return;
+    }
+    if (!zip.trim() || zip.trim().length < 5) {
+      Alert.alert("Zip Code Required", "Please enter a valid 5-digit zip code.");
       return;
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    onSubmit(service, desc, budget);
+    onSubmit(service, desc, budget, address.trim(), zip.trim());
     setService("");
     setDesc("");
     setBudget("");
+    setAddress("");
+    setZip("");
     onClose();
   }
 
@@ -167,50 +183,86 @@ function NewRequestModal({
       <Pressable style={modalStyles.overlay} onPress={onClose}>
         <Pressable style={modalStyles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={modalStyles.handleBar} />
-          <Text style={[modalStyles.title, { fontFamily: "Inter_700Bold" }]}>New Service Request</Text>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <Text style={[modalStyles.title, { fontFamily: "Inter_700Bold" }]}>New Service Request</Text>
 
-          <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>Service Type</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {SERVICES.map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  style={[modalStyles.chip, service === s && modalStyles.chipActive]}
-                  onPress={() => { Haptics.selectionAsync(); setService(s); }}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[modalStyles.chipText, { fontFamily: "Inter_500Medium" }, service === s && modalStyles.chipTextActive]}>
-                    {s}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>Service Type</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {SERVICES.map((s) => (
+                  <TouchableOpacity
+                    key={s}
+                    style={[modalStyles.chip, service === s && modalStyles.chipActive]}
+                    onPress={() => { Haptics.selectionAsync(); setService(s); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[modalStyles.chipText, { fontFamily: "Inter_500Medium" }, service === s && modalStyles.chipTextActive]}>
+                      {s}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>Description</Text>
+            <TextInput
+              style={[modalStyles.textArea, { fontFamily: "Inter_400Regular" }]}
+              placeholder="Describe the job — yard size, specific needs, gate codes, etc."
+              placeholderTextColor="#666"
+              multiline
+              numberOfLines={4}
+              value={desc}
+              onChangeText={setDesc}
+            />
+
+            <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>
+              Service Address <Text style={modalStyles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={[modalStyles.input, { fontFamily: "Inter_400Regular" }]}
+              placeholder="Street address"
+              placeholderTextColor="#666"
+              value={address}
+              onChangeText={setAddress}
+              autoCapitalize="words"
+              returnKeyType="next"
+            />
+
+            <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }, { marginTop: 10 }]}>
+              Zip Code <Text style={modalStyles.required}>*</Text>
+            </Text>
+            <TextInput
+              style={[modalStyles.input, { fontFamily: "Inter_400Regular" }]}
+              placeholder="e.g. 34222"
+              placeholderTextColor="#666"
+              value={zip}
+              onChangeText={(t) => setZip(t.replace(/\D/g, "").slice(0, 5))}
+              keyboardType="number-pad"
+              maxLength={5}
+              returnKeyType="done"
+            />
+
+            <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }, { marginTop: 10 }]}>Budget Range (optional)</Text>
+            <TextInput
+              style={[modalStyles.input, { fontFamily: "Inter_400Regular" }]}
+              placeholder="e.g. $40 – $60"
+              placeholderTextColor="#666"
+              value={budget}
+              onChangeText={setBudget}
+            />
+
+            <View style={modalStyles.requiredNote}>
+              <Ionicons name="information-circle-outline" size={13} color="#888" />
+              <Text style={[modalStyles.requiredNoteText, { fontFamily: "Inter_400Regular" }]}>
+                Address and zip code are required so landscapers can locate your property.
+              </Text>
             </View>
+
+            <TouchableOpacity style={modalStyles.submitBtn} onPress={handleSubmit} activeOpacity={0.85}>
+              <Ionicons name="send-outline" size={16} color="#000" />
+              <Text style={[modalStyles.submitText, { fontFamily: "Inter_600SemiBold" }]}>Post Request</Text>
+            </TouchableOpacity>
           </ScrollView>
-
-          <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>Description</Text>
-          <TextInput
-            style={[modalStyles.textArea, { fontFamily: "Inter_400Regular" }]}
-            placeholder="Describe the job — yard size, specific needs, gate codes, etc."
-            placeholderTextColor="#666"
-            multiline
-            numberOfLines={4}
-            value={desc}
-            onChangeText={setDesc}
-          />
-
-          <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>Budget Range (optional)</Text>
-          <TextInput
-            style={[modalStyles.input, { fontFamily: "Inter_400Regular" }]}
-            placeholder="e.g. $40 – $60"
-            placeholderTextColor="#666"
-            value={budget}
-            onChangeText={setBudget}
-          />
-
-          <TouchableOpacity style={modalStyles.submitBtn} onPress={handleSubmit} activeOpacity={0.85}>
-            <Ionicons name="send-outline" size={16} color="#000" />
-            <Text style={[modalStyles.submitText, { fontFamily: "Inter_600SemiBold" }]}>Post Request</Text>
-          </TouchableOpacity>
         </Pressable>
       </Pressable>
     </Modal>
@@ -245,11 +297,13 @@ export default function RequestsScreen() {
     );
   }
 
-  function handlePostRequest(service: string, desc: string, budget: string) {
+  function handlePostRequest(service: string, desc: string, budget: string, address: string, zip: string) {
     const newReq = {
       id: `new-${Date.now()}`,
       service,
       description: desc,
+      address,
+      zip,
       date: "TBD",
       time: "TBD",
       budget: budget || "Open to quotes",
@@ -590,6 +644,7 @@ const modalStyles = StyleSheet.create({
     paddingBottom: 48,
     borderTopWidth: 1,
     borderColor: "#222222",
+    maxHeight: "92%",
   },
   handleBar: {
     width: 40,
@@ -634,6 +689,18 @@ const modalStyles = StyleSheet.create({
     color: "#FFFFFF",
     marginBottom: 24,
   },
+  required: { color: "#FF4444", fontSize: 13 },
+  requiredNote: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    backgroundColor: "#111111",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    marginTop: 4,
+  },
+  requiredNoteText: { fontSize: 12, color: "#888", flex: 1, lineHeight: 17 },
   submitBtn: {
     backgroundColor: "#34FF7A",
     borderRadius: 28,
@@ -642,6 +709,7 @@ const modalStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
+    marginTop: 4,
   },
   submitText: { fontSize: 16, color: "#000" },
 });
