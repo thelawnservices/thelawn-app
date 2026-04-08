@@ -276,7 +276,6 @@ function ProfileDropdownModal({
   onAppointments,
   onSettings,
   onShare,
-  onPaymentMethod,
   onPaymentHistory,
   onVouchers,
   onHelp,
@@ -290,7 +289,6 @@ function ProfileDropdownModal({
   onAppointments: () => void;
   onSettings: () => void;
   onShare: () => void;
-  onPaymentMethod: () => void;
   onPaymentHistory: () => void;
   onVouchers: () => void;
   onHelp: () => void;
@@ -323,10 +321,6 @@ function ProfileDropdownModal({
           <TouchableOpacity style={dropStyles.item} onPress={onShare} activeOpacity={0.7}>
             <Ionicons name="share-social-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Share with friends</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={dropStyles.item} onPress={onPaymentMethod} activeOpacity={0.7}>
-            <Ionicons name="card-outline" size={20} color="#CCCCCC" />
-            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Payment Method</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onPaymentHistory} activeOpacity={0.7}>
             <Ionicons name="receipt-outline" size={20} color="#34FF7A" />
@@ -985,7 +979,6 @@ export default function HomeScreen() {
             url: "https://thelawn.app",
           }).catch(() => {});
         }}
-        onPaymentMethod={() => { setDropdownVisible(false); setPaymentVisible(true); }}
         onPaymentHistory={() => { setDropdownVisible(false); setPaymentHistoryVisible(true); }}
         onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
@@ -1567,6 +1560,34 @@ function LandscaperProfileViewModal({
               ))}
             </View>
 
+            {/* Customer Reviews */}
+            <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>CUSTOMER REVIEWS</Text>
+            {[
+              { name: "Sarah M.", initials: "SM", color: "#166D42", stars: 5, text: "Incredible job — super clean edges and left no mess behind. Will be booking regularly!", date: "2 days ago" },
+              { name: "Marcus T.", initials: "MT", color: "#2C5282", stars: 5, text: "Reliable, on time, and the yard looks fantastic every time. Highly recommend.", date: "1 week ago" },
+              { name: "Alex R.", initials: "AR", color: "#6B21A8", stars: 5, text: "Professional and thorough. Left the property spotless. Will book again.", date: "2 weeks ago" },
+              { name: "Priya N.", initials: "PN", color: "#B45309", stars: 4, text: "Great quality work. Only minor delay on arrival but the results were worth it.", date: "3 weeks ago" },
+            ].map((rv, i) => (
+              <View key={i} style={fsStyles.reviewCard}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <View style={[fsStyles.reviewAvatar, { backgroundColor: rv.color }]}>
+                    <Text style={[fsStyles.reviewAvatarText, { fontFamily: "Inter_700Bold" }]}>{rv.initials}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    {/* Plain Text — not tappable, customers cannot navigate to other customer profiles */}
+                    <Text style={[fsStyles.reviewAuthor, { fontFamily: "Inter_600SemiBold" }]}>{rv.name}</Text>
+                    <View style={{ flexDirection: "row", gap: 2, marginTop: 2 }}>
+                      {[1,2,3,4,5].map((s) => (
+                        <Ionicons key={s} name="star" size={11} color={s <= rv.stars ? "#f59e0b" : "#333"} />
+                      ))}
+                    </View>
+                  </View>
+                  <Text style={[fsStyles.reviewDate, { fontFamily: "Inter_400Regular" }]}>{rv.date}</Text>
+                </View>
+                <Text style={[fsStyles.reviewText, { fontFamily: "Inter_400Regular" }]}>{rv.text}</Text>
+              </View>
+            ))}
+
             {/* Availability (shown once landscaper has saved it) */}
             {availability.saved && (
               <>
@@ -1623,6 +1644,25 @@ function LandscaperProfileViewModal({
 
 const fsStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A" },
+  reviewCard: {
+    backgroundColor: "#111",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#222",
+    padding: 14,
+    marginBottom: 10,
+  },
+  reviewAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reviewAvatarText: { fontSize: 14, color: "#fff" },
+  reviewAuthor: { fontSize: 13, color: "#FFFFFF" },
+  reviewDate: { fontSize: 11, color: "#666" },
+  reviewText: { fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 20 },
   backBtn: {
     position: "absolute",
     left: 16,

@@ -588,6 +588,34 @@ function SearchProProfileModal({
               ))}
             </View>
 
+            {/* Customer Reviews */}
+            <Text style={[proStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>CUSTOMER REVIEWS</Text>
+            {[
+              { name: "Sarah M.", initials: "SM", color: "#166D42", stars: 5, text: "Incredible job — super clean edges and left no mess behind. Will be booking regularly!", date: "2 days ago" },
+              { name: "Marcus T.", initials: "MT", color: "#2C5282", stars: 5, text: "Reliable, on time, and the yard looks fantastic every time. Highly recommend.", date: "1 week ago" },
+              { name: "Alex R.", initials: "AR", color: "#6B21A8", stars: 5, text: "Professional and thorough. Left the property spotless. Will book again.", date: "2 weeks ago" },
+              { name: "Priya N.", initials: "PN", color: "#B45309", stars: 4, text: "Great quality work. Only minor delay on arrival but the results were worth it.", date: "3 weeks ago" },
+            ].map((rv, i) => (
+              <View key={i} style={proStyles.reviewCard}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <View style={[proStyles.reviewAvatar, { backgroundColor: rv.color }]}>
+                    <Text style={[proStyles.reviewAvatarText, { fontFamily: "Inter_700Bold" }]}>{rv.initials}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    {/* Plain Text — not tappable, customers cannot view other customer profiles */}
+                    <Text style={[proStyles.reviewAuthor, { fontFamily: "Inter_600SemiBold" }]}>{rv.name}</Text>
+                    <View style={{ flexDirection: "row", gap: 2, marginTop: 2 }}>
+                      {[1,2,3,4,5].map((s) => (
+                        <Ionicons key={s} name="star" size={11} color={s <= rv.stars ? "#f59e0b" : "#333"} />
+                      ))}
+                    </View>
+                  </View>
+                  <Text style={[proStyles.reviewDate, { fontFamily: "Inter_400Regular" }]}>{rv.date}</Text>
+                </View>
+                <Text style={[proStyles.reviewText, { fontFamily: "Inter_400Regular" }]}>{rv.text}</Text>
+              </View>
+            ))}
+
             {/* Availability indicator */}
             {availability.saved && (
               <>
@@ -721,6 +749,25 @@ const proStyles = StyleSheet.create({
     borderColor: "#34FF7A33",
   },
   serviceTagText: { fontSize: 13, color: "#34FF7A" },
+  reviewCard: {
+    backgroundColor: "#111",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#222",
+    padding: 14,
+    marginBottom: 10,
+  },
+  reviewAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reviewAvatarText: { fontSize: 14, color: "#fff" },
+  reviewAuthor: { fontSize: 13, color: "#FFFFFF" },
+  reviewDate: { fontSize: 11, color: "#666" },
+  reviewText: { fontSize: 13, color: "rgba(255,255,255,0.75)", lineHeight: 20 },
   photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 4 },
   photoTile: {
     width: "30.5%",
