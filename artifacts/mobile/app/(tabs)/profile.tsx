@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -108,6 +108,7 @@ function LandscaperProfile({
   toggle: () => void;
   logout: () => void;
 }) {
+  const { setAvatarUri } = useAuth();
   const [activeTab, setActiveTab] = useState<LandscaperTab>("info");
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
   const [heroBackground, setHeroBackground] = useState<string | null>(null);
@@ -212,7 +213,10 @@ function LandscaperProfile({
       aspect: [1, 1],
       quality: 0.85,
     });
-    if (!result.canceled) setAvatarImage(result.assets[0].uri);
+    if (!result.canceled) {
+      setAvatarImage(result.assets[0].uri);
+      setAvatarUri(result.assets[0].uri);
+    }
   }
 
   async function pickHeroBackground() {
@@ -783,6 +787,7 @@ function PriceMatrixEditor({
 // ── Customer Profile ──────────────────────────────────────────────────────────
 
 function CustomerProfile({ logout }: { logout: () => void }) {
+  const { setAvatarUri } = useAuth();
   const [selectedPayment, setSelectedPayment] = useState("");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
   const [error, setError] = useState(false);
@@ -798,7 +803,10 @@ function CustomerProfile({ logout }: { logout: () => void }) {
       aspect: [1, 1],
       quality: 0.85,
     });
-    if (!result.canceled) setAvatarImage(result.assets[0].uri);
+    if (!result.canceled) {
+      setAvatarImage(result.assets[0].uri);
+      setAvatarUri(result.assets[0].uri);
+    }
   }
 
   const showSuccess = () => {

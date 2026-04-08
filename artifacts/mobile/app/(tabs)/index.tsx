@@ -198,35 +198,24 @@ function OfflineBanner({ visible }: { visible: boolean }) {
 function AppHeader({
   topPadding,
   onBellPress,
-  isOffline,
-  onToggleOffline,
   notifEnabled,
   missedCount,
   onProfilePress,
+  avatarUri,
+  userInitial,
 }: {
   topPadding: number;
   onBellPress: () => void;
-  isOffline: boolean;
-  onToggleOffline: () => void;
   notifEnabled: boolean;
   missedCount: number;
   onProfilePress: () => void;
+  avatarUri: string | null;
+  userInitial: string;
 }) {
   return (
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
       <View style={styles.headerRow}>
-        <View style={{ flex: 1 }}>
-          <TouchableOpacity
-            style={[styles.onlinePill, isOffline && styles.offlinePill]}
-            onPress={onToggleOffline}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.onlineDot, isOffline && styles.offlineDot]} />
-            <Text style={[styles.onlinePillText, { fontFamily: "Inter_500Medium" }, isOffline && styles.offlinePillText]}>
-              {isOffline ? "Offline" : "Online"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <View style={{ flex: 1 }} />
         <Image
           source={require("../../assets/images/logo-transparent.png")}
           style={styles.logoImg}
@@ -248,7 +237,13 @@ function AppHeader({
             )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.avatarBtn} onPress={onProfilePress} activeOpacity={0.8}>
-            <Ionicons name="person" size={16} color="#000" />
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarBtnImage} />
+            ) : (
+              <Text style={[styles.avatarBtnInitial, { fontFamily: "Inter_700Bold" }]}>
+                {userInitial}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
@@ -867,7 +862,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
-  const { logout, role } = useAuth();
+  const { logout, role, avatarUri, userName } = useAuth();
+  const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "G" : "Z");
   const { acceptJob } = useJobs();
   const [acceptedOnHome, setAcceptedOnHome] = useState<string[]>([]);
   const [prosLoaded, setProsLoaded] = useState(false);
@@ -890,7 +886,6 @@ export default function HomeScreen() {
   ];
   const [notifVisible, setNotifVisible] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(true);
-  const [isOffline, setIsOffline] = useState(false);
   const [pushModalVisible, setPushModalVisible] = useState(false);
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -936,10 +931,6 @@ export default function HomeScreen() {
   }, []);
 
   function handleBooking(action: () => void) {
-    if (isOffline) {
-      // silently blocked — banner is already visible
-      return;
-    }
     action();
   }
 
@@ -948,11 +939,11 @@ export default function HomeScreen() {
       <AppHeader
         topPadding={topPadding}
         onBellPress={() => { setNotifVisible(true); setMissedCount(0); }}
-        isOffline={isOffline}
-        onToggleOffline={() => setIsOffline((v) => !v)}
         notifEnabled={notifEnabled}
         missedCount={missedCount}
         onProfilePress={() => setDropdownVisible(true)}
+        avatarUri={avatarUri}
+        userInitial={userInitial}
       />
       <ProfileDropdownModal
         visible={dropdownVisible}
@@ -1043,7 +1034,6 @@ export default function HomeScreen() {
         </Pressable>
       </Modal>
 
-      <OfflineBanner visible={isOffline} />
       <NotificationsPanel
         visible={notifVisible}
         onClose={() => setNotifVisible(false)}
@@ -1082,7 +1072,7 @@ export default function HomeScreen() {
         {/* CTA Button – customers only */}
         {role !== "landscaper" && (
           <TouchableOpacity
-            style={[styles.ctaBtn, isOffline && styles.ctaBtnDisabled]}
+            style={styles.ctaBtn}
             onPress={() => handleBooking(() => router.navigate("/(tabs)/search"))}
             activeOpacity={0.85}
           >
@@ -1121,9 +1111,8 @@ export default function HomeScreen() {
                 return (
                   <TouchableOpacity
                     key={pro.name}
-                    style={[styles.proHCard, isOffline && styles.proHCardDisabled]}
+                    style={styles.proHCard}
                     onPress={() => {
-                      if (isOffline) return;
                       Haptics.selectionAsync();
                       setSelectedPro(pro);
                     }}
@@ -1933,16 +1922,26 @@ const styles = StyleSheet.create({
   avatarBtn: {
     width: 36,
     height: 36,
-    borderRadius: 11,
+    borderRadius: 18,
     backgroundColor: "#34FF7A",
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
+    overflow: "hidden",
     shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 4,
+  },
+  avatarBtnImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  avatarBtnInitial: {
+    fontSize: 15,
+    color: "#000",
   },
   notifBadge: {
     position: "absolute",
