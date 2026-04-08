@@ -34,40 +34,12 @@ const PAYMENT_METHODS = [
   { label: "In Person",  value: "In Person",   ionIcon: "handshake-outline" as const,     shortLabel: "In Person" },
 ];
 
-const LANDSCAPER_PAY_OPTIONS = [
-  { value: "Cash",     icon: "cash-outline" as const },
-  { value: "Venmo",    icon: "phone-portrait-outline" as const },
-  { value: "PayPal",   icon: "card-outline" as const },
-  { value: "Cash App", icon: "phone-portrait-outline" as const },
-  { value: "Zelle",    icon: "swap-horizontal-outline" as const },
-  { value: "Check",    icon: "document-outline" as const },
-  { value: "In Person",icon: "handshake-outline" as const },
-];
-
-type PriceMatrix = Record<string, Record<string, string>>;
-
-const PRICE_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf"];
-const YARD_COLS = [
-  { key: "Small",  label: "Small",  sub: "< 5k sq ft" },
-  { key: "Medium", label: "Medium", sub: "5–10k sq ft" },
-  { key: "Large",  label: "Large",  sub: "10k+ sq ft" },
-];
-const DEFAULT_PRICE_MATRIX: Record<string, Record<string, string>> = {
-  "Mowing/Edging":    { Small: "45",   Medium: "70",   Large: "100"  },
-  "Weeding/Mulching": { Small: "90",   Medium: "130",  Large: "175"  },
-  "Sod Installation": { Small: "350",  Medium: "550",  Large: "850"  },
-  "Artificial Turf":  { Small: "1200", Medium: "1800", Large: "2800" },
-};
-
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
   const { role, logout } = useAuth();
   const [isLandscaper, setIsLandscaper] = useState(role === "landscaper");
-  const [matrix, setMatrix] = useState<PriceMatrix>(
-    JSON.parse(JSON.stringify(DEFAULT_PRICE_MATRIX))
-  );
   const [custMenuVisible, setCustMenuVisible] = useState(false);
 
   const toggle = () => {
@@ -78,8 +50,6 @@ export default function ProfileScreen() {
   if (isLandscaper) {
     return (
       <LandscaperProfile
-        matrix={matrix}
-        setMatrix={setMatrix}
         topPadding={topPadding}
         toggle={toggle}
         logout={logout}
@@ -146,19 +116,16 @@ type ReviewItem = {
 };
 
 function LandscaperProfile({
-  matrix,
-  setMatrix,
   topPadding,
   toggle,
   logout,
 }: {
-  matrix: PriceMatrix;
-  setMatrix: React.Dispatch<React.SetStateAction<PriceMatrix>>;
   topPadding: number;
   toggle: () => void;
   logout: () => void;
 }) {
   const { setAvatarUri } = useAuth();
+  const { myServices, bookedSlots } = useLandscaperProfile();
   const [activeTab, setActiveTab] = useState<LandscaperTab>("info");
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
   const [heroBackground, setHeroBackground] = useState<string | null>(null);
@@ -168,8 +135,6 @@ function LandscaperProfile({
   const [privVisible, setPrivVisible] = useState(true);
   const [privPrices, setPrivPrices] = useState(false);
   const [privReviews, setPrivReviews] = useState(true);
-  const [acceptedPayments, setAcceptedPayments] = useState<string[]>(["Cash", "Venmo", "In Person"]);
-  const [primaryPayout, setPrimaryPayout] = useState<string | null>("Venmo");
   const [lsMenuVisible, setLsMenuVisible] = useState(false);
   const [replyingToIdx, setReplyingToIdx] = useState<number | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -208,35 +173,16 @@ function LandscaperProfile({
     Alert.alert("Profile Updated");
   }
 
-  // Availability
+  // Derive available days across all offered services from myServices context
   const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const [availDays, setAvailDays] = useState<Record<string, boolean>>({
-    Mon: true, Tue: true, Wed: true, Thu: true, Fri: true, Sat: true, Sun: false,
-  });
-  const [availStart, setAvailStart] = useState("8:00 AM");
-  const [availEnd, setAvailEnd] = useState("6:00 PM");
-  const [upcomingDates, setUpcomingDates] = useState<string[]>(["Apr 10, 2026", "Apr 14, 2026", "Apr 18, 2026"]);
-  const [newDateInput, setNewDateInput] = useState("");
+  const allAvailDays = useMemo(() => {
+    const result: Record<string, boolean> = { Mon:false,Tue:false,Wed:false,Thu:false,Fri:false,Sat:false,Sun:false };
+    for (const svc of myServices.offered) {
+      for (const day of (myServices.avail[svc]?.days ?? [])) result[day] = true;
+    }
+    return result;
+  }, [myServices]);
 
-  function toggleDay(day: string) {
-    Haptics.selectionAsync();
-    setAvailDays((prev) => ({ ...prev, [day]: !prev[day] }));
-  }
-
-  function addDate() {
-    const d = newDateInput.trim();
-    if (!d) return;
-    setUpcomingDates((prev) => [...prev, d]);
-    setNewDateInput("");
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }
-
-  function removeDate(idx: number) {
-    Haptics.selectionAsync();
-    setUpcomingDates((prev) => prev.filter((_, i) => i !== idx));
-  }
-
-  const { saveAvailability, bookedSlots } = useLandscaperProfile();
   const [calendarSelectedDate, setCalendarSelectedDate] = useState<string | null>(null);
 
   const monthDates = useMemo(() => {
@@ -258,20 +204,6 @@ function LandscaperProfile({
     return result;
   }, []);
 
-  function handleSaveAvailability() {
-    saveAvailability({
-      days: availDays,
-      startTime: availStart,
-      endTime: availEnd,
-      upcomingDates,
-      city: profileCity,
-      state: profileState,
-      zip: profileZip,
-      saved: true,
-    });
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert("Availability Saved", "Customers can now see your schedule.");
-  }
 
   const [reviews, setReviews] = useState<ReviewItem[]>([
     { text: '"John did an amazing job on our yard – very professional and on time!"', author: "Sarah M.", date: "4 days ago", stars: 5, avatarInitials: "SM", avatarColor: "#166D42", replies: [] },
@@ -495,154 +427,44 @@ function LandscaperProfile({
               </TouchableOpacity>
             </View>
 
-            {/* Accepted Payments */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>ACCEPTED PAYMENTS</Text>
-            <View style={cutStyles.card}>
-              <Text style={[{ fontSize: 12, color: "#999", marginBottom: 12 }, { fontFamily: "Inter_400Regular" }]}>
-                Select all payment types you accept from customers
-              </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {LANDSCAPER_PAY_OPTIONS.map((opt) => {
-                  const on = acceptedPayments.includes(opt.value);
-                  return (
-                    <TouchableOpacity
-                      key={opt.value}
-                      style={[
-                        payPrefStyles.chip,
-                        on && payPrefStyles.chipOn,
-                      ]}
-                      onPress={() => {
-                        Haptics.selectionAsync();
-                        setAcceptedPayments((prev) =>
-                          on ? prev.filter((v) => v !== opt.value) : [...prev, opt.value]
-                        );
-                      }}
-                      activeOpacity={0.75}
-                    >
-                      <Ionicons name={opt.icon} size={14} color={on ? "#000" : "#888"} />
-                      <Text style={[payPrefStyles.chipText, { fontFamily: "Inter_500Medium" }, on && payPrefStyles.chipTextOn]}>
-                        {opt.value}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-              {acceptedPayments.length > 0 && (
-                <Text style={[{ fontSize: 11, color: "#BBBBBB", marginTop: 12 }, { fontFamily: "Inter_400Regular" }]}>
-                  Customers will see: {acceptedPayments.join(" · ")}
-                </Text>
-              )}
-              <View style={custPayStyles.inPersonNote}>
-                <Ionicons name="handshake-outline" size={14} color="#34FF7A" />
-                <Text style={[custPayStyles.inPersonNoteText, { fontFamily: "Inter_400Regular" }]}>
-                  <Text style={{ fontFamily: "Inter_600SemiBold", color: "#34FF7A" }}>In Person</Text>
-                  {" "}— customers pay you directly on site. No escrow or platform processing required.
-                </Text>
-              </View>
-            </View>
-
-            {/* Primary Payout Method */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>PRIMARY PAYOUT METHOD</Text>
-            <View style={cutStyles.card}>
-              <Text style={[{ fontSize: 12, color: "#999", marginBottom: 12 }, { fontFamily: "Inter_400Regular" }]}>
-                Your main preferred way to receive payment from customers
-              </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {(acceptedPayments.length > 0 ? acceptedPayments : LANDSCAPER_PAY_OPTIONS.map((o) => o.value)).map((val) => {
-                  const opt = LANDSCAPER_PAY_OPTIONS.find((o) => o.value === val);
-                  const isPrimary = primaryPayout === val;
-                  return (
-                    <TouchableOpacity
-                      key={val}
-                      style={[
-                        payPrefStyles.chip,
-                        isPrimary && payPrefStyles.chipPrimary,
-                      ]}
-                      onPress={() => { Haptics.selectionAsync(); setPrimaryPayout(isPrimary ? null : val); }}
-                      activeOpacity={0.75}
-                    >
-                      {opt && <Ionicons name={opt.icon} size={14} color={isPrimary ? "#000" : "#888"} />}
-                      <Text style={[payPrefStyles.chipText, { fontFamily: "Inter_600SemiBold" }, isPrimary && payPrefStyles.chipTextOn]}>
-                        {val}
-                      </Text>
-                      {isPrimary && (
-                        <Text style={[{ fontSize: 10, color: "#000", fontFamily: "Inter_700Bold" }]}>★</Text>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-              {primaryPayout && (
-                <View style={lsPayStyles.primaryActiveBanner}>
-                  <Ionicons name="checkmark-circle" size={14} color="#34FF7A" />
-                  <Text style={[{ fontSize: 12, color: "#34FF7A" }, { fontFamily: "Inter_500Medium" }]}>
-                    {primaryPayout} is your primary payout — customers will be prompted to use this first
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Service & Availability */}
+            {/* Service & Availability — read-only, reflects My Services settings */}
             <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>SERVICE & AVAILABILITY</Text>
             <View style={cutStyles.card}>
-              {/* Location row */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 18 }}>
+              {/* Location */}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
                 <Ionicons name="location-outline" size={18} color="#CCCCCC" />
                 <Text style={[cutStyles.addrLine, { fontFamily: "Inter_500Medium", color: "#fff" }]}>
                   {profileCity}, {profileState} {profileZip}
                 </Text>
               </View>
 
-              {/* Available Days */}
+              {/* Days available across all services */}
               <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 8 }]}>AVAILABLE DAYS</Text>
-              <View style={[availStyles.daysRow, { marginBottom: 18 }]}>
+              <View style={[availStyles.daysRow, { marginBottom: 16 }]}>
                 {DAYS.map((day) => (
-                  <TouchableOpacity
-                    key={day}
-                    style={[availStyles.dayChip, availDays[day] && availStyles.dayChipOn]}
-                    onPress={() => toggleDay(day)}
-                    activeOpacity={0.75}
-                  >
-                    <Text style={[availStyles.dayChipText, { fontFamily: "Inter_600SemiBold" }, availDays[day] && availStyles.dayChipTextOn]}>
+                  <View key={day} style={[availStyles.dayChip, allAvailDays[day] && availStyles.dayChipOn]}>
+                    <Text style={[availStyles.dayChipText, { fontFamily: "Inter_600SemiBold" }, allAvailDays[day] && availStyles.dayChipTextOn]}>
                       {day}
                     </Text>
-                  </TouchableOpacity>
+                  </View>
                 ))}
               </View>
 
-              {/* Working Hours */}
-              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 8 }]}>WORKING HOURS</Text>
-              <View style={[availStyles.hoursRow, { marginBottom: 18 }]}>
-                <View style={availStyles.hoursField}>
-                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_400Regular" }]}>Start</Text>
-                  <TextInput
-                    style={[availStyles.hoursInput, { fontFamily: "Inter_600SemiBold" }]}
-                    value={availStart}
-                    onChangeText={setAvailStart}
-                    placeholder="8:00 AM"
-                    placeholderTextColor="#777"
-                  />
-                </View>
-                <Text style={[availStyles.hoursSep, { fontFamily: "Inter_400Regular" }]}>to</Text>
-                <View style={availStyles.hoursField}>
-                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_400Regular" }]}>End</Text>
-                  <TextInput
-                    style={[availStyles.hoursInput, { fontFamily: "Inter_600SemiBold" }]}
-                    value={availEnd}
-                    onChangeText={setAvailEnd}
-                    placeholder="6:00 PM"
-                    placeholderTextColor="#777"
-                  />
-                </View>
+              <View style={availStyles.readOnlyNote}>
+                <Ionicons name="information-circle-outline" size={14} color="#34FF7A" />
+                <Text style={[availStyles.readOnlyNoteText, { fontFamily: "Inter_400Regular" }]}>
+                  Hours and per-service availability are managed in{" "}
+                  <Text style={{ fontFamily: "Inter_600SemiBold", color: "#34FF7A" }}>My Services</Text>.
+                </Text>
               </View>
 
               {/* Monthly Schedule Calendar */}
-              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 12 }]}>MONTHLY SCHEDULE (NEXT 4 WEEKS)</Text>
+              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 12, marginTop: 16 }]}>MONTHLY SCHEDULE (NEXT 4 WEEKS)</Text>
               <View style={availStyles.calGrid}>
                 {monthDates.map((d, i) => {
                   const dateKey = `${d.month} ${d.dateNum}, ${d.year}`;
                   const hasBookings = (bookedSlots[dateKey] ?? []).length > 0;
-                  const isAvail = !!availDays[d.label];
+                  const isAvail = !!allAvailDays[d.label];
                   const isCalSelected = calendarSelectedDate === dateKey;
                   return (
                     <TouchableOpacity
@@ -687,11 +509,6 @@ function LandscaperProfile({
                   )}
                 </View>
               )}
-
-              {/* Save button */}
-              <TouchableOpacity style={[availStyles.saveAvailBtn, { marginTop: 20 }]} onPress={handleSaveAvailability} activeOpacity={0.85}>
-                <Text style={[availStyles.saveAvailBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Availability</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Photos of our work */}
@@ -906,28 +723,36 @@ function LandscaperProfile({
         {/* ── SERVICES TAB ── */}
         {activeTab === "services" && (
           <>
-            {/* Read-only price cards */}
             <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>OUR SERVICES & PRICING</Text>
-            {PRICE_SERVICES.map((svc) => (
-              <View key={svc} style={[cutStyles.card, { marginBottom: 12 }]}>
-                <Text style={[cutStyles.svcCardName, { fontFamily: "Inter_600SemiBold" }]}>{svc}</Text>
-                <View style={cutStyles.svcPriceRow}>
-                  {YARD_COLS.map((col) => (
-                    <View key={col.key} style={cutStyles.svcPriceCell}>
-                      <Text style={[cutStyles.svcColLabel, { fontFamily: "Inter_400Regular" }]}>{col.label}</Text>
-                      <Text style={[cutStyles.svcColSub, { fontFamily: "Inter_400Regular" }]}>{col.sub}</Text>
-                      <Text style={[cutStyles.svcPrice, { fontFamily: "Inter_700Bold" }]}>
-                        ${matrix[svc][col.key]}
-                      </Text>
-                    </View>
-                  ))}
+            <View style={availStyles.readOnlyNote}>
+              <Ionicons name="information-circle-outline" size={14} color="#34FF7A" />
+              <Text style={[availStyles.readOnlyNoteText, { fontFamily: "Inter_400Regular" }]}>
+                Prices are set per service in{" "}
+                <Text style={{ fontFamily: "Inter_600SemiBold", color: "#34FF7A" }}>My Services</Text>.
+              </Text>
+            </View>
+            {myServices.offered.map((svc) => {
+              const tiers = myServices.pricing[svc] ?? [];
+              return (
+                <View key={svc} style={[cutStyles.card, { marginBottom: 12 }]}>
+                  <Text style={[cutStyles.svcCardName, { fontFamily: "Inter_600SemiBold" }]}>{svc}</Text>
+                  <View style={cutStyles.svcPriceRow}>
+                    {tiers.map((tier) => (
+                      <View key={tier.label} style={cutStyles.svcPriceCell}>
+                        <Text style={[cutStyles.svcColLabel, { fontFamily: "Inter_400Regular" }]}>{tier.label}</Text>
+                        <Text style={[cutStyles.svcColSub, { fontFamily: "Inter_400Regular" }]}>{tier.range}</Text>
+                        <Text style={[cutStyles.svcPrice, { fontFamily: "Inter_700Bold" }]}>{tier.price}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
-              </View>
-            ))}
-
-            {/* Editable price matrix */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold", marginTop: 12 }]}>EDIT PRICES</Text>
-            <PriceMatrixEditor matrix={matrix} setMatrix={setMatrix} />
+              );
+            })}
+            {myServices.offered.length === 0 && (
+              <Text style={[{ fontSize: 13, color: "#777", textAlign: "center", marginTop: 12 }, { fontFamily: "Inter_400Regular" }]}>
+                No services enabled. Open My Services to configure them.
+              </Text>
+            )}
           </>
         )}
 
@@ -976,98 +801,6 @@ function LandscaperProfile({
 
       {termsDoc && (
         <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
-      )}
-    </View>
-  );
-}
-
-// ── Price Matrix Editor ───────────────────────────────────────────────────────
-
-function PriceMatrixEditor({
-  matrix,
-  setMatrix,
-}: {
-  matrix: PriceMatrix;
-  setMatrix: React.Dispatch<React.SetStateAction<PriceMatrix>>;
-}) {
-  const [focusedCell, setFocusedCell] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<"idle" | "loading" | "success">("idle");
-  const successOpacity = useRef(new Animated.Value(0)).current;
-  const successScale = useRef(new Animated.Value(0.8)).current;
-
-  const savePrices = () => {
-    Haptics.selectionAsync();
-    setSaveState("loading");
-    setTimeout(() => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setSaveState("success");
-      Animated.parallel([
-        Animated.timing(successOpacity, { toValue: 1, duration: 400, useNativeDriver: false }),
-        Animated.spring(successScale, { toValue: 1, useNativeDriver: false }),
-      ]).start();
-      setTimeout(() => {
-        setSaveState("idle");
-        successOpacity.setValue(0);
-        successScale.setValue(0.8);
-      }, 2500);
-    }, 1200);
-  };
-
-  return (
-    <View style={styles.priceCard}>
-      <Text style={[styles.priceCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Service Prices by Yard Size</Text>
-      {PRICE_SERVICES.map((svc, si) => (
-        <View key={svc} style={[styles.priceMatrixCard, si > 0 && { marginTop: 12 }]}>
-          <Text style={[styles.priceServiceLabel, { fontFamily: "Inter_500Medium" }]}>{svc}</Text>
-          <View style={styles.priceMatrixRow}>
-            {YARD_COLS.map((col) => {
-              const cellKey = `${svc}:${col.key}`;
-              const isFocused = focusedCell === cellKey;
-              return (
-                <View key={col.key} style={styles.priceMatrixCell}>
-                  <Text style={[styles.priceMatrixColLabel, { fontFamily: "Inter_400Regular" }]}>{col.label}</Text>
-                  <Text style={[styles.priceMatrixColSub, { fontFamily: "Inter_400Regular" }]}>{col.sub}</Text>
-                  <View style={[styles.priceInputWrapper, isFocused && styles.priceInputWrapperFocused]}>
-                    <Text style={[styles.priceDollar, isFocused && { color: "#34FF7A" }]}>$</Text>
-                    <TextInput
-                      style={[styles.priceInput, { fontFamily: "Inter_600SemiBold" }, isFocused && { color: "#34FF7A" }]}
-                      value={matrix[svc][col.key]}
-                      onChangeText={(t) => setMatrix((m) => ({ ...m, [svc]: { ...m[svc], [col.key]: t.replace(/[^0-9]/g, "") } }))}
-                      onFocus={() => setFocusedCell(cellKey)}
-                      onBlur={() => setFocusedCell(null)}
-                      keyboardType="numeric"
-                      maxLength={5}
-                      selectTextOnFocus
-                      placeholderTextColor="#777"
-                    />
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      ))}
-
-      {saveState !== "success" ? (
-        <TouchableOpacity
-          style={[styles.savePricesBtn, saveState === "loading" && styles.savePricesBtnLoading]}
-          onPress={saveState === "idle" ? savePrices : undefined}
-          activeOpacity={0.85}
-        >
-          {saveState === "loading" ? (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <ActivityIndicator size="small" color="#000" />
-              <Text style={[styles.savePricesBtnText, { fontFamily: "Inter_600SemiBold" }]}>Saving...</Text>
-            </View>
-          ) : (
-            <Text style={[styles.savePricesBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Prices</Text>
-          )}
-        </TouchableOpacity>
-      ) : (
-        <Animated.View style={[styles.successBox, { opacity: successOpacity, transform: [{ scale: successScale }] }]}>
-          <Ionicons name="checkmark-circle" size={32} color="#34FF7A" />
-          <Text style={[styles.savedMsg, { fontFamily: "Inter_600SemiBold" }]}>Prices saved!</Text>
-        </Animated.View>
       )}
     </View>
   );
@@ -1712,6 +1445,15 @@ const availStyles = StyleSheet.create({
   },
   saveAvailBtnText: { fontSize: 16, color: "#000000" },
 
+  readOnlyNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#0E1F14", borderRadius: 10,
+    borderWidth: 1, borderColor: "#1D4428",
+    paddingHorizontal: 12, paddingVertical: 10,
+    marginBottom: 16,
+  },
+  readOnlyNoteText: { fontSize: 12, color: "#BBBBBB", flex: 1, lineHeight: 18 },
+
   editField: { marginBottom: 16 },
   editFieldLabel: { fontSize: 12, color: "#CCCCCC", letterSpacing: 0.8, marginBottom: 6 },
   editFieldInput: {
@@ -1723,43 +1465,6 @@ const availStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-  },
-});
-
-const payPrefStyles = StyleSheet.create({
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#111111",
-    borderWidth: 1.5,
-    borderColor: "#2a2a2a",
-  },
-  chipOn: {
-    backgroundColor: "#34FF7A",
-    borderColor: "#34FF7A",
-  },
-  chipPrimary: {
-    backgroundColor: "#34FF7A",
-    borderColor: "#34FF7A",
-  },
-  chipText: { fontSize: 13, color: "#BBBBBB" },
-  chipTextOn: { color: "#000" },
-});
-
-const lsPayStyles = StyleSheet.create({
-  primaryActiveBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#0d2e18",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 14,
   },
 });
 

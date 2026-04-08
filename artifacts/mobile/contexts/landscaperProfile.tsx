@@ -21,7 +21,7 @@ export type LandscaperAvailability = {
   saved: boolean;
 };
 
-const DEFAULT: LandscaperAvailability = {
+const DEFAULT_AVAIL: LandscaperAvailability = {
   days: { Mon: true, Tue: true, Wed: true, Thu: true, Fri: true, Sat: true, Sun: false },
   startTime: "8:00 AM",
   endTime: "6:00 PM",
@@ -32,23 +32,63 @@ const DEFAULT: LandscaperAvailability = {
   saved: false,
 };
 
+// ── My Services shared state ──────────────────────────────────────────────────
+
+export type ServiceAvailItem = { days: string[]; startTime: string; endTime: string };
+export type PricingTierItem  = { label: string; range: string; price: string };
+
+export type MyServicesState = {
+  offered:          string[];
+  avail:            Record<string, ServiceAvailItem>;
+  pricing:          Record<string, PricingTierItem[]>;
+  acceptedPayments: string[];
+};
+
+const ALL_SVC = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
+
+const BASE_TIERS: PricingTierItem[] = [
+  { label: "Small",  range: "Up to 2,000 sq ft",  price: "$45" },
+  { label: "Medium", range: "2,000 – 5,000 sq ft", price: "$65" },
+  { label: "Large",  range: "5,000+ sq ft",         price: "$95" },
+];
+
+const DEFAULT_MY_SERVICES: MyServicesState = {
+  offered: [...ALL_SVC],
+  avail: {
+    "Mowing/Edging":    { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "8:00 AM", endTime: "6:00 PM" },
+    "Weeding/Mulching": { days: ["Tue","Thu"],                   startTime: "9:00 AM", endTime: "5:00 PM" },
+    "Sod Installation": { days: ["Mon","Wed","Fri"],             startTime: "7:00 AM", endTime: "5:00 PM" },
+    "Artificial Turf":  { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "7:00 AM", endTime: "4:00 PM" },
+    "Full Service":     { days: ["Mon","Wed","Fri"],             startTime: "8:00 AM", endTime: "5:00 PM" },
+  },
+  pricing: Object.fromEntries(ALL_SVC.map((s) => [s, BASE_TIERS.map((t) => ({ ...t }))])),
+  acceptedPayments: ["Cash", "Venmo", "In Person"],
+};
+
+// ── Context ───────────────────────────────────────────────────────────────────
+
 type LandscaperProfileContextType = {
-  availability: LandscaperAvailability;
-  saveAvailability: (a: LandscaperAvailability) => void;
-  bookedSlots: Record<string, BookedSlot[]>;
-  addBookedSlot: (dateKey: string, time: string, durationMinutes: number, service: string) => void;
+  availability:    LandscaperAvailability;
+  saveAvailability:(a: LandscaperAvailability) => void;
+  bookedSlots:     Record<string, BookedSlot[]>;
+  addBookedSlot:   (dateKey: string, time: string, durationMinutes: number, service: string) => void;
+  myServices:      MyServicesState;
+  saveMyServices:  (s: MyServicesState) => void;
 };
 
 const LandscaperProfileContext = createContext<LandscaperProfileContextType>({
-  availability: DEFAULT,
-  saveAvailability: () => {},
-  bookedSlots: {},
-  addBookedSlot: () => {},
+  availability:    DEFAULT_AVAIL,
+  saveAvailability:() => {},
+  bookedSlots:     {},
+  addBookedSlot:   () => {},
+  myServices:      DEFAULT_MY_SERVICES,
+  saveMyServices:  () => {},
 });
 
 export function LandscaperProfileProvider({ children }: { children: React.ReactNode }) {
-  const [availability, setAvailability] = useState<LandscaperAvailability>(DEFAULT);
-  const [bookedSlots, setBookedSlots] = useState<Record<string, BookedSlot[]>>({});
+  const [availability, setAvailability] = useState<LandscaperAvailability>(DEFAULT_AVAIL);
+  const [bookedSlots, setBookedSlots]   = useState<Record<string, BookedSlot[]>>({});
+  const [myServices, setMyServices]     = useState<MyServicesState>(DEFAULT_MY_SERVICES);
 
   function saveAvailability(a: LandscaperAvailability) {
     setAvailability({ ...a, saved: true });
@@ -61,8 +101,14 @@ export function LandscaperProfileProvider({ children }: { children: React.ReactN
     }));
   }
 
+  function saveMyServices(s: MyServicesState) {
+    setMyServices(s);
+  }
+
   return (
-    <LandscaperProfileContext.Provider value={{ availability, saveAvailability, bookedSlots, addBookedSlot }}>
+    <LandscaperProfileContext.Provider
+      value={{ availability, saveAvailability, bookedSlots, addBookedSlot, myServices, saveMyServices }}
+    >
       {children}
     </LandscaperProfileContext.Provider>
   );

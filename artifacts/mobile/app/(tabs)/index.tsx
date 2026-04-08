@@ -754,6 +754,16 @@ const helpStyles = StyleSheet.create({
 const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
 
+const ACCEPTED_PAYMENT_OPTIONS = [
+  { value: "Cash",      icon: "cash-outline" as const },
+  { value: "Venmo",     icon: "phone-portrait-outline" as const },
+  { value: "PayPal",    icon: "card-outline" as const },
+  { value: "Cash App",  icon: "logo-buffer" as const },
+  { value: "Zelle",     icon: "swap-horizontal-outline" as const },
+  { value: "Check",     icon: "document-outline" as const },
+  { value: "In Person", icon: "handshake-outline" as const },
+];
+
 type ServiceAvail = { days: string[]; startTime: string; endTime: string };
 type AvailState = Record<string, ServiceAvail>;
 
@@ -795,11 +805,24 @@ function makeDefaultPricing(): ServicePricing {
 }
 
 function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const [offered, setOffered] = useState<string[]>([...ALL_SERVICES]);
-  const [avail, setAvail] = useState<AvailState>(() => JSON.parse(JSON.stringify(DEFAULT_AVAIL)));
-  const [pricing, setPricing] = useState<ServicePricing>(() => makeDefaultPricing());
+  const { myServices, saveMyServices } = useLandscaperProfile();
+
+  const [offered, setOffered]   = useState<string[]>(() => [...myServices.offered]);
+  const [avail, setAvail]       = useState<AvailState>(() => JSON.parse(JSON.stringify(myServices.avail)));
+  const [pricing, setPricing]   = useState<ServicePricing>(() => JSON.parse(JSON.stringify(myServices.pricing)));
+  const [acceptedPayments, setAcceptedPayments] = useState<string[]>(() => [...myServices.acceptedPayments]);
   const [saved, setSaved] = useState(false);
   const [timePicker, setTimePicker] = useState<{ service: string; field: "startTime" | "endTime" } | null>(null);
+
+  // Sync from context whenever modal opens
+  useEffect(() => {
+    if (visible) {
+      setOffered([...myServices.offered]);
+      setAvail(JSON.parse(JSON.stringify(myServices.avail)));
+      setPricing(JSON.parse(JSON.stringify(myServices.pricing)));
+      setAcceptedPayments([...myServices.acceptedPayments]);
+    }
+  }, [visible]);
 
   function toggleService(svc: string) {
     Haptics.selectionAsync();
@@ -831,6 +854,7 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
 
   function handleSave() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    saveMyServices({ offered, avail, pricing, acceptedPayments });
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 900);
   }
@@ -974,6 +998,45 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
             )}
 
             <View style={[svcStyles.divider, { marginTop: 20 }]} />
+
+            {/* ── Accepted Payments ─────────────────────────── */}
+            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Accepted Payments</Text>
+            <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
+              Customers will see your accepted payment methods before booking. Select all that apply.
+            </Text>
+            <View style={svcStyles.chipsRow}>
+              {ACCEPTED_PAYMENT_OPTIONS.map((opt) => {
+                const on = acceptedPayments.includes(opt.value);
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[svcStyles.chip, on && svcStyles.chipOn]}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setAcceptedPayments((prev) =>
+                        on ? prev.filter((v) => v !== opt.value) : [...prev, opt.value]
+                      );
+                    }}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name={opt.icon} size={14} color={on ? "#000" : "#555"} />
+                    <Text style={[svcStyles.chipText, { fontFamily: "Inter_500Medium" }, on && svcStyles.chipTextOn]}>
+                      {opt.value}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {acceptedPayments.length > 0 && (
+              <View style={svcStyles.paymentNote}>
+                <Ionicons name="eye-outline" size={13} color="#34FF7A" />
+                <Text style={[svcStyles.paymentNoteText, { fontFamily: "Inter_400Regular" }]}>
+                  Customers will see: <Text style={{ fontFamily: "Inter_600SemiBold", color: "#FFFFFF" }}>{acceptedPayments.join("  ·  ")}</Text>
+                </Text>
+              </View>
+            )}
+
+            <View style={[svcStyles.divider, { marginTop: 16 }]} />
 
             {/* ── Save ──────────────────────────────────────── */}
             <TouchableOpacity
@@ -1122,6 +1185,14 @@ const svcStyles = StyleSheet.create({
   tpSlotActive: { backgroundColor: "#34FF7A" },
   tpSlotText: { fontSize: 15, color: "#FFFFFF" },
   tpSlotTextActive: { color: "#000" },
+  paymentNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#0E1F14", borderRadius: 12,
+    borderWidth: 1, borderColor: "#1D4428",
+    paddingHorizontal: 14, paddingVertical: 11,
+    marginBottom: 4,
+  },
+  paymentNoteText: { fontSize: 12, color: "#BBBBBB", flex: 1, lineHeight: 18 },
 });
 
 
@@ -1683,7 +1754,7 @@ function LandscaperProfileViewModal({
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPad = isWeb ? 20 : insets.top;
-  const { availability } = useLandscaperProfile();
+  const { availability, myServices } = useLandscaperProfile();
 
   if (!pro) return null;
 
@@ -1815,49 +1886,81 @@ function LandscaperProfileViewModal({
               </View>
             ))}
 
-            {/* Availability (shown once landscaper has saved it) */}
-            {availability.saved && (
-              <>
-                <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
-                  AVAILABILITY
-                </Text>
-                <View style={fsStyles.availCard}>
+            {/* Services & Availability */}
+            <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 28 }]}>
+              SERVICES & AVAILABILITY
+            </Text>
+            {myServices.offered.map((svc) => {
+              const svcAvail = myServices.avail[svc];
+              const svcPricing = myServices.pricing[svc] ?? [];
+              return (
+                <View key={svc} style={fsStyles.svcCard}>
+                  <Text style={[fsStyles.svcCardName, { fontFamily: "Inter_700Bold" }]}>{svc}</Text>
+
                   {/* Days */}
-                  <View style={fsStyles.availDaysRow}>
-                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                      <View
-                        key={day}
-                        style={[fsStyles.availDayChip, availability.days[day] && fsStyles.availDayChipOn]}
-                      >
-                        <Text style={[fsStyles.availDayText, { fontFamily: "Inter_600SemiBold" }, availability.days[day] && fsStyles.availDayTextOn]}>
-                          {day}
+                  {svcAvail && (
+                    <>
+                      <View style={fsStyles.svcDaysRow}>
+                        {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((d) => {
+                          const on = svcAvail.days.includes(d);
+                          return (
+                            <View key={d} style={[fsStyles.svcDayChip, on && fsStyles.svcDayChipOn]}>
+                              <Text style={[fsStyles.svcDayText, { fontFamily: "Inter_600SemiBold" }, on && fsStyles.svcDayTextOn]}>
+                                {d.slice(0,2)}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                      </View>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 12 }}>
+                        <Ionicons name="time-outline" size={13} color="#888" />
+                        <Text style={[{ fontSize: 12, color: "#999" }, { fontFamily: "Inter_400Regular" }]}>
+                          {svcAvail.startTime} – {svcAvail.endTime}
                         </Text>
                       </View>
-                    ))}
-                  </View>
-                  {/* Hours */}
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
-                    <Ionicons name="time-outline" size={14} color="#CCCCCC" />
-                    <Text style={[fsStyles.availHours, { fontFamily: "Inter_400Regular" }]}>
-                      {availability.startTime} – {availability.endTime}
-                    </Text>
-                  </View>
-                  {/* Upcoming dates */}
-                  {availability.upcomingDates.length > 0 && (
-                    <View style={{ marginTop: 10 }}>
-                      <Text style={[{ color: "#BBBBBB", fontSize: 11, letterSpacing: 0.8, marginBottom: 6 }, { fontFamily: "Inter_500Medium" }]}>
-                        UPCOMING DATES
-                      </Text>
-                      {availability.upcomingDates.map((date, i) => (
-                        <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
-                          <Ionicons name="calendar-outline" size={13} color="#34FF7A" />
-                          <Text style={[{ color: "#34FF7A", fontSize: 13 }, { fontFamily: "Inter_400Regular" }]}>
-                            {date}
+                    </>
+                  )}
+
+                  {/* Pricing tiers */}
+                  {svcPricing.length > 0 && (
+                    <View style={fsStyles.svcPriceRow}>
+                      {svcPricing.map((tier) => (
+                        <View key={tier.label} style={fsStyles.svcPriceCell}>
+                          <Text style={[fsStyles.svcPriceCellLabel, { fontFamily: "Inter_500Medium" }]}>
+                            {tier.label}
+                          </Text>
+                          <Text style={[fsStyles.svcPriceCellRange, { fontFamily: "Inter_400Regular" }]}>
+                            {tier.range}
+                          </Text>
+                          <Text style={[fsStyles.svcPriceCellPrice, { fontFamily: "Inter_700Bold" }]}>
+                            {tier.price}
                           </Text>
                         </View>
                       ))}
                     </View>
                   )}
+                </View>
+              );
+            })}
+
+            {/* Accepted Payments */}
+            {myServices.acceptedPayments.length > 0 && (
+              <>
+                <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
+                  ACCEPTED PAYMENTS
+                </Text>
+                <View style={fsStyles.paymentsCard}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    {myServices.acceptedPayments.map((pm) => {
+                      const opt = ACCEPTED_PAYMENT_OPTIONS.find((o) => o.value === pm);
+                      return (
+                        <View key={pm} style={fsStyles.paymentChip}>
+                          {opt && <Ionicons name={opt.icon} size={13} color="#34FF7A" />}
+                          <Text style={[fsStyles.paymentChipText, { fontFamily: "Inter_500Medium" }]}>{pm}</Text>
+                        </View>
+                      );
+                    })}
+                  </View>
                 </View>
               </>
             )}
@@ -2016,6 +2119,42 @@ const fsStyles = StyleSheet.create({
   availDayText: { fontSize: 11, color: "#999" },
   availDayTextOn: { color: "#000" },
   availHours: { fontSize: 14, color: "rgba(255,255,255,0.75)" },
+  svcCard: {
+    backgroundColor: "#111", borderRadius: 16,
+    borderWidth: 1, borderColor: "#222",
+    padding: 14, marginBottom: 10,
+  },
+  svcCardName: { fontSize: 14, color: "#34FF7A", marginBottom: 10 },
+  svcDaysRow: { flexDirection: "row", flexWrap: "wrap", gap: 5, marginBottom: 8 },
+  svcDayChip: {
+    paddingHorizontal: 9, paddingVertical: 5,
+    borderRadius: 8, backgroundColor: "#1A1A1A",
+    borderWidth: 1, borderColor: "#333",
+  },
+  svcDayChipOn: { backgroundColor: "#34FF7A22", borderColor: "#34FF7A55" },
+  svcDayText: { fontSize: 11, color: "#555" },
+  svcDayTextOn: { color: "#34FF7A" },
+  svcPriceRow: { flexDirection: "row", gap: 8 },
+  svcPriceCell: {
+    flex: 1, backgroundColor: "#0F0F0F",
+    borderRadius: 10, borderWidth: 1, borderColor: "#1E1E1E",
+    padding: 10, alignItems: "center",
+  },
+  svcPriceCellLabel: { fontSize: 11, color: "#FFFFFF", marginBottom: 2 },
+  svcPriceCellRange:  { fontSize: 9,  color: "#555", marginBottom: 4, textAlign: "center" },
+  svcPriceCellPrice:  { fontSize: 15, color: "#34FF7A" },
+  paymentsCard: {
+    backgroundColor: "#111", borderRadius: 14,
+    borderWidth: 1, borderColor: "#222",
+    padding: 14,
+  },
+  paymentChip: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 12, paddingVertical: 8,
+    borderRadius: 20, backgroundColor: "#1A1A1A",
+    borderWidth: 1, borderColor: "#333",
+  },
+  paymentChipText: { fontSize: 13, color: "#CCCCCC" },
 });
 
 const TRUSTED_PROS = [
