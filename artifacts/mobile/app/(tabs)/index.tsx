@@ -26,8 +26,6 @@ import { useJobs } from "@/contexts/jobs";
 import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
-import WalletModal from "@/components/WalletModal";
-import { useWallet } from "@/contexts/wallet";
 
 type FeedPost = {
   id: string; customerName: string; customerInitials: string; customerColor: string;
@@ -295,7 +293,6 @@ function ProfileDropdownModal({
   onVouchers,
   onHelp,
   onAvailability,
-  onWallet,
   isLandscaper,
   onSignOut,
 }: {
@@ -309,7 +306,6 @@ function ProfileDropdownModal({
   onVouchers: () => void;
   onHelp: () => void;
   onAvailability: () => void;
-  onWallet: () => void;
   isLandscaper: boolean;
   onSignOut: () => void;
 }) {
@@ -333,10 +329,6 @@ function ProfileDropdownModal({
               <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
                 <Ionicons name="calendar-outline" size={20} color="#CCCCCC" />
                 <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={dropStyles.item} onPress={onWallet} activeOpacity={0.7}>
-                <Ionicons name="wallet-outline" size={20} color="#34FF7A" />
-                <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }, { color: "#34FF7A" }]}>My Wallet</Text>
               </TouchableOpacity>
             </>
           )}
@@ -1128,7 +1120,6 @@ export default function HomeScreen() {
   const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "G" : "Z");
   const { acceptJob } = useJobs();
   const { addBookedSlot } = useLandscaperProfile();
-  const { balance } = useWallet();
   const [prosLoaded, setProsLoaded] = useState(false);
   const [selectedPro, setSelectedPro] = useState<TrustedPro | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -1158,7 +1149,6 @@ export default function HomeScreen() {
   const [availabilityVisible, setAvailabilityVisible] = useState(false);
   const [servicesEditVisible, setServicesEditVisible] = useState(false);
   const [paymentHistoryVisible, setPaymentHistoryVisible] = useState(false);
-  const [walletVisible, setWalletVisible] = useState(false);
   const [feedLiked, setFeedLiked] = useState<Set<string>>(new Set());
   const [feedCounts, setFeedCounts] = useState<Record<string, number>>(
     Object.fromEntries(HOME_FEED_POSTS.map((p) => [p.id, p.likes]))
@@ -1242,13 +1232,8 @@ export default function HomeScreen() {
         onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
         onAvailability={() => { setDropdownVisible(false); setAvailabilityVisible(true); }}
-        onWallet={() => { setDropdownVisible(false); setWalletVisible(true); }}
         isLandscaper={role === "landscaper"}
         onSignOut={() => { setDropdownVisible(false); logout(); }}
-      />
-      <WalletModal
-        visible={walletVisible}
-        onClose={() => setWalletVisible(false)}
       />
       <ServicesEditModal
         visible={servicesEditVisible}
@@ -1354,21 +1339,6 @@ export default function HomeScreen() {
       >
         {/* Greeting */}
         <View style={styles.greetingRow}>
-          {/* Wallet balance chip — landscapers only, top left */}
-          {role === "landscaper" && (
-            <TouchableOpacity
-              style={styles.walletChip}
-              onPress={() => setWalletVisible(true)}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="wallet-outline" size={16} color="#34FF7A" />
-              <Text style={[styles.walletChipAmount, { fontFamily: "Inter_700Bold" }]}>
-                ${balance.toFixed(2)}
-              </Text>
-              <Ionicons name="chevron-forward" size={13} color="#34FF7A" />
-            </TouchableOpacity>
-          )}
-
           <Text style={[styles.greetingText, { fontFamily: "Inter_600SemiBold" }]}>
             {(() => {
               const h = new Date().getHours();
@@ -1508,7 +1478,6 @@ export default function HomeScreen() {
                 key={s.label}
                 stat={s}
                 delay={i * 120}
-                onPress={s.label === "This Week" ? () => setWalletVisible(true) : undefined}
               />
             ))}
           </View>
@@ -2117,15 +2086,6 @@ const styles = StyleSheet.create({
   greetingRow: { marginBottom: 20 },
   greetingText: { fontSize: 22, color: "#FFFFFF", marginBottom: 4 },
   greetingZip: { fontSize: 13, color: "#CCCCCC" },
-  walletChip: {
-    flexDirection: "row", alignItems: "center", gap: 7,
-    alignSelf: "flex-start",
-    backgroundColor: "#0d2e18", borderRadius: 20,
-    borderWidth: 1, borderColor: "#34FF7A55",
-    paddingHorizontal: 14, paddingVertical: 8,
-    marginBottom: 14,
-  },
-  walletChipAmount: { fontSize: 16, color: "#34FF7A" },
   ctaBtn: {
     backgroundColor: "#34C759",
     flexDirection: "row",

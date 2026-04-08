@@ -1,14 +1,16 @@
 import { Tabs, Redirect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Platform } from "react-native";
+import { Platform, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/auth";
+import { useWallet } from "@/contexts/wallet";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const bottomInset = isWeb ? 0 : insets.bottom;
   const { role } = useAuth();
+  const { balance } = useWallet();
 
   if (!role) return <Redirect href="/login" />;
 
@@ -66,6 +68,29 @@ export default function TabLayout() {
           title: "Appts",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="wallet"
+        options={{
+          href: role === "landscaper" ? undefined : null,
+          tabBarIcon: ({ color }) => (
+            <View style={{ alignItems: "center" }}>
+              <Ionicons name="wallet-outline" size={24} color={color} />
+            </View>
+          ),
+          tabBarLabel: ({ color }) => (
+            <Text
+              style={{
+                fontSize: 11,
+                color,
+                fontFamily: "Inter_700Bold",
+                marginTop: 2,
+              }}
+            >
+              ${balance.toFixed(0)}
+            </Text>
           ),
         }}
       />

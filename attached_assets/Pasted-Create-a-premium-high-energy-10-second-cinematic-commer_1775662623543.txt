@@ -1,0 +1,27 @@
+Create a premium, high-energy 10-second cinematic commercial for the mobile app "TheLawn" in the exact fast-paced montage style of the Pepsi "All the Best Moments are Better With Pepsi" ad. Use only text, logo, beautiful lawn textures, dew drops, and clean app UI elements — no people at all.
+Brand Style: Elegant black background with vibrant green (#34FF7A) accents, modern, luxurious, and professional.
+Logo: Use the official green cursive "theLawn" logo exactly.
+Music: High-energy modern cinematic electronic track at 128 BPM with subtle organic grass textures layered underneath.
+Exact 10-Second Timeline with Advanced Kinetic Typography, Sound Design, and Voiceover:
+
+0.0–2.8 sec: Extreme close-up of dew-covered grass blades swaying gently. The official "theLawn" logo fades in center with soft green glow. Text "Tired of lawn care stress?" grows organically from the grass blades (Organic Grass Growth Reveal + Parallax Depth + sparkling dew particles).
+2.8–4.5 sec: Fast, smooth app UI swipe montage. Text "Book trusted pros instantly." extrudes into 3D with metallic green shine and light sweep (3D Extrusion + Dynamic Lighting).
+4.5–5.8 sec: Pricing cards and booking animation. Text "With clear upfront pricing." fluidly morphs with glowing grass particles bursting outward (Fluid Morphing + Grass Particle Burst).
+5.8–7.0 sec: Trusted Pro badges and completion checkmark. Text "From hand-picked Trusted Pros." drops and snaps into place with satisfying physics bounce and glowing green ring (Precision Physics Snap).
+7.0–8.5 sec: Powerful zoom on glowing lawn texture. Full sentence "Your best lawn moments… better with TheLawn." fades in elegantly — the words "TheLawn" smoothly morph into the official green cursive logo (Logo Integration Morph + Parallax Depth).
+8.5–10.0 sec: Logo stays centered with subtle pulse. Bold text "DOWNLOAD THE LAWN APP" scales up powerfully with multiple pulsing green glow layers. Apple App Store badge pops in below with clean bounce (Bold Scale Pulse + Multi-Layer Glow).
+
+Voiceover (natural, warm, conversational, human tone — perfectly synced):
+
+0.5–2.4 sec: “Tired of dealing with lawn care stress?”
+3.0–3.8 sec: “Book trusted local pros in seconds.”
+4.5–5.2 sec: “Get clear upfront pricing.”
+5.9–6.6 sec: “Only from hand-picked Trusted Pros.”
+6.9–7.6 sec: “And pay only when the job is done right.”
+7.4–8.5 sec: “Your best lawn moments… made even better with TheLawn.”
+9.0–9.9 sec: “Download TheLawn now.”
+
+Sound Design: Every text animation has its own satisfying Foley sound (grass rustle, dew plinks, metallic whooshes, particle bursts, physics snaps, glowing chimes) perfectly synced to the music and typography.
+Final On-Screen Text (last 2 seconds):
+DOWNLOAD THE LAWN APP (large, bold, centered, vibrant green and white) with Apple App Store badge below.
+Overall Style: Ultra-clean, premium, modern kinetic typography, cinematic lighting, sharp motion, high detail, 16:9 aspect ratio, professional commercial quality.
