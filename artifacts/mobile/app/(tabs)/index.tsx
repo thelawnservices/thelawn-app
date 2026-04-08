@@ -26,6 +26,7 @@ import { useJobs } from "@/contexts/jobs";
 import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
+import WalletModal from "@/components/WalletModal";
 
 function normalizeDateKey(raw: string): string {
   const parts = raw.trim().split(/\s+/);
@@ -280,6 +281,7 @@ function ProfileDropdownModal({
   onVouchers,
   onHelp,
   onAvailability,
+  onWallet,
   isLandscaper,
   onSignOut,
 }: {
@@ -293,6 +295,7 @@ function ProfileDropdownModal({
   onVouchers: () => void;
   onHelp: () => void;
   onAvailability: () => void;
+  onWallet: () => void;
   isLandscaper: boolean;
   onSignOut: () => void;
 }) {
@@ -305,10 +308,16 @@ function ProfileDropdownModal({
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>View Profile</Text>
           </TouchableOpacity>
           {isLandscaper && (
-            <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
-              <Ionicons name="calendar-outline" size={20} color="#CCCCCC" />
-              <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
-            </TouchableOpacity>
+            <>
+              <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
+                <Ionicons name="calendar-outline" size={20} color="#CCCCCC" />
+                <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={dropStyles.item} onPress={onWallet} activeOpacity={0.7}>
+                <Ionicons name="wallet-outline" size={20} color="#34FF7A" />
+                <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }, { color: "#34FF7A" }]}>My Wallet</Text>
+              </TouchableOpacity>
+            </>
           )}
           <TouchableOpacity style={dropStyles.item} onPress={onAppointments} activeOpacity={0.7}>
             <Ionicons name="calendar" size={20} color="#CCCCCC" />
@@ -913,6 +922,7 @@ export default function HomeScreen() {
   const [helpVisible, setHelpVisible] = useState(false);
   const [availabilityVisible, setAvailabilityVisible] = useState(false);
   const [paymentHistoryVisible, setPaymentHistoryVisible] = useState(false);
+  const [walletVisible, setWalletVisible] = useState(false);
   const notifEnabledRef = React.useRef(notifEnabled);
   notifEnabledRef.current = notifEnabled;
 
@@ -983,8 +993,13 @@ export default function HomeScreen() {
         onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
         onAvailability={() => { setDropdownVisible(false); setAvailabilityVisible(true); }}
+        onWallet={() => { setDropdownVisible(false); setWalletVisible(true); }}
         isLandscaper={role === "landscaper"}
         onSignOut={() => { setDropdownVisible(false); logout(); }}
+      />
+      <WalletModal
+        visible={walletVisible}
+        onClose={() => setWalletVisible(false)}
       />
       <PaymentHistoryModal
         visible={paymentHistoryVisible}
