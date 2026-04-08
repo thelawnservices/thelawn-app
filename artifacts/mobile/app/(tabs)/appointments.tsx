@@ -34,6 +34,8 @@ const SINGLE_UPCOMING = [
     color: "#FFFFFF",
     address: "4627 Hall's Mill Crossing, Ellenton, FL 34222",
     recurring: false,
+    size: "Medium",
+    notes: "Please edge along the driveway and bag all clippings. Gate code is 1234.",
   },
 ];
 
@@ -67,6 +69,7 @@ function JobDetailsModal({
       <Pressable style={jdStyles.overlay} onPress={onClose}>
         <Pressable style={jdStyles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={jdStyles.handle} />
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingBottom: 8 }}>
           <View style={jdStyles.headerRow}>
             <TouchableOpacity style={jdStyles.backBtn} onPress={onClose} activeOpacity={0.7}>
               <Ionicons name="arrow-back" size={20} color="#34FF7A" />
@@ -107,6 +110,59 @@ function JobDetailsModal({
             Tap address to open directions
           </Text>
 
+          {/* Service Request Summary */}
+          <Text style={[jdStyles.sectionLabel, { fontFamily: "Inter_500Medium" }]}>Your Service Request</Text>
+          <View style={jdStyles.requestSummaryCard}>
+            {/* Service + size row */}
+            <View style={jdStyles.reqRow}>
+              <View style={jdStyles.reqIconWrap}>
+                <Ionicons name="leaf-outline" size={15} color="#34FF7A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[jdStyles.reqLabel, { fontFamily: "Inter_400Regular" }]}>Service</Text>
+                <Text style={[jdStyles.reqValue, { fontFamily: "Inter_600SemiBold" }]}>{appt.service}</Text>
+              </View>
+            </View>
+            <View style={jdStyles.reqDivider} />
+            <View style={jdStyles.reqRow}>
+              <View style={jdStyles.reqIconWrap}>
+                <Ionicons name="resize-outline" size={15} color="#34FF7A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[jdStyles.reqLabel, { fontFamily: "Inter_400Regular" }]}>Yard Size</Text>
+                <Text style={[jdStyles.reqValue, { fontFamily: "Inter_600SemiBold" }]}>{appt.size} yard</Text>
+              </View>
+            </View>
+            {appt.notes ? (
+              <>
+                <View style={jdStyles.reqDivider} />
+                <View style={jdStyles.reqRow}>
+                  <View style={jdStyles.reqIconWrap}>
+                    <Ionicons name="chatbubble-ellipses-outline" size={15} color="#34FF7A" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[jdStyles.reqLabel, { fontFamily: "Inter_400Regular" }]}>Your Notes</Text>
+                    <Text style={[jdStyles.reqValue, { fontFamily: "Inter_400Regular" }]}>{appt.notes}</Text>
+                  </View>
+                </View>
+              </>
+            ) : null}
+            <View style={jdStyles.reqDivider} />
+            {/* Agreed price row */}
+            <View style={jdStyles.reqRow}>
+              <View style={jdStyles.reqIconWrap}>
+                <Ionicons name="cash-outline" size={15} color="#34FF7A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[jdStyles.reqLabel, { fontFamily: "Inter_400Regular" }]}>Agreed Price</Text>
+                <Text style={[jdStyles.reqLabel, { fontFamily: "Inter_400Regular", fontSize: 11, color: "#666", marginTop: 1 }]}>
+                  Charged only after you approve the completed work
+                </Text>
+              </View>
+              <Text style={[jdStyles.reqAgreedPrice, { fontFamily: "Inter_700Bold" }]}>{appt.price}</Text>
+            </View>
+          </View>
+
           {/* Confirmed status — no action needed from customer */}
           <View style={jdStyles.confirmedBanner}>
             <View style={jdStyles.confirmedBannerTop}>
@@ -145,6 +201,7 @@ function JobDetailsModal({
             <Ionicons name="close-circle-outline" size={17} color="#FF4444" />
             <Text style={[jdStyles.cancelApptBtnText, { fontFamily: "Inter_500Medium" }]}>Cancel Appointment</Text>
           </TouchableOpacity>
+          </ScrollView>
         </Pressable>
       </Pressable>
     </Modal>
@@ -1412,7 +1469,7 @@ const jdStyles = StyleSheet.create({
   sheet: {
     backgroundColor: "#111111", borderTopLeftRadius: 32, borderTopRightRadius: 32,
     paddingHorizontal: 24, paddingBottom: 52, paddingTop: 12,
-    borderTopWidth: 1, borderColor: "#222222", gap: 14,
+    borderTopWidth: 1, borderColor: "#222222",
   },
   handle: { width: 40, height: 4, backgroundColor: "#333", borderRadius: 2, alignSelf: "center", marginBottom: 8 },
   headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
@@ -1436,6 +1493,24 @@ const jdStyles = StyleSheet.create({
   },
   addressText: { flex: 1, fontSize: 14, color: "#FFFFFF" },
   addressHint: { fontSize: 11, color: "#888", textAlign: "center" },
+  requestSummaryCard: {
+    backgroundColor: "#1A1A1A", borderRadius: 18,
+    borderWidth: 1, borderColor: "#222222",
+    overflow: "hidden",
+  },
+  reqRow: {
+    flexDirection: "row", alignItems: "flex-start", gap: 10,
+    paddingHorizontal: 16, paddingVertical: 13,
+  },
+  reqIconWrap: {
+    width: 28, height: 28, borderRadius: 8,
+    backgroundColor: "#0d2e18", alignItems: "center", justifyContent: "center",
+    marginTop: 1,
+  },
+  reqLabel: { fontSize: 11, color: "#888", marginBottom: 2 },
+  reqValue: { fontSize: 14, color: "#FFFFFF" },
+  reqDivider: { height: 1, backgroundColor: "#222222", marginHorizontal: 16 },
+  reqAgreedPrice: { fontSize: 20, color: "#34FF7A", alignSelf: "center" },
   confirmedBanner: {
     backgroundColor: "#0d2e18", borderRadius: 18,
     borderWidth: 1, borderColor: "#1a4a2a",
