@@ -1045,36 +1045,54 @@ export default function PayScreen() {
             <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>Tip ({tipLabel})</Text>
             <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${tip.toFixed(2)}</Text>
           </View>
-          <View style={styles.lineItem}>
-            <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>TheLawn Platform Fee (3%)</Text>
-            <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${fee.toFixed(2)}</Text>
-          </View>
+          {!isInPerson && (
+            <View style={styles.lineItem}>
+              <Text style={[styles.lineLabel, { fontFamily: "Inter_400Regular" }]}>TheLawn Platform Fee (3%)</Text>
+              <Text style={[styles.lineValue, { fontFamily: "Inter_500Medium" }]}>${fee.toFixed(2)}</Text>
+            </View>
+          )}
           <View style={[styles.lineItem, styles.totalRow]}>
             <Text style={[styles.totalLabel, { fontFamily: "Inter_700Bold" }]}>Total</Text>
             <Text style={[styles.totalValue, { fontFamily: "Inter_700Bold" }]}>${total}</Text>
           </View>
         </View>
 
-        {/* Escrow Notice */}
-        <View style={styles.escrowNotice}>
-          <View style={styles.escrowNoticeTop}>
-            <Ionicons name="lock-closed" size={16} color="#34FF7A" />
-            <Text style={[styles.escrowNoticeTitle, { fontFamily: "Inter_600SemiBold" }]}>
-              Secure Escrow Payment
+        {/* Escrow / In-Person Notice */}
+        {isInPerson ? (
+          <View style={[styles.escrowNotice, { borderColor: "#1A2A1A", backgroundColor: "#0d2e1844" }]}>
+            <View style={styles.escrowNoticeTop}>
+              <Ionicons name="handshake-outline" size={16} color="#34FF7A" />
+              <Text style={[styles.escrowNoticeTitle, { fontFamily: "Inter_600SemiBold" }]}>
+                Pay in Person
+              </Text>
+            </View>
+            <Text style={[styles.escrowNoticeText, { fontFamily: "Inter_400Regular" }]}>
+              No payment is held online. You pay your landscaper{" "}
+              <Text style={{ fontFamily: "Inter_600SemiBold" }}>directly on the day of service.</Text>{" "}
+              No escrow, no processing fees.
             </Text>
           </View>
-          {recurring && (
-            <Text style={[styles.escrowNoticeText, { fontFamily: "Inter_400Regular", marginBottom: 6 }]}>
-              Each recurring appointment requires{" "}
-              <Text style={{ fontFamily: "Inter_600SemiBold" }}>dual confirmation</Text> before payment release.
+        ) : (
+          <View style={styles.escrowNotice}>
+            <View style={styles.escrowNoticeTop}>
+              <Ionicons name="lock-closed" size={16} color="#34FF7A" />
+              <Text style={[styles.escrowNoticeTitle, { fontFamily: "Inter_600SemiBold" }]}>
+                Secure Escrow Payment
+              </Text>
+            </View>
+            {recurring && (
+              <Text style={[styles.escrowNoticeText, { fontFamily: "Inter_400Regular", marginBottom: 6 }]}>
+                Each recurring appointment requires{" "}
+                <Text style={{ fontFamily: "Inter_600SemiBold" }}>dual confirmation</Text> before payment release.
+              </Text>
+            )}
+            <Text style={[styles.escrowNoticeText, { fontFamily: "Inter_400Regular" }]}>
+              Your payment will be held securely and{" "}
+              <Text style={{ fontFamily: "Inter_600SemiBold" }}>not charged</Text> until both you and
+              the landscaper confirm the work is complete.
             </Text>
-          )}
-          <Text style={[styles.escrowNoticeText, { fontFamily: "Inter_400Regular" }]}>
-            Your payment will be held securely and{" "}
-            <Text style={{ fontFamily: "Inter_600SemiBold" }}>not charged</Text> until both you and
-            the landscaper confirm the work is complete.
-          </Text>
-        </View>
+          </View>
+        )}
 
         {/* Payment Method */}
         <Text style={[styles.payMethodLabel, { fontFamily: "Inter_600SemiBold" }]}>
@@ -1110,6 +1128,16 @@ export default function PayScreen() {
           <Ionicons name="card" size={28} color={paymentMethod === "debit" ? "#34FF7A" : "#888"} />
           <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === "debit" && styles.payMethodTileTextActive]}>
             Debit / Credit Card
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.payMethodTileFull, paymentMethod === "inperson" && styles.payMethodTileActive]}
+          onPress={() => { setPaymentMethod("inperson"); Haptics.selectionAsync(); }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="handshake-outline" size={28} color={paymentMethod === "inperson" ? "#34FF7A" : "#888"} />
+          <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === "inperson" && styles.payMethodTileTextActive]}>
+            In Person (Cash / Check / Other)
           </Text>
         </TouchableOpacity>
 
@@ -1191,13 +1219,17 @@ export default function PayScreen() {
 
       <View style={[styles.bottomBar, { paddingBottom: bottomPadding + 12 }]}>
         <TouchableOpacity style={styles.authorizeBtn} onPress={handleAuthorize} activeOpacity={0.85}>
-          <Ionicons name="lock-closed" size={18} color="#fff" />
+          <Ionicons name={isInPerson ? "handshake-outline" : "lock-closed"} size={18} color="#fff" />
           <Text style={[styles.authorizeBtnText, { fontFamily: "Inter_700Bold" }]}>
-            Pay Securely & Hold Funds · ${total}
+            {isInPerson
+              ? `Confirm Booking · Pay In Person · $${total}`
+              : `Pay Securely & Hold Funds · $${total}`}
           </Text>
         </TouchableOpacity>
         <Text style={[styles.escrowDisclaimer, { fontFamily: "Inter_400Regular" }]}>
-          Money is held in escrow until both parties confirm completion.{"\n"}All sales are final.
+          {isInPerson
+            ? "No online payment required. Pay your landscaper directly on the day of service."
+            : `Money is held in escrow until both parties confirm completion.\nAll sales are final.`}
         </Text>
       </View>
     </View>
@@ -1834,4 +1866,22 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   customTipApplyText: { fontSize: 13, color: "#000" },
+});
+
+const inPersonStyles = StyleSheet.create({
+  noEscrowBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#0d2e18",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    width: "100%",
+  },
+  noEscrowText: {
+    fontSize: 13,
+    color: "#34FF7A",
+    flex: 1,
+  },
 });

@@ -14,18 +14,21 @@ export type AcceptedJob = {
 
 type JobsContextType = {
   acceptedJobs: AcceptedJob[];
+  cancelledJobs: AcceptedJob[];
   acceptJob: (job: AcceptedJob) => void;
   cancelAccepted: (id: string) => void;
 };
 
 const JobsContext = createContext<JobsContextType>({
   acceptedJobs: [],
+  cancelledJobs: [],
   acceptJob: () => {},
   cancelAccepted: () => {},
 });
 
 export function JobsProvider({ children }: { children: React.ReactNode }) {
   const [acceptedJobs, setAcceptedJobs] = useState<AcceptedJob[]>([]);
+  const [cancelledJobs, setCancelledJobs] = useState<AcceptedJob[]>([]);
 
   function acceptJob(job: AcceptedJob) {
     setAcceptedJobs((prev) => {
@@ -35,11 +38,17 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
   }
 
   function cancelAccepted(id: string) {
-    setAcceptedJobs((prev) => prev.filter((j) => j.id !== id));
+    setAcceptedJobs((prev) => {
+      const job = prev.find((j) => j.id === id);
+      if (job) {
+        setCancelledJobs((c) => [job, ...c]);
+      }
+      return prev.filter((j) => j.id !== id);
+    });
   }
 
   return (
-    <JobsContext.Provider value={{ acceptedJobs, acceptJob, cancelAccepted }}>
+    <JobsContext.Provider value={{ acceptedJobs, cancelledJobs, acceptJob, cancelAccepted }}>
       {children}
     </JobsContext.Provider>
   );

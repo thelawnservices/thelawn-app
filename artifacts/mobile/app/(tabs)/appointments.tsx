@@ -29,6 +29,7 @@ const CUSTOMER_UPCOMING = [
     initials: "JR",
     color: "#FFFFFF",
     address: "4627 Hall's Mill Crossing, Ellenton, FL 34222",
+    recurring: false,
   },
   {
     id: "2",
@@ -40,21 +41,8 @@ const CUSTOMER_UPCOMING = [
     initials: "GP",
     color: "#166D42",
     address: "22 Palmetto Dr, Bradenton, FL 34208",
-  },
-];
-
-const CUSTOMER_PAST = [
-  {
-    id: "3",
-    service: "Lawn Mowing",
-    date: "March 28, 2026",
-    time: "11:00 AM",
-    pro: "John Rivera",
-    price: "$45",
-    initials: "JR",
-    color: "#FFFFFF",
-    rating: 5,
-    address: "4627 Hall's Mill Crossing, Ellenton, FL 34222",
+    recurring: true,
+    recurringFreq: "Bi-Weekly",
   },
 ];
 
@@ -63,9 +51,11 @@ type CustomerAppt = typeof CUSTOMER_UPCOMING[0];
 function JobDetailsModal({
   appt,
   onClose,
+  onCancel,
 }: {
   appt: CustomerAppt | null;
   onClose: () => void;
+  onCancel: (id: string) => void;
 }) {
   if (!appt) return null;
 
@@ -86,10 +76,8 @@ function JobDetailsModal({
     <Modal visible={!!appt} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={jdStyles.overlay} onPress={onClose}>
         <Pressable style={jdStyles.sheet} onPress={(e) => e.stopPropagation()}>
-          {/* Handle bar */}
           <View style={jdStyles.handle} />
 
-          {/* Header row */}
           <View style={jdStyles.headerRow}>
             <TouchableOpacity style={jdStyles.backBtn} onPress={onClose} activeOpacity={0.7}>
               <Ionicons name="arrow-back" size={20} color="#34FF7A" />
@@ -98,7 +86,15 @@ function JobDetailsModal({
             <View style={{ width: 36 }} />
           </View>
 
-          {/* Date / time card */}
+          {(appt as any).recurring && (
+            <View style={jdStyles.recurringBadge}>
+              <Ionicons name="repeat" size={13} color="#34FF7A" />
+              <Text style={[jdStyles.recurringBadgeText, { fontFamily: "Inter_500Medium" }]}>
+                Recurring · {(appt as any).recurringFreq}
+              </Text>
+            </View>
+          )}
+
           <View style={jdStyles.dateCard}>
             <Ionicons name="calendar-outline" size={18} color="#34FF7A" />
             <Text style={[jdStyles.dateText, { fontFamily: "Inter_500Medium" }]}>
@@ -106,7 +102,6 @@ function JobDetailsModal({
             </Text>
           </View>
 
-          {/* Pro */}
           <View style={jdStyles.proRow}>
             <View style={[jdStyles.proAvatar, { backgroundColor: appt.color }]}>
               <Text style={[jdStyles.proInitials, { fontFamily: "Inter_700Bold" }]}>
@@ -120,7 +115,6 @@ function JobDetailsModal({
             <Text style={[jdStyles.priceTag, { fontFamily: "Inter_700Bold" }]}>{appt.price}</Text>
           </View>
 
-          {/* Service address */}
           <Text style={[jdStyles.sectionLabel, { fontFamily: "Inter_500Medium" }]}>
             Service Address
           </Text>
@@ -139,7 +133,6 @@ function JobDetailsModal({
             Tap address to open directions
           </Text>
 
-          {/* Confirm & Pay */}
           <TouchableOpacity
             style={jdStyles.payBtn}
             activeOpacity={0.85}
@@ -152,6 +145,34 @@ function JobDetailsModal({
             <Ionicons name="card-outline" size={18} color="#000" />
             <Text style={[jdStyles.payBtnText, { fontFamily: "Inter_600SemiBold" }]}>
               Confirm &amp; Pay
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={jdStyles.cancelApptBtn}
+            activeOpacity={0.8}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              Alert.alert(
+                "Cancel Appointment?",
+                `Cancel ${appt.service} with ${appt.pro} on ${appt.date}? This action cannot be undone.`,
+                [
+                  { text: "Keep Appointment", style: "cancel" },
+                  {
+                    text: "Yes, Cancel",
+                    style: "destructive",
+                    onPress: () => {
+                      onCancel(appt.id);
+                      onClose();
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            <Ionicons name="close-circle-outline" size={17} color="#666" />
+            <Text style={[jdStyles.cancelApptBtnText, { fontFamily: "Inter_500Medium" }]}>
+              Cancel Appointment
             </Text>
           </TouchableOpacity>
         </Pressable>
@@ -199,6 +220,8 @@ const LANDSCAPER_SCHEDULED = [
   },
 ];
 
+type LsAppt = typeof LANDSCAPER_SCHEDULED[0];
+
 export default function AppointmentsScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
@@ -207,8 +230,10 @@ export default function AppointmentsScreen() {
   const isLandscaper = role === "landscaper";
 
   const [cancelledIds, setCancelledIds] = useState<string[]>([]);
+  const [cancelledLsAppts, setCancelledLsAppts] = useState<LsAppt[]>([]);
+  const [customerCancelledIds, setCustomerCancelledIds] = useState<string[]>([]);
   const [selectedAppt, setSelectedAppt] = useState<CustomerAppt | null>(null);
-  const { acceptedJobs, cancelAccepted } = useJobs();
+  const { acceptedJobs, cancelledJobs, cancelAccepted } = useJobs();
 
   function openMaps(address: string) {
     const encoded = encodeURIComponent(address);
@@ -220,12 +245,58 @@ export default function AppointmentsScreen() {
     );
   }
 
+  function handleCancelLsAppt(appt: LsAppt) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Alert.alert(
+      "Cancel Appointment?",
+      `Cancel ${appt.service} with ${appt.customer} on ${appt.date}?`,
+      [
+        { text: "Keep", style: "cancel" },
+        {
+          text: "Cancel Job",
+          style: "destructive",
+          onPress: () => {
+            setCancelledLsAppts((prev) => [appt, ...prev]);
+            setCancelledIds((prev) => [...prev, appt.id]);
+          },
+        },
+      ]
+    );
+  }
+
+  function handleCancelCustomerAppt(id: string) {
+    setCustomerCancelledIds((prev) => [...prev, id]);
+  }
+
   const visibleScheduled = LANDSCAPER_SCHEDULED.filter(
     (a) => !cancelledIds.includes(a.id)
   );
 
+  const upcomingCustomerAppts = CUSTOMER_UPCOMING.filter(
+    (a) => !customerCancelledIds.includes(a.id)
+  );
+
+  const cancelledCustomerAppts = CUSTOMER_UPCOMING.filter(
+    (a) => customerCancelledIds.includes(a.id)
+  );
+
+  const allLsCancelledAppts = [
+    ...cancelledJobs.map((j) => ({
+      id: j.id,
+      service: j.service,
+      size: j.size,
+      customer: j.customer,
+      date: j.date,
+      time: j.time,
+      budget: j.budget,
+      note: null as string | null,
+      fromAccepted: true,
+    })),
+    ...cancelledLsAppts.map((a) => ({ ...a, fromAccepted: false })),
+  ];
+
   if (isLandscaper) {
-    const totalJobs = acceptedJobs.length + visibleScheduled.length;
+    const totalActive = acceptedJobs.length + visibleScheduled.length;
     return (
       <View style={styles.container}>
         <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
@@ -241,7 +312,6 @@ export default function AppointmentsScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* ── Live accepted jobs (from accepting requests) ── */}
           {acceptedJobs.length > 0 && (
             <>
               <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>
@@ -299,14 +369,13 @@ export default function AppointmentsScreen() {
             </>
           )}
 
-          {/* ── Pre-scheduled jobs ── */}
           {visibleScheduled.length > 0 && (
             <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }, acceptedJobs.length > 0 && { marginTop: 8 }]}>
               Scheduled
             </Text>
           )}
 
-          {totalJobs === 0 ? (
+          {totalActive === 0 && allLsCancelledAppts.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={40} color="#333" />
               <Text style={[styles.emptyText, { fontFamily: "Inter_500Medium" }]}>
@@ -319,7 +388,6 @@ export default function AppointmentsScreen() {
           ) : (
             visibleScheduled.map((appt) => (
               <View key={appt.id} style={styles.lsCard}>
-                {/* Top row: service badge + budget */}
                 <View style={styles.lsTopRow}>
                   <View style={styles.lsServiceBadge}>
                     <Ionicons name="leaf" size={14} color="#34FF7A" />
@@ -332,7 +400,6 @@ export default function AppointmentsScreen() {
                   </Text>
                 </View>
 
-                {/* Date / time */}
                 <View style={styles.lsMetaRow}>
                   <Ionicons name="calendar-outline" size={13} color="#555" />
                   <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium" }]}>
@@ -345,7 +412,6 @@ export default function AppointmentsScreen() {
                   </Text>
                 </View>
 
-                {/* Customer */}
                 <View style={styles.lsMetaRow}>
                   <Ionicons name="person-outline" size={13} color="#555" />
                   <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>
@@ -353,7 +419,6 @@ export default function AppointmentsScreen() {
                   </Text>
                 </View>
 
-                {/* Address — tap to open maps */}
                 <TouchableOpacity
                   style={styles.lsMetaRow}
                   activeOpacity={0.7}
@@ -366,7 +431,6 @@ export default function AppointmentsScreen() {
                   <Ionicons name="navigate-outline" size={12} color="#34FF7A" />
                 </TouchableOpacity>
 
-                {/* Phone */}
                 <View style={styles.lsMetaRow}>
                   <Ionicons name="call-outline" size={13} color="#555" />
                   <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>
@@ -374,7 +438,6 @@ export default function AppointmentsScreen() {
                   </Text>
                 </View>
 
-                {/* Note pill */}
                 {appt.note && (
                   <View style={styles.notePill}>
                     <Ionicons name="information-circle-outline" size={13} color="#34FF7A" />
@@ -384,25 +447,10 @@ export default function AppointmentsScreen() {
                   </View>
                 )}
 
-                {/* Cancel button */}
                 <TouchableOpacity
                   style={styles.cancelBtn}
                   activeOpacity={0.8}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    Alert.alert(
-                      "Cancel Appointment?",
-                      `Cancel ${appt.service} with ${appt.customer} on ${appt.date}?`,
-                      [
-                        { text: "Keep", style: "cancel" },
-                        {
-                          text: "Cancel Job",
-                          style: "destructive",
-                          onPress: () => setCancelledIds((prev) => [...prev, appt.id]),
-                        },
-                      ]
-                    );
-                  }}
+                  onPress={() => handleCancelLsAppt(appt)}
                 >
                   <Text style={[styles.cancelBtnText, { fontFamily: "Inter_500Medium" }]}>
                     Cancel
@@ -410,6 +458,68 @@ export default function AppointmentsScreen() {
                 </TouchableOpacity>
               </View>
             ))
+          )}
+
+          {/* ── Previous / Cancelled Jobs ── */}
+          {allLsCancelledAppts.length > 0 && (
+            <>
+              <View style={styles.sectionDivider} />
+              <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 4 }]}>
+                Previous Jobs · Cancelled
+              </Text>
+              {allLsCancelledAppts.map((appt, idx) => (
+                <View key={appt.id + idx} style={[styles.lsCard, styles.cancelledCard]}>
+                  <View style={styles.cancelledBadgeRow}>
+                    <View style={styles.cancelledBadge}>
+                      <Ionicons name="close-circle" size={13} color="#FF4444" />
+                      <Text style={[styles.cancelledBadgeText, { fontFamily: "Inter_600SemiBold" }]}>
+                        Cancelled
+                      </Text>
+                    </View>
+                    <Text style={[styles.lsBudget, { fontFamily: "Inter_700Bold", color: "#555", fontSize: 16 }]}>
+                      {appt.budget}
+                    </Text>
+                  </View>
+
+                  <View style={styles.lsTopRow}>
+                    <View style={[styles.lsServiceBadge, { backgroundColor: "#1A1A1A" }]}>
+                      <Ionicons name="leaf" size={14} color="#555" />
+                      <Text style={[styles.lsServiceText, { fontFamily: "Inter_600SemiBold", color: "#555" }]}>
+                        {appt.service}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.lsMetaRow}>
+                    <Ionicons name="calendar-outline" size={13} color="#444" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium", color: "#555" }]}>
+                      {appt.date} at {appt.time}
+                    </Text>
+                    <Text style={styles.metaDot}>·</Text>
+                    <Ionicons name="resize-outline" size={13} color="#444" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular", color: "#555" }]}>
+                      {appt.size} yard
+                    </Text>
+                  </View>
+
+                  <View style={styles.lsMetaRow}>
+                    <Ionicons name="person-outline" size={13} color="#444" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular", color: "#555" }]}>
+                      {appt.customer}
+                    </Text>
+                  </View>
+
+                  {appt.note && (
+                    <View style={[styles.notePill, { backgroundColor: "#1A1A1A" }]}>
+                      <Ionicons name="information-circle-outline" size={13} color="#555" />
+                      <Text style={[styles.noteText, { fontFamily: "Inter_400Regular", color: "#555" }]}>
+                        {appt.note}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </>
           )}
         </ScrollView>
       </View>
@@ -421,78 +531,114 @@ export default function AppointmentsScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Appointments</Text>
+        <Text style={[styles.headerSub, { fontFamily: "Inter_400Regular" }]}>
+          Upcoming & Recurring
+        </Text>
       </View>
 
-      <JobDetailsModal appt={selectedAppt} onClose={() => setSelectedAppt(null)} />
+      <JobDetailsModal
+        appt={selectedAppt}
+        onClose={() => setSelectedAppt(null)}
+        onCancel={handleCancelCustomerAppt}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Upcoming</Text>
 
-        {CUSTOMER_UPCOMING.map((appt) => (
-          <TouchableOpacity
-            key={appt.id}
-            style={styles.card}
-            activeOpacity={0.8}
-            onPress={() => { Haptics.selectionAsync(); setSelectedAppt(appt); }}
-          >
-            <View style={[styles.avatar, { backgroundColor: appt.color }]}>
-              <Text style={styles.avatarText}>{appt.initials}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={styles.cardTopRow}>
-                <Text style={[styles.serviceText, { fontFamily: "Inter_600SemiBold" }]}>
-                  {appt.service}
-                </Text>
-                <Text style={[styles.priceText, { fontFamily: "Inter_700Bold" }]}>
-                  {appt.price}
-                </Text>
-              </View>
-              <Text style={[styles.subText, { fontFamily: "Inter_400Regular" }]}>
-                {appt.date} · {appt.time}
-              </Text>
-              <Text style={[styles.proText, { fontFamily: "Inter_400Regular" }]}>
-                with {appt.pro}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="#34FF7A" />
-          </TouchableOpacity>
-        ))}
-
-        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 20 }]}>
-          Past
-        </Text>
-
-        {CUSTOMER_PAST.map((appt) => (
-          <TouchableOpacity key={appt.id} style={[styles.card, styles.pastCard]} activeOpacity={0.8}>
-            <View style={[styles.avatar, { backgroundColor: appt.color + "60" }]}>
-              <Text style={styles.avatarText}>{appt.initials}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={styles.cardTopRow}>
-                <Text style={[styles.serviceText, { fontFamily: "Inter_600SemiBold", color: "#555" }]}>
-                  {appt.service}
-                </Text>
-                <Text style={[styles.priceText, { fontFamily: "Inter_700Bold", color: "#555" }]}>
-                  {appt.price}
-                </Text>
-              </View>
-              <Text style={[styles.subText, { fontFamily: "Inter_400Regular", color: "#444" }]}>
-                {appt.date} · {appt.time}
-              </Text>
-              <View style={styles.ratingRow}>
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Ionicons
-                    key={s}
-                    name={s <= (appt.rating || 0) ? "star" : "star-outline"}
-                    size={13}
-                    color="#f59e0b"
-                  />
+        {/* ── Upcoming ── */}
+        {upcomingCustomerAppts.length === 0 && cancelledCustomerAppts.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="calendar-outline" size={40} color="#333" />
+            <Text style={[styles.emptyText, { fontFamily: "Inter_500Medium" }]}>
+              No upcoming appointments
+            </Text>
+            <Text style={[styles.emptySub, { fontFamily: "Inter_400Regular" }]}>
+              Book a landscaper to get started
+            </Text>
+          </View>
+        ) : (
+          <>
+            {upcomingCustomerAppts.length > 0 && (
+              <>
+                <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Upcoming</Text>
+                {upcomingCustomerAppts.map((appt) => (
+                  <TouchableOpacity
+                    key={appt.id}
+                    style={styles.card}
+                    activeOpacity={0.8}
+                    onPress={() => { Haptics.selectionAsync(); setSelectedAppt(appt); }}
+                  >
+                    <View style={[styles.avatar, { backgroundColor: appt.color }]}>
+                      <Text style={styles.avatarText}>{appt.initials}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.cardTopRow}>
+                        <Text style={[styles.serviceText, { fontFamily: "Inter_600SemiBold" }]}>
+                          {appt.service}
+                        </Text>
+                        <Text style={[styles.priceText, { fontFamily: "Inter_700Bold" }]}>
+                          {appt.price}
+                        </Text>
+                      </View>
+                      {(appt as any).recurring && (
+                        <View style={styles.recurringPill}>
+                          <Ionicons name="repeat" size={11} color="#34FF7A" />
+                          <Text style={[styles.recurringPillText, { fontFamily: "Inter_500Medium" }]}>
+                            {(appt as any).recurringFreq}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={[styles.subText, { fontFamily: "Inter_400Regular" }]}>
+                        {appt.date} · {appt.time}
+                      </Text>
+                      <Text style={[styles.proText, { fontFamily: "Inter_400Regular" }]}>
+                        with {appt.pro}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: "center", gap: 6 }}>
+                      <Ionicons name="chevron-forward" size={16} color="#34FF7A" />
+                    </View>
+                  </TouchableOpacity>
                 ))}
-              </View>
-            </View>
-            <Ionicons name="checkmark-circle" size={20} color="#34FF7A" />
-          </TouchableOpacity>
-        ))}
+              </>
+            )}
+
+            {/* ── Cancelled ── */}
+            {cancelledCustomerAppts.length > 0 && (
+              <>
+                <View style={[styles.sectionDivider, { marginTop: 12 }]} />
+                <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>
+                  Cancelled
+                </Text>
+                {cancelledCustomerAppts.map((appt) => (
+                  <View key={appt.id} style={[styles.card, styles.cancelledCustomerCard]}>
+                    <View style={[styles.avatar, { backgroundColor: appt.color + "40" }]}>
+                      <Text style={[styles.avatarText, { color: "#555" }]}>{appt.initials}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.cardTopRow}>
+                        <Text style={[styles.serviceText, { fontFamily: "Inter_600SemiBold", color: "#555" }]}>
+                          {appt.service}
+                        </Text>
+                        <View style={styles.cancelledBadge}>
+                          <Ionicons name="close-circle" size={12} color="#FF4444" />
+                          <Text style={[styles.cancelledBadgeText, { fontFamily: "Inter_600SemiBold" }]}>
+                            Cancelled
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.subText, { fontFamily: "Inter_400Regular" }]}>
+                        {appt.date} · {appt.time}
+                      </Text>
+                      <Text style={[styles.proText, { fontFamily: "Inter_400Regular" }]}>
+                        with {appt.pro}
+                      </Text>
+                    </View>
+                  </View>
+                ))}
+              </>
+            )}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -515,19 +661,16 @@ const styles = StyleSheet.create({
     color: "#AAAAAA",
     textTransform: "uppercase",
     letterSpacing: 1.2,
-    marginBottom: 4,
+    marginBottom: 8,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "#1E1E1E",
+    marginVertical: 8,
   },
   emptyState: { paddingVertical: 80, alignItems: "center", gap: 10 },
   emptyText: { fontSize: 16, color: "#555" },
   emptySub: { fontSize: 13, color: "#444" },
-
-  sectionLabel: {
-    fontSize: 11,
-    color: "#AAAAAA",
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-    marginBottom: 8,
-  },
   newJobCard: {
     borderColor: "#34FF7A33",
     borderWidth: 1.5,
@@ -544,8 +687,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 8,
   },
   newJobBadgeText: { fontSize: 10, color: "#000", letterSpacing: 0.8 },
-
-  // Landscaper card
   lsCard: {
     backgroundColor: "#1A1A1A",
     borderRadius: 22,
@@ -554,6 +695,26 @@ const styles = StyleSheet.create({
     borderColor: "#222222",
     gap: 9,
   },
+  cancelledCard: {
+    opacity: 0.75,
+    borderColor: "#2A1A1A",
+    backgroundColor: "#111111",
+  },
+  cancelledBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cancelledBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#2A1010",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  cancelledBadgeText: { fontSize: 11, color: "#FF4444" },
   lsTopRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   lsServiceBadge: {
     flexDirection: "row",
@@ -590,8 +751,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   cancelBtnText: { fontSize: 14, color: "#666" },
-
-  // Customer card
   card: {
     backgroundColor: "#1A1A1A",
     borderRadius: 22,
@@ -602,7 +761,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#222222",
   },
-  pastCard: { opacity: 0.7 },
+  cancelledCustomerCard: {
+    opacity: 0.65,
+    borderColor: "#2A1A1A",
+    backgroundColor: "#111111",
+  },
+  recurringPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#0d2e18",
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginBottom: 4,
+  },
+  recurringPillText: { fontSize: 11, color: "#34FF7A" },
   avatar: {
     width: 48,
     height: 48,
@@ -621,7 +796,6 @@ const styles = StyleSheet.create({
   priceText: { fontSize: 15, color: "#FFFFFF" },
   subText: { fontSize: 12, color: "#555", marginBottom: 3 },
   proText: { fontSize: 12, color: "#555" },
-  ratingRow: { flexDirection: "row", gap: 2 },
 });
 
 const jdStyles = StyleSheet.create({
@@ -639,6 +813,7 @@ const jdStyles = StyleSheet.create({
     paddingTop: 12,
     borderTopWidth: 1,
     borderColor: "#222222",
+    gap: 14,
   },
   handle: {
     width: 40,
@@ -646,105 +821,97 @@ const jdStyles = StyleSheet.create({
     backgroundColor: "#333",
     borderRadius: 2,
     alignSelf: "center",
-    marginBottom: 20,
+    marginBottom: 8,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 24,
   },
   backBtn: {
     width: 36,
     height: 36,
-    backgroundColor: "#1A1A1A",
     borderRadius: 18,
+    backgroundColor: "#1A1A1A",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#2A2A2A",
   },
-  title: { fontSize: 20, color: "#34FF7A" },
-
+  title: { fontSize: 18, color: "#FFFFFF" },
+  recurringBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#0d2e18",
+    alignSelf: "flex-start",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  recurringBadgeText: { fontSize: 13, color: "#34FF7A" },
   dateCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     backgroundColor: "#1A1A1A",
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 16,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: "#222222",
+    borderColor: "#222",
   },
   dateText: { fontSize: 15, color: "#FFFFFF" },
-
   proRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    backgroundColor: "#1A1A1A",
-    borderRadius: 22,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#222222",
   },
   proAvatar: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  proInitials: { color: "#000", fontSize: 15 },
-  proLabel: { fontSize: 11, color: "#666666", marginBottom: 2 },
-  proName: { fontSize: 15, color: "#FFFFFF" },
-  priceTag: { fontSize: 18, color: "#34FF7A", marginLeft: "auto" },
-
-  sectionLabel: {
-    fontSize: 12,
-    color: "#AAAAAA",
-    textTransform: "uppercase",
-    letterSpacing: 1.1,
-    marginBottom: 10,
-  },
+  proInitials: { fontSize: 16, color: "#000" },
+  proLabel: { fontSize: 11, color: "#888", marginBottom: 2 },
+  proName: { fontSize: 16, color: "#FFFFFF" },
+  priceTag: { fontSize: 20, color: "#34FF7A", marginLeft: "auto" },
+  sectionLabel: { fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: 1 },
   addressCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     backgroundColor: "#1A1A1A",
-    borderRadius: 22,
-    padding: 18,
+    borderRadius: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: "#34FF7A33",
-    marginBottom: 6,
+    borderColor: "#222",
   },
-  addressText: {
-    flex: 1,
-    fontSize: 14,
-    color: "#FFFFFF",
-    lineHeight: 20,
-  },
-  addressHint: {
-    fontSize: 11,
-    color: "#555555",
-    marginBottom: 28,
-    paddingHorizontal: 4,
-  },
+  addressText: { flex: 1, fontSize: 14, color: "#FFFFFF" },
+  addressHint: { fontSize: 11, color: "#555", textAlign: "center" },
   payBtn: {
     backgroundColor: "#34FF7A",
-    borderRadius: 28,
-    paddingVertical: 20,
+    borderRadius: 20,
+    paddingVertical: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: 8,
     shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
   },
-  payBtnText: { fontSize: 17, color: "#000000" },
+  payBtnText: { fontSize: 16, color: "#000" },
+  cancelApptBtn: {
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+    borderRadius: 20,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  cancelApptBtnText: { fontSize: 15, color: "#666" },
 });
