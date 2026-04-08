@@ -363,6 +363,7 @@ function CompletionPhotoModal({
 
 // ── Recurring Series Card (customer) ────────────────────────────────────────
 const TWENTY_FOUR_HOURS = 24 * 3600 * 1000;
+const RECURRING_CUSTOMER_PHONE = "(941) 555-1820";
 
 function useCountdown(targetMs: number | undefined): { h: number; m: number; s: number; expired: boolean } {
   const [now, setNow] = useState(Date.now());
@@ -856,6 +857,26 @@ export default function AppointmentsScreen() {
                       </>
                     )}
                   </View>
+                  {job.phone && (
+                    <View style={styles.lsContactRow}>
+                      <TouchableOpacity
+                        style={styles.lsCallBtn}
+                        activeOpacity={0.8}
+                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`tel:${job.phone}`); }}
+                      >
+                        <Ionicons name="call" size={14} color="#000" />
+                        <Text style={[styles.lsCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.lsTextBtn}
+                        activeOpacity={0.8}
+                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`sms:${job.phone}`); }}
+                      >
+                        <Ionicons name="chatbubble-outline" size={14} color="#FFFFFF" />
+                        <Text style={[styles.lsTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                   <TouchableOpacity
                     style={styles.cancelBtn}
                     activeOpacity={0.8}
@@ -933,16 +954,30 @@ export default function AppointmentsScreen() {
                   <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }, styles.mapAddressLink]} numberOfLines={1}>{appt.address}</Text>
                   <Ionicons name="navigate-outline" size={12} color="#34FF7A" />
                 </TouchableOpacity>
-                <View style={styles.lsMetaRow}>
-                  <Ionicons name="call-outline" size={13} color="#CCCCCC" />
-                  <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>{appt.phone}</Text>
-                </View>
                 {appt.note && (
                   <View style={styles.notePill}>
                     <Ionicons name="information-circle-outline" size={13} color="#34FF7A" />
                     <Text style={[styles.noteText, { fontFamily: "Inter_400Regular" }]}>{appt.note}</Text>
                   </View>
                 )}
+                <View style={styles.lsContactRow}>
+                  <TouchableOpacity
+                    style={styles.lsCallBtn}
+                    activeOpacity={0.8}
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`tel:${appt.phone}`); }}
+                  >
+                    <Ionicons name="call" size={14} color="#000" />
+                    <Text style={[styles.lsCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.lsTextBtn}
+                    activeOpacity={0.8}
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`sms:${appt.phone}`); }}
+                  >
+                    <Ionicons name="chatbubble-outline" size={14} color="#FFFFFF" />
+                    <Text style={[styles.lsTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity style={styles.cancelBtn} activeOpacity={0.8} onPress={() => handleCancelLsAppt(appt)}>
                   <Text style={[styles.cancelBtnText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
                 </TouchableOpacity>
@@ -1006,6 +1041,24 @@ export default function AppointmentsScreen() {
                       <Ionicons name="person-outline" size={13} color="#CCCCCC" />
                       <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>Zamire Smith</Text>
                     </View>
+                    <View style={styles.lsContactRow}>
+                      <TouchableOpacity
+                        style={styles.lsCallBtn}
+                        activeOpacity={0.8}
+                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`tel:${RECURRING_CUSTOMER_PHONE}`); }}
+                      >
+                        <Ionicons name="call" size={14} color="#000" />
+                        <Text style={[styles.lsCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.lsTextBtn}
+                        activeOpacity={0.8}
+                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`sms:${RECURRING_CUSTOMER_PHONE}`); }}
+                      >
+                        <Ionicons name="chatbubble-outline" size={14} color="#FFFFFF" />
+                        <Text style={[styles.lsTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+                      </TouchableOpacity>
+                    </View>
 
                     {/* Customer countdown from landscaper's perspective */}
                     <View style={lsRecStyles.customerTimerRow}>
@@ -1058,6 +1111,24 @@ export default function AppointmentsScreen() {
                   <View style={styles.lsMetaRow}>
                     <Ionicons name="person-outline" size={13} color="#CCCCCC" />
                     <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>Zamire Smith</Text>
+                  </View>
+                  <View style={styles.lsContactRow}>
+                    <TouchableOpacity
+                      style={styles.lsCallBtn}
+                      activeOpacity={0.8}
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`tel:${RECURRING_CUSTOMER_PHONE}`); }}
+                    >
+                      <Ionicons name="call" size={14} color="#000" />
+                      <Text style={[styles.lsCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.lsTextBtn}
+                      activeOpacity={0.8}
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`sms:${RECURRING_CUSTOMER_PHONE}`); }}
+                    >
+                      <Ionicons name="chatbubble-outline" size={14} color="#FFFFFF" />
+                      <Text style={[styles.lsTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+                    </TouchableOpacity>
                   </View>
                   <TouchableOpacity
                     style={lsRecStyles.markDoneBtn}
@@ -1310,6 +1381,20 @@ const styles = StyleSheet.create({
     paddingVertical: 11, borderRadius: 20, alignItems: "center", marginTop: 4,
   },
   cancelBtnText: { fontSize: 14, color: "#FF4444" },
+  lsContactRow: {
+    flexDirection: "row", gap: 10, marginTop: 12, marginBottom: 4,
+  },
+  lsCallBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    backgroundColor: "#34FF7A", borderRadius: 20, paddingVertical: 11,
+  },
+  lsCallBtnText: { fontSize: 14, color: "#000000" },
+  lsTextBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    backgroundColor: "#1E1E1E", borderRadius: 20, paddingVertical: 11,
+    borderWidth: 1, borderColor: "#333333",
+  },
+  lsTextBtnText: { fontSize: 14, color: "#FFFFFF" },
   card: {
     backgroundColor: "#1A1A1A", borderRadius: 22, padding: 16,
     flexDirection: "row", alignItems: "center", gap: 14,

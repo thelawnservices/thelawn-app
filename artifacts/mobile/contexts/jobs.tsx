@@ -10,6 +10,7 @@ export type AcceptedJob = {
   budget: string;
   distance?: string;
   zip?: string;
+  phone?: string;
 };
 
 type JobsContextType = {
