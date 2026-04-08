@@ -88,12 +88,14 @@ const PRICE_RANGES = [
   { label: "$100+",      min: 100, max: Infinity },
 ];
 
+const NEW_CUSTOMER_FEE = 5;
+
 const SERVICE_REQUESTS = [
-  { id: "r1", service: "Mowing/Edging",    size: "Medium", customer: "Alex T.",   distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible",          budget: "$70",   description: "Front and back yard, medium lot. Edge along the driveway and sidewalk.",              address: "8910 45th Ave E, Ellenton, FL" },
-  { id: "r2", service: "Weeding/Mulching", size: "Small",  customer: "Priya N.",  distance: "3.1 mi", zip: "34208", date: "Apr 16", time: "Morning preferred",  budget: "$90",   description: "Flower beds need weeding and about 2 yards of fresh mulch around shrubs.",            address: "22 Palmetto Dr, Bradenton, FL" },
-  { id: "r3", service: "Sod Installation", size: "Large",  customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM",            budget: "$850",  description: "Large back yard needs full sod replacement — approx 1,000 sq ft.",                   address: "4400 53rd Ave E, Bradenton, FL" },
-  { id: "r4", service: "Artificial Turf",  size: "Small",  customer: "Sarah B.",  distance: "0.9 mi", zip: "34219", date: "Apr 17", time: "10:00 AM",           budget: "$1200", description: "Small side yard conversion to artificial turf. Pet-friendly material preferred.",      address: "712 Riviera Dunes Way, Palmetto, FL" },
-  { id: "r5", service: "Mowing/Edging",    size: "Large",  customer: "James W.",  distance: "4.5 mi", zip: "34211", date: "Apr 18", time: "7:30 AM",            budget: "$100",  description: "Large corner lot, front and back. Edge along sidewalk and entire driveway perimeter.", address: "6021 Greenfield Way, Lakewood Ranch, FL" },
+  { id: "r1", service: "Mowing/Edging",    size: "Medium", customer: "Alex T.",   distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible",          budget: "$70",   description: "Front and back yard, medium lot. Edge along the driveway and sidewalk.",              address: "8910 45th Ave E, Ellenton, FL",       isNewCustomer: true  },
+  { id: "r2", service: "Weeding/Mulching", size: "Small",  customer: "Priya N.",  distance: "3.1 mi", zip: "34208", date: "Apr 16", time: "Morning preferred",  budget: "$90",   description: "Flower beds need weeding and about 2 yards of fresh mulch around shrubs.",            address: "22 Palmetto Dr, Bradenton, FL",        isNewCustomer: true  },
+  { id: "r3", service: "Sod Installation", size: "Large",  customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM",            budget: "$850",  description: "Large back yard needs full sod replacement — approx 1,000 sq ft.",                   address: "4400 53rd Ave E, Bradenton, FL",      isNewCustomer: false },
+  { id: "r4", service: "Artificial Turf",  size: "Small",  customer: "Sarah B.",  distance: "0.9 mi", zip: "34219", date: "Apr 17", time: "10:00 AM",           budget: "$1200", description: "Small side yard conversion to artificial turf. Pet-friendly material preferred.",      address: "712 Riviera Dunes Way, Palmetto, FL", isNewCustomer: true  },
+  { id: "r5", service: "Mowing/Edging",    size: "Large",  customer: "James W.",  distance: "4.5 mi", zip: "34211", date: "Apr 18", time: "7:30 AM",            budget: "$100",  description: "Large corner lot, front and back. Edge along sidewalk and entire driveway perimeter.", address: "6021 Greenfield Way, Lakewood Ranch, FL", isNewCustomer: false },
 ];
 
 export default function SearchScreen() {
@@ -175,12 +177,39 @@ export default function SearchScreen() {
           ) : (
             visibleRequests.map((req) => (
               <View key={req.id} style={styles.reqCard}>
+                {/* New Customer Banner */}
+                {req.isNewCustomer && (
+                  <View style={styles.newCustBanner}>
+                    <View style={styles.newCustLeft}>
+                      <Ionicons name="person-add-outline" size={14} color="#FFAA00" />
+                      <Text style={[styles.newCustTitle, { fontFamily: "Inter_700Bold" }]}>New Customer</Text>
+                    </View>
+                    <View style={styles.newCustFeePill}>
+                      <Text style={[styles.newCustFeeText, { fontFamily: "Inter_700Bold" }]}>
+                        −$5 Platform Fee
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
                 <View style={styles.reqTopRow}>
                   <View style={styles.reqServiceBadge}>
                     <Ionicons name="leaf" size={14} color="#34FF7A" />
                     <Text style={[styles.reqServiceText, { fontFamily: "Inter_600SemiBold" }]}>{req.service}</Text>
                   </View>
-                  <Text style={[styles.reqBudget, { fontFamily: "Inter_700Bold" }]}>{req.budget}</Text>
+                  {/* Payout column */}
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={[styles.reqBudget, { fontFamily: "Inter_700Bold" }]}>{req.budget}</Text>
+                    {req.isNewCustomer && (() => {
+                      const raw = parseFloat(req.budget.replace("$", "").replace(",", ""));
+                      const net = (raw - NEW_CUSTOMER_FEE).toFixed(0);
+                      return (
+                        <Text style={[styles.reqNetPayout, { fontFamily: "Inter_500Medium" }]}>
+                          You receive: ${net}
+                        </Text>
+                      );
+                    })()}
+                  </View>
                 </View>
 
                 {req.description ? (
@@ -215,17 +244,47 @@ export default function SearchScreen() {
                   <Ionicons name="person-outline" size={13} color="#CCCCCC" />
                   <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.customer}</Text>
                 </View>
+
+                {/* New-customer fee breakdown row */}
+                {req.isNewCustomer && (() => {
+                  const raw = parseFloat(req.budget.replace("$", "").replace(",", ""));
+                  const net = (raw - NEW_CUSTOMER_FEE).toFixed(0);
+                  return (
+                    <View style={styles.feeBreakdownRow}>
+                      <View style={styles.feeBreakdownItem}>
+                        <Text style={[styles.feeBreakdownLabel, { fontFamily: "Inter_400Regular" }]}>Job total</Text>
+                        <Text style={[styles.feeBreakdownValue, { fontFamily: "Inter_600SemiBold" }]}>{req.budget}</Text>
+                      </View>
+                      <View style={styles.feeBreakdownDivider} />
+                      <View style={styles.feeBreakdownItem}>
+                        <Text style={[styles.feeBreakdownLabel, { fontFamily: "Inter_400Regular" }]}>New customer fee</Text>
+                        <Text style={[styles.feeBreakdownValue, { fontFamily: "Inter_600SemiBold", color: "#FFAA00" }]}>−$5</Text>
+                      </View>
+                      <View style={styles.feeBreakdownDivider} />
+                      <View style={styles.feeBreakdownItem}>
+                        <Text style={[styles.feeBreakdownLabel, { fontFamily: "Inter_600SemiBold", color: "#FFFFFF" }]}>Your payout</Text>
+                        <Text style={[styles.feeBreakdownValue, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>${net}</Text>
+                      </View>
+                    </View>
+                  );
+                })()}
+
                 <TouchableOpacity
                   style={styles.acceptBtn}
                   activeOpacity={0.85}
                   onPress={() => {
+                    const raw = parseFloat(req.budget.replace("$", "").replace(",", ""));
+                    const net = req.isNewCustomer ? (raw - NEW_CUSTOMER_FEE).toFixed(0) : null;
+                    const feeNote = req.isNewCustomer
+                      ? `\n\n⚠️ New Customer Fee: A $${NEW_CUSTOMER_FEE} platform fee applies since this is a new TheLawn customer. Your payout will be $${net} instead of ${req.budget}.`
+                      : "";
                     Alert.alert(
                       "Agree to Customer's Price?",
-                      `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer. No counter-offers.\n\nDo you want to accept?`,
+                      `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer. No counter-offers.${feeNote}\n\nDo you want to accept?`,
                       [
                         { text: "Cancel", style: "cancel" },
                         {
-                          text: "Accept at " + req.budget,
+                          text: req.isNewCustomer ? `Accept · Receive $${net}` : "Accept at " + req.budget,
                           onPress: () => {
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             setAcceptedIds((prev) => [...prev, req.id]);
@@ -242,7 +301,9 @@ export default function SearchScreen() {
                             });
                             Alert.alert(
                               "Job Accepted ✓",
-                              `You agreed to ${req.customer}'s ${req.service} job for ${req.budget}. It's been added to your Appointments.`
+                              req.isNewCustomer
+                                ? `You accepted ${req.customer}'s ${req.service} job. Your payout is $${net} after the $${NEW_CUSTOMER_FEE} new customer fee. Added to your Appointments.`
+                                : `You agreed to ${req.customer}'s ${req.service} job for ${req.budget}. It's been added to your Appointments.`
                             );
                           },
                         },
@@ -250,7 +311,11 @@ export default function SearchScreen() {
                     );
                   }}
                 >
-                  <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>Accept at {req.budget}</Text>
+                  <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+                    {req.isNewCustomer
+                      ? `Accept · Receive $${(parseFloat(req.budget.replace("$", "").replace(",", "")) - NEW_CUSTOMER_FEE).toFixed(0)}`
+                      : `Accept at ${req.budget}`}
+                  </Text>
                 </TouchableOpacity>
               </View>
             ))
@@ -1242,6 +1307,45 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   acceptBtnText: { color: "#000", fontSize: 15 },
+
+  newCustBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1F1500",
+    borderWidth: 1,
+    borderColor: "#FFAA0040",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 10,
+  },
+  newCustLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
+  newCustTitle: { fontSize: 13, color: "#FFAA00" },
+  newCustFeePill: {
+    backgroundColor: "#FFAA0020",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  newCustFeeText: { fontSize: 12, color: "#FFAA00" },
+  reqNetPayout: { fontSize: 12, color: "#FFAA00", marginTop: 1 },
+  feeBreakdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#141414",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#222",
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  feeBreakdownItem: { flex: 1, alignItems: "center", gap: 3 },
+  feeBreakdownLabel: { fontSize: 10, color: "#777" },
+  feeBreakdownValue: { fontSize: 14, color: "#FFFFFF" },
+  feeBreakdownDivider: { width: 1, height: 28, backgroundColor: "#2A2A2A" },
 
   payAcceptRow: {
     flexDirection: "row", alignItems: "center", gap: 5,
