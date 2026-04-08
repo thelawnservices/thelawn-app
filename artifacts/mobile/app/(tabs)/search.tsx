@@ -90,6 +90,7 @@ const PRICE_RANGES = [
 ];
 
 const NEW_CUSTOMER_FEE = 5;
+const PLATFORM_COMMISSION_RATE = 0.03;
 
 const SERVICE_REQUESTS = [
   { id: "r1", service: "Mowing/Edging",    size: "Medium", customer: "Alex T.",   distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible",          budget: "$70",   description: "Front and back yard, medium lot. Edge along the driveway and sidewalk.",              address: "8910 45th Ave E, Ellenton, FL",           phone: "(941) 555-0192", isNewCustomer: true  },
@@ -185,7 +186,8 @@ export default function SearchScreen() {
             visibleRequests.map((req) => {
               const effectiveIsNew = req.isNewCustomer && !knownCustomers.has(req.customer);
               const raw = parseFloat(req.budget.replace("$", "").replace(",", ""));
-              const net = effectiveIsNew ? (raw - NEW_CUSTOMER_FEE).toFixed(0) : null;
+              const commission = effectiveIsNew ? Math.round(raw * PLATFORM_COMMISSION_RATE * 100) / 100 : 0;
+              const net = effectiveIsNew ? (raw - NEW_CUSTOMER_FEE - commission).toFixed(2) : null;
               return (
                 <View key={req.id} style={styles.reqCard}>
                   {/* New Customer Banner */}
@@ -197,7 +199,7 @@ export default function SearchScreen() {
                       </View>
                       <View style={styles.newCustFeePill}>
                         <Text style={[styles.newCustFeeText, { fontFamily: "Inter_700Bold" }]}>
-                          −$5 Platform Fee
+                          Fees Apply
                         </Text>
                       </View>
                     </View>
@@ -252,22 +254,25 @@ export default function SearchScreen() {
                     <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.customer}</Text>
                   </View>
 
-                  {/* New-customer fee breakdown row */}
+                  {/* New-customer fee receipt breakdown */}
                   {effectiveIsNew && (
-                    <View style={styles.feeBreakdownRow}>
-                      <View style={styles.feeBreakdownItem}>
-                        <Text style={[styles.feeBreakdownLabel, { fontFamily: "Inter_400Regular" }]}>Job total</Text>
-                        <Text style={[styles.feeBreakdownValue, { fontFamily: "Inter_600SemiBold" }]}>{req.budget}</Text>
+                    <View style={styles.feeReceiptCard}>
+                      <View style={styles.feeReceiptRow}>
+                        <Text style={[styles.feeReceiptLabel, { fontFamily: "Inter_400Regular" }]}>Job total</Text>
+                        <Text style={[styles.feeReceiptValue, { fontFamily: "Inter_500Medium" }]}>{req.budget}</Text>
                       </View>
-                      <View style={styles.feeBreakdownDivider} />
-                      <View style={styles.feeBreakdownItem}>
-                        <Text style={[styles.feeBreakdownLabel, { fontFamily: "Inter_400Regular" }]}>New customer fee</Text>
-                        <Text style={[styles.feeBreakdownValue, { fontFamily: "Inter_600SemiBold", color: "#FFAA00" }]}>−$5</Text>
+                      <View style={styles.feeReceiptRow}>
+                        <Text style={[styles.feeReceiptLabel, { fontFamily: "Inter_400Regular" }]}>New customer fee</Text>
+                        <Text style={[styles.feeReceiptDeduct, { fontFamily: "Inter_500Medium" }]}>−${NEW_CUSTOMER_FEE.toFixed(2)}</Text>
                       </View>
-                      <View style={styles.feeBreakdownDivider} />
-                      <View style={styles.feeBreakdownItem}>
-                        <Text style={[styles.feeBreakdownLabel, { fontFamily: "Inter_600SemiBold", color: "#FFFFFF" }]}>Your payout</Text>
-                        <Text style={[styles.feeBreakdownValue, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>${net}</Text>
+                      <View style={styles.feeReceiptRow}>
+                        <Text style={[styles.feeReceiptLabel, { fontFamily: "Inter_400Regular" }]}>TheLawn commission (3%)</Text>
+                        <Text style={[styles.feeReceiptDeduct, { fontFamily: "Inter_500Medium" }]}>−${commission.toFixed(2)}</Text>
+                      </View>
+                      <View style={styles.feeReceiptDivider} />
+                      <View style={styles.feeReceiptRow}>
+                        <Text style={[styles.feeReceiptPayoutLabel, { fontFamily: "Inter_700Bold" }]}>Your payout</Text>
+                        <Text style={[styles.feeReceiptPayoutValue, { fontFamily: "Inter_700Bold" }]}>${net}</Text>
                       </View>
                     </View>
                   )}
@@ -277,7 +282,7 @@ export default function SearchScreen() {
                     activeOpacity={0.85}
                     onPress={() => {
                       const feeNote = effectiveIsNew
-                        ? `\n\n⚠️ New Customer Fee: A $${NEW_CUSTOMER_FEE} platform fee applies since this is a new TheLawn customer. Your payout will be $${net} instead of ${req.budget}.`
+                        ? `\n\n⚠️ Fees for new customers:\n  • New customer fee: −$${NEW_CUSTOMER_FEE.toFixed(2)}\n  • TheLawn commission (3%): −$${commission.toFixed(2)}\n\nYour payout: $${net} (instead of ${req.budget}).`
                         : "";
                       Alert.alert(
                         "Agree to Customer's Price?",
@@ -304,7 +309,7 @@ export default function SearchScreen() {
                               Alert.alert(
                                 "Job Accepted ✓",
                                 effectiveIsNew
-                                  ? `You accepted ${req.customer}'s ${req.service} job. Your payout is $${net} after the $${NEW_CUSTOMER_FEE} new customer fee. Added to your Appointments.`
+                                  ? `You accepted ${req.customer}'s ${req.service} job.\n\nYour payout: $${net}\n(after $${NEW_CUSTOMER_FEE.toFixed(2)} new customer fee + $${commission.toFixed(2)} TheLawn commission)\n\nAdded to your Appointments.`
                                   : `You agreed to ${req.customer}'s ${req.service} job for ${req.budget}. It's been added to your Appointments.`
                               );
                             },
@@ -1352,6 +1357,27 @@ const styles = StyleSheet.create({
   },
   newCustFeeText: { fontSize: 12, color: "#FFAA00" },
   reqNetPayout: { fontSize: 12, color: "#FFAA00", marginTop: 1 },
+  feeReceiptCard: {
+    backgroundColor: "#111111",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#222222",
+    padding: 12,
+    marginBottom: 12,
+    gap: 7,
+  },
+  feeReceiptRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  feeReceiptLabel: { fontSize: 12, color: "#888888" },
+  feeReceiptValue: { fontSize: 13, color: "#CCCCCC" },
+  feeReceiptDeduct: { fontSize: 13, color: "#FFAA00" },
+  feeReceiptDivider: { height: 1, backgroundColor: "#2A2A2A", marginVertical: 4 },
+  feeReceiptPayoutLabel: { fontSize: 13, color: "#FFFFFF" },
+  feeReceiptPayoutValue: { fontSize: 15, color: "#34FF7A" },
+
   feeBreakdownRow: {
     flexDirection: "row",
     alignItems: "center",
