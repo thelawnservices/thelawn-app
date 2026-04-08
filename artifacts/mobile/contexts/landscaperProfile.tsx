@@ -2,6 +2,14 @@ import React, { createContext, useContext, useState } from "react";
 
 export type BookedSlot = { time: string; durationMinutes: number; service: string };
 
+export const SERVICE_BLOCK_MINUTES: Record<string, number> = {
+  "Mowing/Edging":    120,
+  "Weeding/Mulching": 240,
+  "Sod Installation": 480,
+  "Artificial Turf":  1200,
+  "Full Service":     240,
+};
+
 export type LandscaperAvailability = {
   days: Record<string, boolean>;
   startTime: string;

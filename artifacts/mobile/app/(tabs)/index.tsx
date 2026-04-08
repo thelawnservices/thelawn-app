@@ -24,8 +24,24 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
-import { useLandscaperProfile } from "@/contexts/landscaperProfile";
+import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
+
+function normalizeDateKey(raw: string): string {
+  const parts = raw.trim().split(/\s+/);
+  if (parts.length === 3) return raw;
+  if (parts.length === 2) return `${parts[0]} ${parts[1]}, ${new Date().getFullYear()}`;
+  return raw;
+}
+
+function normalizeTime(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (lower.includes("morning")) return "8:00 AM";
+  if (lower.includes("afternoon")) return "12:00 PM";
+  if (lower.includes("evening")) return "5:00 PM";
+  if (lower === "flexible" || lower === "anytime" || lower === "tbd") return "8:00 AM";
+  return raw;
+}
 
 
 const LANDSCAPER_QUICK_STATS = [
@@ -873,6 +889,7 @@ export default function HomeScreen() {
   const { logout, role, avatarUri, userName } = useAuth();
   const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "G" : "Z");
   const { acceptJob } = useJobs();
+  const { addBookedSlot } = useLandscaperProfile();
   const [acceptedOnHome, setAcceptedOnHome] = useState<string[]>([]);
   const [prosLoaded, setProsLoaded] = useState(false);
   const [selectedPro, setSelectedPro] = useState<TrustedPro | null>(null);
@@ -1305,6 +1322,8 @@ export default function HomeScreen() {
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                         setAcceptedOnHome((prev) => [...prev, req.id]);
                         acceptJob({ id: req.id, service: req.service, size: req.size, customer: req.customer, date: req.date, time: req.time, budget: req.budget, distance: req.distance, zip: req.zip });
+                        const blockMins = SERVICE_BLOCK_MINUTES[req.service] ?? 120;
+                        addBookedSlot(normalizeDateKey(req.date), normalizeTime(req.time), blockMins, req.service);
                         Alert.alert("Job Accepted", `${req.customer}'s ${req.service} job added to your Appointments.`);
                       }}
                     >

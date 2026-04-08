@@ -16,6 +16,30 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
+import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
+
+const MONTH_MAP: Record<string, number> = {
+  Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+  Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+};
+
+function normalizeDateKey(raw: string): string {
+  const parts = raw.trim().split(/\s+/);
+  if (parts.length === 3) return raw;
+  if (parts.length === 2) {
+    return `${parts[0]} ${parts[1]}, ${new Date().getFullYear()}`;
+  }
+  return raw;
+}
+
+function normalizeTime(raw: string): string {
+  const lower = raw.toLowerCase();
+  if (lower.includes("morning")) return "8:00 AM";
+  if (lower.includes("afternoon")) return "12:00 PM";
+  if (lower.includes("evening")) return "5:00 PM";
+  if (lower === "flexible" || lower === "anytime" || lower === "tbd") return "8:00 AM";
+  return raw;
+}
 
 type RequestStatus = "pending" | "accepted" | "in_progress" | "completed" | "cancelled";
 
@@ -199,6 +223,7 @@ export default function RequestsScreen() {
   const topPadding = isWeb ? 67 : insets.top;
   const { role } = useAuth();
   const { acceptJob } = useJobs();
+  const { addBookedSlot } = useLandscaperProfile();
 
   const isLandscaper = role === "landscaper";
 
@@ -206,10 +231,14 @@ export default function RequestsScreen() {
   const [newModalVisible, setNewModalVisible] = useState(false);
   const [extraRequests, setExtraRequests] = useState<typeof CUSTOMER_REQUESTS>([]);
 
-  function handleAccept(id: string, service: string, customer: string, budget: string) {
+  function handleAccept(id: string, service: string, customer: string, budget: string, rawDate: string, rawTime: string) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setAccepted((prev) => [...prev, id]);
-    acceptJob({ id, service, customer, address: "", date: "", time: "", budget });
+    acceptJob({ id, service, customer, address: "", date: rawDate, time: rawTime, budget });
+    const blockMins = SERVICE_BLOCK_MINUTES[service] ?? 120;
+    const dateKey = normalizeDateKey(rawDate);
+    const timeKey = normalizeTime(rawTime);
+    addBookedSlot(dateKey, timeKey, blockMins, service);
     Alert.alert(
       "Job Accepted ✓",
       `You agreed to complete ${customer}'s ${service} job for ${budget} — the price the customer set.`
@@ -320,7 +349,7 @@ export default function RequestsScreen() {
                               { text: "Cancel", style: "cancel" },
                               {
                                 text: `Accept at ${req.budget}`,
-                                onPress: () => handleAccept(req.id, req.service, req.customer, req.budget),
+                                onPress: () => handleAccept(req.id, req.service, req.customer, req.budget, req.date, req.time),
                               },
                             ]
                           );

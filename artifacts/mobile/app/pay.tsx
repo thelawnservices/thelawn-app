@@ -14,7 +14,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { useLandscaperProfile } from "@/contexts/landscaperProfile";
+import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import { useAuth } from "@/contexts/auth";
 
 type PayState = "availability" | "details" | "review" | "processing" | "success";
@@ -63,10 +63,10 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const SERVICE_DURATIONS: Record<string, number> = {
-  "Mowing/Edging":    90,
-  "Weeding/Mulching": 180,
-  "Sod Installation": 360,
-  "Artificial Turf":  900,
+  "Mowing/Edging":    120,
+  "Weeding/Mulching": 240,
+  "Sod Installation": 480,
+  "Artificial Turf":  1200,
   "Full Service":     240,
 };
 
@@ -290,7 +290,8 @@ export default function PayScreen() {
     }
     if (selectedDateLabel && selectedTime) {
       const primaryService = [...selectedServices][0] ?? "Service";
-      addBookedSlot(selectedDateLabel, selectedTime, bookingDurationMinutes, primaryService);
+      const blockMins = SERVICE_BLOCK_MINUTES[primaryService] ?? bookingDurationMinutes;
+      addBookedSlot(selectedDateLabel, selectedTime, blockMins, primaryService);
     }
     const newOrderId = `TL-2026-${String(Math.floor(10000 + Math.random() * 89999)).padStart(5, "0")}`;
     setOrderId(newOrderId);
