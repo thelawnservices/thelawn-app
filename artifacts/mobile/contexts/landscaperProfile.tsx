@@ -42,6 +42,7 @@ export type MyServicesState = {
   avail:            Record<string, ServiceAvailItem>;
   pricing:          Record<string, PricingTierItem[]>;
   acceptedPayments: string[];
+  blockedDates:     string[];   // "Apr 10, 2026" style keys the landscaper marked off
 };
 
 const ALL_SVC = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
@@ -62,7 +63,8 @@ const DEFAULT_MY_SERVICES: MyServicesState = {
     "Full Service":     { days: ["Mon","Wed","Fri"],             startTime: "8:00 AM", endTime: "5:00 PM" },
   },
   pricing: Object.fromEntries(ALL_SVC.map((s) => [s, BASE_TIERS.map((t) => ({ ...t }))])),
-  acceptedPayments: ["Cash", "Venmo", "In Person"],
+  acceptedPayments: ["In Person", "Venmo"],
+  blockedDates: [],
 };
 
 // ── Context ───────────────────────────────────────────────────────────────────

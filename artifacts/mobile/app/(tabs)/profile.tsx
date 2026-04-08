@@ -450,7 +450,8 @@ function LandscaperProfile({
                 {monthDates.map((d, i) => {
                   const dateKey = `${d.month} ${d.dateNum}, ${d.year}`;
                   const hasBookings = (bookedSlots[dateKey] ?? []).length > 0;
-                  const isAvail = !!allAvailDays[d.label];
+                  const isBlocked = (myServices.blockedDates ?? []).includes(dateKey);
+                  const isAvail = !!allAvailDays[d.label] && !isBlocked;
                   const isCalSelected = calendarSelectedDate === dateKey;
                   return (
                     <TouchableOpacity
@@ -458,19 +459,21 @@ function LandscaperProfile({
                       style={[
                         availStyles.calCell,
                         isAvail && availStyles.calCellAvail,
+                        isBlocked && availStyles.calCellBlocked,
                         isCalSelected && availStyles.calCellSelected,
                         hasBookings && availStyles.calCellHasBookings,
                       ]}
                       onPress={() => setCalendarSelectedDate(isCalSelected ? null : dateKey)}
                       activeOpacity={0.75}
                     >
-                      <Text style={[availStyles.calCellLabel, { fontFamily: "Inter_400Regular" }, isAvail ? { color: "rgba(0,0,0,0.6)" } : { color: "#777" }]}>
+                      <Text style={[availStyles.calCellLabel, { fontFamily: "Inter_400Regular" }, isAvail ? { color: "rgba(0,0,0,0.6)" } : isBlocked ? { color: "#EF4444" } : { color: "#777" }]}>
                         {d.label.slice(0, 2)}
                       </Text>
-                      <Text style={[availStyles.calCellDate, { fontFamily: "Inter_700Bold" }, isAvail ? { color: "#000" } : { color: "#777" }]}>
+                      <Text style={[availStyles.calCellDate, { fontFamily: "Inter_700Bold" }, isAvail ? { color: "#000" } : isBlocked ? { color: "#EF4444" } : { color: "#777" }]}>
                         {d.dateNum}
                       </Text>
-                      {hasBookings && <View style={availStyles.calDot} />}
+                      {isBlocked && <Text style={{ fontSize: 8, color: "#EF4444" }}>OFF</Text>}
+                      {hasBookings && !isBlocked && <View style={availStyles.calDot} />}
                     </TouchableOpacity>
                   );
                 })}
@@ -1369,6 +1372,7 @@ const availStyles = StyleSheet.create({
     position: "relative",
   },
   calCellAvail: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  calCellBlocked: { backgroundColor: "#3A1A1A", borderColor: "#5A2020" },
   calCellSelected: { borderColor: "#fff", borderWidth: 2 },
   calCellHasBookings: { borderColor: "#f87171" },
   calCellLabel: { fontSize: 9, marginBottom: 2 },

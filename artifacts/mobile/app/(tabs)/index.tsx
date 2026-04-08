@@ -803,15 +803,46 @@ function makeDefaultPricing(): ServicePricing {
   return out;
 }
 
+// ── Month date grid helper (4 weeks from today) ───────────────────────────────
+const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MON_NAMES_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function buildMonthGrid() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const rows: { key: string; dayLabel: string; dateNum: number; monthLabel: string }[][] = [];
+  let week: { key: string; dayLabel: string; dateNum: number; monthLabel: string }[] = [];
+  for (let i = 0; i < 28; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const key = `${MON_NAMES_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+    week.push({ key, dayLabel: DAY_NAMES_SHORT[d.getDay()], dateNum: d.getDate(), monthLabel: MON_NAMES_SHORT[d.getMonth()] });
+    if (week.length === 7 || i === 27) { rows.push(week); week = []; }
+  }
+  return rows;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const { myServices, saveMyServices } = useLandscaperProfile();
+  const { myServices, saveMyServices, bookedSlots } = useLandscaperProfile();
 
   const [offered, setOffered]   = useState<string[]>(() => [...myServices.offered]);
   const [avail, setAvail]       = useState<AvailState>(() => JSON.parse(JSON.stringify(myServices.avail)));
   const [pricing, setPricing]   = useState<ServicePricing>(() => JSON.parse(JSON.stringify(myServices.pricing)));
   const [acceptedPayments, setAcceptedPayments] = useState<string[]>(() => [...myServices.acceptedPayments]);
+  const [blockedDates, setBlockedDates] = useState<string[]>(() => [...(myServices.blockedDates ?? [])]);
   const [saved, setSaved] = useState(false);
   const [timePicker, setTimePicker] = useState<{ service: string; field: "startTime" | "endTime" } | null>(null);
+
+  // Derive which days of week are "active" across all offered services
+  const activeDaysOfWeek = useMemo(() => {
+    const s = new Set<string>();
+    for (const svc of offered) { for (const d of (avail[svc]?.days ?? [])) s.add(d); }
+    return s;
+  }, [offered, avail]);
+
+  const calRows = useMemo(() => buildMonthGrid(), [visible]);
 
   // Sync from context whenever modal opens
   useEffect(() => {
@@ -820,6 +851,7 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
       setAvail(JSON.parse(JSON.stringify(myServices.avail)));
       setPricing(JSON.parse(JSON.stringify(myServices.pricing)));
       setAcceptedPayments([...myServices.acceptedPayments]);
+      setBlockedDates([...(myServices.blockedDates ?? [])]);
     }
   }, [visible]);
 
@@ -851,9 +883,16 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
     }));
   }
 
+  function toggleBlockedDate(key: string) {
+    Haptics.selectionAsync();
+    setBlockedDates((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
+  }
+
   function handleSave() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    saveMyServices({ offered, avail, pricing, acceptedPayments });
+    saveMyServices({ offered, avail, pricing, acceptedPayments, blockedDates });
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 900);
   }
@@ -1038,6 +1077,104 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
 
             <View style={[svcStyles.divider, { marginTop: 16 }]} />
 
+            {/* ── Monthly Availability ──────────────────────── */}
+            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Monthly Availability</Text>
+            <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
+              Tap any{" "}
+              <Text style={{ color: "#34FF7A", fontFamily: "Inter_600SemiBold" }}>green</Text>
+              {" "}day to block it off. Tap a{" "}
+              <Text style={{ color: "#EF4444", fontFamily: "Inter_600SemiBold" }}>red</Text>
+              {" "}day to restore it. Gray days are outside your set schedule.
+            </Text>
+
+            {/* Day-of-week header */}
+            <View style={svcStyles.calHeader}>
+              {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
+                <Text key={d} style={[svcStyles.calHeaderCell, { fontFamily: "Inter_600SemiBold" }]}>{d}</Text>
+              ))}
+            </View>
+
+            {/* 4-week grid */}
+            {calRows.map((week, wi) => {
+              // Month label when the month changes
+              const firstOfWeek = week[0];
+              const showMonthLabel = wi === 0 || week.some((day, di) => di > 0 && day.monthLabel !== week[di - 1].monthLabel);
+              return (
+                <View key={wi}>
+                  {showMonthLabel && (
+                    <Text style={[svcStyles.calMonthLabel, { fontFamily: "Inter_700Bold" }]}>
+                      {firstOfWeek.monthLabel}
+                    </Text>
+                  )}
+                  <View style={svcStyles.calWeekRow}>
+                    {week.map((day) => {
+                      const isWorkDay = activeDaysOfWeek.has(day.dayLabel);
+                      const isBlocked = blockedDates.includes(day.key);
+                      const hasBooking = (bookedSlots[day.key] ?? []).length > 0;
+                      const cellStyle = isBlocked
+                        ? svcStyles.calCellBlocked
+                        : isWorkDay
+                        ? svcStyles.calCellAvail
+                        : svcStyles.calCellOff;
+                      const textColor = isBlocked ? "#EF4444" : isWorkDay ? "#000" : "#555";
+                      return (
+                        <TouchableOpacity
+                          key={day.key}
+                          style={[svcStyles.calCell, cellStyle]}
+                          onPress={() => isWorkDay || isBlocked ? toggleBlockedDate(day.key) : null}
+                          activeOpacity={isWorkDay || isBlocked ? 0.7 : 1}
+                        >
+                          <Text style={[svcStyles.calCellDay, { fontFamily: "Inter_400Regular", color: isBlocked ? "#EF4444" : isWorkDay ? "rgba(0,0,0,0.6)" : "#555" }]}>
+                            {day.dayLabel.slice(0, 2)}
+                          </Text>
+                          <Text style={[svcStyles.calCellNum, { fontFamily: "Inter_700Bold", color: textColor }]}>
+                            {day.dateNum}
+                          </Text>
+                          {isBlocked && (
+                            <Ionicons name="close" size={8} color="#EF4444" />
+                          )}
+                          {hasBooking && !isBlocked && (
+                            <View style={svcStyles.calDot} />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+            })}
+
+            {/* Legend */}
+            <View style={svcStyles.calLegend}>
+              <View style={svcStyles.calLegendItem}>
+                <View style={[svcStyles.calLegendDot, { backgroundColor: "#34FF7A" }]} />
+                <Text style={[svcStyles.calLegendText, { fontFamily: "Inter_400Regular" }]}>Available</Text>
+              </View>
+              <View style={svcStyles.calLegendItem}>
+                <View style={[svcStyles.calLegendDot, { backgroundColor: "#3A1A1A" }]} />
+                <Text style={[svcStyles.calLegendText, { fontFamily: "Inter_400Regular" }]}>Blocked off</Text>
+              </View>
+              <View style={svcStyles.calLegendItem}>
+                <View style={[svcStyles.calLegendDot, { backgroundColor: "#1A1A1A" }]} />
+                <Text style={[svcStyles.calLegendText, { fontFamily: "Inter_400Regular" }]}>Not scheduled</Text>
+              </View>
+            </View>
+
+            {blockedDates.length > 0 && (
+              <TouchableOpacity
+                style={svcStyles.clearBlockedBtn}
+                onPress={() => { Haptics.selectionAsync(); setBlockedDates([]); }}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="refresh-outline" size={14} color="#EF4444" />
+                <Text style={[svcStyles.clearBlockedText, { fontFamily: "Inter_500Medium" }]}>
+                  Clear {blockedDates.length} blocked {blockedDates.length === 1 ? "date" : "dates"}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <View style={[svcStyles.divider, { marginTop: 20 }]} />
+
             {/* ── Save ──────────────────────────────────────── */}
             <TouchableOpacity
               style={[svcStyles.saveBtn, saved && svcStyles.saveBtnSuccess]}
@@ -1214,6 +1351,34 @@ const svcStyles = StyleSheet.create({
     marginBottom: 4,
   },
   paymentNoteText: { fontSize: 12, color: "#BBBBBB", flex: 1, lineHeight: 18 },
+
+  calHeader: { flexDirection: "row", marginBottom: 4 },
+  calHeaderCell: { flex: 1, textAlign: "center", fontSize: 10, color: "#666", letterSpacing: 0.4 },
+  calMonthLabel: { fontSize: 13, color: "#34FF7A", marginTop: 14, marginBottom: 6 },
+  calWeekRow: { flexDirection: "row", gap: 4, marginBottom: 4 },
+  calCell: {
+    flex: 1, alignItems: "center", justifyContent: "center",
+    borderRadius: 10, paddingVertical: 6, minHeight: 52,
+    borderWidth: 1, borderColor: "transparent",
+  },
+  calCellAvail: { backgroundColor: "#34FF7A" },
+  calCellBlocked: { backgroundColor: "#3A1A1A", borderColor: "#5A2020" },
+  calCellOff: { backgroundColor: "#141414", borderColor: "#1e1e1e" },
+  calCellDay: { fontSize: 9, marginBottom: 2 },
+  calCellNum: { fontSize: 14 },
+  calDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: "#1A4428", marginTop: 2 },
+  calLegend: { flexDirection: "row", gap: 16, marginTop: 10, marginBottom: 4, flexWrap: "wrap" },
+  calLegendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+  calLegendDot: { width: 12, height: 12, borderRadius: 6 },
+  calLegendText: { fontSize: 11, color: "#888" },
+  clearBlockedBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    alignSelf: "flex-start", marginTop: 10,
+    backgroundColor: "#2A0E0E", borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderWidth: 1, borderColor: "#5A2020",
+  },
+  clearBlockedText: { fontSize: 12, color: "#EF4444" },
 });
 
 
