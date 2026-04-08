@@ -757,35 +757,53 @@ const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "
 type ServiceAvail = { days: string[]; startTime: string; endTime: string };
 type AvailState = Record<string, ServiceAvail>;
 
+function buildTimeSlots(): string[] {
+  const slots: string[] = [];
+  for (let h = 6; h <= 20; h++) {
+    for (const m of [0, 30]) {
+      if (h === 20 && m === 30) break;
+      const period = h < 12 ? "AM" : "PM";
+      const hr = h > 12 ? h - 12 : h;
+      slots.push(`${hr}:${m === 0 ? "00" : "30"} ${period}`);
+    }
+  }
+  return slots;
+}
+const TIME_SLOTS = buildTimeSlots();
+
 const DEFAULT_AVAIL: AvailState = {
-  "Mowing/Edging":    { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "08:00", endTime: "18:00" },
-  "Weeding/Mulching": { days: ["Tue", "Thu"], startTime: "09:00", endTime: "17:00" },
-  "Sod Installation": { days: ["Mon", "Wed", "Fri"], startTime: "07:00", endTime: "17:00" },
-  "Artificial Turf":  { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "07:00", endTime: "16:00" },
-  "Full Service":     { days: ["Mon", "Wed", "Fri"], startTime: "08:00", endTime: "17:00" },
+  "Mowing/Edging":    { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "8:00 AM",  endTime: "6:00 PM"  },
+  "Weeding/Mulching": { days: ["Tue", "Thu"],                       startTime: "9:00 AM",  endTime: "5:00 PM"  },
+  "Sod Installation": { days: ["Mon", "Wed", "Fri"],                startTime: "7:00 AM",  endTime: "5:00 PM"  },
+  "Artificial Turf":  { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "7:00 AM",  endTime: "4:00 PM"  },
+  "Full Service":     { days: ["Mon", "Wed", "Fri"],                startTime: "8:00 AM",  endTime: "5:00 PM"  },
 };
 
-type PricingTier = { size: string; desc: string; price: string };
+type PricingTier = { label: string; range: string; price: string };
+type ServicePricing = Record<string, PricingTier[]>;
 
-const DEFAULT_PRICING: PricingTier[] = [
-  { size: "Small Yard",  desc: "Up to 2,000 sq ft",  price: "$45" },
-  { size: "Medium Yard", desc: "2,000–5,000 sq ft",   price: "$65" },
-  { size: "Large Yard",  desc: "5,000+ sq ft",         price: "$95" },
+const BASE_TIERS: PricingTier[] = [
+  { label: "Small",  range: "Up to 2,000 sq ft",   price: "$45" },
+  { label: "Medium", range: "2,000 – 5,000 sq ft",  price: "$65" },
+  { label: "Large",  range: "5,000+ sq ft",          price: "$95" },
 ];
+
+function makeDefaultPricing(): ServicePricing {
+  const out: ServicePricing = {};
+  for (const svc of ALL_SERVICES) out[svc] = BASE_TIERS.map((t) => ({ ...t }));
+  return out;
+}
 
 function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [offered, setOffered] = useState<string[]>([...ALL_SERVICES]);
   const [avail, setAvail] = useState<AvailState>(() => JSON.parse(JSON.stringify(DEFAULT_AVAIL)));
-  const [pricing, setPricing] = useState<PricingTier[]>(
-    DEFAULT_PRICING.map((t) => ({ ...t }))
-  );
+  const [pricing, setPricing] = useState<ServicePricing>(() => makeDefaultPricing());
   const [saved, setSaved] = useState(false);
+  const [timePicker, setTimePicker] = useState<{ service: string; field: "startTime" | "endTime" } | null>(null);
 
   function toggleService(svc: string) {
     Haptics.selectionAsync();
-    setOffered((prev) =>
-      prev.includes(svc) ? prev.filter((s) => s !== svc) : [...prev, svc]
-    );
+    setOffered((prev) => prev.includes(svc) ? prev.filter((s) => s !== svc) : [...prev, svc]);
   }
 
   function toggleDay(service: string, day: string) {
@@ -797,14 +815,18 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
     });
   }
 
-  function setTime(service: string, field: "startTime" | "endTime", val: string) {
-    setAvail((prev) => ({ ...prev, [service]: { ...prev[service], [field]: val } }));
+  function applyTime(slot: string) {
+    if (!timePicker) return;
+    const { service, field } = timePicker;
+    setAvail((prev) => ({ ...prev, [service]: { ...prev[service], [field]: slot } }));
+    setTimePicker(null);
   }
 
-  function updatePrice(index: number, value: string) {
-    setPricing((prev) =>
-      prev.map((t, i) => (i === index ? { ...t, price: value } : t))
-    );
+  function updatePrice(service: string, tierIdx: number, value: string) {
+    setPricing((prev) => ({
+      ...prev,
+      [service]: prev[service].map((t, i) => (i === tierIdx ? { ...t, price: value } : t)),
+    }));
   }
 
   function handleSave() {
@@ -813,11 +835,13 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
     setTimeout(() => { setSaved(false); onClose(); }, 900);
   }
 
+  const tpField = timePicker?.field ?? "startTime";
+  const currentTime = timePicker ? (avail[timePicker.service]?.[tpField] ?? "") : "";
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={svcStyles.overlay}>
         <View style={svcStyles.sheet}>
-          {/* Header */}
           <View style={svcStyles.header}>
             <Text style={[svcStyles.title, { fontFamily: "Inter_700Bold" }]}>My Services</Text>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
@@ -827,10 +851,10 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
 
-            {/* ── Services I Offer ───────────────────────── */}
+            {/* ── Services I Offer ───────────────────────────── */}
             <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Services I Offer</Text>
             <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
-              Toggle the services you provide. Unchecked services are hidden from your profile.
+              Toggle on the services you provide. Disabled services are hidden from your profile.
             </Text>
             <View style={svcStyles.chipsRow}>
               {ALL_SERVICES.map((svc) => {
@@ -842,14 +866,8 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
                     onPress={() => toggleService(svc)}
                     activeOpacity={0.8}
                   >
-                    <Ionicons
-                      name={on ? "checkmark-circle" : "ellipse-outline"}
-                      size={16}
-                      color={on ? "#000" : "#555"}
-                    />
-                    <Text
-                      style={[svcStyles.chipText, { fontFamily: "Inter_500Medium" }, on && svcStyles.chipTextOn]}
-                    >
+                    <Ionicons name={on ? "checkmark-circle" : "ellipse-outline"} size={16} color={on ? "#000" : "#555"} />
+                    <Text style={[svcStyles.chipText, { fontFamily: "Inter_500Medium" }, on && svcStyles.chipTextOn]}>
                       {svc}
                     </Text>
                   </TouchableOpacity>
@@ -859,14 +877,19 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
 
             <View style={svcStyles.divider} />
 
-            {/* ── Availability Schedule ────────────────────── */}
-            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Availability Schedule</Text>
+            {/* ── Per-Service: Availability + Pricing ───────── */}
+            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Availability & Pricing</Text>
             <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
-              Set available days and hours for each service you offer.
+              Configure working days, hours, and rates per yard size for each active service.
             </Text>
+
             {offered.map((service, si) => (
-              <View key={service} style={si > 0 ? { marginTop: 22 } : undefined}>
-                <Text style={[svcStyles.schedServiceLabel, { fontFamily: "Inter_600SemiBold" }]}>{service}</Text>
+              <View key={service} style={[svcStyles.serviceBlock, si > 0 && { marginTop: 14 }]}>
+
+                <Text style={[svcStyles.schedServiceLabel, { fontFamily: "Inter_700Bold" }]}>{service}</Text>
+
+                {/* Days */}
+                <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium" }]}>AVAILABLE DAYS</Text>
                 <View style={svcStyles.daysRow}>
                   {ALL_DAYS.map((day) => {
                     const active = avail[service]?.days.includes(day) ?? false;
@@ -884,64 +907,75 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
                     );
                   })}
                 </View>
+
+                {/* Time buttons */}
+                <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium" }]}>WORKING HOURS</Text>
                 <View style={svcStyles.timesRow}>
-                  <View style={svcStyles.timeCol}>
-                    <Text style={[svcStyles.timeLabel, { fontFamily: "Inter_400Regular" }]}>Start</Text>
-                    <TextInput
-                      style={[svcStyles.timeInput, { fontFamily: "Inter_400Regular" }]}
-                      value={avail[service]?.startTime ?? "08:00"}
-                      onChangeText={(v) => setTime(service, "startTime", v)}
-                      placeholder="08:00"
-                      placeholderTextColor="#777"
-                    />
-                  </View>
-                  <View style={svcStyles.timeCol}>
-                    <Text style={[svcStyles.timeLabel, { fontFamily: "Inter_400Regular" }]}>End</Text>
-                    <TextInput
-                      style={[svcStyles.timeInput, { fontFamily: "Inter_400Regular" }]}
-                      value={avail[service]?.endTime ?? "17:00"}
-                      onChangeText={(v) => setTime(service, "endTime", v)}
-                      placeholder="17:00"
-                      placeholderTextColor="#777"
-                    />
-                  </View>
+                  <TouchableOpacity
+                    style={svcStyles.timeBtn}
+                    onPress={() => setTimePicker({ service, field: "startTime" })}
+                    activeOpacity={0.8}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5, flex: 1 }}>
+                      <Ionicons name="time-outline" size={14} color="#34FF7A" />
+                      <Text style={[svcStyles.timeBtnLabel, { fontFamily: "Inter_400Regular" }]}>Start</Text>
+                    </View>
+                    <Text style={[svcStyles.timeBtnValue, { fontFamily: "Inter_600SemiBold" }]}>
+                      {avail[service]?.startTime ?? "8:00 AM"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <Ionicons name="arrow-forward" size={13} color="#444" style={{ marginHorizontal: 2 }} />
+
+                  <TouchableOpacity
+                    style={svcStyles.timeBtn}
+                    onPress={() => setTimePicker({ service, field: "endTime" })}
+                    activeOpacity={0.8}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5, flex: 1 }}>
+                      <Ionicons name="time-outline" size={14} color="#34FF7A" />
+                      <Text style={[svcStyles.timeBtnLabel, { fontFamily: "Inter_400Regular" }]}>End</Text>
+                    </View>
+                    <Text style={[svcStyles.timeBtnValue, { fontFamily: "Inter_600SemiBold" }]}>
+                      {avail[service]?.endTime ?? "5:00 PM"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
+
+                {/* Pricing per service */}
+                <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium" }]}>BASE RATE BY YARD SIZE</Text>
+                {(pricing[service] ?? BASE_TIERS).map((tier, ti) => (
+                  <View key={tier.label} style={svcStyles.pricingRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[svcStyles.pricingSize, { fontFamily: "Inter_600SemiBold" }]}>
+                        {tier.label} Yard
+                      </Text>
+                      <Text style={[svcStyles.pricingDesc, { fontFamily: "Inter_400Regular" }]}>{tier.range}</Text>
+                    </View>
+                    <TextInput
+                      style={[svcStyles.priceInput, { fontFamily: "Inter_700Bold" }]}
+                      value={tier.price}
+                      onChangeText={(v) => updatePrice(service, ti, v)}
+                      keyboardType="default"
+                      maxLength={8}
+                      selectTextOnFocus
+                      placeholderTextColor="#555"
+                    />
+                  </View>
+                ))}
+
               </View>
             ))}
+
             {offered.length === 0 && (
               <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular", marginTop: 4 }]}>
-                Select at least one service above to set its schedule.
+                Enable at least one service above to configure its availability and pricing.
               </Text>
             )}
 
-            <View style={svcStyles.divider} />
+            <View style={[svcStyles.divider, { marginTop: 20 }]} />
 
-            {/* ── Pricing by Yard Size ────────────────────── */}
-            <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Pricing by Yard Size</Text>
-            <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
-              Set your base rates — customers see these on your profile.
-            </Text>
-            {pricing.map((tier, i) => (
-              <View key={tier.size} style={svcStyles.pricingRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[svcStyles.pricingSize, { fontFamily: "Inter_600SemiBold" }]}>{tier.size}</Text>
-                  <Text style={[svcStyles.pricingDesc, { fontFamily: "Inter_400Regular" }]}>{tier.desc}</Text>
-                </View>
-                <TextInput
-                  style={[svcStyles.priceInput, { fontFamily: "Inter_700Bold" }]}
-                  value={tier.price}
-                  onChangeText={(v) => updatePrice(i, v)}
-                  keyboardType="default"
-                  maxLength={8}
-                  selectTextOnFocus
-                  placeholderTextColor="#555"
-                />
-              </View>
-            ))}
-
-            <View style={svcStyles.divider} />
-
-            {/* ── Save ───────────────────────────────────── */}
+            {/* ── Save ──────────────────────────────────────── */}
             <TouchableOpacity
               style={[svcStyles.saveBtn, saved && svcStyles.saveBtnSuccess]}
               onPress={handleSave}
@@ -956,6 +990,44 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
           </ScrollView>
         </View>
       </View>
+
+      {/* ── Time Picker ───────────────────────────────────── */}
+      {timePicker && (
+        <Modal visible transparent animationType="fade" onRequestClose={() => setTimePicker(null)}>
+          <TouchableOpacity style={svcStyles.tpOverlay} activeOpacity={1} onPress={() => setTimePicker(null)}>
+            <View style={svcStyles.tpSheet}>
+              <Text style={[svcStyles.tpTitle, { fontFamily: "Inter_700Bold" }]}>
+                Select {tpField === "startTime" ? "Start" : "End"} Time
+              </Text>
+              <Text style={[svcStyles.tpSubtitle, { fontFamily: "Inter_400Regular" }]}>
+                {timePicker.service}
+              </Text>
+              <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 300 }}>
+                {TIME_SLOTS.map((slot) => {
+                  const selected = slot === currentTime;
+                  return (
+                    <TouchableOpacity
+                      key={slot}
+                      style={[svcStyles.tpSlot, selected && svcStyles.tpSlotActive]}
+                      onPress={() => { Haptics.selectionAsync(); applyTime(slot); }}
+                      activeOpacity={0.75}
+                    >
+                      <Text style={[
+                        svcStyles.tpSlotText,
+                        { fontFamily: selected ? "Inter_600SemiBold" : "Inter_400Regular" },
+                        selected && svcStyles.tpSlotTextActive,
+                      ]}>
+                        {slot}
+                      </Text>
+                      {selected && <Ionicons name="checkmark" size={16} color="#000" />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -964,7 +1036,7 @@ const svcStyles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)", justifyContent: "flex-end" },
   sheet: {
     backgroundColor: "#111", borderTopLeftRadius: 28, borderTopRightRadius: 28,
-    borderWidth: 1, borderColor: "#222", padding: 24, maxHeight: "88%",
+    borderWidth: 1, borderColor: "#222", padding: 24, maxHeight: "90%",
   },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 24 },
   title: { fontSize: 20, color: "#FFFFFF" },
@@ -981,31 +1053,14 @@ const svcStyles = StyleSheet.create({
   chipText: { fontSize: 13, color: "#666" },
   chipTextOn: { color: "#000" },
   divider: { height: 1, backgroundColor: "#222", marginBottom: 22, marginTop: 4 },
-  pricingRow: {
-    flexDirection: "row", alignItems: "center",
-    backgroundColor: "#1A1A1A", borderRadius: 14,
-    borderWidth: 1, borderColor: "#222",
-    paddingHorizontal: 16, paddingVertical: 14,
-    marginBottom: 10,
+  serviceBlock: {
+    backgroundColor: "#171717", borderRadius: 18,
+    borderWidth: 1, borderColor: "#262626",
+    padding: 16, marginBottom: 4,
   },
-  pricingSize: { fontSize: 14, color: "#FFFFFF", marginBottom: 2 },
-  pricingDesc: { fontSize: 12, color: "#888" },
-  priceInput: {
-    fontSize: 18, color: "#34FF7A",
-    backgroundColor: "#111", borderRadius: 10,
-    borderWidth: 1, borderColor: "#34FF7A44",
-    paddingHorizontal: 12, paddingVertical: 8,
-    minWidth: 70, textAlign: "center",
-  },
-  saveBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
-    backgroundColor: "#34FF7A", borderRadius: 16,
-    paddingVertical: 16, marginTop: 4,
-  },
-  saveBtnSuccess: { backgroundColor: "#22c55e" },
-  saveBtnText: { fontSize: 16, color: "#000" },
-  schedServiceLabel: { fontSize: 14, color: "#FFFFFF", marginBottom: 10 },
-  daysRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 },
+  schedServiceLabel: { fontSize: 15, color: "#34FF7A", marginBottom: 14 },
+  subLabel: { fontSize: 10, color: "#666", marginBottom: 8, letterSpacing: 0.8 },
+  daysRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 14 },
   dayChip: {
     paddingHorizontal: 11, paddingVertical: 7,
     borderRadius: 10, backgroundColor: "#1A1A1A",
@@ -1014,15 +1069,59 @@ const svcStyles = StyleSheet.create({
   dayChipActive: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
   dayChipText: { fontSize: 12, color: "#777" },
   dayChipTextActive: { color: "#000" },
-  timesRow: { flexDirection: "row", gap: 12, marginBottom: 4 },
-  timeCol: { flex: 1 },
-  timeLabel: { fontSize: 11, color: "#888", marginBottom: 5 },
-  timeInput: {
-    backgroundColor: "#1A1A1A", borderRadius: 10,
+  timesRow: { flexDirection: "row", alignItems: "center", marginBottom: 16 },
+  timeBtn: {
+    flex: 1, flexDirection: "row", alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#1A1A1A", borderRadius: 12,
     borderWidth: 1, borderColor: "#333",
-    paddingHorizontal: 12, paddingVertical: 10,
-    color: "#FFFFFF", fontSize: 14,
+    paddingHorizontal: 12, paddingVertical: 11,
   },
+  timeBtnLabel: { fontSize: 11, color: "#888" },
+  timeBtnValue: { fontSize: 13, color: "#FFFFFF" },
+  pricingRow: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#111", borderRadius: 12,
+    borderWidth: 1, borderColor: "#222",
+    paddingHorizontal: 14, paddingVertical: 11,
+    marginBottom: 8,
+  },
+  pricingSize: { fontSize: 13, color: "#FFFFFF", marginBottom: 2 },
+  pricingDesc: { fontSize: 11, color: "#666" },
+  priceInput: {
+    fontSize: 17, color: "#34FF7A",
+    backgroundColor: "#0D0D0D", borderRadius: 10,
+    borderWidth: 1, borderColor: "#34FF7A44",
+    paddingHorizontal: 10, paddingVertical: 7,
+    minWidth: 64, textAlign: "center",
+  },
+  saveBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
+    backgroundColor: "#34FF7A", borderRadius: 16,
+    paddingVertical: 16, marginTop: 4,
+  },
+  saveBtnSuccess: { backgroundColor: "#22c55e" },
+  saveBtnText: { fontSize: 16, color: "#000" },
+  tpOverlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "center", alignItems: "center",
+  },
+  tpSheet: {
+    backgroundColor: "#1A1A1A", borderRadius: 22,
+    borderWidth: 1, borderColor: "#2A2A2A",
+    padding: 22, width: "82%", maxWidth: 340,
+  },
+  tpTitle: { fontSize: 17, color: "#FFFFFF", textAlign: "center", marginBottom: 4 },
+  tpSubtitle: { fontSize: 12, color: "#666", textAlign: "center", marginBottom: 16 },
+  tpSlot: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderRadius: 10, marginBottom: 4,
+    backgroundColor: "#111",
+  },
+  tpSlotActive: { backgroundColor: "#34FF7A" },
+  tpSlotText: { fontSize: 15, color: "#FFFFFF" },
+  tpSlotTextActive: { color: "#000" },
 });
 
 
