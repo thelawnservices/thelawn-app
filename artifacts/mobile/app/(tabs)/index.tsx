@@ -25,11 +25,6 @@ import { useJobs } from "@/contexts/jobs";
 import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 
-const CUSTOMER_QUICK_STATS = [
-  { label: "Jobs Done", value: "3", icon: "checkmark-circle" as const, iconColor: "#34C759" },
-  { label: "Avg Rating", value: "4.9", icon: "star" as const, iconColor: "#f59e0b" },
-  { label: "Saved Pros", value: "2", icon: "heart" as const, iconColor: "#f87171" },
-];
 
 const LANDSCAPER_QUICK_STATS = [
   { label: "Jobs Accepted", value: "7", icon: "checkmark-circle" as const, iconColor: "#34C759" },
@@ -43,7 +38,7 @@ const HOME_PENDING_REQUESTS = [
   { id: "h3", service: "Mulching", size: "Large", customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM", budget: "$180" },
 ];
 
-function AnimatedStatCard({ stat, delay }: { stat: typeof CUSTOMER_QUICK_STATS[0]; delay: number }) {
+function AnimatedStatCard({ stat, delay }: { stat: { label: string; value: string; icon: "checkmark-circle" | "star" | "heart" | "cash"; iconColor: string }; delay: number }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(16)).current;
 
@@ -871,6 +866,22 @@ export default function HomeScreen() {
   const [acceptedOnHome, setAcceptedOnHome] = useState<string[]>([]);
   const [prosLoaded, setProsLoaded] = useState(false);
   const [selectedPro, setSelectedPro] = useState<TrustedPro | null>(null);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+
+  const toggleFavorite = (name: string) => {
+    Haptics.selectionAsync();
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const customerQuickStats = [
+    { label: "Jobs Done", value: "3", icon: "checkmark-circle" as const, iconColor: "#34C759" },
+    { label: "Saved Pros", value: String(favorites.size), icon: "heart" as const, iconColor: "#f87171" },
+  ];
   const [notifVisible, setNotifVisible] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [isOffline, setIsOffline] = useState(false);
@@ -1100,6 +1111,7 @@ export default function HomeScreen() {
             ) : (
               TRUSTED_PROS.map((pro) => {
                 const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
+                const isFav = favorites.has(pro.name);
                 return (
                   <TouchableOpacity
                     key={pro.name}
@@ -1111,6 +1123,15 @@ export default function HomeScreen() {
                     }}
                     activeOpacity={0.8}
                   >
+                    {/* Favorite heart */}
+                    <TouchableOpacity
+                      style={styles.favBtn}
+                      onPress={(e) => { e.stopPropagation(); toggleFavorite(pro.name); }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name={isFav ? "heart" : "heart-outline"} size={18} color={isFav ? "#f87171" : "#555"} />
+                    </TouchableOpacity>
                     <View style={styles.proHIconWrap}>
                       <Ionicons name={pro.icon} size={26} color="#34FF7A" />
                     </View>
@@ -1132,6 +1153,38 @@ export default function HomeScreen() {
               })
             )}
           </ScrollView>
+
+          {/* My Favorites section */}
+          {favorites.size > 0 && (
+            <>
+              <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 4 }]}>
+                My Favorites
+              </Text>
+              {TRUSTED_PROS.filter((p) => favorites.has(p.name)).map((pro) => (
+                <TouchableOpacity
+                  key={pro.name}
+                  style={styles.favRow}
+                  onPress={() => { Haptics.selectionAsync(); setSelectedPro(pro); }}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.favRowIcon}>
+                    <Ionicons name={pro.icon} size={22} color="#34FF7A" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.favRowName, { fontFamily: "Inter_600SemiBold" }]}>{pro.name}</Text>
+                    <Text style={[styles.favRowMeta, { fontFamily: "Inter_400Regular" }]}>{pro.meta}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => toggleFavorite(pro.name)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="heart" size={20} color="#f87171" />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
           </>
         )}
 
@@ -1269,7 +1322,7 @@ export default function HomeScreen() {
 
         {/* Quick Stats — staggered entrance, role-aware */}
         <View style={styles.statsRow}>
-          {(role === "landscaper" ? LANDSCAPER_QUICK_STATS : CUSTOMER_QUICK_STATS).map((s, i) => (
+          {(role === "landscaper" ? LANDSCAPER_QUICK_STATS : customerQuickStats).map((s, i) => (
             <AnimatedStatCard key={s.label} stat={s} delay={i * 120} />
           ))}
         </View>
@@ -1894,6 +1947,30 @@ const styles = StyleSheet.create({
   offlinePillText: { color: "#FF3B30" },
   ctaBtnDisabled: { backgroundColor: "#2a2a2a", shadowOpacity: 0 },
   proHCardDisabled: { opacity: 0.4 },
+
+  favBtn: { position: "absolute", top: 8, right: 8, zIndex: 5 },
+
+  favRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: "#1A1A1A",
+    borderRadius: 20,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#222",
+  },
+  favRowIcon: {
+    width: 44,
+    height: 44,
+    backgroundColor: "#0d2e18",
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  favRowName: { fontSize: 14, color: "#fff", marginBottom: 2 },
+  favRowMeta: { fontSize: 12, color: "#888" },
 
   pendingCard: {
     backgroundColor: "#1A1A1A",
