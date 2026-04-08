@@ -83,22 +83,6 @@ export default function ProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={picStyles.row}>
-        <TouchableOpacity
-          style={picStyles.avatar}
-          activeOpacity={0.8}
-          onPress={() => Alert.alert("Change Profile Picture", "This would open your photo library on a real device.", [{ text: "OK" }])}
-        >
-          <Text style={picStyles.avatarEmoji}>👤</Text>
-        </TouchableOpacity>
-        <View style={picStyles.nameCol}>
-          <Text style={[picStyles.displayName, { fontFamily: "Inter_600SemiBold" }]}>Your Account</Text>
-          <TouchableOpacity activeOpacity={0.7} onPress={() => Alert.alert("Change Profile Picture", "This would open your photo library on a real device.", [{ text: "OK" }])}>
-            <Text style={[picStyles.changeLink, { fontFamily: "Inter_500Medium" }]}>📸  Change profile picture</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <CustomerProfile logout={logout} />
       </ScrollView>
@@ -800,8 +784,19 @@ function CustomerProfile({ logout }: { logout: () => void }) {
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
   const [error, setError] = useState(false);
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
+  const [avatarImage, setAvatarImage] = useState<string | null>(null);
   const successOpacity = useRef(new Animated.Value(0)).current;
   const successScale = useRef(new Animated.Value(0.8)).current;
+
+  async function pickAvatar() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+    if (!result.canceled) setAvatarImage(result.assets[0].uri);
+  }
 
   const showSuccess = () => {
     Animated.parallel([
@@ -825,9 +820,18 @@ function CustomerProfile({ logout }: { logout: () => void }) {
   return (
     <>
       <View style={styles.avatarRow}>
-        <View style={styles.avatarBox}>
-          <Ionicons name="person" size={40} color="#34FF7A" />
-        </View>
+        <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8} style={{ position: "relative" }}>
+          <View style={styles.avatarBox}>
+            {avatarImage ? (
+              <Image source={{ uri: avatarImage }} style={{ width: 80, height: 80, borderRadius: 24 }} />
+            ) : (
+              <Ionicons name="person" size={40} color="#34FF7A" />
+            )}
+          </View>
+          <View style={styles.avatarEditBadge}>
+            <Ionicons name="camera" size={12} color="#000" />
+          </View>
+        </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>Zamire Smith</Text>
           <Text style={[styles.proSub, { fontFamily: "Inter_400Regular" }]}>Ellenton, FL</Text>
@@ -1118,7 +1122,8 @@ const styles = StyleSheet.create({
   toggleIcon: { fontSize: 14 },
   scroll: { padding: 20, paddingBottom: 48 },
   avatarRow: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 24 },
-  avatarBox: { width: 80, height: 80, backgroundColor: "#1A1A1A", borderRadius: 24, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#34FF7A" },
+  avatarBox: { width: 80, height: 80, backgroundColor: "#1A1A1A", borderRadius: 24, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#34FF7A", overflow: "hidden" },
+  avatarEditBadge: { position: "absolute", bottom: -4, right: -4, width: 22, height: 22, backgroundColor: "#34FF7A", borderRadius: 11, alignItems: "center", justifyContent: "center", zIndex: 10 },
   proName: { fontSize: 18, color: "#FFFFFF", marginBottom: 2 },
   proSub: { fontSize: 12, color: "#FFFFFF", marginBottom: 6 },
   card: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 20, borderWidth: 1, borderColor: "#222222", marginBottom: 12 },
