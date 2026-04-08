@@ -31,6 +31,29 @@ const PAYMENT_METHODS = [
   { label: "Cash App",   value: "Cash App",    ionIcon: "phone-portrait-outline" as const, shortLabel: "Cash App" },
 ];
 
+type PayStatus = "paid" | "pending" | "refunded" | "failed";
+
+const PAY_STATUS_CONFIG: Record<PayStatus, { label: string; color: string; bg: string }> = {
+  paid:     { label: "Paid",     color: "#34FF7A", bg: "#0d2e18" },
+  pending:  { label: "Pending",  color: "#FFAA00", bg: "#2A1F00" },
+  refunded: { label: "Refunded", color: "#60a5fa", bg: "#0d1f3c" },
+  failed:   { label: "Failed",   color: "#ef4444", bg: "#2A0808" },
+};
+
+const CUSTOMER_PAYMENT_HISTORY: { id: string; date: string; service: string; pro: string; amount: string; status: PayStatus }[] = [
+  { id: "cp1", date: "Apr 8, 2026",  service: "Lawn Mowing",    pro: "John Rivera",     amount: "$65",  status: "paid" },
+  { id: "cp2", date: "Apr 2, 2026",  service: "Hedge Trimming", pro: "EcoGreen Services",amount: "$55",  status: "paid" },
+  { id: "cp3", date: "Mar 22, 2026", service: "Clean Up",       pro: "Mike Torres",     amount: "$40",  status: "pending" },
+  { id: "cp4", date: "Mar 14, 2026", service: "Mulching",       pro: "GreenScape Pros", amount: "$180", status: "refunded" },
+];
+
+const LANDSCAPER_PAYMENT_HISTORY: { id: string; date: string; service: string; customer: string; earned: string; commission: string; status: PayStatus }[] = [
+  { id: "lp1", date: "Apr 8, 2026",  service: "Lawn Mowing",    customer: "Alex T.",   earned: "$61.75",  commission: "$3.25",  status: "paid" },
+  { id: "lp2", date: "Apr 5, 2026",  service: "Hedge Trimming", customer: "Priya N.",  earned: "$52.25",  commission: "$2.75",  status: "pending" },
+  { id: "lp3", date: "Mar 28, 2026", service: "Clean Up",       customer: "Marcus R.", earned: "$38.00",  commission: "$2.00",  status: "paid" },
+  { id: "lp4", date: "Mar 15, 2026", service: "Mulching",       customer: "Diane W.",  earned: "$171.50", commission: "$8.50",  status: "paid" },
+];
+
 type PriceMatrix = Record<string, Record<string, string>>;
 
 const PRICE_SERVICES = ["Lawn Mowing", "Hedge Trimming", "Mulching", "Clean Up"];
@@ -566,6 +589,32 @@ function LandscaperProfile({
               </TouchableOpacity>
             </View>
 
+            {/* ── Earnings / Payment History ── */}
+            <View style={phStyles.card}>
+              <View style={phStyles.cardHeader}>
+                <Ionicons name="wallet-outline" size={18} color="#34FF7A" />
+                <Text style={[phStyles.cardTitle, { fontFamily: "Inter_600SemiBold" }]}>Earnings History</Text>
+              </View>
+              {LANDSCAPER_PAYMENT_HISTORY.map((item, idx) => {
+                const cfg = PAY_STATUS_CONFIG[item.status];
+                return (
+                  <View key={item.id} style={[phStyles.row, idx < LANDSCAPER_PAYMENT_HISTORY.length - 1 && phStyles.rowBorder]}>
+                    <View style={phStyles.rowLeft}>
+                      <Text style={[phStyles.rowService, { fontFamily: "Inter_600SemiBold" }]}>{item.service}</Text>
+                      <Text style={[phStyles.rowSub, { fontFamily: "Inter_400Regular" }]}>{item.customer} · {item.date}</Text>
+                      <Text style={[phStyles.rowCommission, { fontFamily: "Inter_400Regular" }]}>Platform fee: {item.commission}</Text>
+                    </View>
+                    <View style={phStyles.rowRight}>
+                      <Text style={[phStyles.rowAmount, { fontFamily: "Inter_700Bold" }]}>{item.earned}</Text>
+                      <View style={[phStyles.statusBadge, { backgroundColor: cfg.bg }]}>
+                        <Text style={[phStyles.statusText, { fontFamily: "Inter_600SemiBold", color: cfg.color }]}>{cfg.label}</Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+
             <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.75}>
               <Ionicons name="log-out-outline" size={18} color="#ef4444" />
               <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Sign Out</Text>
@@ -939,6 +988,31 @@ function CustomerProfile({ logout }: { logout: () => void }) {
             <Text style={[styles.savedMsg, { fontFamily: "Inter_600SemiBold" }]}>Payment method saved successfully!</Text>
           </Animated.View>
         )}
+      </View>
+
+      {/* ── Payment History ── */}
+      <View style={phStyles.card}>
+        <View style={phStyles.cardHeader}>
+          <Ionicons name="receipt-outline" size={18} color="#34FF7A" />
+          <Text style={[phStyles.cardTitle, { fontFamily: "Inter_600SemiBold" }]}>Payment History</Text>
+        </View>
+        {CUSTOMER_PAYMENT_HISTORY.map((item, idx) => {
+          const cfg = PAY_STATUS_CONFIG[item.status];
+          return (
+            <View key={item.id} style={[phStyles.row, idx < CUSTOMER_PAYMENT_HISTORY.length - 1 && phStyles.rowBorder]}>
+              <View style={phStyles.rowLeft}>
+                <Text style={[phStyles.rowService, { fontFamily: "Inter_600SemiBold" }]}>{item.service}</Text>
+                <Text style={[phStyles.rowSub, { fontFamily: "Inter_400Regular" }]}>{item.pro} · {item.date}</Text>
+              </View>
+              <View style={phStyles.rowRight}>
+                <Text style={[phStyles.rowAmount, { fontFamily: "Inter_700Bold" }]}>{item.amount}</Text>
+                <View style={[phStyles.statusBadge, { backgroundColor: cfg.bg }]}>
+                  <Text style={[phStyles.statusText, { fontFamily: "Inter_600SemiBold", color: cfg.color }]}>{cfg.label}</Text>
+                </View>
+              </View>
+            </View>
+          );
+        })}
       </View>
 
       <TouchableOpacity style={styles.editBtn} onPress={() => Alert.alert("Edit Profile", "Profile editor would open here")} activeOpacity={0.85}>
@@ -1416,4 +1490,51 @@ const availStyles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
   },
+});
+
+const phStyles = StyleSheet.create({
+  card: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#222222",
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#222222",
+  },
+  cardTitle: {
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  rowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: "#1e1e1e",
+  },
+  rowLeft: { flex: 1, gap: 3 },
+  rowRight: { alignItems: "flex-end", gap: 6 },
+  rowService: { fontSize: 14, color: "#FFFFFF" },
+  rowSub: { fontSize: 12, color: "#666666" },
+  rowCommission: { fontSize: 11, color: "#444444" },
+  rowAmount: { fontSize: 15, color: "#FFFFFF" },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
+  },
+  statusText: { fontSize: 11 },
 });
