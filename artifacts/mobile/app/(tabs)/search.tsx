@@ -109,7 +109,7 @@ export default function SearchScreen() {
   const [showSort, setShowSort] = useState(false);
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
   const [selectedPro, setSelectedPro] = useState<(typeof PROS)[0] | null>(null);
-  const { acceptJob } = useJobs();
+  const { acceptJob, knownCustomers } = useJobs();
 
   const filtered = PROS.filter((p) => {
     const matchesQuery =
@@ -175,81 +175,78 @@ export default function SearchScreen() {
               <Text style={[styles.emptySubText, { fontFamily: "Inter_400Regular" }]}>Check back soon for new jobs</Text>
             </View>
           ) : (
-            visibleRequests.map((req) => (
-              <View key={req.id} style={styles.reqCard}>
-                {/* New Customer Banner */}
-                {req.isNewCustomer && (
-                  <View style={styles.newCustBanner}>
-                    <View style={styles.newCustLeft}>
-                      <Ionicons name="person-add-outline" size={14} color="#FFAA00" />
-                      <Text style={[styles.newCustTitle, { fontFamily: "Inter_700Bold" }]}>New Customer</Text>
+            visibleRequests.map((req) => {
+              const effectiveIsNew = req.isNewCustomer && !knownCustomers.has(req.customer);
+              const raw = parseFloat(req.budget.replace("$", "").replace(",", ""));
+              const net = effectiveIsNew ? (raw - NEW_CUSTOMER_FEE).toFixed(0) : null;
+              return (
+                <View key={req.id} style={styles.reqCard}>
+                  {/* New Customer Banner */}
+                  {effectiveIsNew && (
+                    <View style={styles.newCustBanner}>
+                      <View style={styles.newCustLeft}>
+                        <Ionicons name="person-add-outline" size={14} color="#FFAA00" />
+                        <Text style={[styles.newCustTitle, { fontFamily: "Inter_700Bold" }]}>New Customer</Text>
+                      </View>
+                      <View style={styles.newCustFeePill}>
+                        <Text style={[styles.newCustFeeText, { fontFamily: "Inter_700Bold" }]}>
+                          −$5 Platform Fee
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.newCustFeePill}>
-                      <Text style={[styles.newCustFeeText, { fontFamily: "Inter_700Bold" }]}>
-                        −$5 Platform Fee
-                      </Text>
-                    </View>
-                  </View>
-                )}
+                  )}
 
-                <View style={styles.reqTopRow}>
-                  <View style={styles.reqServiceBadge}>
-                    <Ionicons name="leaf" size={14} color="#34FF7A" />
-                    <Text style={[styles.reqServiceText, { fontFamily: "Inter_600SemiBold" }]}>{req.service}</Text>
-                  </View>
-                  {/* Payout column */}
-                  <View style={{ alignItems: "flex-end" }}>
-                    <Text style={[styles.reqBudget, { fontFamily: "Inter_700Bold" }]}>{req.budget}</Text>
-                    {req.isNewCustomer && (() => {
-                      const raw = parseFloat(req.budget.replace("$", "").replace(",", ""));
-                      const net = (raw - NEW_CUSTOMER_FEE).toFixed(0);
-                      return (
+                  <View style={styles.reqTopRow}>
+                    <View style={styles.reqServiceBadge}>
+                      <Ionicons name="leaf" size={14} color="#34FF7A" />
+                      <Text style={[styles.reqServiceText, { fontFamily: "Inter_600SemiBold" }]}>{req.service}</Text>
+                    </View>
+                    {/* Payout column */}
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={[styles.reqBudget, { fontFamily: "Inter_700Bold" }]}>{req.budget}</Text>
+                      {effectiveIsNew && (
                         <Text style={[styles.reqNetPayout, { fontFamily: "Inter_500Medium" }]}>
                           You receive: ${net}
                         </Text>
-                      );
-                    })()}
+                      )}
+                    </View>
                   </View>
-                </View>
 
-                {req.description ? (
-                  <Text style={[styles.reqDescription, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
-                    {req.description}
-                  </Text>
-                ) : null}
+                  {req.description ? (
+                    <Text style={[styles.reqDescription, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
+                      {req.description}
+                    </Text>
+                  ) : null}
 
-                <TouchableOpacity
-                  style={styles.reqAddressRow}
-                  activeOpacity={0.7}
-                  onPress={() => openMaps(req.address ?? "")}
-                >
-                  <Ionicons name="location" size={13} color="#34FF7A" />
-                  <Text style={[styles.reqAddressText, { fontFamily: "Inter_400Regular" }]} numberOfLines={1}>
-                    {req.address}
-                  </Text>
-                  <Ionicons name="open-outline" size={12} color="#34FF7A" />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.reqAddressRow}
+                    activeOpacity={0.7}
+                    onPress={() => openMaps(req.address ?? "")}
+                  >
+                    <Ionicons name="location" size={13} color="#34FF7A" />
+                    <Text style={[styles.reqAddressText, { fontFamily: "Inter_400Regular" }]} numberOfLines={1}>
+                      {req.address}
+                    </Text>
+                    <Ionicons name="open-outline" size={12} color="#34FF7A" />
+                  </TouchableOpacity>
 
-                <View style={styles.reqMeta}>
-                  <Ionicons name="resize-outline" size={13} color="#CCCCCC" />
-                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.size} yard</Text>
-                  <Text style={styles.metaDot}>·</Text>
-                  <Ionicons name="navigate-outline" size={13} color="#CCCCCC" />
-                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.distance} · ZIP {req.zip}</Text>
-                </View>
-                <View style={styles.reqMeta}>
-                  <Ionicons name="calendar-outline" size={13} color="#CCCCCC" />
-                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.date} · {req.time}</Text>
-                  <Text style={styles.metaDot}>·</Text>
-                  <Ionicons name="person-outline" size={13} color="#CCCCCC" />
-                  <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.customer}</Text>
-                </View>
+                  <View style={styles.reqMeta}>
+                    <Ionicons name="resize-outline" size={13} color="#CCCCCC" />
+                    <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.size} yard</Text>
+                    <Text style={styles.metaDot}>·</Text>
+                    <Ionicons name="navigate-outline" size={13} color="#CCCCCC" />
+                    <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.distance} · ZIP {req.zip}</Text>
+                  </View>
+                  <View style={styles.reqMeta}>
+                    <Ionicons name="calendar-outline" size={13} color="#CCCCCC" />
+                    <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.date} · {req.time}</Text>
+                    <Text style={styles.metaDot}>·</Text>
+                    <Ionicons name="person-outline" size={13} color="#CCCCCC" />
+                    <Text style={[styles.reqMetaText, { fontFamily: "Inter_400Regular" }]}>{req.customer}</Text>
+                  </View>
 
-                {/* New-customer fee breakdown row */}
-                {req.isNewCustomer && (() => {
-                  const raw = parseFloat(req.budget.replace("$", "").replace(",", ""));
-                  const net = (raw - NEW_CUSTOMER_FEE).toFixed(0);
-                  return (
+                  {/* New-customer fee breakdown row */}
+                  {effectiveIsNew && (
                     <View style={styles.feeBreakdownRow}>
                       <View style={styles.feeBreakdownItem}>
                         <Text style={[styles.feeBreakdownLabel, { fontFamily: "Inter_400Regular" }]}>Job total</Text>
@@ -266,60 +263,58 @@ export default function SearchScreen() {
                         <Text style={[styles.feeBreakdownValue, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>${net}</Text>
                       </View>
                     </View>
-                  );
-                })()}
+                  )}
 
-                <TouchableOpacity
-                  style={styles.acceptBtn}
-                  activeOpacity={0.85}
-                  onPress={() => {
-                    const raw = parseFloat(req.budget.replace("$", "").replace(",", ""));
-                    const net = req.isNewCustomer ? (raw - NEW_CUSTOMER_FEE).toFixed(0) : null;
-                    const feeNote = req.isNewCustomer
-                      ? `\n\n⚠️ New Customer Fee: A $${NEW_CUSTOMER_FEE} platform fee applies since this is a new TheLawn customer. Your payout will be $${net} instead of ${req.budget}.`
-                      : "";
-                    Alert.alert(
-                      "Agree to Customer's Price?",
-                      `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer. No counter-offers.${feeNote}\n\nDo you want to accept?`,
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: req.isNewCustomer ? `Accept · Receive $${net}` : "Accept at " + req.budget,
-                          onPress: () => {
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            setAcceptedIds((prev) => [...prev, req.id]);
-                            acceptJob({
-                              id: req.id,
-                              service: req.service,
-                              size: req.size,
-                              customer: req.customer,
-                              date: req.date,
-                              time: req.time,
-                              budget: req.budget,
-                              distance: req.distance,
-                              zip: req.zip,
-                              phone: req.phone,
-                            });
-                            Alert.alert(
-                              "Job Accepted ✓",
-                              req.isNewCustomer
-                                ? `You accepted ${req.customer}'s ${req.service} job. Your payout is $${net} after the $${NEW_CUSTOMER_FEE} new customer fee. Added to your Appointments.`
-                                : `You agreed to ${req.customer}'s ${req.service} job for ${req.budget}. It's been added to your Appointments.`
-                            );
+                  <TouchableOpacity
+                    style={styles.acceptBtn}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      const feeNote = effectiveIsNew
+                        ? `\n\n⚠️ New Customer Fee: A $${NEW_CUSTOMER_FEE} platform fee applies since this is a new TheLawn customer. Your payout will be $${net} instead of ${req.budget}.`
+                        : "";
+                      Alert.alert(
+                        "Agree to Customer's Price?",
+                        `By accepting, you agree to complete this ${req.service} job for ${req.budget} — the price set by the customer. No counter-offers.${feeNote}\n\nDo you want to accept?`,
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          {
+                            text: effectiveIsNew ? `Accept · Receive $${net}` : "Accept at " + req.budget,
+                            onPress: () => {
+                              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                              setAcceptedIds((prev) => [...prev, req.id]);
+                              acceptJob({
+                                id: req.id,
+                                service: req.service,
+                                size: req.size,
+                                customer: req.customer,
+                                date: req.date,
+                                time: req.time,
+                                budget: req.budget,
+                                distance: req.distance,
+                                zip: req.zip,
+                                phone: req.phone,
+                              });
+                              Alert.alert(
+                                "Job Accepted ✓",
+                                effectiveIsNew
+                                  ? `You accepted ${req.customer}'s ${req.service} job. Your payout is $${net} after the $${NEW_CUSTOMER_FEE} new customer fee. Added to your Appointments.`
+                                  : `You agreed to ${req.customer}'s ${req.service} job for ${req.budget}. It's been added to your Appointments.`
+                              );
+                            },
                           },
-                        },
-                      ]
-                    );
-                  }}
-                >
-                  <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-                    {req.isNewCustomer
-                      ? `Accept · Receive $${(parseFloat(req.budget.replace("$", "").replace(",", "")) - NEW_CUSTOMER_FEE).toFixed(0)}`
-                      : `Accept at ${req.budget}`}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))
+                        ]
+                      );
+                    }}
+                  >
+                    <Text style={[styles.acceptBtnText, { fontFamily: "Inter_600SemiBold" }]}>
+                      {effectiveIsNew
+                        ? `Accept · Receive $${net}`
+                        : `Accept at ${req.budget}`}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })
           )}
         </ScrollView>
       </View>

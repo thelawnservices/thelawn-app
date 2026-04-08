@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 
 export type AcceptedJob = {
   id: string;
@@ -16,6 +16,7 @@ export type AcceptedJob = {
 type JobsContextType = {
   acceptedJobs: AcceptedJob[];
   cancelledJobs: AcceptedJob[];
+  knownCustomers: Set<string>;
   acceptJob: (job: AcceptedJob) => void;
   cancelAccepted: (id: string) => void;
 };
@@ -23,6 +24,7 @@ type JobsContextType = {
 const JobsContext = createContext<JobsContextType>({
   acceptedJobs: [],
   cancelledJobs: [],
+  knownCustomers: new Set(),
   acceptJob: () => {},
   cancelAccepted: () => {},
 });
@@ -30,6 +32,13 @@ const JobsContext = createContext<JobsContextType>({
 export function JobsProvider({ children }: { children: React.ReactNode }) {
   const [acceptedJobs, setAcceptedJobs] = useState<AcceptedJob[]>([]);
   const [cancelledJobs, setCancelledJobs] = useState<AcceptedJob[]>([]);
+
+  const knownCustomers = useMemo<Set<string>>(() => {
+    const names = new Set<string>();
+    acceptedJobs.forEach((j) => names.add(j.customer));
+    cancelledJobs.forEach((j) => names.add(j.customer));
+    return names;
+  }, [acceptedJobs, cancelledJobs]);
 
   function acceptJob(job: AcceptedJob) {
     setAcceptedJobs((prev) => {
@@ -49,7 +58,7 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <JobsContext.Provider value={{ acceptedJobs, cancelledJobs, acceptJob, cancelAccepted }}>
+    <JobsContext.Provider value={{ acceptedJobs, cancelledJobs, knownCustomers, acceptJob, cancelAccepted }}>
       {children}
     </JobsContext.Provider>
   );
