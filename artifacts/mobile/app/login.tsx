@@ -252,7 +252,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.verifyIconBox}>
-            <Text style={styles.verifyIcon}>✉️</Text>
+            <Ionicons name="mail-outline" size={48} color="#34FF7A" />
           </View>
           <Text style={[styles.verifySubtitle, { fontFamily: "Inter_400Regular" }]}>
             A 6-digit code was sent to your registered email from{"\n"}
@@ -317,7 +317,7 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("customer")} activeOpacity={0.85}>
-            <Text style={styles.passkeyLoginIcon}>🔑</Text>
+            <Ionicons name="finger-print" size={22} color="#34FF7A" />
             <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in using Passcode saved on iPhone</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleCustomerLogin} activeOpacity={0.88}>
@@ -380,7 +380,7 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("landscaper")} activeOpacity={0.85}>
-            <Text style={styles.passkeyLoginIcon}>🔑</Text>
+            <Ionicons name="finger-print" size={22} color="#34FF7A" />
             <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in using Passcode saved on iPhone</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleLandscaperLogin} activeOpacity={0.88}>
@@ -731,7 +731,7 @@ function PasskeyModal({
         <View style={[pkStyles.sheet, { paddingBottom: isWeb ? 36 : insets.bottom + 24 }]}>
           <View style={pkStyles.handle} />
           <View style={pkStyles.iconBox}>
-            <Text style={pkStyles.iconText}>🔑</Text>
+            <Ionicons name="finger-print" size={52} color="#34FF7A" />
           </View>
           <Text style={[pkStyles.title, { fontFamily: "Inter_700Bold" }]}>
             Use Passkey for faster login?
@@ -740,7 +740,7 @@ function PasskeyModal({
             Sign in with Face ID or Touch ID — no password needed
           </Text>
           <TouchableOpacity style={pkStyles.primaryBtn} onPress={onUsePasskey} activeOpacity={0.88}>
-            <Text style={pkStyles.primaryBtnIcon}>👤</Text>
+            <Ionicons name="person-circle-outline" size={24} color="#000" style={{ marginRight: 6 }} />
             <Text style={[pkStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
               Continue with Passkey
             </Text>

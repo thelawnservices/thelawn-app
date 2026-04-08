@@ -24,11 +24,11 @@ import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import TermsModal from "@/components/TermsModal";
 
 const PAYMENT_METHODS = [
-  { label: "🍎  Apple Pay", value: "Apple Pay",  emoji: "🍎", shortLabel: "Apple Pay" },
-  { label: "💸  Venmo",     value: "Venmo",       emoji: "💸", shortLabel: "Venmo" },
-  { label: "🅿️  PayPal",   value: "PayPal",      emoji: "🅿️", shortLabel: "PayPal" },
-  { label: "💳  Debit Card",value: "Debit Card",  emoji: "💳", shortLabel: "Debit" },
-  { label: "📱  Cash App",  value: "Cash App",    emoji: "📱", shortLabel: "Cash App" },
+  { label: "Apple Pay",  value: "Apple Pay",  ionIcon: "logo-apple" as const,   shortLabel: "Apple Pay" },
+  { label: "Venmo",      value: "Venmo",       ionIcon: "cash-outline" as const,  shortLabel: "Venmo" },
+  { label: "PayPal",     value: "PayPal",      ionIcon: "card-outline" as const,  shortLabel: "PayPal" },
+  { label: "Debit Card", value: "Debit Card",  ionIcon: "card" as const,          shortLabel: "Debit" },
+  { label: "Cash App",   value: "Cash App",    ionIcon: "phone-portrait-outline" as const, shortLabel: "Cash App" },
 ];
 
 type PriceMatrix = Record<string, Record<string, string>>;
@@ -79,7 +79,7 @@ export default function ProfileScreen() {
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Profile</Text>
         <TouchableOpacity style={styles.togglePill} onPress={toggle} activeOpacity={0.8}>
           <Text style={[styles.togglePillText, { fontFamily: "Inter_500Medium" }]}>Customer View</Text>
-          <Text style={styles.toggleIcon}>🔄</Text>
+          <Ionicons name="sync-outline" size={14} color="#34FF7A" />
         </TouchableOpacity>
       </View>
 
@@ -149,7 +149,7 @@ function LandscaperProfile({
     setProfileZip(draftZip.trim() || profileZip);
     setEditVisible(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert("✅ Profile updated!");
+    Alert.alert("Profile Updated");
   }
 
   // Availability
@@ -194,7 +194,7 @@ function LandscaperProfile({
       saved: true,
     });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert("✅ Availability saved!", "Customers can now see your schedule.");
+    Alert.alert("Availability Saved", "Customers can now see your schedule.");
   }
 
   const [reviews, setReviews] = useState<ReviewItem[]>([
@@ -247,7 +247,7 @@ function LandscaperProfile({
       ...prev,
     ]);
     setNewReviewText("");
-    Alert.alert("✅ Review posted!");
+    Alert.alert("Review Posted");
   }
 
   return (
@@ -263,7 +263,7 @@ function LandscaperProfile({
         {/* Toggle pill — top right, below status bar */}
         <TouchableOpacity style={[cutStyles.togglePill, { top: topPadding + 14 }]} onPress={toggle} activeOpacity={0.8}>
           <Text style={[cutStyles.toggleText, { fontFamily: "Inter_500Medium" }]}>Landscaper View</Text>
-          <Text style={{ fontSize: 13 }}>🔄</Text>
+          <Ionicons name="sync-outline" size={13} color="#34FF7A" />
         </TouchableOpacity>
 
         {/* Edit Banner — top left, below status bar */}
@@ -299,9 +299,12 @@ function LandscaperProfile({
           </View>
           <Text style={[cutStyles.jobsText, { fontFamily: "Inter_400Regular" }]}>142 jobs</Text>
         </View>
-        <Text style={[cutStyles.heroLocation, { fontFamily: "Inter_400Regular" }]}>
-          📍 {profileCity}, {profileState} {profileZip}
-        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+          <Ionicons name="location-outline" size={13} color="#888" />
+          <Text style={[cutStyles.heroLocation, { fontFamily: "Inter_400Regular" }]}>
+            {profileCity}, {profileState} {profileZip}
+          </Text>
+        </View>
 
         {/* Edit Profile button */}
         <TouchableOpacity style={cutStyles.editProfileBtn} onPress={openEdit} activeOpacity={0.8}>
@@ -334,19 +337,19 @@ function LandscaperProfile({
           <>
             {/* Quick actions */}
             <View style={cutStyles.actionsRow}>
-              {[
-                { icon: "⭐", label: "ADD" },
-                { icon: "📅", label: "BOOK" },
-                { icon: "✍️", label: "REVIEW", onPress: () => setActiveTab("reviews") },
-                { icon: "🔗", label: "SHARE" },
-              ].map((btn) => (
+              {([
+                { ionIcon: "star-outline" as const,          label: "ADD" },
+                { ionIcon: "calendar-outline" as const,      label: "BOOK" },
+                { ionIcon: "create-outline" as const,        label: "REVIEW", onPress: () => setActiveTab("reviews") },
+                { ionIcon: "share-social-outline" as const,  label: "SHARE" },
+              ]).map((btn) => (
                 <TouchableOpacity
                   key={btn.label}
                   style={cutStyles.actionChip}
                   onPress={btn.onPress ?? (() => Alert.alert(btn.label, `${btn.label} action`))}
                   activeOpacity={0.75}
                 >
-                  <Text style={cutStyles.actionChipIcon}>{btn.icon}</Text>
+                  <Ionicons name={btn.ionIcon} size={20} color="#fff" style={{ marginBottom: 4 }} />
                   <Text style={[cutStyles.actionChipLabel, { fontFamily: "Inter_600SemiBold" }]}>{btn.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -362,12 +365,12 @@ function LandscaperProfile({
 
             {/* Call & Text */}
             <View style={cutStyles.contactRow}>
-              <TouchableOpacity style={cutStyles.contactBtn} onPress={() => Alert.alert("📞 Calling…", "Connecting to GreenScape Pros.\n\n(Demo)")} activeOpacity={0.8}>
-                <Text style={cutStyles.contactIcon}>📞</Text>
+              <TouchableOpacity style={cutStyles.contactBtn} onPress={() => Alert.alert("Calling…", "Connecting to GreenScape Pros.\n\n(Demo)")} activeOpacity={0.8}>
+                <Ionicons name="call-outline" size={22} color="#34FF7A" />
                 <Text style={[cutStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={cutStyles.contactBtn} onPress={() => Alert.alert("💬 Texting…", "Opening chat with GreenScape Pros.\n\n(Demo)")} activeOpacity={0.8}>
-                <Text style={cutStyles.contactIcon}>💬</Text>
+              <TouchableOpacity style={cutStyles.contactBtn} onPress={() => Alert.alert("Texting…", "Opening chat with GreenScape Pros.\n\n(Demo)")} activeOpacity={0.8}>
+                <Ionicons name="chatbubble-outline" size={22} color="#34FF7A" />
                 <Text style={[cutStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
               </TouchableOpacity>
             </View>
@@ -377,7 +380,7 @@ function LandscaperProfile({
             <View style={cutStyles.card}>
               {/* Location row */}
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 18 }}>
-                <Text style={{ fontSize: 18 }}>📍</Text>
+                <Ionicons name="location-outline" size={18} color="#888" />
                 <Text style={[cutStyles.addrLine, { fontFamily: "Inter_500Medium", color: "#fff" }]}>
                   {profileCity}, {profileState} {profileZip}
                 </Text>
@@ -471,9 +474,9 @@ function LandscaperProfile({
             </View>
             <View style={cutStyles.photosGrid}>
               {servicePhotos.length === 0
-                ? ["🌿", "✂️", "🪴", "🧹"].map((emoji, i) => (
+                ? (["leaf-outline","cut-outline","flower-outline","trash-outline"] as const).map((icon, i) => (
                     <View key={i} style={cutStyles.photoCell}>
-                      <Text style={cutStyles.photoEmoji}>{emoji}</Text>
+                      <Ionicons name={icon} size={30} color="#34FF7A" />
                     </View>
                   ))
                 : servicePhotos.map((uri, i) => (
@@ -555,7 +558,7 @@ function LandscaperProfile({
                     onPress={() => {
                       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                       setPrivacyVisible(false);
-                      Alert.alert("✅ Privacy settings saved");
+                      Alert.alert("Privacy Settings Saved");
                     }}
                   >
                     <Text style={[privModalStyles.saveBtnText, { fontFamily: "Inter_600SemiBold" }]}>Save Settings</Text>
@@ -857,13 +860,18 @@ function CustomerProfile({ logout }: { logout: () => void }) {
             const isSelected = selectedPayment === method.value;
             return (
               <TouchableOpacity key={method.value} style={[styles.paymentTile, isSelected && styles.paymentTileActive]} onPress={() => { setSelectedPayment(method.value); setError(false); Haptics.selectionAsync(); }} activeOpacity={0.75}>
-                <Text style={styles.paymentTileEmoji}>{method.emoji}</Text>
+                <Ionicons name={method.ionIcon} size={28} color={isSelected ? "#34FF7A" : "#888"} />
                 <Text style={[styles.paymentTileLabel, { fontFamily: isSelected ? "Inter_600SemiBold" : "Inter_400Regular" }, isSelected && styles.paymentTileLabelActive]}>{method.shortLabel}</Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
-        {error && <Text style={[styles.errorMsg, { fontFamily: "Inter_400Regular" }]}>⚠️ Please select a payment method</Text>}
+        {error && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
+            <Ionicons name="warning-outline" size={15} color="#f87171" />
+            <Text style={[styles.errorMsg, { fontFamily: "Inter_400Regular" }]}>Please select a payment method</Text>
+          </View>
+        )}
         {paymentState !== "success" ? (
           <TouchableOpacity style={[styles.savePaymentBtn, paymentState === "loading" && styles.savePaymentBtnLoading]} onPress={paymentState === "idle" ? savePayment : undefined} activeOpacity={0.85}>
             {paymentState === "loading" ? (

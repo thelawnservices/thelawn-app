@@ -38,7 +38,7 @@ const HOME_PENDING_REQUESTS = [
   { id: "h3", service: "Mulching", size: "Large", customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM", budget: "$180" },
 ];
 
-function AnimatedStatCard({ stat, delay }: { stat: { label: string; value: string; icon: "checkmark-circle" | "star" | "heart" | "cash"; iconColor: string }; delay: number }) {
+function AnimatedStatCard({ stat, delay, onPress }: { stat: { label: string; value: string; icon: "checkmark-circle" | "star" | "heart" | "cash"; iconColor: string }; delay: number; onPress?: () => void }) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(16)).current;
 
@@ -49,13 +49,17 @@ function AnimatedStatCard({ stat, delay }: { stat: { label: string; value: strin
     ]).start();
   }, []);
 
-  return (
+  const inner = (
     <Animated.View style={[styles.statCard, { opacity, transform: [{ translateY }] }]}>
       <Ionicons name={stat.icon} size={22} color={stat.iconColor} />
       <Text style={[styles.statValue, { fontFamily: "Inter_700Bold" }]}>{stat.value}</Text>
       <Text style={[styles.statLabel, { fontFamily: "Inter_400Regular" }]}>{stat.label}</Text>
     </Animated.View>
   );
+  if (onPress) {
+    return <TouchableOpacity onPress={onPress} activeOpacity={0.8}>{inner}</TouchableOpacity>;
+  }
+  return inner;
 }
 
 function SkeletonCard() {
@@ -138,7 +142,7 @@ function NotificationsPanel({
             <View style={styles.notifList}>
               {items.length === 0 ? (
                 <View style={{ alignItems: "center", paddingVertical: 28 }}>
-                  <Text style={{ fontSize: 32, marginBottom: 10 }}>🔔</Text>
+                  <Ionicons name="notifications-outline" size={42} color="#444" style={{ marginBottom: 10 }} />
                   <Text style={[{ color: "#888", fontSize: 14, textAlign: "center" }, { fontFamily: "Inter_400Regular" }]}>
                     No alerts yet.{"\n"}Alerts appear when work starts, a message is sent, or a job is complete.
                   </Text>
@@ -146,7 +150,9 @@ function NotificationsPanel({
               ) : (
                 items.map((n) => (
                   <View key={n.id} style={styles.notifItem}>
-                    <Text style={styles.notifItemIcon}>{n.icon}</Text>
+                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(52,255,122,0.1)", alignItems: "center", justifyContent: "center" }}>
+                      <Ionicons name={n.icon as any} size={22} color="#34FF7A" />
+                    </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.notifItemTitle, { fontFamily: "Inter_500Medium" }]}>
                         {n.title}
@@ -282,37 +288,37 @@ function ProfileDropdownModal({
       <Pressable style={dropStyles.overlay} onPress={onClose}>
         <Pressable style={dropStyles.sheet} onPress={(e) => e.stopPropagation()}>
           <TouchableOpacity style={dropStyles.item} onPress={onViewProfile} activeOpacity={0.7}>
-            <Text style={dropStyles.itemIcon}>👤</Text>
+            <Ionicons name="person-outline" size={20} color="#888" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>View Profile</Text>
           </TouchableOpacity>
           {isLandscaper && (
             <TouchableOpacity style={dropStyles.item} onPress={onAvailability} activeOpacity={0.7}>
-              <Text style={dropStyles.itemIcon}>🗓️</Text>
+              <Ionicons name="calendar-outline" size={20} color="#888" />
               <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Service Availability</Text>
             </TouchableOpacity>
           )}
           <TouchableOpacity style={dropStyles.item} onPress={onAppointments} activeOpacity={0.7}>
-            <Text style={dropStyles.itemIcon}>📅</Text>
+            <Ionicons name="calendar" size={20} color="#888" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Appointments</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onSettings} activeOpacity={0.7}>
-            <Text style={dropStyles.itemIcon}>⚙️</Text>
+            <Ionicons name="settings-outline" size={20} color="#888" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Settings</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onShare} activeOpacity={0.7}>
-            <Text style={dropStyles.itemIcon}>🔗</Text>
+            <Ionicons name="share-social-outline" size={20} color="#888" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Share with friends</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onPaymentMethod} activeOpacity={0.7}>
-            <Text style={dropStyles.itemIcon}>💳</Text>
+            <Ionicons name="card-outline" size={20} color="#888" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Payment Method</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onVouchers} activeOpacity={0.7}>
-            <Text style={dropStyles.itemIcon}>🎟️</Text>
+            <Ionicons name="pricetag-outline" size={20} color="#888" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Vouchers</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onHelp} activeOpacity={0.7}>
-            <Text style={dropStyles.itemIcon}>❔</Text>
+            <Ionicons name="help-circle-outline" size={20} color="#888" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Help and Resources</Text>
           </TouchableOpacity>
           <View style={dropStyles.divider} />
@@ -592,7 +598,7 @@ const settStyles = StyleSheet.create({
 
 const PAYMENT_OPTIONS = [
   { id: "applepay", label: " Apple Pay", icon: "" },
-  { id: "debit", label: "💳 Debit Card", icon: "" },
+  { id: "debit", label: "Debit Card", icon: "" },
   { id: "venmo", label: "Venmo", icon: "" },
   { id: "paypal", label: "PayPal", icon: "" },
   { id: "cashapp", label: "Cash App", icon: "" },
@@ -878,9 +884,9 @@ export default function HomeScreen() {
     });
   };
 
+  const [favoritesModalVisible, setFavoritesModalVisible] = useState(false);
   const customerQuickStats = [
-    { label: "Jobs Done", value: "3", icon: "checkmark-circle" as const, iconColor: "#34C759" },
-    { label: "Saved Pros", value: String(favorites.size), icon: "heart" as const, iconColor: "#f87171" },
+    { label: "Favorites", value: String(favorites.size), icon: "heart" as const, iconColor: "#f87171" },
   ];
   const [notifVisible, setNotifVisible] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(true);
@@ -1001,7 +1007,7 @@ export default function HomeScreen() {
           }}
         >
           <Pressable style={pushStyles.sheet} onPress={(e) => e.stopPropagation()}>
-            <Text style={pushStyles.bell}>🛎️</Text>
+            <Ionicons name="notifications-outline" size={52} color="#34FF7A" style={{ marginBottom: 8 }} />
             <Text style={[pushStyles.title, { fontFamily: "Inter_600SemiBold" }]}>
               Enable Notifications?
             </Text>
@@ -1063,7 +1069,7 @@ export default function HomeScreen() {
               const h = new Date().getHours();
               const tod = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
               const name = role === "landscaper" ? "John" : "Alex";
-              return `${tod}, ${name} 👋`;
+              return `${tod}, ${name}`;
             })()}
           </Text>
           <Text style={[styles.greetingZip, { fontFamily: "Inter_400Regular" }]}>
@@ -1283,7 +1289,7 @@ export default function HomeScreen() {
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                         setAcceptedOnHome((prev) => [...prev, req.id]);
                         acceptJob({ id: req.id, service: req.service, size: req.size, customer: req.customer, date: req.date, time: req.time, budget: req.budget, distance: req.distance, zip: req.zip });
-                        Alert.alert("✅ Accepted!", `${req.customer}'s ${req.service} job added to your Appointments.`);
+                        Alert.alert("Job Accepted", `${req.customer}'s ${req.service} job added to your Appointments.`);
                       }}
                     >
                       <Text style={[styles.pendingAcceptText, { fontFamily: "Inter_600SemiBold" }]}>
@@ -1323,11 +1329,65 @@ export default function HomeScreen() {
         {/* Quick Stats — staggered entrance, role-aware */}
         <View style={styles.statsRow}>
           {(role === "landscaper" ? LANDSCAPER_QUICK_STATS : customerQuickStats).map((s, i) => (
-            <AnimatedStatCard key={s.label} stat={s} delay={i * 120} />
+            <AnimatedStatCard
+              key={s.label}
+              stat={s}
+              delay={i * 120}
+              onPress={role === "customer" && s.label === "Favorites" ? () => setFavoritesModalVisible(true) : undefined}
+            />
           ))}
         </View>
 
       </ScrollView>
+
+      {/* Favorites Modal — customers only */}
+      <Modal
+        visible={favoritesModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFavoritesModalVisible(false)}
+      >
+        <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }} onPress={() => setFavoritesModalVisible(false)}>
+          <Pressable style={{ backgroundColor: "#1A1A1A", borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderColor: "#222", paddingBottom: 36 }} onPress={(e) => e.stopPropagation()}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingTop: 24, paddingBottom: 16 }}>
+              <Text style={{ color: "#fff", fontSize: 18, fontFamily: "Inter_700Bold" }}>
+                Favorites <Text style={{ color: "#34FF7A" }}>({favorites.size})</Text>
+              </Text>
+              <TouchableOpacity onPress={() => setFavoritesModalVisible(false)} activeOpacity={0.7}>
+                <Ionicons name="close" size={24} color="#888" />
+              </TouchableOpacity>
+            </View>
+            {favorites.size === 0 ? (
+              <View style={{ alignItems: "center", paddingVertical: 40, gap: 12 }}>
+                <Ionicons name="heart-outline" size={48} color="#333" />
+                <Text style={{ color: "#888", fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" }}>
+                  Tap the heart on any landscaper{"\n"}to save them here.
+                </Text>
+              </View>
+            ) : (
+              <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+                {TRUSTED_PROS.filter((p) => favorites.has(p.name)).map((pro) => (
+                  <TouchableOpacity
+                    key={pro.name}
+                    style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingVertical: 14, gap: 14, borderBottomWidth: 1, borderBottomColor: "#222" }}
+                    onPress={() => { setFavoritesModalVisible(false); setTimeout(() => setSelectedPro(pro), 200); }}
+                    activeOpacity={0.75}
+                  >
+                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: "#0d2e18", alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#34FF7A" }}>
+                      <Ionicons name="person" size={22} color="#34FF7A" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: "#fff", fontSize: 15, fontFamily: "Inter_600SemiBold" }}>{pro.name}</Text>
+                      <Text style={{ color: "#888", fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 }}>★ {pro.rating} · {pro.jobs} jobs</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Landscaper Profile Modal — customers only */}
       <LandscaperProfileViewModal
@@ -1399,9 +1459,12 @@ function LandscaperProfileViewModal({
               )}
               <Text style={[fsStyles.jobsText, { fontFamily: "Inter_400Regular" }]}>{pro.jobs} jobs</Text>
             </View>
-            <Text style={[fsStyles.location, { fontFamily: "Inter_400Regular" }]}>
-              📍 Sarasota / Ellenton, FL · {pro.meta.split("•")[0].trim()}
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Ionicons name="location-outline" size={14} color="#888" />
+              <Text style={[fsStyles.location, { fontFamily: "Inter_400Regular" }]}>
+                Sarasota / Ellenton, FL · {pro.meta.split("•")[0].trim()}
+              </Text>
+            </View>
           </View>
 
           {/* ── Body ── */}
@@ -1437,9 +1500,9 @@ function LandscaperProfileViewModal({
             {/* Recent Work */}
             <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>RECENT WORK</Text>
             <View style={fsStyles.photoGrid}>
-              {["🌿", "✂️", "🪴", "🌱", "🧹", "🌳"].map((emoji, i) => (
+              {(["leaf-outline","cut-outline","flower-outline","leaf","construct-outline","tree-outline"] as const).map((icon, i) => (
                 <View key={i} style={fsStyles.photoTile}>
-                  <Text style={fsStyles.photoEmoji}>{emoji}</Text>
+                  <Ionicons name={icon} size={32} color="#34FF7A" />
                 </View>
               ))}
             </View>
@@ -1465,9 +1528,12 @@ function LandscaperProfileViewModal({
                     ))}
                   </View>
                   {/* Hours */}
-                  <Text style={[fsStyles.availHours, { fontFamily: "Inter_400Regular" }]}>
-                    🕐 {availability.startTime} – {availability.endTime}
-                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+                    <Ionicons name="time-outline" size={14} color="#888" />
+                    <Text style={[fsStyles.availHours, { fontFamily: "Inter_400Regular" }]}>
+                      {availability.startTime} – {availability.endTime}
+                    </Text>
+                  </View>
                   {/* Upcoming dates */}
                   {availability.upcomingDates.length > 0 && (
                     <View style={{ marginTop: 10 }}>
@@ -1475,9 +1541,12 @@ function LandscaperProfileViewModal({
                         UPCOMING DATES
                       </Text>
                       {availability.upcomingDates.map((date, i) => (
-                        <Text key={i} style={[{ color: "#34FF7A", fontSize: 13, marginBottom: 3 }, { fontFamily: "Inter_400Regular" }]}>
-                          📅 {date}
-                        </Text>
+                        <View key={i} style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                          <Ionicons name="calendar-outline" size={13} color="#34FF7A" />
+                          <Text style={[{ color: "#34FF7A", fontSize: 13 }, { fontFamily: "Inter_400Regular" }]}>
+                            {date}
+                          </Text>
+                        </View>
                       ))}
                     </View>
                   )}
@@ -1492,11 +1561,11 @@ function LandscaperProfileViewModal({
                 activeOpacity={0.8}
                 onPress={() =>
                   Linking.openURL("tel:+19415550000").catch(() =>
-                    Alert.alert("📞 Demo", "Calling " + pro.name)
+                    Alert.alert("Calling", pro.name)
                   )
                 }
               >
-                <Text style={fsStyles.contactIcon}>📞</Text>
+                <Ionicons name="call-outline" size={22} color="#34FF7A" />
                 <Text style={[fsStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -1504,11 +1573,11 @@ function LandscaperProfileViewModal({
                 activeOpacity={0.8}
                 onPress={() =>
                   Linking.openURL("sms:+19415550000").catch(() =>
-                    Alert.alert("💬 Demo", "Texting " + pro.name)
+                    Alert.alert("Message", "Texting " + pro.name)
                   )
                 }
               >
-                <Text style={fsStyles.contactIcon}>💬</Text>
+                <Ionicons name="chatbubble-outline" size={22} color="#34FF7A" />
                 <Text style={[fsStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
               </TouchableOpacity>
             </View>

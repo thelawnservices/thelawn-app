@@ -133,7 +133,7 @@ function ChatModal({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setMessages((prev) => [...prev, { id: String(Date.now()), text, fromMe: true }]);
     addNotification({
-      icon: "💬",
+      icon: "chatbubble-outline",
       title: "New message",
       sub: `${otherParty} sent you a message`,
     });
@@ -145,7 +145,7 @@ function ChatModal({
         { id: String(Date.now() + 1), text: isLandscaper ? "Thanks!" : "On my way!", fromMe: false },
       ]);
       addNotification({
-        icon: "💬",
+        icon: "chatbubble-outline",
         title: "New message",
         sub: `${otherParty} replied`,
       });
@@ -225,13 +225,13 @@ export default function JobsScreen() {
     if (next === "started" && statusOrder(current) < statusOrder("started")) {
       const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
       addNotification({
-        icon: "🛠️",
+        icon: "construct-outline",
         title: "Work has started",
         sub: `${isLandscaper ? "You've" : "Your landscaper has"} started work on ${job?.service ?? "your job"}`,
       });
       setTimeout(() => {
         Alert.alert(
-          "✅ Customer Notified",
+          "Customer Notified",
           "The customer has been notified that you've arrived and work has started.",
           [{ text: "OK" }]
         );
@@ -240,13 +240,13 @@ export default function JobsScreen() {
     if (next === "completed") {
       const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
       addNotification({
-        icon: "✅",
+        icon: "checkmark-circle",
         title: "Work complete!",
         sub: `${job?.service ?? "Your job"} has been completed successfully`,
       });
       setTimeout(() => {
         Alert.alert(
-          "🎉 Job Complete",
+          "Job Complete",
           "The customer has been notified that work is complete. Payment will be released from escrow within 24 hours.",
           [{ text: "OK" }]
         );
@@ -261,7 +261,7 @@ export default function JobsScreen() {
 
   function simulateCall(name: string) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert("📞 Calling…", `Connecting you to ${name}.\n\n(Demo call simulation)`);
+    Alert.alert("Calling…", `Connecting you to ${name}.\n\n(Demo call simulation)`);
   }
 
   return (
@@ -305,14 +305,14 @@ export default function JobsScreen() {
                       onPress={() => openChat(isLandscaper ? { customer: job.customer } : { landscaper: job.landscaper })}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.btnIcon}>💬</Text>
+                      <Ionicons name="chatbubble-outline" size={20} color="#34FF7A" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.callBtn}
                       onPress={() => simulateCall(isLandscaper ? job.customer : job.landscaper)}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.btnIcon}>📞</Text>
+                      <Ionicons name="call-outline" size={20} color="#34FF7A" />
                     </TouchableOpacity>
                   </View>
                 )}

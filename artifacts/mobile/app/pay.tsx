@@ -43,7 +43,8 @@ const PRICE_MATRIX: Record<string, Record<string, number>> = {
   "Clean Up":       { Small: 30,  Medium: 40,  Large: 55  },
 };
 
-const PHOTO_EMOJIS = ["🌳", "📸", "🏡", "🪴", "🌿", "🍃"];
+const PHOTO_ICONS = ["tree-outline", "camera-outline", "home-outline", "flower-outline", "leaf-outline", "leaf"] as const;
+type PhotoIcon = typeof PHOTO_ICONS[number];
 
 const DATES = [
   { label: "Mon", date: "Apr 7" },
@@ -97,7 +98,7 @@ export default function PayScreen() {
   const [customTipAmount, setCustomTipAmount] = useState("");
   const [serviceAddress, setServiceAddress] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [photos, setPhotos] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<PhotoIcon[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"applepay" | "debit" | "venmo" | "paypal" | "cashapp">("applepay");
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
@@ -157,7 +158,7 @@ export default function PayScreen() {
       Alert.alert("Max Photos", "You can attach up to 6 photos.");
       return;
     }
-    setPhotos((prev) => [...prev, PHOTO_EMOJIS[prev.length % PHOTO_EMOJIS.length]]);
+    setPhotos((prev) => [...prev, PHOTO_ICONS[prev.length % PHOTO_ICONS.length]]);
   };
 
   const validatePayment = (): string | true => {
@@ -681,9 +682,9 @@ export default function PayScreen() {
 
           {photos.length > 0 && (
             <View style={styles.photoGrid}>
-              {photos.map((emoji, i) => (
-                <View key={i} style={styles.photoTile}>
-                  <Text style={{ fontSize: 36 }}>{emoji}</Text>
+              {photos.map((icon, i) => (
+                <View key={i} style={[styles.photoTile, { alignItems: "center", justifyContent: "center" }]}>
+                  <Ionicons name={icon} size={36} color="#34FF7A" />
                 </View>
               ))}
             </View>
@@ -912,10 +913,10 @@ export default function PayScreen() {
         <View style={styles.payMethodGrid}>
           {(
             [
-              { key: "applepay", emoji: "",  label: "Apple Pay" },
-              { key: "venmo",    emoji: "💰", label: "Venmo" },
-              { key: "paypal",   emoji: "💳", label: "PayPal" },
-              { key: "cashapp",  emoji: "$",  label: "Cash App" },
+              { key: "applepay", ionIcon: "logo-apple" as const,          label: "Apple Pay" },
+              { key: "venmo",    ionIcon: "cash-outline" as const,         label: "Venmo" },
+              { key: "paypal",   ionIcon: "card-outline" as const,         label: "PayPal" },
+              { key: "cashapp",  ionIcon: "phone-portrait-outline" as const, label: "Cash App" },
             ] as const
           ).map((m) => (
             <TouchableOpacity
@@ -924,7 +925,7 @@ export default function PayScreen() {
               onPress={() => { setPaymentMethod(m.key); Haptics.selectionAsync(); }}
               activeOpacity={0.8}
             >
-              <Text style={styles.payMethodTileEmoji}>{m.emoji}</Text>
+              <Ionicons name={m.ionIcon} size={28} color={paymentMethod === m.key ? "#34FF7A" : "#888"} />
               <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === m.key && styles.payMethodTileTextActive]}>
                 {m.label}
               </Text>
@@ -936,7 +937,7 @@ export default function PayScreen() {
           onPress={() => { setPaymentMethod("debit"); Haptics.selectionAsync(); }}
           activeOpacity={0.8}
         >
-          <Text style={styles.payMethodTileEmoji}>💳</Text>
+          <Ionicons name="card" size={28} color={paymentMethod === "debit" ? "#34FF7A" : "#888"} />
           <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === "debit" && styles.payMethodTileTextActive]}>
             Debit / Credit Card
           </Text>

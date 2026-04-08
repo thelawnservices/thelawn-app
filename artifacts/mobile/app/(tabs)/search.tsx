@@ -243,7 +243,7 @@ export default function SearchScreen() {
                       zip: req.zip,
                     });
                     Alert.alert(
-                      "✅ Request Accepted!",
+                      "Request Accepted",
                       `${req.customer}'s ${req.service} job (${req.date} at ${req.time}) has been added to your Appointments.`
                     );
                   }}
