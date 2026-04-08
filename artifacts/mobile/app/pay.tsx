@@ -15,7 +15,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
-import { useAuth } from "@/contexts/auth";
 import { validateText } from "@/utils/moderation";
 
 type PayState = "availability" | "details" | "review" | "processing" | "success";
@@ -123,16 +122,12 @@ export default function PayScreen() {
     ? params.proAcceptedPayments.split(",").map((p) => PROFILE_TO_PAY_KEY[p.trim()]).filter(Boolean) as PayKey[]
     : [];
 
-  const allowedPayOptions = jobAccepted || proAcceptedPayments.length === 0
-    ? ALL_PAY_OPTIONS
-    : ALL_PAY_OPTIONS.filter((opt) => proAcceptedPayments.includes(opt.key));
+  const allowedPayOptions = proAcceptedPayments.length > 0
+    ? ALL_PAY_OPTIONS.filter((opt) => proAcceptedPayments.includes(opt.key))
+    : ALL_PAY_OPTIONS;
 
   const { availability, bookedSlots, addBookedSlot } = useLandscaperProfile();
-  const { preferredPayment } = useAuth();
-  const rawDefaultKey = (preferredPayment && PROFILE_TO_PAY_KEY[preferredPayment]) || "applepay";
-  const defaultPayKey: PayKey = allowedPayOptions.some((o) => o.key === rawDefaultKey)
-    ? rawDefaultKey
-    : (allowedPayOptions[0]?.key ?? "inperson");
+  const defaultPayKey: PayKey = allowedPayOptions[0]?.key ?? "inperson";
 
   const rollingDates = useMemo(() => {
     const today = new Date();
@@ -1246,7 +1241,7 @@ export default function PayScreen() {
         </Text>
 
         {/* Accepted-payment enforcement banner */}
-        {!jobAccepted && proAcceptedPayments.length > 0 && (
+        {proAcceptedPayments.length > 0 && (
           <View style={styles.acceptedPayBanner}>
             <Ionicons name="wallet-outline" size={15} color="#34FF7A" />
             <Text style={[styles.acceptedPayBannerText, { fontFamily: "Inter_400Regular" }]}>
