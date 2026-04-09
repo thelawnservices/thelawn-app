@@ -1,5 +1,10 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 
+function generateJobCode(): string {
+  const num = Math.floor(10000 + Math.random() * 89999);
+  return `JOB-${num}`;
+}
+
 export type AcceptedJob = {
   id: string;
   service: string;
@@ -8,6 +13,12 @@ export type AcceptedJob = {
   date: string;
   time: string;
   budget: string;
+  code: string;
+  pro: string;
+  initials: string;
+  color: string;
+  address: string;
+  notes: string;
   distance?: string;
   zip?: string;
   phone?: string;
@@ -17,7 +28,7 @@ type JobsContextType = {
   acceptedJobs: AcceptedJob[];
   cancelledJobs: AcceptedJob[];
   knownCustomers: Set<string>;
-  acceptJob: (job: AcceptedJob) => void;
+  acceptJob: (job: Omit<AcceptedJob, "code" | "pro" | "initials" | "color" | "notes"> & Partial<Pick<AcceptedJob, "code" | "pro" | "initials" | "color" | "notes">>) => void;
   cancelAccepted: (id: string) => void;
 };
 
@@ -40,10 +51,22 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
     return names;
   }, [acceptedJobs, cancelledJobs]);
 
-  function acceptJob(job: AcceptedJob) {
+  function acceptJob(
+    job: Omit<AcceptedJob, "code" | "pro" | "initials" | "color" | "notes"> &
+      Partial<Pick<AcceptedJob, "code" | "pro" | "initials" | "color" | "notes">>
+  ) {
+    const enriched: AcceptedJob = {
+      ...job,
+      code:     job.code     ?? generateJobCode(),
+      pro:      job.pro      ?? "GreenScape Pros",
+      initials: job.initials ?? "GP",
+      color:    job.color    ?? "#166D42",
+      address:  job.address  ?? "",
+      notes:    job.notes    ?? "",
+    };
     setAcceptedJobs((prev) => {
-      if (prev.some((j) => j.id === job.id)) return prev;
-      return [job, ...prev];
+      if (prev.some((j) => j.id === enriched.id)) return prev;
+      return [enriched, ...prev];
     });
   }
 

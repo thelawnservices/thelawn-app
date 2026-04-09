@@ -943,6 +943,22 @@ export default function AppointmentsScreen() {
   const [selectedAppt, setSelectedAppt] = useState<CustomerAppt | null>(null);
 
   const { acceptedJobs, cancelledJobs, cancelAccepted } = useJobs();
+
+  const acceptedAsAppts: CustomerAppt[] = acceptedJobs.map((j) => ({
+    id:        j.id,
+    code:      j.code,
+    service:   j.service,
+    date:      j.date,
+    time:      j.time,
+    pro:       j.pro,
+    price:     j.budget,
+    initials:  j.initials,
+    color:     j.color,
+    address:   j.address,
+    recurring: false,
+    size:      j.size,
+    notes:     j.notes,
+  }));
   const { instances, completionPhotos, markedDoneAt, markDone, releasePayment, disputeInstance } = useRecurring();
   const { addNotification } = useNotifications();
 
@@ -990,10 +1006,15 @@ export default function AppointmentsScreen() {
 
   const visibleScheduled = LANDSCAPER_SCHEDULED.filter((a) => !cancelledIds.includes(a.id));
 
-  const upcomingCustomerAppts = SINGLE_UPCOMING.filter(
+  const allCustomerAppts: CustomerAppt[] = [
+    ...SINGLE_UPCOMING,
+    ...acceptedAsAppts,
+  ];
+
+  const upcomingCustomerAppts = allCustomerAppts.filter(
     (a) => !customerCancelledIds.includes(a.id)
   );
-  const cancelledCustomerAppts = SINGLE_UPCOMING.filter(
+  const cancelledCustomerAppts = allCustomerAppts.filter(
     (a) => customerCancelledIds.includes(a.id)
   );
 
@@ -1421,7 +1442,12 @@ export default function AppointmentsScreen() {
       <JobDetailsModal
         appt={selectedAppt}
         onClose={() => setSelectedAppt(null)}
-        onCancel={(id) => setCustomerCancelledIds((prev) => [...prev, id])}
+        onCancel={(id) => {
+          setCustomerCancelledIds((prev) => [...prev, id]);
+          if (acceptedJobs.some((j) => j.id === id)) {
+            cancelAccepted(id);
+          }
+        }}
         addNotification={addNotification}
       />
 
