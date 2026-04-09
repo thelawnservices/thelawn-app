@@ -50,6 +50,7 @@ function canCancelAppt(date: string, time: string): { ok: boolean; reason: strin
 const SINGLE_UPCOMING = [
   {
     id: "1",
+    code: "JOB-37594",
     service: "Mowing/Edging",
     date: "April 12, 2026",
     time: "10:30 AM",
@@ -697,6 +698,10 @@ function RecurringSeriesCard({
                 <View>
                   <Text style={[rcStyles.instanceDate, { fontFamily: "Inter_600SemiBold" }]}>{inst.date}</Text>
                   <Text style={[rcStyles.instanceTime, { fontFamily: "Inter_400Regular" }]}>{inst.time}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 }}>
+                    <Ionicons name="barcode-outline" size={10} color="#34FF7A" />
+                    <Text style={{ fontFamily: "Inter_500Medium", fontSize: 10, color: "#34FF7A" }}>{inst.code}</Text>
+                  </View>
                 </View>
               </View>
               <View style={rcStyles.instanceRight}>
@@ -1450,6 +1455,10 @@ export default function AppointmentsScreen() {
                       </View>
                       <Text style={[styles.subText, { fontFamily: "Inter_400Regular" }]}>{appt.date} · {appt.time}</Text>
                       <Text style={[styles.proText, { fontFamily: "Inter_400Regular" }]}>with {appt.pro}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
+                        <Ionicons name="barcode-outline" size={12} color="#34FF7A" />
+                        <Text style={{ fontFamily: "Inter_500Medium", fontSize: 11, color: "#34FF7A" }}>{appt.code}</Text>
+                      </View>
                       <View style={styles.confirmedPill}>
                         <Ionicons name="checkmark-circle" size={11} color="#34FF7A" />
                         <Text style={[styles.confirmedPillText, { fontFamily: "Inter_600SemiBold" }]}>Confirmed</Text>
@@ -1465,7 +1474,7 @@ export default function AppointmentsScreen() {
             {instances.length > 0 && (
               <>
                 <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }, upcomingCustomerAppts.length > 0 && { marginTop: 8 }]}>
-                  Recurring Series
+                  Recurring Service Appointments
                 </Text>
                 <RecurringSeriesCard
                   instances={instances}

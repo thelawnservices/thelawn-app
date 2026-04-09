@@ -5,6 +5,7 @@ export type InstanceStatus = "upcoming" | "pending_approval" | "completed" | "di
 export type RecurringInstance = {
   id: string;
   parentId: string;
+  code: string;
   service: string;
   date: string;
   time: string;
@@ -53,9 +54,12 @@ function generateDates(
 
 const biWeeklyDates = generateDates("April 18, 2026", "Bi-Weekly", 7);
 
+const RECURRING_CODES = ["JOB-48312","JOB-59274","JOB-63891","JOB-77042","JOB-81534","JOB-92065","JOB-15728"];
+
 const INITIAL_INSTANCES: RecurringInstance[] = biWeeklyDates.map((date, i) => ({
   id: `r2-inst-${i}`,
   parentId: "2",
+  code: RECURRING_CODES[i] ?? `JOB-${10000 + i * 7213}`,
   service: "Mowing/Edging",
   date,
   time: "9:00 AM",
