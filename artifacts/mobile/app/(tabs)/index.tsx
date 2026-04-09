@@ -28,6 +28,7 @@ import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscap
 import { validateText } from "@/utils/moderation";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import HelpSupportModal from "@/components/HelpSupportModal";
+import FeedbackModal from "@/components/FeedbackModal";
 
 type FeedPost = {
   id: string; customerName: string; customerInitials: string; customerColor: string;
@@ -487,6 +488,7 @@ function ProfileDropdownModal({
   onPaymentHistory,
   onVouchers,
   onHelp,
+  onFeedback,
   isLandscaper,
   onSignOut,
 }: {
@@ -499,6 +501,7 @@ function ProfileDropdownModal({
   onPaymentHistory: () => void;
   onVouchers: () => void;
   onHelp: () => void;
+  onFeedback: () => void;
   isLandscaper: boolean;
   onSignOut: () => void;
 }) {
@@ -540,6 +543,10 @@ function ProfileDropdownModal({
           <TouchableOpacity style={dropStyles.item} onPress={onHelp} activeOpacity={0.7}>
             <Ionicons name="help-circle-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Help and Resources</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={dropStyles.item} onPress={onFeedback} activeOpacity={0.7}>
+            <Ionicons name="chatbubble-ellipses-outline" size={20} color="#34FF7A" />
+            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>App Feedback</Text>
           </TouchableOpacity>
           <View style={dropStyles.divider} />
           <TouchableOpacity style={dropStyles.item} onPress={onSignOut} activeOpacity={0.7}>
@@ -1874,6 +1881,7 @@ export default function HomeScreen() {
   const [paymentVisible, setPaymentVisible] = useState(false);
   const [vouchersVisible, setVouchersVisible] = useState(false);
   const [helpVisible, setHelpVisible] = useState(false);
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [servicesEditVisible, setServicesEditVisible] = useState(false);
   const [servicesIsFirstSetup, setServicesIsFirstSetup] = useState(false);
   const [paymentHistoryVisible, setPaymentHistoryVisible] = useState(false);
@@ -1995,6 +2003,7 @@ export default function HomeScreen() {
         onPaymentHistory={() => { setDropdownVisible(false); setPaymentHistoryVisible(true); }}
         onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
+        onFeedback={() => { setDropdownVisible(false); setFeedbackVisible(true); }}
         isLandscaper={role === "landscaper"}
         onSignOut={() => { setDropdownVisible(false); logout(); }}
       />
@@ -2101,6 +2110,12 @@ export default function HomeScreen() {
         visible={helpVisible}
         onClose={() => setHelpVisible(false)}
         role={role === "landscaper" ? "landscaper" : "customer"}
+      />
+      <FeedbackModal
+        visible={feedbackVisible}
+        onClose={() => setFeedbackVisible(false)}
+        userName={userName || ""}
+        role={role ?? "customer"}
       />
 
       {/* Push Notification Permission Modal – shown once after first login */}
