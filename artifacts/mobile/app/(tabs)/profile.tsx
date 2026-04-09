@@ -24,7 +24,6 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/contexts/auth";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
-import { useSubscription } from "@/lib/revenuecat";
 import TermsModal from "@/components/TermsModal";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import HelpSupportModal from "@/components/HelpSupportModal";
@@ -1333,7 +1332,6 @@ function CustomerProfile({
 }) {
   const { setAvatarUri, preferredPayment, setPreferredPayment } = useAuth();
   const router = useRouter();
-  const { isSubscribed } = useSubscription();
   const [selectedPayment, setSelectedPayment] = useState(preferredPayment ?? "");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
   const [error, setError] = useState(false);
@@ -1412,31 +1410,6 @@ function CustomerProfile({
         </View>
       </View>
 
-
-      {/* Go Pro banner */}
-      {isSubscribed ? (
-        <View style={styles.proBanner}>
-          <Ionicons name="leaf" size={16} color="#34FF7A" />
-          <Text style={[styles.proBannerText, { fontFamily: "Inter_600SemiBold" }]}>
-            TheLawn Pro — Active
-          </Text>
-          <View style={styles.proBadge}>
-            <Text style={[styles.proBadgeText, { fontFamily: "Inter_700Bold" }]}>PRO</Text>
-          </View>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={styles.goProBtn}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push("/paywall"); }}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="flash" size={16} color="#000" />
-          <Text style={[styles.goProText, { fontFamily: "Inter_700Bold" }]}>
-            Upgrade to Pro — $5.99/mo
-          </Text>
-          <Ionicons name="chevron-forward" size={14} color="#000" />
-        </TouchableOpacity>
-      )}
 
       <TouchableOpacity style={styles.editBtn} onPress={() => Alert.alert("Edit Profile", "Profile editor would open here")} activeOpacity={0.85}>
         <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile Settings</Text>

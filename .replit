@@ -24,3 +24,8 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+EXPO_PUBLIC_API_URL = "https://4badcd8d-03f5-4cc5-b16a-417f5dd88243-00-2bd4pdtl92w01.riker.replit.dev/api-server"

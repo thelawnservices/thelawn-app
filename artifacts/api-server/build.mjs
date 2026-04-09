@@ -29,6 +29,10 @@ async function buildAll() {
     // - use path traversal to read files (e.g. @google-cloud/secret-manager loads sibling .proto files)
     external: [
       "*.node",
+      // stripe-replit-sync and stripe are large packages that are better
+      // loaded natively — avoids any CJS/ESM bundling edge-cases
+      "stripe",
+      "stripe-replit-sync",
       "sharp",
       "better-sqlite3",
       "sqlite3",
