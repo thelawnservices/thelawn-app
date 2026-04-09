@@ -20,7 +20,7 @@ import { useJobs } from "@/contexts/jobs";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import { useNotifications } from "@/contexts/notifications";
 
-const FILTERS = ["All", "Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Tree Removal"];
+const FILTERS = ["All", "Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Tree Removal"];
 
 const PROS = [
   {
@@ -73,7 +73,7 @@ const PROS = [
     reviews: 43,
     price: 350,
     distance: "2.8 mi",
-    tags: ["Sod Installation", "Artificial Turf"],
+    tags: ["Sod Installation"],
     initials: "EG",
     color: "#2E7D32",
     trusted: false,
@@ -96,7 +96,6 @@ const SERVICE_REQUESTS = [
   { id: "r1", service: "Mowing/Edging",    size: "Medium", customer: "Alex T.",   distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible",          budget: "$70",   description: "Front and back yard, medium lot. Edge along the driveway and sidewalk.",              address: "8910 45th Ave E, Ellenton, FL",           phone: "(941) 555-0192", isNewCustomer: true  },
   { id: "r2", service: "Weeding/Mulching", size: "Small",  customer: "Priya N.",  distance: "3.1 mi", zip: "34208", date: "Apr 16", time: "Morning preferred",  budget: "$90",   description: "Flower beds need weeding and about 2 yards of fresh mulch around shrubs.",            address: "22 Palmetto Dr, Bradenton, FL",            phone: "(941) 555-3841", isNewCustomer: true  },
   { id: "r3", service: "Sod Installation", size: "Large",  customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM",            budget: "$850",  description: "Large back yard needs full sod replacement — approx 1,000 sq ft.",                   address: "4400 53rd Ave E, Bradenton, FL",           phone: "(941) 555-7743", isNewCustomer: false },
-  { id: "r4", service: "Artificial Turf",  size: "Small",  customer: "Sarah B.",  distance: "0.9 mi", zip: "34219", date: "Apr 17", time: "10:00 AM",           budget: "$1200", description: "Small side yard conversion to artificial turf. Pet-friendly material preferred.",      address: "712 Riviera Dunes Way, Palmetto, FL",      phone: "(941) 555-2290", isNewCustomer: true  },
   { id: "r5", service: "Mowing/Edging",    size: "Large",  customer: "James W.",  distance: "4.5 mi", zip: "34211", date: "Apr 18", time: "7:30 AM",            budget: "$100",  description: "Large corner lot, front and back. Edge along sidewalk and entire driveway perimeter.", address: "6021 Greenfield Way, Lakewood Ranch, FL",  phone: "(941) 555-6614", isNewCustomer: false },
 ];
 

@@ -950,7 +950,7 @@ const helpStyles = StyleSheet.create({
 });
 
 const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal"];
+const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Full Service", "Tree Removal"];
 
 const ACCEPTED_PAYMENT_OPTIONS = [
   { value: "Pay Now (Online)", icon: "card" as const },
@@ -978,7 +978,6 @@ const DEFAULT_AVAIL: AvailState = {
   "Mowing/Edging":            { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "8:00 AM",  endTime: "6:00 PM"  },
   "Weeding/Mulching":         { days: ["Tue", "Thu"],                       startTime: "9:00 AM",  endTime: "5:00 PM"  },
   "Sod Installation":         { days: ["Mon", "Wed", "Fri"],                startTime: "7:00 AM",  endTime: "5:00 PM"  },
-  "Artificial Turf":          { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "7:00 AM",  endTime: "4:00 PM"  },
   "Full Service":             { days: ["Mon", "Wed", "Fri"],                startTime: "8:00 AM",  endTime: "5:00 PM"  },
   "Tree Removal":             { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "7:00 AM",  endTime: "4:00 PM"  },
 };
@@ -1000,13 +999,23 @@ const TREE_TIERS: PricingTier[] = [
 ];
 
 const TREE_SERVICES_LIST = ["Tree Removal"];
+const SOD_SERVICES_LIST  = ["Sod Installation"];
+
+const SOD_TIERS: PricingTier[] = [
+  { label: "St. Augustine",   range: "Dense, shade-tolerant",            price: "$420" },
+  { label: "Zoysia Grass",    range: "Low-maintenance, drought-resistant", price: "$480" },
+  { label: "Bermuda Grass",   range: "Heat-resistant, durable",          price: "$390" },
+  { label: "Bahia Grass",     range: "Low-input, sandy soils",           price: "$320" },
+  { label: "Centipede Grass", range: "Low-maintenance, acidic soil",     price: "$360" },
+  { label: "Xeriscaping",     range: "Drought-resistant design",         price: "$520" },
+];
 
 function makeDefaultPricing(): ServicePricing {
   const out: ServicePricing = {};
   for (const svc of ALL_SERVICES) {
-    out[svc] = TREE_SERVICES_LIST.includes(svc)
-      ? TREE_TIERS.map((t) => ({ ...t }))
-      : BASE_TIERS.map((t) => ({ ...t }));
+    if (TREE_SERVICES_LIST.includes(svc)) out[svc] = TREE_TIERS.map((t) => ({ ...t }));
+    else if (SOD_SERVICES_LIST.includes(svc)) out[svc] = SOD_TIERS.map((t) => ({ ...t }));
+    else out[svc] = BASE_TIERS.map((t) => ({ ...t }));
   }
   return out;
 }
@@ -1352,18 +1361,18 @@ function ServicesEditModal({ visible, onClose, isFirstSetup = false }: { visible
 
                 {/* Pricing per service */}
                 <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium" }]}>
-                  {TREE_SERVICES_LIST.includes(service) ? "BASE RATE BY TREE SIZE" : "BASE RATE BY YARD SIZE"}
+                  {TREE_SERVICES_LIST.includes(service) ? "BASE RATE BY TREE SIZE" : SOD_SERVICES_LIST.includes(service) ? "BASE RATE BY SOD TYPE" : "BASE RATE BY YARD SIZE"}
                 </Text>
                 <View style={[
                   { gap: 8, marginBottom: 6 },
-                  TREE_SERVICES_LIST.includes(service)
+                  (TREE_SERVICES_LIST.includes(service) || SOD_SERVICES_LIST.includes(service))
                     ? { flexDirection: "row", flexWrap: "wrap" }
                     : { flexDirection: "row" }
                 ]}>
-                  {(pricing[service] ?? (TREE_SERVICES_LIST.includes(service) ? TREE_TIERS : BASE_TIERS)).map((tier, ti) => (
+                  {(pricing[service] ?? (TREE_SERVICES_LIST.includes(service) ? TREE_TIERS : SOD_SERVICES_LIST.includes(service) ? SOD_TIERS : BASE_TIERS)).map((tier, ti) => (
                     <View key={tier.label} style={[
                       svcStyles.tierCell,
-                      TREE_SERVICES_LIST.includes(service) && { width: "47%", flex: 0 }
+                      (TREE_SERVICES_LIST.includes(service) || SOD_SERVICES_LIST.includes(service)) && { width: "47%", flex: 0 }
                     ]}>
                       <Text style={[svcStyles.tierCellLabel, { fontFamily: "Inter_600SemiBold" }]}>{tier.label}</Text>
                       <Text style={[svcStyles.tierCellRange, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
@@ -2286,8 +2295,6 @@ export default function HomeScreen() {
                 { name: "Mowing/Edging",          icon: "cut-outline" as const,    est: "1–2 hrs",   hot: true  },
                 { name: "Weeding/Mulching",        icon: "flower-outline" as const, est: "2–4 hrs",   hot: true  },
                 { name: "Sod Installation",        icon: "grid-outline" as const,   est: "4–8 hrs",   hot: false },
-                { name: "Artificial Turf",         icon: "layers-outline" as const, est: "10–20 hrs", hot: false },
-                { name: "Full Service",            icon: "star-outline" as const,   est: "3–6 hrs",   hot: false },
                 { name: "Tree Removal",            icon: "cut-outline" as const,    est: "4–8 hrs",   hot: false },
               ].map((svc) => (
                 <TouchableOpacity

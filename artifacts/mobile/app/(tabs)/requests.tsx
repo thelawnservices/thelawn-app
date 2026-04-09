@@ -113,17 +113,6 @@ const LANDSCAPER_INCOMING = [
     customer: "Marcus R.",
     distance: "5.8 mi",
   },
-  {
-    id: "in4",
-    service: "Artificial Turf",
-    description: "Full back yard conversion to artificial turf, approx 1,200 sq ft.",
-    address: "67 Oak Trail, Sarasota, FL",
-    budget: "$1200 – $1800",
-    date: "Apr 20",
-    time: "Afternoon",
-    customer: "Diane W.",
-    distance: "8.2 mi",
-  },
 ];
 
 const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; bg: string; icon: "time-outline" | "checkmark-circle-outline" | "close-circle-outline" | "leaf" | "reload-outline" }> = {
@@ -149,7 +138,7 @@ function NewRequestModal({
   const [address, setAddress] = useState("");
   const [zip, setZip] = useState("");
 
-  const SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Tree Removal"];
+  const SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Tree Removal"];
 
   function handleSubmit() {
     if (!service) {

@@ -17,7 +17,6 @@ const SERVICES = [
   { id: "1", name: "Mowing/Edging",           description: "Mow & edge the full yard",          price: 70,   icon: "cut-outline" as const,    estTime: "1–2 hrs" },
   { id: "2", name: "Weeding/Mulching",        description: "Weed beds & apply fresh mulch",     price: 90,   icon: "flower-outline" as const, estTime: "2–4 hrs" },
   { id: "3", name: "Sod Installation",        description: "Remove old & install fresh sod",    price: 350,  icon: "grid-outline" as const,   estTime: "4–8 hrs" },
-  { id: "4", name: "Artificial Turf",         description: "Full turf yard conversion",          price: 1200, icon: "layers-outline" as const, estTime: "10–20 hrs" },
   { id: "5", name: "Tree Removal",            description: "Safe removal of trees & stumps",    price: 250,  icon: "cut-outline" as const,    estTime: "4–8 hrs" },
 ];
 

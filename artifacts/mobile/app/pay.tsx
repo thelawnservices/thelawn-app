@@ -58,11 +58,11 @@ const SERVICE_OPTIONS: { label: string; icon: "cut-outline" | "flower-outline" |
   { label: "Mowing/Edging",           icon: "cut-outline",    estTime: "30min–1hr" },
   { label: "Weeding/Mulching",        icon: "flower-outline", estTime: "2–4 hrs" },
   { label: "Sod Installation",        icon: "grid-outline",   estTime: "4–8 hrs" },
-  { label: "Artificial Turf",         icon: "layers-outline", estTime: "10–20 hrs" },
   { label: "Tree Removal",            icon: "cut-outline",    estTime: "4–8 hrs" },
 ];
 
 const TREE_SERVICES = ["Tree Removal"];
+const SOD_SERVICES  = ["Sod Installation"];
 
 const YARD_SIZE_OPTIONS = [
   { key: "Small",  label: "Small",  sub: "< 5,000 sq ft" },
@@ -77,11 +77,19 @@ const TREE_SIZE_OPTIONS = [
   { key: "XLarge", label: "Extra Large", sub: "Over 20 ft" },
 ];
 
+const SOD_TYPE_OPTIONS = [
+  { key: "St. Augustine",  label: "St. Augustine",  sub: "Dense, shade-tolerant" },
+  { key: "Zoysia Grass",   label: "Zoysia Grass",   sub: "Low-maintenance, drought-resistant" },
+  { key: "Bermuda Grass",  label: "Bermuda Grass",  sub: "Heat-resistant, durable" },
+  { key: "Bahia Grass",    label: "Bahia Grass",    sub: "Low-input, sandy soils" },
+  { key: "Centipede Grass",label: "Centipede Grass",sub: "Low-maintenance, acidic soil" },
+  { key: "Xeriscaping",    label: "Xeriscaping",    sub: "Drought-resistant design" },
+];
+
 const PRICE_MATRIX: Record<string, Record<string, number>> = {
   "Mowing/Edging":            { Small: 45,   Medium: 70,   Large: 100                },
   "Weeding/Mulching":         { Small: 90,   Medium: 130,  Large: 175                },
-  "Sod Installation":         { Small: 350,  Medium: 550,  Large: 850                },
-  "Artificial Turf":          { Small: 1200, Medium: 1800, Large: 2800               },
+  "Sod Installation":         { "St. Augustine": 420, "Zoysia Grass": 480, "Bermuda Grass": 390, "Bahia Grass": 320, "Centipede Grass": 360, "Xeriscaping": 520 },
   "Tree Removal":             { Small: 250,  Medium: 500,  Large: 900,  XLarge: 1500 },
 };
 
@@ -95,8 +103,6 @@ const SERVICE_DURATIONS: Record<string, number> = {
   "Mowing/Edging":            60,
   "Weeding/Mulching":         240,
   "Sod Installation":         480,
-  "Artificial Turf":          1200,
-  "Full Service":             240,
   "Tree Removal":             360,
 };
 
@@ -196,7 +202,8 @@ export default function PayScreen() {
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
   const [selectedYardSize, setSelectedYardSize] = useState<string | null>(null);
   const isTreeSizeMode = selectedServices.size > 0 && [...selectedServices].some((s) => TREE_SERVICES.includes(s));
-  const activeSizeOptions = isTreeSizeMode ? TREE_SIZE_OPTIONS : YARD_SIZE_OPTIONS;
+  const isSodMode      = selectedServices.size > 0 && [...selectedServices].some((s) => SOD_SERVICES.includes(s)) && !isTreeSizeMode;
+  const activeSizeOptions = isTreeSizeMode ? TREE_SIZE_OPTIONS : isSodMode ? SOD_TYPE_OPTIONS : YARD_SIZE_OPTIONS;
   const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
@@ -344,7 +351,7 @@ export default function PayScreen() {
 
   useEffect(() => {
     setSelectedYardSize(null);
-  }, [isTreeSizeMode]);
+  }, [isTreeSizeMode, isSodMode]);
 
   useEffect(() => {
     if (payState === "processing") {
@@ -1124,17 +1131,17 @@ export default function PayScreen() {
 
           {/* Yard/Tree Size */}
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
-            {isTreeSizeMode ? "What size is the tree?" : "What size is your yard?"}{" "}
+            {isTreeSizeMode ? "What size is the tree?" : isSodMode ? "What type of sod?" : "What size is your yard?"}{" "}
             <Text style={{ color: "#ef4444" }}>*</Text>
           </Text>
           <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
-            {isTreeSizeMode ? "Select the approximate height of the tree" : "This determines your price"}
+            {isTreeSizeMode ? "Select the approximate height of the tree" : isSodMode ? "Choose the sod variety — this sets your price" : "This determines your price"}
           </Text>
-          <View style={[styles.yardSizeRow, isTreeSizeMode && { flexWrap: "wrap" }]}>
+          <View style={[styles.yardSizeRow, (isTreeSizeMode || isSodMode) && { flexWrap: "wrap" }]}>
             {activeSizeOptions.map((ys) => (
               <TouchableOpacity
                 key={ys.key}
-                style={[styles.yardChip, selectedYardSize === ys.key && styles.yardChipActive, isTreeSizeMode && { minWidth: "45%" }]}
+                style={[styles.yardChip, selectedYardSize === ys.key && styles.yardChipActive, (isTreeSizeMode || isSodMode) && { minWidth: "45%" }]}
                 onPress={() => {
                   setSelectedYardSize(ys.key);
                   Haptics.selectionAsync();
@@ -1244,7 +1251,7 @@ export default function PayScreen() {
                 : !serviceAddress.trim()
                 ? "Enter a service address"
                 : !selectedYardSize
-                ? "Select your yard size"
+                ? isSodMode ? "Select sod type" : "Select your yard size"
                 : "Continue to Review & Pay"}
             </Text>
             {canContinueFromDetails && (
@@ -1278,7 +1285,7 @@ export default function PayScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.summaryService, { fontFamily: "Inter_600SemiBold" }]}>
-              {selectedServices.size > 0 ? [...selectedServices].join(" + ") : "Mowing/Edging"}{selectedYardSize ? ` · ${selectedYardSize} ${isTreeSizeMode ? "tree" : "yard"}` : ""}
+              {selectedServices.size > 0 ? [...selectedServices].join(" + ") : "Mowing/Edging"}{selectedYardSize ? ` · ${selectedYardSize}${isTreeSizeMode ? " tree" : isSodMode ? " sod" : " yard"}` : ""}
             </Text>
             {recurring && (
               <View style={styles.recurringBadge}>

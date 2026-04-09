@@ -37,9 +37,9 @@ const KNOWLEDGE_BASE: KBEntry[] = [
       "TheLawnServices is a landscaping marketplace that connects customers with professional landscapers in their area.\n\nCustomers post jobs with their preferred service, date, time, and budget. Landscapers browse available requests and accept the ones that fit their schedule. Payment goes directly between customer and landscaper using your agreed-upon method after the work is approved.",
   },
   {
-    keywords: ["service", "mowing", "edging", "weeding", "mulch", "sod", "artificial turf", "full service", "what service", "available"],
+    keywords: ["service", "mowing", "edging", "weeding", "mulch", "sod", "full service", "what service", "available", "tree"],
     answer:
-      "TheLawnServices supports the following service types:\n\n🌿 Mowing/Edging\n🌱 Weeding/Mulching\n🟫 Sod Installation\n🌐 Artificial Turf\n⭐ Full Service\n\nWhen booking, select the service that matches your yard needs. For multiple services, choose \"Full Service\" or discuss details with your landscaper.",
+      "TheLawnServices supports the following service types:\n\n🌿 Mowing/Edging\n🌱 Weeding/Mulching\n🟫 Sod Installation\n🌲 Tree Removal\n\nWhen booking Sod Installation you'll be asked to choose your sod type (St. Augustine, Zoysia, Bermuda, Bahia, Centipede, or Xeriscaping). Select the service that best matches your yard needs.",
   },
   {
     keywords: ["book", "booking", "hire", "how do i find", "request", "get a landscaper", "order", "schedule"],

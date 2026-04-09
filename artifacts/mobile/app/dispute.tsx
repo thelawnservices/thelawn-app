@@ -25,7 +25,6 @@ const SERVICES = [
   "Mowing/Edging",
   "Weeding/Mulching",
   "Sod Installation",
-  "Artificial Turf",
   "Full Service",
   "Tree Removal",
   "Other",
