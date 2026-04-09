@@ -2298,10 +2298,12 @@ export default function HomeScreen() {
                 { name: "Tree Removal",            icon: "cut-outline" as const,    est: "4–8 hrs",   hot: false },
               ].map((svc) => (
                 <View key={svc.name} style={styles.svcGridCardWrap}>
-                  {svc.hot && (
+                  {svc.hot ? (
                     <View style={styles.svcHotBadge}>
-                      <Text style={{ fontSize: 9, fontFamily: "Inter_600SemiBold", color: "#FF6B35" }}>🔥 HOT</Text>
+                      <Text style={{ fontSize: 11, fontFamily: "Inter_700Bold", color: "#FF6B35" }}>🔥 HOT</Text>
                     </View>
+                  ) : (
+                    <View style={styles.svcHotSpacer} />
                   )}
                   <TouchableOpacity
                     style={styles.svcGridCard}
@@ -3148,8 +3150,6 @@ const styles = StyleSheet.create({
   },
   svcGridCardWrap: {
     alignItems: "center",
-    paddingTop: 14,
-    position: "relative",
   },
   svcGridCard: {
     width: 108,
@@ -3164,17 +3164,19 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   svcHotBadge: {
-    position: "absolute",
-    top: 0,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#2A1200",
     borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderWidth: 1,
-    borderColor: "#FF6B3560",
-    zIndex: 10,
+    borderColor: "#FF6B35",
+    marginBottom: 6,
+  },
+  svcHotSpacer: {
+    height: 28,
+    marginBottom: 6,
   },
   svcGridIconWrap: {
     width: 56,
