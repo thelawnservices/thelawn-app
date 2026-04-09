@@ -28,7 +28,6 @@ const SERVICES = [
   "Artificial Turf",
   "Full Service",
   "Tree Removal",
-  "Tree Trimming & Pruning",
   "Other",
 ];
 

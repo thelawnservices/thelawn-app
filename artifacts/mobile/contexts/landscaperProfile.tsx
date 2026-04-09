@@ -9,7 +9,6 @@ export const SERVICE_BLOCK_MINUTES: Record<string, number> = {
   "Artificial Turf":          1200,
   "Full Service":             240,
   "Tree Removal":             360,
-  "Tree Trimming & Pruning":  180,
 };
 
 export type LandscaperAvailability = {
@@ -47,7 +46,7 @@ export type MyServicesState = {
   blockedDates:     string[];   // "Apr 10, 2026" style keys the landscaper marked off
 };
 
-const ALL_SVC = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal", "Tree Trimming & Pruning"];
+const ALL_SVC = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal"];
 
 const BASE_TIERS: PricingTierItem[] = [
   { label: "Small",  range: "Up to 2,000 sq ft",  price: "$45" },
@@ -64,7 +63,6 @@ const DEFAULT_MY_SERVICES: MyServicesState = {
     "Artificial Turf":          { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "7:00 AM", endTime: "4:00 PM" },
     "Full Service":             { days: ["Mon","Wed","Fri"],             startTime: "8:00 AM", endTime: "5:00 PM" },
     "Tree Removal":             { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "7:00 AM", endTime: "4:00 PM" },
-    "Tree Trimming & Pruning":  { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "8:00 AM", endTime: "5:00 PM" },
   },
   pricing: Object.fromEntries(ALL_SVC.map((s) => [s, BASE_TIERS.map((t) => ({ ...t }))])),
   acceptedPayments: ["Stripe", "In Person"],

@@ -149,7 +149,7 @@ function NewRequestModal({
   const [address, setAddress] = useState("");
   const [zip, setZip] = useState("");
 
-  const SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Tree Removal", "Tree Trimming & Pruning"];
+  const SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Tree Removal"];
 
   function handleSubmit() {
     if (!service) {

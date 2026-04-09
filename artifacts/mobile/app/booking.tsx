@@ -19,7 +19,6 @@ const SERVICES = [
   { id: "3", name: "Sod Installation",        description: "Remove old & install fresh sod",    price: 350,  icon: "grid-outline" as const,   estTime: "4–8 hrs" },
   { id: "4", name: "Artificial Turf",         description: "Full turf yard conversion",          price: 1200, icon: "layers-outline" as const, estTime: "10–20 hrs" },
   { id: "5", name: "Tree Removal",            description: "Safe removal of trees & stumps",    price: 250,  icon: "cut-outline" as const,    estTime: "4–8 hrs" },
-  { id: "6", name: "Tree Trimming & Pruning", description: "Shape & trim trees for health",     price: 150,  icon: "leaf-outline" as const,   estTime: "2–4 hrs" },
 ];
 
 export default function BookingScreen() {

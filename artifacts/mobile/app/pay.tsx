@@ -60,10 +60,9 @@ const SERVICE_OPTIONS: { label: string; icon: "cut-outline" | "flower-outline" |
   { label: "Sod Installation",        icon: "grid-outline",   estTime: "4–8 hrs" },
   { label: "Artificial Turf",         icon: "layers-outline", estTime: "10–20 hrs" },
   { label: "Tree Removal",            icon: "cut-outline",    estTime: "4–8 hrs" },
-  { label: "Tree Trimming & Pruning", icon: "leaf-outline",   estTime: "2–4 hrs" },
 ];
 
-const TREE_SERVICES = ["Tree Removal", "Tree Trimming & Pruning"];
+const TREE_SERVICES = ["Tree Removal"];
 
 const YARD_SIZE_OPTIONS = [
   { key: "Small",  label: "Small",  sub: "< 5,000 sq ft" },
@@ -84,7 +83,6 @@ const PRICE_MATRIX: Record<string, Record<string, number>> = {
   "Sod Installation":         { Small: 350,  Medium: 550,  Large: 850                },
   "Artificial Turf":          { Small: 1200, Medium: 1800, Large: 2800               },
   "Tree Removal":             { Small: 250,  Medium: 500,  Large: 900,  XLarge: 1500 },
-  "Tree Trimming & Pruning":  { Small: 150,  Medium: 280,  Large: 450,  XLarge: 700  },
 };
 
 const PHOTO_ICONS = ["leaf-outline", "camera-outline", "home-outline", "flower-outline", "leaf-outline", "leaf"] as const;
@@ -100,7 +98,6 @@ const SERVICE_DURATIONS: Record<string, number> = {
   "Artificial Turf":          1200,
   "Full Service":             240,
   "Tree Removal":             360,
-  "Tree Trimming & Pruning":  180,
 };
 
 function parseTimeToMinutes(t: string): number {

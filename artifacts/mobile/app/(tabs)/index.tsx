@@ -950,7 +950,7 @@ const helpStyles = StyleSheet.create({
 });
 
 const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal", "Tree Trimming & Pruning"];
+const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal"];
 
 const ACCEPTED_PAYMENT_OPTIONS = [
   { value: "Pay Now (Online)", icon: "card" as const },
@@ -981,7 +981,6 @@ const DEFAULT_AVAIL: AvailState = {
   "Artificial Turf":          { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "7:00 AM",  endTime: "4:00 PM"  },
   "Full Service":             { days: ["Mon", "Wed", "Fri"],                startTime: "8:00 AM",  endTime: "5:00 PM"  },
   "Tree Removal":             { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "7:00 AM",  endTime: "4:00 PM"  },
-  "Tree Trimming & Pruning":  { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "8:00 AM",  endTime: "5:00 PM"  },
 };
 
 type PricingTier = { label: string; range: string; price: string };
@@ -1000,7 +999,7 @@ const TREE_TIERS: PricingTier[] = [
   { label: "Extra Large", range: "Over 20 ft",        price: "$700" },
 ];
 
-const TREE_SERVICES_LIST = ["Tree Removal", "Tree Trimming & Pruning"];
+const TREE_SERVICES_LIST = ["Tree Removal"];
 
 function makeDefaultPricing(): ServicePricing {
   const out: ServicePricing = {};
@@ -2286,7 +2285,6 @@ export default function HomeScreen() {
               {[
                 { name: "Mowing/Edging",          icon: "cut-outline" as const,    est: "1–2 hrs",   hot: true  },
                 { name: "Weeding/Mulching",        icon: "flower-outline" as const, est: "2–4 hrs",   hot: true  },
-                { name: "Tree Trimming",           icon: "leaf-outline" as const,   est: "2–4 hrs",   hot: true  },
                 { name: "Sod Installation",        icon: "grid-outline" as const,   est: "4–8 hrs",   hot: false },
                 { name: "Artificial Turf",         icon: "layers-outline" as const, est: "10–20 hrs", hot: false },
                 { name: "Full Service",            icon: "star-outline" as const,   est: "3–6 hrs",   hot: false },

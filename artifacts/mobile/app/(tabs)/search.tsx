@@ -20,7 +20,7 @@ import { useJobs } from "@/contexts/jobs";
 import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import { useNotifications } from "@/contexts/notifications";
 
-const FILTERS = ["All", "Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Tree Removal", "Tree Trimming & Pruning"];
+const FILTERS = ["All", "Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Tree Removal"];
 
 const PROS = [
   {
