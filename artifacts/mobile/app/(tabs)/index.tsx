@@ -2269,34 +2269,44 @@ export default function HomeScreen() {
         {/* Popular Services — customers only */}
         {role !== "landscaper" && (
           <>
-            <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
-              Popular Services
-            </Text>
-            <View style={[styles.servicesGrid, { flexWrap: "wrap" }]}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginBottom: 0 }]}>
+                Popular Services
+              </Text>
+              <TouchableOpacity onPress={() => router.navigate("/(tabs)/search")} activeOpacity={0.7}>
+                <Text style={{ fontSize: 12, color: "#34FF7A", fontFamily: "Inter_500Medium" }}>See all →</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 4, gap: 10 }}
+              style={{ marginBottom: 28 }}
+            >
               {[
-                { name: "Mowing/\nEdging",           icon: "cut-outline" as const,      est: "1–2 hrs",   hot: true  },
-                { name: "Weeding/\nMulching",         icon: "flower-outline" as const,   est: "2–4 hrs",   hot: true  },
-                { name: "Sod\nInstallation",          icon: "grid-outline" as const,     est: "4–8 hrs",   hot: false },
-                { name: "Artificial\nTurf",           icon: "layers-outline" as const,   est: "10–20 hrs", hot: false },
-                { name: "Full\nService",              icon: "star-outline" as const,     est: "3–6 hrs",   hot: false },
-                { name: "Tree\nRemoval",              icon: "cut-outline" as const,      est: "4–8 hrs",   hot: false },
-                { name: "Tree Trim &\nPruning",       icon: "leaf-outline" as const,     est: "2–4 hrs",   hot: true  },
+                { name: "Mowing/Edging",          icon: "cut-outline" as const,    est: "1–2 hrs",   hot: true  },
+                { name: "Weeding/Mulching",        icon: "flower-outline" as const, est: "2–4 hrs",   hot: true  },
+                { name: "Tree Trimming",           icon: "leaf-outline" as const,   est: "2–4 hrs",   hot: true  },
+                { name: "Sod Installation",        icon: "grid-outline" as const,   est: "4–8 hrs",   hot: false },
+                { name: "Artificial Turf",         icon: "layers-outline" as const, est: "10–20 hrs", hot: false },
+                { name: "Full Service",            icon: "star-outline" as const,   est: "3–6 hrs",   hot: false },
+                { name: "Tree Removal",            icon: "cut-outline" as const,    est: "4–8 hrs",   hot: false },
               ].map((svc) => (
                 <TouchableOpacity
                   key={svc.name}
-                  style={[styles.svcGridCard, { width: "30%", margin: "1.5%" }]}
+                  style={styles.svcGridCard}
                   onPress={() => router.navigate("/(tabs)/search")}
                   activeOpacity={0.8}
                 >
                   {svc.hot && (
-                    <View style={{ position: "absolute", top: 6, right: 6, zIndex: 1 }}>
-                      <Text style={{ fontSize: 13 }}>🔥</Text>
+                    <View style={styles.svcHotBadge}>
+                      <Text style={{ fontSize: 9, fontFamily: "Inter_600SemiBold", color: "#FF6B35" }}>🔥 HOT</Text>
                     </View>
                   )}
                   <View style={styles.svcGridIconWrap}>
-                    <Ionicons name={svc.icon} size={26} color="#34FF7A" />
+                    <Ionicons name={svc.icon} size={28} color="#34FF7A" />
                   </View>
-                  <Text style={[styles.svcGridName, { fontFamily: "Inter_500Medium" }]}>
+                  <Text style={[styles.svcGridName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
                     {svc.name}
                   </Text>
                   <Text style={[styles.svcGridUpdated, { fontFamily: "Inter_400Regular" }]}>
@@ -2304,7 +2314,7 @@ export default function HomeScreen() {
                   </Text>
                 </TouchableOpacity>
               ))}
-            </View>
+            </ScrollView>
           </>
         )}
 
@@ -2679,7 +2689,7 @@ function LandscaperProfileViewModal({
             {/* Recent Work */}
             <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>RECENT WORK</Text>
             <View style={fsStyles.photoGrid}>
-              {(["leaf-outline","cut-outline","flower-outline","leaf","construct-outline","tree-outline"] as const).map((icon, i) => (
+              {(["leaf-outline","cut-outline","flower-outline","leaf","construct-outline","leaf-outline"] as const).map((icon, i) => (
                 <View key={i} style={fsStyles.photoTile}>
                   <Ionicons name={icon} size={32} color="#34FF7A" />
                 </View>
@@ -3131,28 +3141,42 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   svcGridCard: {
-    flex: 1,
-    backgroundColor: "#1A1A1A",
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 6,
+    width: 108,
+    backgroundColor: "#161616",
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 10,
     alignItems: "center",
-    gap: 6,
+    gap: 8,
     borderWidth: 1,
-    borderColor: "#222222",
+    borderColor: "#262626",
+    position: "relative",
+    overflow: "hidden",
+  },
+  svcHotBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#2A1200",
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: "#FF6B3530",
+    marginBottom: 2,
   },
   svcGridIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 18,
     backgroundColor: "#0d2e18",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 2,
+    borderWidth: 1,
+    borderColor: "#34FF7A20",
   },
-  svcGridName: { fontSize: 10, color: "#FFFFFF", textAlign: "center", lineHeight: 14 },
+  svcGridName: { fontSize: 12, color: "#FFFFFF", textAlign: "center", lineHeight: 16 },
   svcGridPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
-  svcGridUpdated: { fontSize: 9, color: "#BBBBBB", textAlign: "center", marginTop: 1 },
+  svcGridUpdated: { fontSize: 10, color: "#777", textAlign: "center", marginTop: 0 },
   feedHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
   feedLiveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#34FF7A" },
   feedLiveText: { fontSize: 12, color: "#34FF7A" },

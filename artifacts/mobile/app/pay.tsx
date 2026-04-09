@@ -87,7 +87,7 @@ const PRICE_MATRIX: Record<string, Record<string, number>> = {
   "Tree Trimming & Pruning":  { Small: 150,  Medium: 280,  Large: 450,  XLarge: 700  },
 };
 
-const PHOTO_ICONS = ["tree-outline", "camera-outline", "home-outline", "flower-outline", "leaf-outline", "leaf"] as const;
+const PHOTO_ICONS = ["leaf-outline", "camera-outline", "home-outline", "flower-outline", "leaf-outline", "leaf"] as const;
 type PhotoIcon = typeof PHOTO_ICONS[number];
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

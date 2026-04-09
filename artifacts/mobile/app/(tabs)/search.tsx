@@ -585,8 +585,8 @@ function SearchProProfileModal({
     { size: "Large Yard",  desc: "5,000+ sq ft",          price: `$${Math.round(pro.price * 2.2)}+` },
   ];
 
-  const recentWorkIcons: ("leaf-outline" | "cut-outline" | "flower-outline" | "leaf" | "construct-outline" | "tree-outline")[] =
-    ["leaf-outline", "cut-outline", "flower-outline", "leaf", "construct-outline", "tree-outline"];
+  const recentWorkIcons: ("leaf-outline" | "cut-outline" | "flower-outline" | "leaf" | "construct-outline")[] =
+    ["leaf-outline", "cut-outline", "flower-outline", "leaf", "construct-outline", "leaf-outline"];
 
   return (
     <Modal visible={!!pro} animationType="slide" onRequestClose={onClose} statusBarTranslucent>
