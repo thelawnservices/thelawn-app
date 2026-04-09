@@ -2127,7 +2127,7 @@ export default function HomeScreen() {
       <NotificationsPanel
         visible={notifVisible}
         onClose={() => setNotifVisible(false)}
-        items={getNotificationsForRole(isLandscaper ? "landscaper" : "customer")}
+        items={getNotificationsForRole(role === "landscaper" ? "landscaper" : "customer")}
         notifEnabled={notifEnabled}
         onToggleEnabled={() => {
           setNotifEnabled((v) => {
