@@ -3188,7 +3188,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#34FF7A20",
   },
-  svcGridName: { fontSize: 12, color: "#FFFFFF", textAlign: "center", lineHeight: 16 },
+  svcGridName: { fontSize: 12, color: "#FFFFFF", textAlign: "center", lineHeight: 16, minHeight: 32 },
   svcGridPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
   svcGridUpdated: { fontSize: 10, color: "#777", textAlign: "center", marginTop: 0 },
   feedHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
