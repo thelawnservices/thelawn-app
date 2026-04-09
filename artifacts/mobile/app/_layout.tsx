@@ -32,7 +32,6 @@ function RootLayoutNav() {
       <Stack.Screen name="login" options={{ headerShown: false, animation: "fade" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="pay" options={{ headerShown: false, animation: "slide_from_bottom", presentation: "modal" }} />
-      <Stack.Screen name="checkout" options={{ headerShown: false, animation: "slide_from_bottom", presentation: "modal" }} />
     </Stack>
   );
 }

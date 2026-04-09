@@ -1478,9 +1478,9 @@ export default function PayScreen() {
           </View>
         )}
 
-        {/* Dynamic payment tiles — small tiles for options 1-4, full-width for rest */}
+        {/* Payment method grid — all options except Pay In Person in a 2-column grid */}
         <View style={styles.payMethodGrid}>
-          {allowedPayOptions.filter((o) => !["debit","inperson"].includes(o.key)).map((m) => (
+          {allowedPayOptions.filter((o) => o.key !== "inperson").map((m) => (
             <TouchableOpacity
               key={m.key}
               style={[styles.payMethodTile, paymentMethod === m.key && styles.payMethodTileActive]}
@@ -1489,13 +1489,14 @@ export default function PayScreen() {
             >
               <Ionicons name={m.ionIcon as any} size={28} color={paymentMethod === m.key ? "#34FF7A" : "#888"} />
               <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === m.key && styles.payMethodTileTextActive]}>
-                {m.label}
+                {m.key === "debit" ? "Debit / Card" : m.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {allowedPayOptions.filter((o) => ["debit","inperson"].includes(o.key)).map((m) => (
+        {/* Pay In Person — full-width */}
+        {allowedPayOptions.filter((o) => o.key === "inperson").map((m) => (
           <TouchableOpacity
             key={m.key}
             style={[styles.payMethodTileFull, paymentMethod === m.key && styles.payMethodTileActive]}
@@ -1541,46 +1542,70 @@ export default function PayScreen() {
           </View>
         )}
         {paymentMethod === "venmo" && (
-          <TextInput
-            style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
-            placeholder="Venmo Username"
-            placeholderTextColor="#777"
-            value={venmoUser}
-            onChangeText={setVenmoUser}
-            autoCapitalize="none"
-          />
+          <View style={styles.payFieldHighlightBox}>
+            <View style={styles.payFieldLabelRow}>
+              <Ionicons name="logo-venmo" size={15} color="#34FF7A" />
+              <Text style={[styles.payFieldLabel, { fontFamily: "Inter_600SemiBold" }]}>Venmo Username</Text>
+            </View>
+            <TextInput
+              style={[styles.payFieldInputHighlighted, { fontFamily: "Inter_400Regular" }]}
+              placeholder="@username"
+              placeholderTextColor="#555"
+              value={venmoUser}
+              onChangeText={setVenmoUser}
+              autoCapitalize="none"
+            />
+          </View>
         )}
         {paymentMethod === "paypal" && (
-          <TextInput
-            style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
-            placeholder="PayPal Email"
-            placeholderTextColor="#777"
-            keyboardType="email-address"
-            value={paypalEmail}
-            onChangeText={setPaypalEmail}
-            autoCapitalize="none"
-          />
+          <View style={styles.payFieldHighlightBox}>
+            <View style={styles.payFieldLabelRow}>
+              <Ionicons name="logo-paypal" size={15} color="#34FF7A" />
+              <Text style={[styles.payFieldLabel, { fontFamily: "Inter_600SemiBold" }]}>PayPal Email</Text>
+            </View>
+            <TextInput
+              style={[styles.payFieldInputHighlighted, { fontFamily: "Inter_400Regular" }]}
+              placeholder="you@email.com"
+              placeholderTextColor="#555"
+              keyboardType="email-address"
+              value={paypalEmail}
+              onChangeText={setPaypalEmail}
+              autoCapitalize="none"
+            />
+          </View>
         )}
         {paymentMethod === "cashapp" && (
-          <TextInput
-            style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
-            placeholder="$Cashtag"
-            placeholderTextColor="#777"
-            value={cashTag}
-            onChangeText={setCashTag}
-            autoCapitalize="none"
-          />
+          <View style={styles.payFieldHighlightBox}>
+            <View style={styles.payFieldLabelRow}>
+              <Ionicons name="cash-outline" size={15} color="#34FF7A" />
+              <Text style={[styles.payFieldLabel, { fontFamily: "Inter_600SemiBold" }]}>Cash App $Cashtag</Text>
+            </View>
+            <TextInput
+              style={[styles.payFieldInputHighlighted, { fontFamily: "Inter_400Regular" }]}
+              placeholder="$YourCashtag"
+              placeholderTextColor="#555"
+              value={cashTag}
+              onChangeText={setCashTag}
+              autoCapitalize="none"
+            />
+          </View>
         )}
         {paymentMethod === "zelle" && (
-          <TextInput
-            style={[styles.payFieldInputStandalone, { fontFamily: "Inter_400Regular" }]}
-            placeholder="Phone number or email"
-            placeholderTextColor="#777"
-            value={zellePhone}
-            onChangeText={setZellePhone}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
+          <View style={styles.payFieldHighlightBox}>
+            <View style={styles.payFieldLabelRow}>
+              <Ionicons name="flash-outline" size={15} color="#34FF7A" />
+              <Text style={[styles.payFieldLabel, { fontFamily: "Inter_600SemiBold" }]}>Zelle Phone or Email</Text>
+            </View>
+            <TextInput
+              style={[styles.payFieldInputHighlighted, { fontFamily: "Inter_400Regular" }]}
+              placeholder="Phone number or email"
+              placeholderTextColor="#555"
+              value={zellePhone}
+              onChangeText={setZellePhone}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
         )}
 
       </ScrollView>
@@ -2265,6 +2290,37 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 14,
     fontSize: 14,
+    color: "#FFFFFF",
+  },
+  payFieldHighlightBox: {
+    backgroundColor: "#0d2318",
+    borderWidth: 2,
+    borderColor: "#34FF7A",
+    borderRadius: 20,
+    padding: 14,
+    gap: 10,
+    shadowColor: "#34FF7A",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
+  },
+  payFieldLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  payFieldLabel: {
+    color: "#34FF7A",
+    fontSize: 13,
+  },
+  payFieldInputHighlighted: {
+    backgroundColor: "#0A0A0A",
+    borderWidth: 1,
+    borderColor: "#1a5c35",
+    borderRadius: 14,
+    padding: 13,
+    fontSize: 15,
     color: "#FFFFFF",
   },
 
