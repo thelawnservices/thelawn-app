@@ -279,10 +279,6 @@ export default function PayScreen() {
   const [instructions, setInstructions] = useState("");
   const [photos, setPhotos] = useState<PhotoIcon[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PayKey>(defaultPayKey);
-  const [venmoUser, setVenmoUser] = useState("");
-  const [paypalEmail, setPaypalEmail] = useState("");
-  const [cashTag, setCashTag] = useState("");
-  const [zellePhone, setZellePhone] = useState("");
   const [instrErr, setInstrErr] = useState<string | null>(null);
   const spinValue = useRef(new Animated.Value(0)).current;
 
@@ -350,31 +346,7 @@ export default function PayScreen() {
   const validatePayment = (): string | true => {
     if (paymentMethod === "inperson") return true;
     if (paymentMethod === "applepay") return true;
-    if (paymentMethod === "debit") {
-      // Card details are collected on Stripe's hosted checkout page — no local validation needed
-      return true;
-    }
-    if (paymentMethod === "venmo") {
-      if (!venmoUser.trim() || !venmoUser.trim().startsWith("@"))
-        return "Venmo username must start with @";
-      return true;
-    }
-    if (paymentMethod === "paypal") {
-      if (!paypalEmail.includes("@")) return "Please enter a valid PayPal email address.";
-      return true;
-    }
-    if (paymentMethod === "cashapp") {
-      if (!cashTag.trim() || !cashTag.trim().startsWith("$"))
-        return "Cash App $cashtag must start with $";
-      return true;
-    }
-    if (paymentMethod === "zelle") {
-      const z = zellePhone.trim();
-      if (!z) return "Please enter a phone number or email for Zelle.";
-      if (!/^\d{10,}$/.test(z.replace(/\D/g, "")) && !z.includes("@"))
-        return "Enter a valid 10-digit phone number or email for Zelle.";
-      return true;
-    }
+    // All digital payments are processed through Stripe — no local field validation needed
     return true;
   };
 
@@ -414,89 +386,75 @@ export default function PayScreen() {
       return;
     }
 
-    // ── Stripe card payment ─────────────────────────────────────────────────
-    if (paymentMethod === "debit") {
-      if (!API_BASE_URL) {
-        Alert.alert(
-          "Stripe Not Configured",
-          "Card payments require the API server to be connected. Other payment methods are available."
-        );
-        return;
-      }
-      try {
-        setStripeLoading(true);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-        const primaryService = [...selectedServices][0] ?? "Service";
-        const body = {
-          jobTotal: parseFloat(discountedBase.toFixed(2)),
-          isNewCustomer: false,
-          proName,
-          serviceName: primaryService,
-          serviceDate: selectedDateLabel ?? "TBD",
-          successUrl: `${API_BASE_URL}/api/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${API_BASE_URL}/api/payments/cancel`,
-        };
-
-        const response = await fetch(`${API_BASE_URL}/api/payments/create-session`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error ?? "Failed to create payment session");
-        }
-
-        const data = await response.json();
-        setStripeSessionId(data.sessionId);
-
-        // Open Stripe Checkout in the system browser
-        const result = await WebBrowser.openBrowserAsync(data.url, {
-          toolbarColor: "#0A0A0A",
-          controlsColor: "#34FF7A",
-          dismissButtonStyle: "close",
-        });
-
-        // Browser closed — check payment status
-        if (result.type === "opened" || result.type === "dismiss") {
-          setPayState("processing");
-          // Poll for payment status
-          let paid = false;
-          for (let i = 0; i < 12; i++) {
-            await new Promise((r) => setTimeout(r, 2000));
-            try {
-              const statusRes = await fetch(
-                `${API_BASE_URL}/api/payments/session/${data.sessionId}`
-              );
-              if (statusRes.ok) {
-                const statusData = await statusRes.json();
-                if (statusData.paid) {
-                  paid = true;
-                  break;
-                }
-              }
-            } catch {}
-          }
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          setPayState("success");
-        }
-      } catch (err: any) {
-        Alert.alert("Payment Error", err.message ?? "Payment could not be processed.");
-      } finally {
-        setStripeLoading(false);
-      }
+    // ── All digital payments go through Stripe ──────────────────────────────
+    if (!API_BASE_URL) {
+      Alert.alert(
+        "Payments Unavailable",
+        "The payment server is not reachable. Please try again later."
+      );
       return;
     }
+    try {
+      setStripeLoading(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // ── Other online payment methods ────────────────────────────────────────
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setPayState("processing");
-    setTimeout(() => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setPayState("success");
-    }, 2200);
+      const primaryService = [...selectedServices][0] ?? "Service";
+      const body = {
+        jobTotal: parseFloat(discountedBase.toFixed(2)),
+        isNewCustomer: false,
+        preferredPaymentMethod: paymentMethod,
+        proName,
+        serviceName: primaryService,
+        serviceDate: selectedDateLabel ?? "TBD",
+        successUrl: `${API_BASE_URL}/api/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${API_BASE_URL}/api/payments/cancel`,
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/payments/create-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error ?? "Failed to create payment session");
+      }
+
+      const data = await response.json();
+      setStripeSessionId(data.sessionId);
+
+      // Open Stripe Checkout in the system browser
+      const result = await WebBrowser.openBrowserAsync(data.url, {
+        toolbarColor: "#0A0A0A",
+        controlsColor: "#34FF7A",
+        dismissButtonStyle: "close",
+      });
+
+      // Browser closed — poll for payment confirmation
+      if (result.type === "opened" || result.type === "dismiss") {
+        setPayState("processing");
+        let paid = false;
+        for (let i = 0; i < 12; i++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          try {
+            const statusRes = await fetch(
+              `${API_BASE_URL}/api/payments/session/${data.sessionId}`
+            );
+            if (statusRes.ok) {
+              const statusData = await statusRes.json();
+              if (statusData.paid) { paid = true; break; }
+            }
+          } catch {}
+        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setPayState("success");
+      }
+    } catch (err: any) {
+      Alert.alert("Payment Error", err.message ?? "Payment could not be processed.");
+    } finally {
+      setStripeLoading(false);
+    }
   };
 
   const selectedDateLabel =
@@ -1510,15 +1468,7 @@ export default function PayScreen() {
           </TouchableOpacity>
         ))}
 
-        {paymentMethod === "applepay" && (
-          <View style={styles.payFieldReady}>
-            <Ionicons name="checkmark-circle" size={20} color="#34FF7A" />
-            <Text style={[styles.payFieldReadyText, { fontFamily: "Inter_500Medium" }]}>
-              Apple Pay ready — tap Authorize to confirm
-            </Text>
-          </View>
-        )}
-        {paymentMethod === "debit" && (
+        {!isInPerson && (
           <View style={styles.stripeCardBlock}>
             <View style={styles.stripeCardHeader}>
               <Ionicons name="card" size={20} color="#34FF7A" />
@@ -1530,8 +1480,8 @@ export default function PayScreen() {
               </View>
             </View>
             <Text style={[styles.stripeCardBody, { fontFamily: "Inter_400Regular" }]}>
-              Tap the button below to complete payment through Stripe's secure checkout page.
-              Your card information is handled entirely by Stripe — we never see your card details.
+              All payments are processed securely through Stripe. Tap the button below to complete
+              your payment — your financial details are handled entirely by Stripe and never stored by us.
             </Text>
             <View style={styles.stripeCardFeeRow}>
               <Ionicons name="shield-checkmark-outline" size={14} color="#34FF7A" />
@@ -1539,72 +1489,6 @@ export default function PayScreen() {
                 Funds held in escrow until work is approved · PCI DSS compliant
               </Text>
             </View>
-          </View>
-        )}
-        {paymentMethod === "venmo" && (
-          <View style={styles.payFieldHighlightBox}>
-            <View style={styles.payFieldLabelRow}>
-              <Ionicons name="logo-venmo" size={15} color="#34FF7A" />
-              <Text style={[styles.payFieldLabel, { fontFamily: "Inter_600SemiBold" }]}>Venmo Username</Text>
-            </View>
-            <TextInput
-              style={[styles.payFieldInputHighlighted, { fontFamily: "Inter_400Regular" }]}
-              placeholder="@username"
-              placeholderTextColor="#555"
-              value={venmoUser}
-              onChangeText={setVenmoUser}
-              autoCapitalize="none"
-            />
-          </View>
-        )}
-        {paymentMethod === "paypal" && (
-          <View style={styles.payFieldHighlightBox}>
-            <View style={styles.payFieldLabelRow}>
-              <Ionicons name="logo-paypal" size={15} color="#34FF7A" />
-              <Text style={[styles.payFieldLabel, { fontFamily: "Inter_600SemiBold" }]}>PayPal Email</Text>
-            </View>
-            <TextInput
-              style={[styles.payFieldInputHighlighted, { fontFamily: "Inter_400Regular" }]}
-              placeholder="you@email.com"
-              placeholderTextColor="#555"
-              keyboardType="email-address"
-              value={paypalEmail}
-              onChangeText={setPaypalEmail}
-              autoCapitalize="none"
-            />
-          </View>
-        )}
-        {paymentMethod === "cashapp" && (
-          <View style={styles.payFieldHighlightBox}>
-            <View style={styles.payFieldLabelRow}>
-              <Ionicons name="cash-outline" size={15} color="#34FF7A" />
-              <Text style={[styles.payFieldLabel, { fontFamily: "Inter_600SemiBold" }]}>Cash App $Cashtag</Text>
-            </View>
-            <TextInput
-              style={[styles.payFieldInputHighlighted, { fontFamily: "Inter_400Regular" }]}
-              placeholder="$YourCashtag"
-              placeholderTextColor="#555"
-              value={cashTag}
-              onChangeText={setCashTag}
-              autoCapitalize="none"
-            />
-          </View>
-        )}
-        {paymentMethod === "zelle" && (
-          <View style={styles.payFieldHighlightBox}>
-            <View style={styles.payFieldLabelRow}>
-              <Ionicons name="flash-outline" size={15} color="#34FF7A" />
-              <Text style={[styles.payFieldLabel, { fontFamily: "Inter_600SemiBold" }]}>Zelle Phone or Email</Text>
-            </View>
-            <TextInput
-              style={[styles.payFieldInputHighlighted, { fontFamily: "Inter_400Regular" }]}
-              placeholder="Phone number or email"
-              placeholderTextColor="#555"
-              value={zellePhone}
-              onChangeText={setZellePhone}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
           </View>
         )}
 
@@ -1627,9 +1511,7 @@ export default function PayScreen() {
               ? "Opening Stripe Checkout..."
               : isInPerson
               ? `Confirm Booking · Pay In Person · $${total}`
-              : paymentMethod === "debit"
-              ? `Pay with Stripe · $${total}`
-              : `Pay Securely & Hold Funds · $${total}`}
+              : `Pay with Stripe · $${total}`}
           </Text>
         </TouchableOpacity>
         <Text style={[styles.escrowDisclaimer, { fontFamily: "Inter_400Regular" }]}>

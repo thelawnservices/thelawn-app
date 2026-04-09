@@ -71,8 +71,10 @@ router.post("/create-session", async (req, res) => {
       });
     }
 
+    const { preferredPaymentMethod } = req.body as { preferredPaymentMethod?: string };
+
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+      automatic_payment_methods: { enabled: true },
       line_items: lineItems,
       mode: "payment",
       success_url: successUrl || `${req.protocol}://${req.get("host")}/api/payments/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -85,6 +87,7 @@ router.post("/create-session", async (req, res) => {
         newCustomerFee: newCustomerFee.toString(),
         commission: commission.toString(),
         landscaperPayout: landscaperPayout.toString(),
+        preferredPaymentMethod: preferredPaymentMethod ?? "card",
       },
     });
 
