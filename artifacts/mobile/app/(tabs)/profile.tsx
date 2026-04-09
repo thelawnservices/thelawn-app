@@ -40,6 +40,7 @@ export default function ProfileScreen() {
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
   const { role, logout } = useAuth();
+  const router = useRouter();
   const [isLandscaper, setIsLandscaper] = useState(role === "landscaper");
   const [helpVisible, setHelpVisible] = useState(false);
   const [custMenuVisible, setCustMenuVisible] = useState(false);
@@ -94,6 +95,11 @@ export default function ProfileScreen() {
             <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); setHelpVisible(true); }}>
               <Ionicons name="help-circle-outline" size={18} color="#34FF7A" />
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>Help & Support</Text>
+            </TouchableOpacity>
+            <View style={menuStyles.divider} />
+            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); router.push("/dispute"); }}>
+              <Ionicons name="warning-outline" size={18} color="#f59e0b" />
+              <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#f59e0b" }]}>File a Dispute</Text>
             </TouchableOpacity>
             <View style={menuStyles.divider} />
             <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); Alert.alert("Edit Profile", "Profile editor coming soon."); }}>
@@ -214,6 +220,7 @@ function LandscaperProfile({
   const { setAvatarUri } = useAuth();
   const { myServices, bookedSlots } = useLandscaperProfile();
   const { broadcastAnnouncement } = useNotifications();
+  const lsRouter = useRouter();
   const [activeTab, setActiveTab] = useState<LandscaperTab>("info");
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
   const [heroBackground, setHeroBackground] = useState<string | null>(null);
@@ -432,6 +439,11 @@ function LandscaperProfile({
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setHelpVisible(true); }}>
                 <Ionicons name="help-circle-outline" size={18} color="#34FF7A" />
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>Help & Support</Text>
+              </TouchableOpacity>
+              <View style={menuStyles.divider} />
+              <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); lsRouter.push("/dispute"); }}>
+                <Ionicons name="warning-outline" size={18} color="#f59e0b" />
+                <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#f59e0b" }]}>File a Dispute</Text>
               </TouchableOpacity>
               <View style={menuStyles.divider} />
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setPrivacyVisible(true); }}>
@@ -1409,6 +1421,17 @@ function CustomerProfile({
 
       <TouchableOpacity style={styles.editBtn} onPress={() => Alert.alert("Edit Profile", "Profile editor would open here")} activeOpacity={0.85}>
         <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile Settings</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.editBtn, { backgroundColor: "#1a1000", borderWidth: 1.5, borderColor: "#f59e0b", marginTop: 0 }]}
+        onPress={() => router.push("/dispute")}
+        activeOpacity={0.85}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <Ionicons name="warning-outline" size={18} color="#f59e0b" />
+          <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold", color: "#f59e0b" }]}>File a Dispute</Text>
+        </View>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.75}>
