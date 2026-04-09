@@ -2577,16 +2577,16 @@ export default function HomeScreen() {
       <LandscaperProfileViewModal
         pro={selectedPro}
         onClose={() => setSelectedPro(null)}
-        onBook={() => {
+        onBook={(services) => {
           setSelectedPro(null);
-          handleBooking(() => router.navigate("/pay"));
+          handleBooking(() => router.push({ pathname: "/pay", params: { proServices: services.join(",") } }));
         }}
       />
     </View>
   );
 }
 
-type TrustedPro = { name: string; rating: number; jobs: number; meta: string; icon: "leaf" | "grid" | "flower" | "star" | "cut" | "options" | "earth" };
+type TrustedPro = { name: string; rating: number; jobs: number; meta: string; icon: "leaf" | "grid" | "flower" | "star" | "cut" | "options" | "earth"; services: string[] };
 
 function LandscaperProfileViewModal({
   pro,
@@ -2595,7 +2595,7 @@ function LandscaperProfileViewModal({
 }: {
   pro: TrustedPro | null;
   onClose: () => void;
-  onBook: () => void;
+  onBook: (services: string[]) => void;
 }) {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
@@ -2683,7 +2683,7 @@ function LandscaperProfileViewModal({
             </View>
 
             {/* Book Now */}
-            <TouchableOpacity style={fsStyles.bookBtn} activeOpacity={0.85} onPress={onBook}>
+            <TouchableOpacity style={fsStyles.bookBtn} activeOpacity={0.85} onPress={() => onBook(pro.services)}>
               <Ionicons name="calendar-outline" size={20} color="#000" />
               <Text style={[fsStyles.bookBtnText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
             </TouchableOpacity>
@@ -2736,7 +2736,7 @@ function LandscaperProfileViewModal({
             <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 28 }]}>
               SERVICES & AVAILABILITY
             </Text>
-            {myServices.offered.map((svc) => {
+            {pro.services.map((svc) => {
               const svcAvail = myServices.avail[svc];
               const svcPricing = myServices.pricing[svc] ?? [];
               return (
@@ -3003,14 +3003,14 @@ const fsStyles = StyleSheet.create({
   paymentChipText: { fontSize: 13, color: "#CCCCCC" },
 });
 
-const TRUSTED_PROS = [
-  { name: "John Rivera Landscaping", rating: 4.9, jobs: 142, meta: "2.3 mi • 142 jobs completed", icon: "leaf" as const },
-  { name: "Sarah's Lawn Care",        rating: 5.0, jobs: 98,  meta: "1.8 mi • 98 jobs completed",  icon: "grid" as const },
-  { name: "GreenScape Pros",          rating: 4.8, jobs: 87,  meta: "3.1 mi • 87 jobs completed",  icon: "flower" as const },
-  { name: "Elite Lawn Services",      rating: 4.9, jobs: 65,  meta: "2.9 mi • 65 jobs completed",  icon: "star" as const },
-  { name: "FreshCut Landscaping",     rating: 5.0, jobs: 112, meta: "1.4 mi • 112 jobs completed", icon: "cut" as const },
-  { name: "Premier Turf Care",        rating: 4.7, jobs: 79,  meta: "4.2 mi • 79 jobs completed",  icon: "options" as const },
-  { name: "Nature's Edge Lawn",       rating: 4.9, jobs: 53,  meta: "2.7 mi • 53 jobs completed",  icon: "earth" as const },
+const TRUSTED_PROS: TrustedPro[] = [
+  { name: "John Rivera Landscaping", rating: 4.9, jobs: 142, meta: "2.3 mi • 142 jobs completed", icon: "leaf",    services: ["Mowing/Edging"] },
+  { name: "Sarah's Lawn Care",       rating: 5.0, jobs: 98,  meta: "1.8 mi • 98 jobs completed",  icon: "grid",    services: ["Mowing/Edging", "Weeding/Mulching"] },
+  { name: "GreenScape Pros",         rating: 4.8, jobs: 87,  meta: "3.1 mi • 87 jobs completed",  icon: "flower",  services: ["Mowing/Edging", "Weeding/Mulching", "Sod Installation"] },
+  { name: "Elite Lawn Services",     rating: 4.9, jobs: 65,  meta: "2.9 mi • 65 jobs completed",  icon: "star",    services: ["Mowing/Edging", "Weeding/Mulching"] },
+  { name: "FreshCut Landscaping",    rating: 5.0, jobs: 112, meta: "1.4 mi • 112 jobs completed", icon: "cut",     services: ["Mowing/Edging"] },
+  { name: "Premier Turf Care",       rating: 4.7, jobs: 79,  meta: "4.2 mi • 79 jobs completed",  icon: "options", services: ["Sod Installation", "Tree Removal"] },
+  { name: "Nature's Edge Lawn",      rating: 4.9, jobs: 53,  meta: "2.7 mi • 53 jobs completed",  icon: "earth",   services: ["Weeding/Mulching", "Mowing/Edging"] },
 ];
 
 const styles = StyleSheet.create({

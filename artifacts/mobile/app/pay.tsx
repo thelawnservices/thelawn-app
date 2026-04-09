@@ -134,6 +134,7 @@ export default function PayScreen() {
     proColor: string;
     price: string;
     proAcceptedPayments: string;
+    proServices: string;
     jobAccepted: string;
     discountPct: string;
     discountAmt: string;
@@ -159,6 +160,14 @@ export default function PayScreen() {
   const allowedPayOptions = proAcceptedPayments.length > 0
     ? ALL_PAY_OPTIONS.filter((opt) => proAcceptedPayments.includes(opt.key))
     : ALL_PAY_OPTIONS;
+
+  const proServicesList: string[] = params.proServices
+    ? params.proServices.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  const availableServiceOptions = proServicesList.length > 0
+    ? SERVICE_OPTIONS.filter((s) => proServicesList.includes(s.label))
+    : SERVICE_OPTIONS;
 
   const { availability, bookedSlots, addBookedSlot } = useLandscaperProfile();
   const { addNotification } = useNotifications();
@@ -199,7 +208,9 @@ export default function PayScreen() {
 
   const [payState, setPayState] = useState<PayState>("availability");
   const [orderId, setOrderId] = useState<string>("");
-  const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
+  const [selectedServices, setSelectedServices] = useState<Set<string>>(
+    () => availableServiceOptions.length === 1 ? new Set([availableServiceOptions[0].label]) : new Set()
+  );
   const [selectedYardSize, setSelectedYardSize] = useState<string | null>(null);
   const [selectedTreeSize, setSelectedTreeSize] = useState<string | null>(null);
   const [selectedSodType,  setSelectedSodType]  = useState<string | null>(null);
@@ -1073,10 +1084,12 @@ export default function PayScreen() {
             <Text style={{ color: "#ef4444" }}>*</Text>
           </Text>
           <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
-            Select one or more services
+            {availableServiceOptions.length === 1
+              ? `${availableServiceOptions[0].label} — the only service this pro offers`
+              : "Select one or more services this pro offers"}
           </Text>
           <View style={styles.serviceGrid}>
-            {SERVICE_OPTIONS.map((svc) => {
+            {availableServiceOptions.map((svc) => {
               const isSelected = selectedServices.has(svc.label);
               return (
                 <TouchableOpacity
