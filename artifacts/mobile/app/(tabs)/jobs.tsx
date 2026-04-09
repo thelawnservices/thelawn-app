@@ -95,6 +95,7 @@ const SHARED_COMPLETED_JOBS = [
 const SERVICE_HISTORY = [
   {
     id: "h1",
+    code: "JOB-29341",
     service: "Mowing/Edging",
     customer: "Zamire Smith",
     landscaper: "GreenScape Pros",
@@ -103,6 +104,7 @@ const SERVICE_HISTORY = [
   },
   {
     id: "h2",
+    code: "JOB-74412",
     service: "Hedge Trimming",
     customer: "Marcus T.",
     landscaper: "GreenScape Pros",
@@ -111,6 +113,7 @@ const SERVICE_HISTORY = [
   },
   {
     id: "h3",
+    code: "JOB-51087",
     service: "Weeding/Mulching",
     customer: "Alex T.",
     landscaper: "GreenScape Pros",
@@ -119,6 +122,7 @@ const SERVICE_HISTORY = [
   },
   {
     id: "h4",
+    code: "JOB-66203",
     service: "Mowing/Edging",
     customer: "Priya N.",
     landscaper: "GreenScape Pros",
@@ -1120,6 +1124,10 @@ export default function JobsScreen() {
                 {isLandscaper ? entry.customer : entry.landscaper}
               </Text>
               <Text style={[styles.historyDate, { fontFamily: "Inter_400Regular" }]}>{entry.date}</Text>
+              <View style={[styles.metaRow, { marginTop: 4 }]}>
+                <Ionicons name="barcode-outline" size={11} color="#34FF7A" />
+                <Text style={[{ fontSize: 11, color: "#34FF7A", fontFamily: "Inter_500Medium" }]}>{entry.code}</Text>
+              </View>
             </View>
           </View>
         ))}
