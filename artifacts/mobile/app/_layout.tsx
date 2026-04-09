@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { Alert } from "react-native";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider, useAuth } from "@/contexts/auth";
 import { JobsProvider } from "@/contexts/jobs";
@@ -21,8 +22,15 @@ import { NotificationsProvider } from "@/contexts/notifications";
 import { LandscaperProfileProvider } from "@/contexts/landscaperProfile";
 import { RecurringProvider } from "@/contexts/recurring";
 import { WalletProvider } from "@/contexts/wallet";
+import { initializeRevenueCat, SubscriptionProvider } from "@/lib/revenuecat";
 
 SplashScreen.preventAutoHideAsync();
+
+try {
+  initializeRevenueCat();
+} catch (err: any) {
+  Alert.alert("RevenueCat Unavailable", err?.message ?? "Unknown error");
+}
 
 const queryClient = new QueryClient();
 
@@ -32,6 +40,7 @@ function RootLayoutNav() {
       <Stack.Screen name="login" options={{ headerShown: false, animation: "fade" }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="pay" options={{ headerShown: false, animation: "slide_from_bottom", presentation: "modal" }} />
+      <Stack.Screen name="paywall" options={{ headerShown: false, animation: "slide_from_bottom", presentation: "modal" }} />
     </Stack>
   );
 }
@@ -57,6 +66,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
+          <SubscriptionProvider>
           <AuthProvider>
             <WalletProvider>
             <JobsProvider>
@@ -74,6 +84,7 @@ export default function RootLayout() {
             </JobsProvider>
             </WalletProvider>
           </AuthProvider>
+          </SubscriptionProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
