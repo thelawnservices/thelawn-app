@@ -53,6 +53,32 @@ const BASE_TIERS: PricingTierItem[] = [
   { label: "Large",  range: "5,000+ sq ft",         price: "$95" },
 ];
 
+const SOD_TIERS_DEFAULT: PricingTierItem[] = [
+  { label: "St. Augustine",   range: "Dense, shade-tolerant",             price: "$420" },
+  { label: "Zoysia Grass",    range: "Low-maintenance, drought-resistant", price: "$480" },
+  { label: "Bermuda Grass",   range: "Heat-resistant, durable",           price: "$390" },
+  { label: "Bahia Grass",     range: "Low-input, sandy soils",            price: "$320" },
+  { label: "Centipede Grass", range: "Low-maintenance, acidic soil",      price: "$360" },
+  { label: "Xeriscaping",     range: "Drought-resistant design",          price: "$520" },
+];
+
+const TREE_TIERS_DEFAULT: PricingTierItem[] = [
+  { label: "Small",       range: "1 – 6 ft tall",  price: "$250" },
+  { label: "Medium",      range: "Up to 10 ft",     price: "$500" },
+  { label: "Large",       range: "Up to 20 ft",     price: "$900" },
+  { label: "Extra Large", range: "Over 20 ft",       price: "$1500" },
+];
+
+function makeDefaultPricing(): Record<string, PricingTierItem[]> {
+  return {
+    "Mowing/Edging":    BASE_TIERS.map((t) => ({ ...t })),
+    "Weeding/Mulching": BASE_TIERS.map((t) => ({ ...t, price: t.label === "Small" ? "$90" : t.label === "Medium" ? "$130" : "$175" })),
+    "Sod Installation": SOD_TIERS_DEFAULT.map((t) => ({ ...t })),
+    "Full Service":     BASE_TIERS.map((t) => ({ ...t })),
+    "Tree Removal":     TREE_TIERS_DEFAULT.map((t) => ({ ...t })),
+  };
+}
+
 const DEFAULT_MY_SERVICES: MyServicesState = {
   offered: [...ALL_SVC],
   avail: {
@@ -62,7 +88,7 @@ const DEFAULT_MY_SERVICES: MyServicesState = {
     "Full Service":             { days: ["Mon","Wed","Fri"],             startTime: "8:00 AM", endTime: "5:00 PM" },
     "Tree Removal":             { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "7:00 AM", endTime: "4:00 PM" },
   },
-  pricing: Object.fromEntries(ALL_SVC.map((s) => [s, BASE_TIERS.map((t) => ({ ...t }))])),
+  pricing: makeDefaultPricing(),
   acceptedPayments: ["Stripe", "In Person"],
   blockedDates: [],
 };

@@ -169,7 +169,7 @@ export default function PayScreen() {
     ? SERVICE_OPTIONS.filter((s) => proServicesList.includes(s.label))
     : SERVICE_OPTIONS;
 
-  const { availability, bookedSlots, addBookedSlot } = useLandscaperProfile();
+  const { availability, bookedSlots, addBookedSlot, myServices } = useLandscaperProfile();
   const { addNotification } = useNotifications();
   const defaultPayKey: PayKey = allowedPayOptions[0]?.key ?? "inperson";
 
@@ -219,15 +219,46 @@ export default function PayScreen() {
   const hasSodService  = [...selectedServices].some((s) => SOD_SERVICES.includes(s));
   const hasYardService = [...selectedServices].some((s) => !TREE_SERVICES.includes(s) && !SOD_SERVICES.includes(s));
 
+  // Map pay.tsx TREE_SIZE key → the label used in My Services TREE_TIERS
+  const TREE_KEY_TO_TIER: Record<string, string> = {
+    Small: "Small", Medium: "Medium", Large: "Large", XLarge: "Extra Large",
+  };
+
+  function parsePriceStr(s: string): number {
+    return parseFloat(String(s).replace(/[^0-9.]/g, "")) || 0;
+  }
+
+  function getLandscaperPrice(svc: string, key: string): number | null {
+    const tiers = myServices.pricing[svc];
+    if (!tiers?.length) return null;
+    const tierLabel = svc === "Tree Removal" ? (TREE_KEY_TO_TIER[key] ?? key) : key;
+    const tier = tiers.find((t) => t.label === tierLabel);
+    return tier ? parsePriceStr(tier.price) : null;
+  }
+
   function getPriceForService(svc: string): number {
-    if (TREE_SERVICES.includes(svc)) return PRICE_MATRIX[svc]?.[selectedTreeSize ?? ""] ?? 0;
-    if (SOD_SERVICES.includes(svc))  return PRICE_MATRIX[svc]?.[selectedSodType  ?? ""] ?? 0;
+    if (TREE_SERVICES.includes(svc)) {
+      const key = selectedTreeSize ?? "";
+      return getLandscaperPrice(svc, key) ?? PRICE_MATRIX[svc]?.[key] ?? 0;
+    }
+    if (SOD_SERVICES.includes(svc)) {
+      const key = selectedSodType ?? "";
+      return getLandscaperPrice(svc, key) ?? PRICE_MATRIX[svc]?.[key] ?? 0;
+    }
     return PRICE_MATRIX[svc]?.[selectedYardSize ?? ""] ?? 0;
   }
 
   function getServiceTilePrice(svcLabel: string): string | null {
-    if (TREE_SERVICES.includes(svcLabel)) return selectedTreeSize ? `$${PRICE_MATRIX[svcLabel]?.[selectedTreeSize] ?? "–"}` : null;
-    if (SOD_SERVICES.includes(svcLabel))  return selectedSodType  ? `$${PRICE_MATRIX[svcLabel]?.[selectedSodType]  ?? "–"}` : null;
+    if (TREE_SERVICES.includes(svcLabel)) {
+      if (!selectedTreeSize) return null;
+      const p = getLandscaperPrice(svcLabel, selectedTreeSize) ?? PRICE_MATRIX[svcLabel]?.[selectedTreeSize];
+      return p != null ? `$${p}` : null;
+    }
+    if (SOD_SERVICES.includes(svcLabel)) {
+      if (!selectedSodType) return null;
+      const p = getLandscaperPrice(svcLabel, selectedSodType) ?? PRICE_MATRIX[svcLabel]?.[selectedSodType];
+      return p != null ? `$${p}` : null;
+    }
     return selectedYardSize ? `$${PRICE_MATRIX[svcLabel]?.[selectedYardSize] ?? "–"}` : null;
   }
 
@@ -1248,7 +1279,7 @@ export default function PayScreen() {
                       {ys.sub}
                     </Text>
                     <Text style={[styles.yardChipPrice, { fontFamily: "Inter_700Bold" }, selectedSodType === ys.key && { color: "#34FF7A" }]}>
-                      ${PRICE_MATRIX["Sod Installation"]?.[ys.key] ?? "–"}
+                      ${getLandscaperPrice("Sod Installation", ys.key) ?? PRICE_MATRIX["Sod Installation"]?.[ys.key] ?? "–"}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -1281,7 +1312,7 @@ export default function PayScreen() {
                       {ys.sub}
                     </Text>
                     <Text style={[styles.yardChipPrice, { fontFamily: "Inter_700Bold" }, selectedTreeSize === ys.key && { color: "#34FF7A" }]}>
-                      ${PRICE_MATRIX["Tree Removal"]?.[ys.key] ?? "–"}
+                      ${getLandscaperPrice("Tree Removal", ys.key) ?? PRICE_MATRIX["Tree Removal"]?.[ys.key] ?? "–"}
                     </Text>
                   </TouchableOpacity>
                 ))}
