@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -14,36 +16,89 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useWallet } from "@/contexts/wallet";
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
+const MIN_WITHDRAWAL = 10;
+
 type Screen = "main" | "withdraw" | "pin" | "success" | "payout_settings";
 
+type PayoutMethodId = "stripe" | "paypal" | "zelle" | "venmo" | "check";
+
 type WithdrawMethod = {
-  id: string;
+  id: PayoutMethodId;
   label: string;
   icon: keyof typeof import("@expo/vector-icons/build/vendor/react-native-vector-icons/glyphmaps/Ionicons.json");
   speed: string;
   speedDays: string;
   fee: string;
+  feeRate: number;
+  isStripe: boolean;
   instant: boolean;
 };
 
 const METHODS: WithdrawMethod[] = [
-  { id: "paypal",  label: "PayPal",        icon: "logo-paypal",             speed: "Instant",           speedDays: "within minutes",    fee: "1.5% fee", instant: true  },
-  { id: "zelle",   label: "Zelle",         icon: "swap-horizontal-outline", speed: "Instant",           speedDays: "within minutes",    fee: "Free",     instant: true  },
-  { id: "debit",   label: "Debit Card",    icon: "card-outline",            speed: "Instant",           speedDays: "within minutes",    fee: "1% fee",   instant: true  },
-  { id: "venmo",   label: "Venmo",         icon: "phone-portrait-outline",  speed: "Instant",           speedDays: "within minutes",    fee: "1% fee",   instant: true  },
-  { id: "bank",    label: "Bank Transfer", icon: "business-outline",        speed: "1–3 Business Days", speedDays: "1–3 business days", fee: "Free",     instant: false },
-  { id: "check",   label: "Check by Mail", icon: "mail-outline",            speed: "5–7 Business Days", speedDays: "5–7 business days", fee: "Free",     instant: false },
+  {
+    id: "stripe",
+    label: "Stripe Bank Payout",
+    icon: "card-outline",
+    speed: "1–2 Business Days",
+    speedDays: "1–2 business days",
+    fee: "No fee",
+    feeRate: 0,
+    isStripe: true,
+    instant: false,
+  },
+  {
+    id: "paypal",
+    label: "PayPal",
+    icon: "logo-paypal",
+    speed: "Manual · 2–3 Days",
+    speedDays: "2–3 business days",
+    fee: "No fee",
+    feeRate: 0,
+    isStripe: false,
+    instant: false,
+  },
+  {
+    id: "zelle",
+    label: "Zelle",
+    icon: "swap-horizontal-outline",
+    speed: "Manual · 1–2 Days",
+    speedDays: "1–2 business days",
+    fee: "No fee",
+    feeRate: 0,
+    isStripe: false,
+    instant: false,
+  },
+  {
+    id: "venmo",
+    label: "Venmo",
+    icon: "phone-portrait-outline",
+    speed: "Manual · 2–3 Days",
+    speedDays: "2–3 business days",
+    fee: "No fee",
+    feeRate: 0,
+    isStripe: false,
+    instant: false,
+  },
+  {
+    id: "check",
+    label: "Check by Mail",
+    icon: "mail-outline",
+    speed: "Manual · 5–7 Days",
+    speedDays: "5–7 business days",
+    fee: "No fee",
+    feeRate: 0,
+    isStripe: false,
+    instant: false,
+  },
 ];
 
-type PayoutInfo = {
+type StripeStatus = "idle" | "loading" | "connected" | "needs_info" | "error";
+
+type ManualPayoutInfo = {
   paypal_email: string;
   zelle_contact: string;
   venmo_username: string;
-  debit_name: string;
-  debit_last4: string;
-  bank_routing: string;
-  bank_account: string;
-  bank_name: string;
   mail_name: string;
   mail_address: string;
   mail_city: string;
@@ -51,17 +106,9 @@ type PayoutInfo = {
   mail_zip: string;
 };
 
-function calcFee(amount: number, method: WithdrawMethod): number {
-  if (method.fee === "1.5% fee") return parseFloat((amount * 0.015).toFixed(2));
-  if (method.fee === "1% fee")   return parseFloat((amount * 0.01).toFixed(2));
-  return 0;
-}
-
 function fmt(n: number): string {
   return n.toFixed(2);
 }
-
-const MIN_WITHDRAWAL = 10;
 
 export default function WalletScreen() {
   const insets = useSafeAreaInsets();
@@ -75,38 +122,138 @@ export default function WalletScreen() {
   const [amountText, setAmountText] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<WithdrawMethod | null>(null);
   const [pin, setPin] = useState("");
-  const [pinError, setPinError] = useState(false);
 
-  const [payoutInfo, setPayoutInfo] = useState<PayoutInfo>({
+  // Stripe Connect state
+  const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
+  const [stripeStatus, setStripeStatus] = useState<StripeStatus>("idle");
+  const [stripeConnecting, setStripeConnecting] = useState(false);
+  const [withdrawResult, setWithdrawResult] = useState<{
+    transferId?: string;
+    payoutId?: string | null;
+    arrivalDate?: string | null;
+    status?: string;
+  } | null>(null);
+
+  // Manual payout info
+  const [manualInfo, setManualInfo] = useState<ManualPayoutInfo>({
     paypal_email: "",
     zelle_contact: "",
     venmo_username: "",
-    debit_name: "",
-    debit_last4: "",
-    bank_routing: "",
-    bank_account: "",
-    bank_name: "",
     mail_name: "",
     mail_address: "",
     mail_city: "",
     mail_state: "",
     mail_zip: "",
   });
-  const [payoutSaved, setPayoutSaved] = useState(false);
+  const [manualSaved, setManualSaved] = useState(false);
 
   const amountNum = parseFloat(amountText) || 0;
-  const fee = selectedMethod ? calcFee(amountNum, selectedMethod) : 0;
-  const netAmount = amountNum - fee;
 
-  function reset() {
-    setScreen("main");
-    setAmountText("");
-    setSelectedMethod(null);
-    setPin("");
-    setPinError(false);
+  // Check Stripe account status on load if we have an account ID
+  useEffect(() => {
+    if (stripeAccountId) {
+      checkStripeStatus(stripeAccountId);
+    }
+  }, [stripeAccountId]);
+
+  async function checkStripeStatus(accountId: string) {
+    try {
+      const res = await fetch(`${API_URL}/api/payouts/account-status/${accountId}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      if (data.payoutsEnabled) {
+        setStripeStatus("connected");
+      } else if (data.detailsSubmitted) {
+        setStripeStatus("needs_info");
+      } else {
+        setStripeStatus("needs_info");
+      }
+    } catch {
+      setStripeStatus("error");
+    }
   }
 
-  function proceedToPin() {
+  async function connectStripe() {
+    setStripeConnecting(true);
+    try {
+      let accountId = stripeAccountId;
+
+      if (!accountId) {
+        const createRes = await fetch(`${API_URL}/api/payouts/create-connect-account`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: "landscaper@example.com" }),
+        });
+        const createData = await createRes.json();
+        if (createData.error) throw new Error(createData.error);
+        accountId = createData.accountId;
+        setStripeAccountId(accountId);
+      }
+
+      const linkRes = await fetch(`${API_URL}/api/payouts/onboarding-link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId }),
+      });
+      const linkData = await linkRes.json();
+      if (linkData.error) throw new Error(linkData.error);
+
+      await Linking.openURL(linkData.url);
+
+      // After returning from Stripe, check status
+      setTimeout(() => {
+        if (accountId) checkStripeStatus(accountId);
+      }, 3000);
+    } catch (err: any) {
+      Alert.alert("Stripe Connection Error", err.message ?? "Failed to connect Stripe account.");
+      setStripeStatus("error");
+    } finally {
+      setStripeConnecting(false);
+    }
+  }
+
+  async function executeStripeWithdrawal() {
+    if (!stripeAccountId) {
+      Alert.alert("Not Connected", "Please connect your Stripe account first.");
+      return;
+    }
+    if (amountNum < MIN_WITHDRAWAL) {
+      Alert.alert("Minimum Withdrawal", `The minimum withdrawal is $${MIN_WITHDRAWAL}.00.`);
+      return;
+    }
+    if (amountNum > balance) {
+      Alert.alert("Insufficient Funds", `Your available balance is $${fmt(balance)}.`);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/api/payouts/withdraw`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId: stripeAccountId,
+          amount: amountNum,
+          description: `TheLawnServices wallet withdrawal — $${fmt(amountNum)}`,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      recordWithdrawal(amountNum, "Stripe Bank Payout");
+      setWithdrawResult({
+        transferId: data.transferId,
+        payoutId: data.payoutId,
+        arrivalDate: data.arrivalDate,
+        status: data.status,
+      });
+      setScreen("success");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (err: any) {
+      Alert.alert("Withdrawal Failed", err.message ?? "Something went wrong. Please try again.");
+    }
+  }
+
+  function proceedFromWithdraw() {
     if (!amountText || amountNum <= 0) {
       Alert.alert("Enter Amount", "Please enter a valid withdrawal amount.");
       return;
@@ -123,59 +270,67 @@ export default function WalletScreen() {
       Alert.alert("Minimum Withdrawal", `The minimum withdrawal amount is $${MIN_WITHDRAWAL}.00.`);
       return;
     }
-    setScreen("pin");
-  }
 
-  function appendPin(digit: string) {
-    if (pin.length >= 4) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const next = pin + digit;
-    setPin(next);
-    setPinError(false);
-    if (next.length === 4) {
-      setTimeout(() => {
-        recordWithdrawal(amountNum, selectedMethod!.label);
-        setScreen("success");
-      }, 300);
+    if (selectedMethod.isStripe) {
+      if (stripeStatus !== "connected") {
+        Alert.alert(
+          "Stripe Not Connected",
+          "Please connect your Stripe payout account in Payout Settings before using Stripe Bank Payout.",
+          [
+            { text: "Go to Settings", onPress: () => { setScreen("payout_settings"); } },
+            { text: "Cancel", style: "cancel" },
+          ]
+        );
+        return;
+      }
+      executeStripeWithdrawal();
+    } else {
+      // Manual payout — record locally and submit request
+      recordWithdrawal(amountNum, selectedMethod.label);
+      setWithdrawResult(null);
+      setScreen("success");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   }
 
-  function deletePin() {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setPin((p) => p.slice(0, -1));
-    setPinError(false);
+  function reset() {
+    setScreen("main");
+    setAmountText("");
+    setSelectedMethod(null);
+    setPin("");
+    setWithdrawResult(null);
   }
 
-  function savePayoutInfo() {
+  function saveManualInfo() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setPayoutSaved(true);
-    setTimeout(() => setPayoutSaved(false), 2500);
-    Alert.alert("Payout Info Saved", "Your payout details have been saved securely.");
+    setManualSaved(true);
+    setTimeout(() => setManualSaved(false), 2500);
+    Alert.alert("Info Saved", "Your payout details have been saved. TheLawnServices will use these when processing manual payouts.");
   }
 
   const creditTotal   = transactions.filter((t) => t.type === "credit").reduce((s, t) => s + t.amount, 0);
   const withdrawTotal = transactions.filter((t) => t.type === "debit").reduce((s, t) => s + t.amount, 0);
 
   function headerTitle() {
-    if (screen === "withdraw") return "Withdraw Funds";
-    if (screen === "pin") return "Confirm Withdrawal";
-    if (screen === "success") return "Withdrawal Initiated";
+    if (screen === "withdraw")       return "Withdraw Funds";
+    if (screen === "success")        return "Withdrawal Initiated";
     if (screen === "payout_settings") return "Payout Settings";
     return "My Wallet";
   }
 
+  const isStripeConnected = stripeStatus === "connected";
+
   return (
     <View style={[s.root, { paddingTop: topPad }]}>
-      {/* ── HEADER ─────────────────────────────────────────────── */}
+      {/* ── HEADER ──────────────────────────────────────────────── */}
       <View style={s.header}>
         {screen !== "main" ? (
           <TouchableOpacity
             style={s.backBtn}
             onPress={() => {
-              if (screen === "pin")             setScreen("withdraw");
-              else if (screen === "withdraw")   setScreen("main");
-              else if (screen === "success")    reset();
+              if (screen === "success")          reset();
               else if (screen === "payout_settings") setScreen("main");
+              else                               setScreen("main");
             }}
             activeOpacity={0.7}
           >
@@ -198,17 +353,14 @@ export default function WalletScreen() {
         )}
       </View>
 
-      {/* ── MAIN ───────────────────────────────────────────────── */}
+      {/* ── MAIN ─────────────────────────────────────────────────── */}
       {screen === "main" && (
-        <ScrollView
-          contentContainerStyle={{ paddingBottom: bottomPad + 48 }}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={{ paddingBottom: bottomPad + 48 }} showsVerticalScrollIndicator={false}>
           {/* Balance card */}
           <View style={s.balanceCard}>
             <View style={s.badge}>
               <Ionicons name="shield-checkmark" size={13} color="#34FF7A" />
-              <Text style={[s.badgeText, { fontFamily: "Inter_500Medium" }]}>FDIC Protected · Secured</Text>
+              <Text style={[s.badgeText, { fontFamily: "Inter_500Medium" }]}>FDIC Protected · Stripe Secured</Text>
             </View>
             <Text style={[s.balLabel, { fontFamily: "Inter_400Regular" }]}>Available Balance</Text>
             <Text style={[s.balAmount, { fontFamily: "Inter_700Bold" }]}>${fmt(balance)}</Text>
@@ -231,50 +383,53 @@ export default function WalletScreen() {
             </View>
           </View>
 
-          {/* Action buttons */}
-          <View style={s.actionRow}>
-            <TouchableOpacity
-              style={[s.actionBtn, { flex: 1 }]}
-              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScreen("withdraw"); }}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="wallet-outline" size={20} color="#000" />
-              <Text style={[s.withdrawBtnText, { fontFamily: "Inter_700Bold" }]}>Withdraw Funds</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={s.minNotice}>
-            <Ionicons name="information-circle-outline" size={14} color="#888" />
-            <Text style={[s.minNoticeText, { fontFamily: "Inter_400Regular" }]}>
-              Minimum withdrawal: ${MIN_WITHDRAWAL}.00
-            </Text>
-          </View>
-
-          {/* Payout settings shortcut */}
+          {/* Stripe Connect status banner */}
           <TouchableOpacity
-            style={s.payoutSettingsBtn}
+            style={[s.stripeBanner, isStripeConnected ? s.stripeBannerConnected : s.stripeBannerDisconnected]}
             onPress={() => { Haptics.selectionAsync(); setScreen("payout_settings"); }}
             activeOpacity={0.8}
           >
-            <View style={s.payoutSettingsBtnLeft}>
-              <Ionicons name="card-outline" size={20} color="#34FF7A" />
-              <View>
-                <Text style={[s.payoutSettingsBtnLabel, { fontFamily: "Inter_600SemiBold" }]}>Payout Settings</Text>
-                <Text style={[s.payoutSettingsBtnSub, { fontFamily: "Inter_400Regular" }]}>
-                  Save your withdrawal account info
-                </Text>
-              </View>
+            <View style={[s.stripeIconWrap, { backgroundColor: isStripeConnected ? "#34FF7A22" : "#1a1a1a" }]}>
+              <Ionicons
+                name={isStripeConnected ? "checkmark-circle" : "card-outline"}
+                size={22}
+                color={isStripeConnected ? "#34FF7A" : "#888"}
+              />
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#555" />
+            <View style={{ flex: 1 }}>
+              <Text style={[s.stripeBannerTitle, { fontFamily: "Inter_600SemiBold", color: isStripeConnected ? "#34FF7A" : "#FFFFFF" }]}>
+                {isStripeConnected ? "Stripe Payout Account Connected" : "Connect Your Bank via Stripe"}
+              </Text>
+              <Text style={[s.stripeBannerSub, { fontFamily: "Inter_400Regular" }]}>
+                {isStripeConnected
+                  ? "Direct bank payouts are enabled. Tap to manage."
+                  : "Connect once — withdraw earnings directly to your bank."}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#555" />
           </TouchableOpacity>
+
+          {/* Withdraw button */}
+          <TouchableOpacity
+            style={s.withdrawBtn}
+            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScreen("withdraw"); }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="wallet-outline" size={20} color="#000" />
+            <Text style={[s.withdrawBtnText, { fontFamily: "Inter_700Bold" }]}>Withdraw Funds</Text>
+          </TouchableOpacity>
+
+          <Text style={[s.minNoticeText, { fontFamily: "Inter_400Regular" }]}>
+            Minimum withdrawal: ${MIN_WITHDRAWAL}.00
+          </Text>
 
           {/* Transactions */}
           <Text style={[s.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>TRANSACTION HISTORY</Text>
           {transactions.length === 0 && (
             <View style={s.emptyRow}>
               <Ionicons name="receipt-outline" size={32} color="#333" />
-              <Text style={[{ fontSize: 14, color: "#555", marginTop: 8 }, { fontFamily: "Inter_400Regular" }]}>
-                No transactions yet. Completed jobs will appear here.
+              <Text style={[{ fontSize: 14, color: "#555", marginTop: 8, textAlign: "center" }, { fontFamily: "Inter_400Regular" }]}>
+                No transactions yet.{"\n"}Completed jobs will appear here.
               </Text>
             </View>
           )}
@@ -305,28 +460,110 @@ export default function WalletScreen() {
         </ScrollView>
       )}
 
-      {/* ── PAYOUT SETTINGS ────────────────────────────────────── */}
+      {/* ── PAYOUT SETTINGS ─────────────────────────────────────── */}
       {screen === "payout_settings" && (
         <ScrollView
           contentContainerStyle={{ padding: 20, paddingBottom: bottomPad + 60 }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={s.payoutInfoBox}>
-            <Ionicons name="lock-closed-outline" size={16} color="#34FF7A" />
-            <Text style={[s.payoutInfoBoxText, { fontFamily: "Inter_400Regular" }]}>
-              Save your payout details so TheLawnServices can accurately send your earnings. All data is encrypted and stored securely.
-            </Text>
+          {/* ── Stripe Connect ── */}
+          <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold" }]}>Stripe Bank Payout</Text>
+          <Text style={[s.payoutSectionSub, { fontFamily: "Inter_400Regular" }]}>
+            The fastest way to receive your earnings. Connect once and we'll transfer directly to your bank account or debit card via Stripe.
+          </Text>
+
+          <View style={[s.stripeConnectCard, isStripeConnected ? s.stripeConnectCardOn : s.stripeConnectCardOff]}>
+            <View style={s.stripeConnectTop}>
+              <View style={[s.stripeConnectIcon, { backgroundColor: isStripeConnected ? "#34FF7A22" : "#222" }]}>
+                <Ionicons
+                  name={isStripeConnected ? "checkmark-circle" : "card-outline"}
+                  size={28}
+                  color={isStripeConnected ? "#34FF7A" : "#CCCCCC"}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.stripeConnectTitle, { fontFamily: "Inter_700Bold", color: isStripeConnected ? "#34FF7A" : "#FFFFFF" }]}>
+                  {isStripeConnected
+                    ? "Stripe Account Connected"
+                    : stripeStatus === "needs_info"
+                    ? "Additional Info Required"
+                    : "Not Connected"}
+                </Text>
+                <Text style={[s.stripeConnectSub, { fontFamily: "Inter_400Regular" }]}>
+                  {isStripeConnected
+                    ? `Account ID: ${stripeAccountId}`
+                    : stripeStatus === "needs_info"
+                    ? "Your Stripe account needs more information before payouts are enabled."
+                    : "Connect your bank account or debit card to receive payouts."}
+                </Text>
+              </View>
+            </View>
+
+            {/* How it works */}
+            {!isStripeConnected && (
+              <View style={s.howItWorks}>
+                {[
+                  { icon: "finger-print-outline", text: "Stripe verifies your identity securely" },
+                  { icon: "business-outline",     text: "Add your bank account or debit card" },
+                  { icon: "flash-outline",         text: "Withdraw earnings directly from your wallet" },
+                ].map((item, i) => (
+                  <View key={i} style={s.howItWorksRow}>
+                    <View style={s.howItWorksIcon}>
+                      <Ionicons name={item.icon as any} size={14} color="#34FF7A" />
+                    </View>
+                    <Text style={[s.howItWorksText, { fontFamily: "Inter_400Regular" }]}>{item.text}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[s.stripeConnectBtn, isStripeConnected && s.stripeConnectBtnAlt]}
+              onPress={connectStripe}
+              activeOpacity={0.85}
+              disabled={stripeConnecting}
+            >
+              {stripeConnecting ? (
+                <ActivityIndicator size="small" color={isStripeConnected ? "#34FF7A" : "#000"} />
+              ) : (
+                <Ionicons
+                  name={isStripeConnected ? "open-outline" : "link-outline"}
+                  size={17}
+                  color={isStripeConnected ? "#34FF7A" : "#000"}
+                />
+              )}
+              <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_700Bold", color: isStripeConnected ? "#34FF7A" : "#000" }]}>
+                {stripeConnecting
+                  ? "Opening Stripe..."
+                  : isStripeConnected
+                  ? "Manage Stripe Account"
+                  : stripeStatus === "needs_info"
+                  ? "Complete Stripe Setup"
+                  : "Connect with Stripe"}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={s.stripeLegal}>
+              <Ionicons name="lock-closed-outline" size={12} color="#555" />
+              <Text style={[s.stripeLegalText, { fontFamily: "Inter_400Regular" }]}>
+                Powered by Stripe. Your banking details are never stored on TheLawnServices servers.
+              </Text>
+            </View>
           </View>
 
-          {/* PayPal */}
-          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>PayPal</Text>
-          <View style={s.payoutFieldGroup}>
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>PayPal Email Address</Text>
+          {/* ── Manual payout details ── */}
+          <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold", marginTop: 28 }]}>Manual Payout Details</Text>
+          <Text style={[s.payoutSectionSub, { fontFamily: "Inter_400Regular" }]}>
+            For PayPal, Zelle, Venmo, or check payouts, save your info below. TheLawnServices processes these manually within 1–3 business days.
+          </Text>
+
+          <View style={s.manualGroup}>
+            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>PayPal Email</Text>
             <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.paypal_email}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, paypal_email: v }))}
+              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
+              value={manualInfo.paypal_email}
+              onChangeText={(v) => setManualInfo((p) => ({ ...p, paypal_email: v }))}
               placeholder="yourname@email.com"
               placeholderTextColor="#444"
               keyboardType="email-address"
@@ -334,158 +571,83 @@ export default function WalletScreen() {
             />
           </View>
 
-          {/* Zelle */}
-          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Zelle</Text>
-          <View style={s.payoutFieldGroup}>
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Phone Number or Email</Text>
+          <View style={s.manualGroup}>
+            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>Zelle (Phone or Email)</Text>
             <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.zelle_contact}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, zelle_contact: v }))}
+              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
+              value={manualInfo.zelle_contact}
+              onChangeText={(v) => setManualInfo((p) => ({ ...p, zelle_contact: v }))}
               placeholder="(555) 000-0000 or email"
               placeholderTextColor="#444"
             />
           </View>
 
-          {/* Venmo */}
-          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Venmo</Text>
-          <View style={s.payoutFieldGroup}>
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Venmo Username</Text>
+          <View style={s.manualGroup}>
+            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>Venmo Username</Text>
             <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.venmo_username}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, venmo_username: v }))}
+              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
+              value={manualInfo.venmo_username}
+              onChangeText={(v) => setManualInfo((p) => ({ ...p, venmo_username: v }))}
               placeholder="@username"
               placeholderTextColor="#444"
               autoCapitalize="none"
             />
           </View>
 
-          {/* Debit Card */}
-          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Debit Card</Text>
-          <View style={s.payoutFieldGroup}>
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Cardholder Name</Text>
+          <View style={s.manualGroup}>
+            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>Check — Payable To</Text>
             <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.debit_name}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, debit_name: v }))}
-              placeholder="Full name on card"
-              placeholderTextColor="#444"
-            />
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>Last 4 Digits</Text>
-            <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.debit_last4}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, debit_last4: v.replace(/\D/g, "").slice(0, 4) }))}
-              placeholder="•••• 4321"
-              placeholderTextColor="#444"
-              keyboardType="number-pad"
-              maxLength={4}
-            />
-          </View>
-
-          {/* Bank Transfer */}
-          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Bank Transfer (ACH)</Text>
-          <View style={s.payoutFieldGroup}>
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Bank Name</Text>
-            <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.bank_name}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, bank_name: v }))}
-              placeholder="e.g. Chase, Wells Fargo"
-              placeholderTextColor="#444"
-            />
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>Routing Number</Text>
-            <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.bank_routing}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, bank_routing: v.replace(/\D/g, "").slice(0, 9) }))}
-              placeholder="9-digit routing number"
-              placeholderTextColor="#444"
-              keyboardType="number-pad"
-              maxLength={9}
-            />
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>Account Number</Text>
-            <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.bank_account}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, bank_account: v.replace(/\D/g, "") }))}
-              placeholder="Account number"
-              placeholderTextColor="#444"
-              keyboardType="number-pad"
-            />
-          </View>
-
-          {/* Check by Mail */}
-          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Check by Mail</Text>
-          <View style={s.payoutFieldGroup}>
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Payable To (Full Name)</Text>
-            <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.mail_name}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_name: v }))}
+              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
+              value={manualInfo.mail_name}
+              onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_name: v }))}
               placeholder="Full legal name"
               placeholderTextColor="#444"
             />
-            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>Mailing Address</Text>
             <TextInput
-              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-              value={payoutInfo.mail_address}
-              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_address: v }))}
-              placeholder="123 Main St"
+              style={[s.manualInput, { fontFamily: "Inter_400Regular", marginTop: 8 }]}
+              value={manualInfo.mail_address}
+              onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_address: v }))}
+              placeholder="Mailing address"
               placeholderTextColor="#444"
             />
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
-              <View style={{ flex: 1.5 }}>
-                <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>City</Text>
-                <TextInput
-                  style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-                  value={payoutInfo.mail_city}
-                  onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_city: v }))}
-                  placeholder="City"
-                  placeholderTextColor="#444"
-                />
-              </View>
-              <View style={{ flex: 0.7 }}>
-                <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>State</Text>
-                <TextInput
-                  style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-                  value={payoutInfo.mail_state}
-                  onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_state: v.toUpperCase().slice(0, 2) }))}
-                  placeholder="FL"
-                  placeholderTextColor="#444"
-                  maxLength={2}
-                />
-              </View>
-              <View style={{ flex: 0.8 }}>
-                <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>ZIP</Text>
-                <TextInput
-                  style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
-                  value={payoutInfo.mail_zip}
-                  onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_zip: v.replace(/\D/g, "").slice(0, 5) }))}
-                  placeholder="34222"
-                  placeholderTextColor="#444"
-                  keyboardType="number-pad"
-                  maxLength={5}
-                />
-              </View>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+              <TextInput
+                style={[s.manualInput, { fontFamily: "Inter_400Regular", flex: 2 }]}
+                value={manualInfo.mail_city}
+                onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_city: v }))}
+                placeholder="City"
+                placeholderTextColor="#444"
+              />
+              <TextInput
+                style={[s.manualInput, { fontFamily: "Inter_400Regular", flex: 0.7 }]}
+                value={manualInfo.mail_state}
+                onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_state: v.toUpperCase().slice(0, 2) }))}
+                placeholder="FL"
+                placeholderTextColor="#444"
+                maxLength={2}
+              />
+              <TextInput
+                style={[s.manualInput, { fontFamily: "Inter_400Regular", flex: 1 }]}
+                value={manualInfo.mail_zip}
+                onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_zip: v.replace(/\D/g, "").slice(0, 5) }))}
+                placeholder="ZIP"
+                placeholderTextColor="#444"
+                keyboardType="number-pad"
+                maxLength={5}
+              />
             </View>
           </View>
 
-          <TouchableOpacity style={s.savePayoutBtn} onPress={savePayoutInfo} activeOpacity={0.85}>
-            <Ionicons name={payoutSaved ? "checkmark-circle" : "save-outline"} size={18} color="#000" />
-            <Text style={[s.savePayoutBtnText, { fontFamily: "Inter_700Bold" }]}>
-              {payoutSaved ? "Saved!" : "Save Payout Information"}
+          <TouchableOpacity style={s.saveManualBtn} onPress={saveManualInfo} activeOpacity={0.85}>
+            <Ionicons name={manualSaved ? "checkmark-circle" : "save-outline"} size={18} color="#000" />
+            <Text style={[s.saveManualBtnText, { fontFamily: "Inter_700Bold" }]}>
+              {manualSaved ? "Saved!" : "Save Payout Details"}
             </Text>
           </TouchableOpacity>
-
-          <Text style={[s.payoutLegal, { fontFamily: "Inter_400Regular" }]}>
-            🔒 Your banking and payout details are encrypted. TheLawnServices uses this information solely to process your earnings withdrawals.
-          </Text>
         </ScrollView>
       )}
 
-      {/* ── WITHDRAW ───────────────────────────────────────────── */}
+      {/* ── WITHDRAW ─────────────────────────────────────────────── */}
       {screen === "withdraw" && (
         <ScrollView
           contentContainerStyle={{ paddingBottom: bottomPad + 48 }}
@@ -514,165 +676,159 @@ export default function WalletScreen() {
               <Text style={[s.maxBtnText, { fontFamily: "Inter_500Medium" }]}>Withdraw Max</Text>
             </TouchableOpacity>
             <Text style={[{ fontSize: 12, color: "#555", marginTop: 6 }, { fontFamily: "Inter_400Regular" }]}>
-              Minimum withdrawal: ${MIN_WITHDRAWAL}.00
+              Minimum: ${MIN_WITHDRAWAL}.00
             </Text>
           </View>
 
-          {selectedMethod && amountNum > 0 && (
-            <View style={s.feeBox}>
-              <View style={s.feeRow}>
-                <Text style={[s.feeLabel, { fontFamily: "Inter_400Regular" }]}>Withdrawal Amount</Text>
-                <Text style={[s.feeVal, { fontFamily: "Inter_500Medium" }]}>${fmt(amountNum)}</Text>
-              </View>
-              {fee > 0 && (
-                <View style={s.feeRow}>
-                  <Text style={[s.feeLabel, { fontFamily: "Inter_400Regular" }]}>Processing Fee ({selectedMethod.fee})</Text>
-                  <Text style={[s.feeVal, { fontFamily: "Inter_500Medium" }, { color: "#ff6b6b" }]}>−${fmt(fee)}</Text>
-                </View>
-              )}
-              <View style={[s.feeRow, { borderTopWidth: 1, borderTopColor: "#222", marginTop: 6, paddingTop: 10 }]}>
-                <Text style={[s.feeLabel, { fontFamily: "Inter_600SemiBold" }, { color: "#FFF" }]}>You Receive</Text>
-                <Text style={[s.feeVal, { fontFamily: "Inter_700Bold" }, { color: "#34FF7A" }]}>${fmt(netAmount > 0 ? netAmount : 0)}</Text>
-              </View>
-            </View>
-          )}
-
+          {/* Method selection */}
           <View style={s.section}>
             <Text style={[s.fieldLabel, { fontFamily: "Inter_500Medium" }]}>Withdrawal Method</Text>
+
             {METHODS.map((m) => {
               const active = selectedMethod?.id === m.id;
+              const stripeReady = m.isStripe && isStripeConnected;
+              const stripeBlocked = m.isStripe && !isStripeConnected;
+
               return (
                 <TouchableOpacity
                   key={m.id}
-                  style={[s.methodRow, active && s.methodRowActive]}
-                  onPress={() => { setSelectedMethod(m); Haptics.selectionAsync(); }}
-                  activeOpacity={0.8}
+                  style={[
+                    s.methodRow,
+                    active && s.methodRowActive,
+                    stripeBlocked && s.methodRowDisabled,
+                  ]}
+                  onPress={() => {
+                    if (stripeBlocked) {
+                      Alert.alert(
+                        "Connect Stripe First",
+                        "Go to Payout Settings to connect your Stripe account for direct bank payouts.",
+                        [
+                          { text: "Open Settings", onPress: () => setScreen("payout_settings") },
+                          { text: "Cancel", style: "cancel" },
+                        ]
+                      );
+                      return;
+                    }
+                    setSelectedMethod(m);
+                    Haptics.selectionAsync();
+                  }}
+                  activeOpacity={stripeBlocked ? 1 : 0.8}
                 >
-                  <View style={[s.methodIconWrap, active && s.methodIconWrapActive]}>
-                    <Ionicons name={m.icon as any} size={20} color={active ? "#000" : "#CCCCCC"} />
+                  <View style={[s.methodIconWrap, active && s.methodIconWrapActive, stripeBlocked && { backgroundColor: "#111" }]}>
+                    <Ionicons name={m.icon as any} size={20} color={active ? "#000" : stripeBlocked ? "#444" : "#CCCCCC"} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[s.methodLabel, { fontFamily: "Inter_600SemiBold" }, active && { color: "#34FF7A" }]}>{m.label}</Text>
-                    <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
-                      <View style={[s.speedChip, m.instant ? s.speedChipInstant : s.speedChipSlow]}>
-                        <Ionicons name={m.instant ? "flash" : "time-outline"} size={10} color={m.instant ? "#34FF7A" : "#f59e0b"} />
-                        <Text style={[s.speedChipText, { fontFamily: "Inter_500Medium" }, { color: m.instant ? "#34FF7A" : "#f59e0b" }]}>{m.speed}</Text>
-                      </View>
-                      <View style={s.feeChip}>
-                        <Text style={[s.feeChipText, { fontFamily: "Inter_400Regular" }]}>{m.fee}</Text>
-                      </View>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Text style={[s.methodLabel, { fontFamily: "Inter_600SemiBold" }, active && { color: "#34FF7A" }, stripeBlocked && { color: "#444" }]}>
+                        {m.label}
+                      </Text>
+                      {m.isStripe && (
+                        <View style={[s.stripeTag, { backgroundColor: isStripeConnected ? "#34FF7A22" : "#ffffff0a" }]}>
+                          <Text style={[s.stripeTagText, { fontFamily: "Inter_600SemiBold", color: isStripeConnected ? "#34FF7A" : "#555" }]}>
+                            {isStripeConnected ? "✓ Connected" : "Setup Required"}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 6, marginTop: 3 }}>
+                      {m.isStripe ? (
+                        <View style={[s.speedChip, { backgroundColor: isStripeConnected ? "#34FF7A15" : "#1a1a1a" }]}>
+                          <Ionicons name="flash-outline" size={10} color={isStripeConnected ? "#34FF7A" : "#555"} />
+                          <Text style={[s.speedChipText, { fontFamily: "Inter_500Medium", color: isStripeConnected ? "#34FF7A" : "#555" }]}>
+                            {m.speed}
+                          </Text>
+                        </View>
+                      ) : (
+                        <View style={s.manualChip}>
+                          <Text style={[s.manualChipText, { fontFamily: "Inter_400Regular" }]}>{m.speed}</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
-                  {active && <Ionicons name="checkmark-circle" size={22} color="#34FF7A" />}
+                  {active && !stripeBlocked && <Ionicons name="checkmark-circle" size={22} color="#34FF7A" />}
+                  {stripeBlocked && <Ionicons name="lock-closed-outline" size={18} color="#444" />}
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <TouchableOpacity style={s.proceedBtn} onPress={proceedToPin} activeOpacity={0.85}>
-            <Ionicons name="lock-closed-outline" size={18} color="#000" />
-            <Text style={[s.proceedBtnText, { fontFamily: "Inter_700Bold" }]}>Continue — Enter PIN</Text>
+          {/* Manual payout note */}
+          {selectedMethod && !selectedMethod.isStripe && (
+            <View style={s.manualNote}>
+              <Ionicons name="information-circle-outline" size={16} color="#f59e0b" />
+              <Text style={[s.manualNoteText, { fontFamily: "Inter_400Regular" }]}>
+                Manual payouts are reviewed and processed by TheLawnServices within 1–3 business days. Make sure your payout details are saved in Settings.
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity style={s.proceedBtn} onPress={proceedFromWithdraw} activeOpacity={0.85}>
+            <Ionicons name={selectedMethod?.isStripe ? "card-outline" : "send-outline"} size={18} color="#000" />
+            <Text style={[s.proceedBtnText, { fontFamily: "Inter_700Bold" }]}>
+              {selectedMethod?.isStripe ? "Withdraw via Stripe" : "Submit Withdrawal Request"}
+            </Text>
           </TouchableOpacity>
 
           <Text style={[s.securityNote, { fontFamily: "Inter_400Regular" }]}>
-            🔒  Withdrawals are encrypted and monitored for fraud. A confirmation email will be sent after processing.
+            🔒 All withdrawals are secured by Stripe. Your banking details are never stored by TheLawnServices.
           </Text>
         </ScrollView>
       )}
 
-      {/* ── PIN ─────────────────────────────────────────────────── */}
-      {screen === "pin" && (
-        <View style={s.pinRoot}>
-          <Ionicons name="lock-closed" size={44} color="#34FF7A" style={{ marginBottom: 16 }} />
-          <Text style={[s.pinTitle, { fontFamily: "Inter_700Bold" }]}>Enter Your 4-Digit PIN</Text>
-          <Text style={[s.pinSub, { fontFamily: "Inter_400Regular" }]}>
-            Confirming ${fmt(amountNum)} withdrawal via {selectedMethod?.label}
-          </Text>
-          <View style={s.pinDots}>
-            {[0, 1, 2, 3].map((i) => (
-              <View key={i} style={[s.pinDot, pin.length > i && s.pinDotFilled]} />
-            ))}
-          </View>
-          {pinError && (
-            <Text style={[s.pinError, { fontFamily: "Inter_500Medium" }]}>Incorrect PIN. Please try again.</Text>
-          )}
-          <View style={s.numpad}>
-            {[["1","2","3"],["4","5","6"],["7","8","9"],["","0","⌫"]].map((row, ri) => (
-              <View key={ri} style={s.numpadRow}>
-                {row.map((key, ki) => {
-                  if (key === "") return <View key={ki} style={s.numpadKey} />;
-                  return (
-                    <TouchableOpacity
-                      key={ki}
-                      style={s.numpadKey}
-                      onPress={() => key === "⌫" ? deletePin() : appendPin(key)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[s.numpadKeyText, { fontFamily: key === "⌫" ? "Inter_400Regular" : "Inter_600SemiBold" }]}>{key}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-          <Text style={[s.pinHint, { fontFamily: "Inter_400Regular" }]}>
-            Enter any 4-digit PIN to authorize this withdrawal
-          </Text>
-        </View>
-      )}
-
-      {/* ── SUCCESS ─────────────────────────────────────────────── */}
+      {/* ── SUCCESS ──────────────────────────────────────────────── */}
       {screen === "success" && (
         <ScrollView contentContainerStyle={[s.successRoot, { paddingBottom: bottomPad + 48 }]} showsVerticalScrollIndicator={false}>
           <View style={s.successIconWrap}>
             <Ionicons name="checkmark-circle" size={72} color="#34FF7A" />
           </View>
-          <Text style={[s.successTitle, { fontFamily: "Inter_700Bold" }]}>Withdrawal Initiated!</Text>
+          <Text style={[s.successTitle, { fontFamily: "Inter_700Bold" }]}>
+            {selectedMethod?.isStripe ? "Payout Initiated!" : "Request Submitted!"}
+          </Text>
+
           <View style={s.successCard}>
             <View style={s.successRow}>
               <Text style={[s.successRowLabel, { fontFamily: "Inter_400Regular" }]}>Amount</Text>
               <Text style={[s.successRowVal, { fontFamily: "Inter_700Bold" }, { color: "#34FF7A" }]}>${fmt(amountNum)}</Text>
             </View>
-            {fee > 0 && (
-              <View style={s.successRow}>
-                <Text style={[s.successRowLabel, { fontFamily: "Inter_400Regular" }]}>Processing Fee</Text>
-                <Text style={[s.successRowVal, { fontFamily: "Inter_500Medium" }, { color: "#ff6b6b" }]}>−${fmt(fee)}</Text>
-              </View>
-            )}
             <View style={s.successRow}>
-              <Text style={[s.successRowLabel, { fontFamily: "Inter_400Regular" }]}>You Receive</Text>
-              <Text style={[s.successRowVal, { fontFamily: "Inter_700Bold" }]}>${fmt(netAmount > 0 ? netAmount : amountNum)}</Text>
-            </View>
-            <View style={[s.successRow, { borderTopWidth: 1, borderTopColor: "#222", marginTop: 6, paddingTop: 12 }]}>
               <Text style={[s.successRowLabel, { fontFamily: "Inter_400Regular" }]}>Method</Text>
               <Text style={[s.successRowVal, { fontFamily: "Inter_600SemiBold" }]}>{selectedMethod?.label}</Text>
             </View>
-            <View style={s.successRow}>
-              <Text style={[s.successRowLabel, { fontFamily: "Inter_400Regular" }]}>Estimated Arrival</Text>
-              <Text style={[s.successRowVal, { fontFamily: "Inter_600SemiBold" }, { color: selectedMethod?.instant ? "#34FF7A" : "#f59e0b" }]}>
-                {selectedMethod?.speedDays}
+            {withdrawResult?.transferId && (
+              <View style={s.successRow}>
+                <Text style={[s.successRowLabel, { fontFamily: "Inter_400Regular" }]}>Transfer ID</Text>
+                <Text style={[s.successRowVal, { fontFamily: "Inter_400Regular", fontSize: 11, color: "#888" }]}>
+                  {withdrawResult.transferId}
+                </Text>
+              </View>
+            )}
+            {withdrawResult?.payoutId && (
+              <View style={s.successRow}>
+                <Text style={[s.successRowLabel, { fontFamily: "Inter_400Regular" }]}>Payout ID</Text>
+                <Text style={[s.successRowVal, { fontFamily: "Inter_400Regular", fontSize: 11, color: "#888" }]}>
+                  {withdrawResult.payoutId}
+                </Text>
+              </View>
+            )}
+            <View style={[s.successRow, { borderTopWidth: 1, borderTopColor: "#222", marginTop: 6, paddingTop: 12 }]}>
+              <Text style={[s.successRowLabel, { fontFamily: "Inter_400Regular" }]}>Est. Arrival</Text>
+              <Text style={[s.successRowVal, { fontFamily: "Inter_600SemiBold", color: "#f59e0b" }]}>
+                {withdrawResult?.arrivalDate ?? selectedMethod?.speedDays}
               </Text>
             </View>
           </View>
-          <View style={[s.timingAlert, { borderColor: selectedMethod?.instant ? "#34FF7A33" : "#f59e0b44", backgroundColor: selectedMethod?.instant ? "#0d2e1855" : "#2e1f0055" }]}>
-            <Ionicons name={selectedMethod?.instant ? "flash" : "time-outline"} size={18} color={selectedMethod?.instant ? "#34FF7A" : "#f59e0b"} />
-            <Text style={[s.timingAlertText, { fontFamily: "Inter_400Regular" }, { color: selectedMethod?.instant ? "#34FF7A" : "#f59e0b" }]}>
-              {selectedMethod?.instant
-                ? "Your funds will arrive within minutes. Check your account shortly."
-                : `Your funds will arrive in ${selectedMethod?.speedDays}. You'll receive a notification once transferred.`}
+
+          <View style={s.successNote}>
+            <Ionicons name={selectedMethod?.isStripe ? "card-outline" : "time-outline"} size={18} color="#34FF7A" />
+            <Text style={[s.successNoteText, { fontFamily: "Inter_400Regular" }]}>
+              {selectedMethod?.isStripe
+                ? "Your funds have been transferred by Stripe. They will appear in your bank account within 1–2 business days."
+                : `Your manual payout request has been submitted. TheLawnServices will send funds to your ${selectedMethod?.label} account within 1–3 business days.`}
             </Text>
           </View>
-          <View style={s.emailNotice}>
-            <Ionicons name="mail-outline" size={18} color="#CCCCCC" />
-            <Text style={[s.emailNoticeText, { fontFamily: "Inter_400Regular" }]}>
-              A confirmation email has been sent to your registered email address with full withdrawal details and a reference number.
-            </Text>
-          </View>
+
           <TouchableOpacity style={s.doneBtn} onPress={reset} activeOpacity={0.85}>
             <Text style={[s.doneBtnText, { fontFamily: "Inter_700Bold" }]}>Done</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={reset} style={{ marginTop: 14, alignItems: "center" }}>
-            <Text style={[{ fontSize: 14, color: "#666" }, { fontFamily: "Inter_400Regular" }]}>View transaction history</Text>
           </TouchableOpacity>
         </ScrollView>
       )}
@@ -682,6 +838,7 @@ export default function WalletScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#0A0A0A" },
+
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 16, paddingVertical: 14,
@@ -712,31 +869,27 @@ const s = StyleSheet.create({
   balStatLabel: { fontSize: 11, color: "rgba(255,255,255,0.45)" },
   balStatVal: { fontSize: 15, color: "#FFFFFF", marginTop: 1 },
 
-  actionRow: { flexDirection: "row", paddingHorizontal: 16, gap: 10, marginBottom: 8 },
-  actionBtn: {
+  stripeBanner: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    marginHorizontal: 16, marginBottom: 10, borderRadius: 16,
+    borderWidth: 1, padding: 14,
+  },
+  stripeBannerConnected: { backgroundColor: "#0d2e1855", borderColor: "#34FF7A33" },
+  stripeBannerDisconnected: { backgroundColor: "#1A1A1A", borderColor: "#222" },
+  stripeIconWrap: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  stripeBannerTitle: { fontSize: 14 },
+  stripeBannerSub: { fontSize: 12, color: "#888", marginTop: 2 },
+
+  withdrawBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
     backgroundColor: "#34FF7A", borderRadius: 16, paddingVertical: 16,
+    marginHorizontal: 16, marginBottom: 6,
   },
   withdrawBtnText: { fontSize: 16, color: "#000" },
-
-  minNotice: {
-    flexDirection: "row", alignItems: "center", gap: 6,
-    paddingHorizontal: 20, marginBottom: 16,
-  },
-  minNoticeText: { fontSize: 12, color: "#888" },
-
-  payoutSettingsBtn: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    backgroundColor: "#1A1A1A", borderRadius: 16, borderWidth: 1, borderColor: "#222",
-    marginHorizontal: 16, marginBottom: 24, padding: 16,
-  },
-  payoutSettingsBtnLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
-  payoutSettingsBtnLabel: { fontSize: 15, color: "#FFFFFF" },
-  payoutSettingsBtnSub: { fontSize: 12, color: "#888", marginTop: 2 },
+  minNoticeText: { fontSize: 12, color: "#555", textAlign: "center", marginBottom: 20 },
 
   sectionLabel: { fontSize: 11, color: "#666", letterSpacing: 1, marginHorizontal: 16, marginBottom: 8 },
-
-  emptyRow: { alignItems: "center", paddingVertical: 40 },
+  emptyRow: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 20 },
 
   txRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
@@ -751,26 +904,50 @@ const s = StyleSheet.create({
   pendingChipText: { fontSize: 11, color: "#f59e0b" },
 
   // Payout settings
-  payoutInfoBox: {
-    flexDirection: "row", gap: 10, alignItems: "flex-start",
-    backgroundColor: "#0d2e18", borderRadius: 12, padding: 14,
-    borderWidth: 1, borderColor: "#1a5c30", marginBottom: 24,
+  payoutSectionLabel: { fontSize: 16, color: "#FFFFFF", marginBottom: 4 },
+  payoutSectionSub: { fontSize: 13, color: "#888", lineHeight: 19, marginBottom: 16 },
+
+  stripeConnectCard: {
+    borderRadius: 20, borderWidth: 1, padding: 20, gap: 14,
   },
-  payoutInfoBoxText: { flex: 1, fontSize: 13, color: "#AAAAAA", lineHeight: 19 },
-  payoutSection: { fontSize: 13, color: "#34FF7A", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 12, marginTop: 8 },
-  payoutFieldGroup: { backgroundColor: "#141414", borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: "#222" },
-  payoutFieldLabel: { fontSize: 13, color: "#AAAAAA", marginBottom: 8 },
-  payoutInput: {
+  stripeConnectCardOn: { backgroundColor: "#0d2e18", borderColor: "#34FF7A33" },
+  stripeConnectCardOff: { backgroundColor: "#141414", borderColor: "#222" },
+  stripeConnectTop: { flexDirection: "row", alignItems: "flex-start", gap: 14 },
+  stripeConnectIcon: { width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center" },
+  stripeConnectTitle: { fontSize: 16, marginBottom: 4 },
+  stripeConnectSub: { fontSize: 12, color: "#888", lineHeight: 18 },
+
+  howItWorks: { gap: 10, paddingLeft: 4 },
+  howItWorksRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  howItWorksIcon: {
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: "#0d2e18", alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: "#1a5c30",
+  },
+  howItWorksText: { fontSize: 13, color: "#CCCCCC", flex: 1 },
+
+  stripeConnectBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#34FF7A", borderRadius: 14, paddingVertical: 14,
+  },
+  stripeConnectBtnAlt: { backgroundColor: "transparent", borderWidth: 1, borderColor: "#34FF7A44" },
+  stripeConnectBtnText: { fontSize: 15 },
+
+  stripeLegal: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
+  stripeLegalText: { flex: 1, fontSize: 11, color: "#555", lineHeight: 16 },
+
+  manualGroup: { backgroundColor: "#141414", borderRadius: 14, borderWidth: 1, borderColor: "#222", padding: 16, marginBottom: 12 },
+  manualFieldLabel: { fontSize: 13, color: "#888", marginBottom: 8 },
+  manualInput: {
     backgroundColor: "#1A1A1A", borderWidth: 1.5, borderColor: "#2A2A2A",
     borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
     fontSize: 14, color: "#FFFFFF",
   },
-  savePayoutBtn: {
+  saveManualBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
-    backgroundColor: "#34FF7A", borderRadius: 16, paddingVertical: 16, marginTop: 8,
+    backgroundColor: "#34FF7A", borderRadius: 16, paddingVertical: 16, marginTop: 4,
   },
-  savePayoutBtnText: { fontSize: 16, color: "#000" },
-  payoutLegal: { fontSize: 12, color: "#555", textAlign: "center", marginTop: 16, lineHeight: 18 },
+  saveManualBtnText: { fontSize: 16, color: "#000" },
 
   // Withdraw
   section: { paddingHorizontal: 16, marginBottom: 16 },
@@ -785,34 +962,37 @@ const s = StyleSheet.create({
   amountInput: { flex: 1, fontSize: 28, color: "#FFFFFF", paddingVertical: 14 },
   maxBtn: { alignSelf: "flex-end", marginTop: 10 },
   maxBtnText: { fontSize: 13, color: "#34FF7A" },
-  feeBox: {
-    backgroundColor: "#1A1A1A", borderRadius: 16, borderWidth: 1, borderColor: "#222",
-    marginHorizontal: 16, marginBottom: 16, padding: 16,
-  },
-  feeRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 },
-  feeLabel: { fontSize: 13, color: "#888" },
-  feeVal: { fontSize: 13, color: "#FFFFFF" },
+
   methodRow: {
     flexDirection: "row", alignItems: "center", gap: 14,
     backgroundColor: "#1A1A1A", borderRadius: 16, borderWidth: 1, borderColor: "#222",
     padding: 14, marginBottom: 10,
   },
   methodRowActive: { borderColor: "#34FF7A44", backgroundColor: "#0d2e18" },
+  methodRowDisabled: { opacity: 0.5 },
   methodIconWrap: {
     width: 44, height: 44, borderRadius: 22,
     backgroundColor: "#252525", alignItems: "center", justifyContent: "center",
   },
   methodIconWrapActive: { backgroundColor: "#34FF7A" },
   methodLabel: { fontSize: 15, color: "#FFFFFF" },
+  stripeTag: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
+  stripeTagText: { fontSize: 10, letterSpacing: 0.3 },
   speedChip: {
     flexDirection: "row", alignItems: "center", gap: 4,
     paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6,
   },
-  speedChipInstant: { backgroundColor: "#34FF7A15" },
-  speedChipSlow: { backgroundColor: "#f59e0b15" },
   speedChipText: { fontSize: 11 },
-  feeChip: { backgroundColor: "#1e1e1e", paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
-  feeChipText: { fontSize: 11, color: "#888" },
+  manualChip: { backgroundColor: "#1e1e1e", paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
+  manualChipText: { fontSize: 11, color: "#666" },
+
+  manualNote: {
+    flexDirection: "row", alignItems: "flex-start", gap: 10,
+    backgroundColor: "#1C1400", borderRadius: 14, borderWidth: 1, borderColor: "#f59e0b33",
+    marginHorizontal: 16, marginBottom: 16, padding: 14,
+  },
+  manualNoteText: { flex: 1, fontSize: 13, color: "#f59e0b", lineHeight: 19 },
+
   proceedBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
     backgroundColor: "#34FF7A", borderRadius: 16,
@@ -820,24 +1000,6 @@ const s = StyleSheet.create({
   },
   proceedBtnText: { fontSize: 16, color: "#000" },
   securityNote: { fontSize: 12, color: "#555", textAlign: "center", marginHorizontal: 24, lineHeight: 18 },
-
-  // PIN
-  pinRoot: { flex: 1, alignItems: "center", paddingTop: 48, paddingHorizontal: 24 },
-  pinTitle: { fontSize: 22, color: "#FFFFFF", marginBottom: 8 },
-  pinSub: { fontSize: 14, color: "#888", textAlign: "center", marginBottom: 32, lineHeight: 20 },
-  pinDots: { flexDirection: "row", gap: 16, marginBottom: 16 },
-  pinDot: { width: 16, height: 16, borderRadius: 8, backgroundColor: "#333" },
-  pinDotFilled: { backgroundColor: "#34FF7A" },
-  pinError: { fontSize: 13, color: "#ff6b6b", marginBottom: 12 },
-  numpad: { width: "100%", maxWidth: 300, marginTop: 12 },
-  numpadRow: { flexDirection: "row", justifyContent: "center" },
-  numpadKey: {
-    flex: 1, aspectRatio: 1.6, alignItems: "center", justifyContent: "center",
-    margin: 6, backgroundColor: "#1A1A1A", borderRadius: 16,
-    borderWidth: 1, borderColor: "#222",
-  },
-  numpadKeyText: { fontSize: 22, color: "#FFFFFF" },
-  pinHint: { fontSize: 12, color: "#555", marginTop: 20, textAlign: "center" },
 
   // Success
   successRoot: { paddingHorizontal: 20, alignItems: "center", paddingTop: 20 },
@@ -851,25 +1013,19 @@ const s = StyleSheet.create({
     width: "100%", backgroundColor: "#1A1A1A",
     borderRadius: 20, borderWidth: 1, borderColor: "#222", padding: 20, marginBottom: 16,
   },
-  successRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8 },
+  successRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8 },
   successRowLabel: { fontSize: 14, color: "#888" },
-  successRowVal: { fontSize: 14, color: "#FFFFFF" },
-  timingAlert: {
+  successRowVal: { fontSize: 14, color: "#FFFFFF", flex: 1, textAlign: "right", marginLeft: 16 },
+  successNote: {
     flexDirection: "row", alignItems: "flex-start", gap: 10,
-    width: "100%", borderRadius: 14, borderWidth: 1,
-    padding: 14, marginBottom: 14,
+    width: "100%", backgroundColor: "#0d2e18",
+    borderRadius: 14, borderWidth: 1, borderColor: "#34FF7A22",
+    padding: 14, marginBottom: 24,
   },
-  timingAlertText: { flex: 1, fontSize: 13, lineHeight: 19 },
-  emailNotice: {
-    flexDirection: "row", alignItems: "flex-start", gap: 10,
-    width: "100%", backgroundColor: "#1A1A1A",
-    borderRadius: 14, padding: 14, marginBottom: 24,
-  },
-  emailNoticeText: { flex: 1, fontSize: 13, color: "#888", lineHeight: 19 },
+  successNoteText: { flex: 1, fontSize: 13, color: "#AAAAAA", lineHeight: 19 },
   doneBtn: {
     width: "100%", backgroundColor: "#34FF7A",
-    borderRadius: 16, paddingVertical: 16,
-    alignItems: "center",
+    borderRadius: 16, paddingVertical: 16, alignItems: "center",
   },
   doneBtnText: { fontSize: 16, color: "#000" },
 });
