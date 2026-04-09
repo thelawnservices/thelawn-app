@@ -123,6 +123,22 @@ const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; bg: s
   cancelled: { label: "Cancelled", color: "#EF4444", bg: "#2A0808", icon: "close-circle-outline" },
 };
 
+const TREE_SERVICES_REQ = ["Tree Removal"];
+const SOD_SERVICES_REQ  = ["Sod Installation"];
+const YARD_SERVICES_REQ = ["Mowing/Edging", "Weeding/Mulching"];
+
+const YARD_SIZE_OPTS = ["Small (under ¼ acre)", "Medium (¼ – ½ acre)", "Large (over ½ acre)"];
+const TREE_SIZE_OPTS = [
+  { label: "Small",  sub: "1 – 6 ft" },
+  { label: "Medium", sub: "up to 10 ft" },
+  { label: "Large",  sub: "up to 20 ft" },
+  { label: "XLarge", sub: "over 20 ft" },
+];
+const SOD_TYPE_OPTS = [
+  "St. Augustine", "Zoysia Grass", "Bermuda Grass",
+  "Bahia Grass",   "Centipede Grass", "Xeriscaping",
+];
+
 function NewRequestModal({
   visible,
   onClose,
@@ -130,9 +146,12 @@ function NewRequestModal({
 }: {
   visible: boolean;
   onClose: () => void;
-  onSubmit: (service: string, desc: string, budget: string, address: string, zip: string) => void;
+  onSubmit: (service: string, desc: string, budget: string, address: string, zip: string, detail: string) => void;
 }) {
   const [service, setService] = useState("");
+  const [yardSize, setYardSize] = useState("");
+  const [treeSize, setTreeSize] = useState("");
+  const [sodType,  setSodType]  = useState("");
   const [desc, setDesc] = useState("");
   const [budget, setBudget] = useState("");
   const [address, setAddress] = useState("");
@@ -140,9 +159,33 @@ function NewRequestModal({
 
   const SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Tree Removal"];
 
+  function pickService(s: string) {
+    Haptics.selectionAsync();
+    setService(s);
+    setYardSize(""); setTreeSize(""); setSodType("");
+  }
+
+  function getDetail() {
+    if (TREE_SERVICES_REQ.includes(service)) return treeSize;
+    if (SOD_SERVICES_REQ.includes(service))  return sodType;
+    return yardSize;
+  }
+
   function handleSubmit() {
     if (!service) {
       Alert.alert("Service Required", "Please select a service type.");
+      return;
+    }
+    if (TREE_SERVICES_REQ.includes(service) && !treeSize) {
+      Alert.alert("Tree Size Required", "Please select the size of the tree to be removed.");
+      return;
+    }
+    if (SOD_SERVICES_REQ.includes(service) && !sodType) {
+      Alert.alert("Sod Type Required", "Please select the type of sod you want installed.");
+      return;
+    }
+    if (YARD_SERVICES_REQ.includes(service) && !yardSize) {
+      Alert.alert("Yard Size Required", "Please select your yard size so landscapers can estimate the job.");
       return;
     }
     if (!desc.trim()) {
@@ -162,14 +205,15 @@ function NewRequestModal({
       return;
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    onSubmit(service, desc, budget.trim(), address.trim(), zip.trim());
-    setService("");
-    setDesc("");
-    setBudget("");
-    setAddress("");
-    setZip("");
+    onSubmit(service, desc, budget.trim(), address.trim(), zip.trim(), getDetail());
+    setService(""); setYardSize(""); setTreeSize(""); setSodType("");
+    setDesc(""); setBudget(""); setAddress(""); setZip("");
     onClose();
   }
+
+  const needsYard = YARD_SERVICES_REQ.includes(service);
+  const needsTree = TREE_SERVICES_REQ.includes(service);
+  const needsSod  = SOD_SERVICES_REQ.includes(service);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -186,7 +230,7 @@ function NewRequestModal({
                   <TouchableOpacity
                     key={s}
                     style={[modalStyles.chip, service === s && modalStyles.chipActive]}
-                    onPress={() => { Haptics.selectionAsync(); setService(s); }}
+                    onPress={() => pickService(s)}
                     activeOpacity={0.8}
                   >
                     <Text style={[modalStyles.chipText, { fontFamily: "Inter_500Medium" }, service === s && modalStyles.chipTextActive]}>
@@ -197,10 +241,82 @@ function NewRequestModal({
               </View>
             </ScrollView>
 
+            {/* ── Yard size (Mowing / Weeding) ─── */}
+            {needsYard && (
+              <>
+                <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>
+                  Yard Size <Text style={modalStyles.required}>*</Text>
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                  {YARD_SIZE_OPTS.map((opt) => (
+                    <TouchableOpacity
+                      key={opt}
+                      style={[modalStyles.chip, yardSize === opt && modalStyles.chipActive]}
+                      onPress={() => { Haptics.selectionAsync(); setYardSize(opt); }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[modalStyles.chipText, { fontFamily: "Inter_500Medium" }, yardSize === opt && modalStyles.chipTextActive]}>
+                        {opt}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* ── Tree size (Tree Removal) ─── */}
+            {needsTree && (
+              <>
+                <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>
+                  Tree Size <Text style={modalStyles.required}>*</Text>
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                  {TREE_SIZE_OPTS.map(({ label, sub }) => (
+                    <TouchableOpacity
+                      key={label}
+                      style={[modalStyles.chip, treeSize === label && modalStyles.chipActive, { paddingVertical: 10 }]}
+                      onPress={() => { Haptics.selectionAsync(); setTreeSize(label); }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[modalStyles.chipText, { fontFamily: "Inter_600SemiBold" }, treeSize === label && modalStyles.chipTextActive]}>
+                        {label}
+                      </Text>
+                      <Text style={[{ fontSize: 10, color: treeSize === label ? "#34FF7A" : "#888", fontFamily: "Inter_400Regular" }]}>
+                        {sub}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* ── Sod type (Sod Installation) ─── */}
+            {needsSod && (
+              <>
+                <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>
+                  Sod Type <Text style={modalStyles.required}>*</Text>
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                  {SOD_TYPE_OPTS.map((opt) => (
+                    <TouchableOpacity
+                      key={opt}
+                      style={[modalStyles.chip, sodType === opt && modalStyles.chipActive]}
+                      onPress={() => { Haptics.selectionAsync(); setSodType(opt); }}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[modalStyles.chipText, { fontFamily: "Inter_500Medium" }, sodType === opt && modalStyles.chipTextActive]}>
+                        {opt}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+
             <Text style={[modalStyles.label, { fontFamily: "Inter_500Medium" }]}>Description</Text>
             <TextInput
               style={[modalStyles.textArea, { fontFamily: "Inter_400Regular" }]}
-              placeholder="Describe the job — yard size, specific needs, gate codes, etc."
+              placeholder="Describe the job — specific needs, gate codes, access instructions, etc."
               placeholderTextColor="#666"
               multiline
               numberOfLines={4}
@@ -291,11 +407,12 @@ export default function RequestsScreen() {
     );
   }
 
-  function handlePostRequest(service: string, desc: string, budget: string, address: string, zip: string) {
+  function handlePostRequest(service: string, desc: string, budget: string, address: string, zip: string, detail: string) {
     const newReq = {
       id: `new-${Date.now()}`,
       service,
       description: desc,
+      detail,
       address,
       zip,
       date: "TBD",
@@ -440,6 +557,13 @@ export default function RequestsScreen() {
                   <Text style={[styles.requestDesc, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
                     {req.description}
                   </Text>
+
+                  {"detail" in req && req.detail ? (
+                    <View style={styles.metaRow}>
+                      <Ionicons name="options-outline" size={12} color="#CCCCCC" />
+                      <Text style={[styles.metaText, { fontFamily: "Inter_500Medium" }]}>{req.detail}</Text>
+                    </View>
+                  ) : null}
 
                   <View style={styles.metaRow}>
                     <Ionicons name="calendar-outline" size={12} color="#CCCCCC" />
