@@ -20,29 +20,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import * as Location from "expo-location";
 import { useAuth } from "@/contexts/auth";
 import { useNotifications } from "@/contexts/notifications";
 import { simulatePhotoReview, validateText } from "@/utils/moderation";
-
-// ── Geo helpers ───────────────────────────────────────────────────────────────
-// Hardcoded lat/lon for demo customer address: "8910 45th Ave E, Ellenton, FL"
-const JOB_COORDS: Record<string, { lat: number; lon: number }> = {
-  a1: { lat: 27.5268, lon: -82.5302 },
-};
-
-function haversineDistanceMiles(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 3958.8; // Earth radius in miles
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+import { requestPushPermissions, sendLocalPush } from "@/utils/pushNotifications";
 
 // Parse "Apr 12, 2026" / "Today" + "10:30 AM" → Date
 function parseJobDateTime(date: string, time: string): Date | null {
@@ -57,7 +38,7 @@ function parseJobDateTime(date: string, time: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-type JobStatus = "pending" | "started" | "completed";
+type JobStatus = "pending" | "arrived" | "started" | "completed";
 
 const SHARED_ACTIVE_JOBS = [
   {
@@ -128,12 +109,13 @@ const SERVICE_HISTORY = [
 ];
 
 const STATUS_STEPS: { key: JobStatus; label: string }[] = [
+  { key: "arrived", label: "Arrived at Location" },
   { key: "started", label: "Work Started" },
   { key: "completed", label: "Completed" },
 ];
 
 function statusOrder(s: JobStatus): number {
-  return { pending: 0, started: 1, completed: 2 }[s];
+  return { pending: 0, arrived: 1, started: 2, completed: 3 }[s];
 }
 
 type ChatMessage = { id: string; text: string; fromMe: boolean };
@@ -604,53 +586,10 @@ export default function JobsScreen() {
     return () => clearInterval(interval);
   }, [isLandscaper, jobStatuses, autoCancelledJobs, addNotification]);
 
-  // ── GPS proximity: auto-advance to "started" when within 0.5 mi ──────────
+  // ── Request push notification permissions once on mount ─────────────────
   useEffect(() => {
-    if (!isLandscaper) return;
-    let subscription: Location.LocationSubscription | null = null;
-
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") return;
-
-      subscription = await Location.watchPositionAsync(
-        { accuracy: Location.Accuracy.Balanced, distanceInterval: 50 },
-        (loc) => {
-          SHARED_ACTIVE_JOBS.forEach((job) => {
-            const target = JOB_COORDS[job.id];
-            if (!target) return;
-            const dist = haversineDistanceMiles(
-              loc.coords.latitude,
-              loc.coords.longitude,
-              target.lat,
-              target.lon
-            );
-            setJobStatuses((prev) => {
-              if (prev[job.id] === "pending" && dist <= 0.5) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                addNotification({
-                  icon: "construct-outline",
-                  title: "Work in Progress",
-                  sub: `You're within 0.5 mi of ${job.customer}'s address — ${job.service} marked as started.`,
-                });
-                setTimeout(() =>
-                  Alert.alert(
-                    "Work In Progress",
-                    `You're within 0.5 miles of the service address. Your status has been automatically set to "Work In Progress".`,
-                    [{ text: "OK" }]
-                  ), 400
-                );
-                return { ...prev, [job.id]: "started" };
-              }
-              return prev;
-            });
-          });
-        }
-      );
-    })();
-
-    return () => { subscription?.remove(); };
-  }, [isLandscaper, addNotification]);
+    requestPushPermissions();
+  }, []);
   const [completionPhotos, setCompletionPhotos] = useState<Record<string, string[]>>({});
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
   const [photoModalJobId, setPhotoModalJobId] = useState<string | null>(null);
@@ -663,19 +602,44 @@ export default function JobsScreen() {
   function advanceStatus(jobId: string, next: JobStatus) {
     const current = jobStatuses[jobId];
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
     if (next === "completed") {
-      // Open photo modal instead of advancing directly
       setPhotoModalJobId(jobId);
       return;
     }
+
     setJobStatuses((prev) => ({ ...prev, [jobId]: next }));
+    const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
+
+    if (next === "arrived" && statusOrder(current) < statusOrder("arrived")) {
+      addNotification({
+        icon: "location-outline",
+        title: "Landscaper Arrived",
+        sub: `Your landscaper has arrived at the location for ${job?.service ?? "your job"}`,
+      });
+      sendLocalPush(
+        "Your Landscaper Has Arrived",
+        `${job?.landscaper ?? "Your landscaper"} is at the location and will begin ${job?.service ?? "work"} shortly.`
+      );
+      setTimeout(() => {
+        Alert.alert(
+          "Customer Notified",
+          `${job?.customer ?? "The customer"} has been notified that you've arrived at the service location. You may now start work.`,
+          [{ text: "OK" }]
+        );
+      }, 300);
+    }
+
     if (next === "started" && statusOrder(current) < statusOrder("started")) {
-      const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
       addNotification({
         icon: "construct-outline",
-        title: "Work has started",
+        title: "Work Has Started",
         sub: `${isLandscaper ? "You've" : "Your landscaper has"} started work on ${job?.service ?? "your job"}`,
       });
+      sendLocalPush(
+        "Work Has Started",
+        `${job?.landscaper ?? "Your landscaper"} has begun ${job?.service ?? "work"} at your property.`
+      );
       setTimeout(() => {
         Alert.alert(
           "Customer Notified",
@@ -711,9 +675,13 @@ export default function JobsScreen() {
     const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
     addNotification({
       icon: "checkmark-circle",
-      title: "Work complete!",
+      title: "Work Complete!",
       sub: `${job?.service ?? "Your job"} has been completed. Awaiting customer approval.`,
     });
+    sendLocalPush(
+      "Work Has Been Completed",
+      `${job?.landscaper ?? "Your landscaper"} has finished ${job?.service ?? "work"}. You have 24 hours to approve or dispute.`
+    );
     setTimeout(() => {
       Alert.alert(
         "Customer Notified",
@@ -791,7 +759,13 @@ export default function JobsScreen() {
                     {isLandscaper ? job.customer : job.landscaper}
                   </Text>
                   <Text style={[styles.jobStatus, { fontFamily: "Inter_500Medium" }]}>
-                    {isLandscaperComplete ? "✓ Completed" : "In Progress"}
+                    {status === "completed"
+                      ? "✓ Completed"
+                      : status === "started"
+                      ? "🔧 Work In Progress"
+                      : status === "arrived"
+                      ? "📍 Arrived at Location"
+                      : "⏳ Awaiting Landscaper"}
                   </Text>
                 </View>
                 {!isLandscaperComplete && (
@@ -1122,9 +1096,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10,
   },
-  jobTitle: { fontSize: 15, color: "#FFFFFF", marginBottom: 2 },
-  jobSub: { fontSize: 13, color: "#BBBBBB", marginBottom: 3 },
-  jobStatus: { fontSize: 13, color: "#34FF7A" },
+  jobTitle: { fontSize: 16, color: "#FFFFFF", marginBottom: 2 },
+  jobSub: { fontSize: 14, color: "#BBBBBB", marginBottom: 3 },
+  jobStatus: { fontSize: 14, color: "#34FF7A" },
 
   actionBtns: { flexDirection: "row", gap: 8, alignItems: "center" },
   chatBtn: {
@@ -1146,7 +1120,7 @@ const styles = StyleSheet.create({
   btnIcon: { fontSize: 18 },
 
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  metaText: { fontSize: 12, color: "#BBBBBB", flex: 1 },
+  metaText: { fontSize: 13, color: "#BBBBBB", flex: 1 },
 
   statusRow: { flexDirection: "row", gap: 8, marginTop: 6 },
   stepBtn: {
@@ -1218,10 +1192,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 2,
   },
-  historyService: { fontSize: 14, color: "#FFFFFF" },
-  historyAmount: { fontSize: 14, color: "#34FF7A" },
-  historyPerson: { fontSize: 12, color: "#BBBBBB", marginBottom: 2 },
-  historyDate: { fontSize: 11, color: "#BBBBBB" },
+  historyService: { fontSize: 15, color: "#FFFFFF" },
+  historyAmount: { fontSize: 15, color: "#34FF7A" },
+  historyPerson: { fontSize: 13, color: "#BBBBBB", marginBottom: 2 },
+  historyDate: { fontSize: 12, color: "#BBBBBB" },
 
   finalSaleNotice: {
     flexDirection: "row",

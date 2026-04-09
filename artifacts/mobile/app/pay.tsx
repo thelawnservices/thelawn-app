@@ -17,7 +17,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as WebBrowser from "expo-web-browser";
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
+import { useNotifications } from "@/contexts/notifications";
 import { validateText } from "@/utils/moderation";
+import { sendLocalPush } from "@/utils/pushNotifications";
 
 // API server base URL — set EXPO_PUBLIC_API_URL in environment to point to your API server
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "");
@@ -139,6 +141,7 @@ export default function PayScreen() {
     : ALL_PAY_OPTIONS;
 
   const { availability, bookedSlots, addBookedSlot } = useLandscaperProfile();
+  const { addNotification } = useNotifications();
   const defaultPayKey: PayKey = allowedPayOptions[0]?.key ?? "inperson";
 
   const rollingDates = useMemo(() => {
@@ -372,6 +375,18 @@ export default function PayScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     if (isInPerson) {
+      const primaryService = [...selectedServices][0] ?? "Service";
+      const dateLabel = selectedDateLabel ?? "your scheduled date";
+      const timeLabel = selectedTime ?? "";
+      addNotification({
+        icon: "calendar-outline",
+        title: "New Booking Received",
+        sub: `${primaryService} booked for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. Please select 'Arrived at Location' when you reach the customer.`,
+      });
+      sendLocalPush(
+        "New Job Booking — Action Required",
+        `You have a new ${primaryService} booking for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. When you arrive, tap "Arrived at Location" before starting work.`
+      );
       setPayState("success");
       return;
     }
@@ -442,6 +457,18 @@ export default function PayScreen() {
           } catch {}
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        const primarySvc = [...selectedServices][0] ?? "Service";
+        const dateLabel2 = selectedDateLabel ?? "your scheduled date";
+        const timeLabel2 = selectedTime ?? "";
+        addNotification({
+          icon: "calendar-outline",
+          title: "New Booking Received",
+          sub: `${primarySvc} booked for ${dateLabel2}${timeLabel2 ? ` at ${timeLabel2}` : ""}. Please select 'Arrived at Location' when you reach the customer.`,
+        });
+        sendLocalPush(
+          "New Job Booking — Action Required",
+          `You have a new ${primarySvc} booking for ${dateLabel2}${timeLabel2 ? ` at ${timeLabel2}` : ""}. When you arrive, tap "Arrived at Location" before starting work.`
+        );
         setPayState("success");
       }
     } catch (err: any) {

@@ -1583,7 +1583,7 @@ const cutStyles = StyleSheet.create({
   actionChipIcon: { fontSize: 18 },
   actionChipLabel: { fontSize: 10, color: "#FFFFFF", letterSpacing: 0.5 },
 
-  sectionHeading: { fontSize: 12, color: "#CCCCCC", letterSpacing: 1.4, marginBottom: 10, marginTop: 4 },
+  sectionHeading: { fontSize: 13, color: "#CCCCCC", letterSpacing: 1.4, marginBottom: 10, marginTop: 4 },
 
   card: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 18, borderWidth: 1, borderColor: "#222222", marginBottom: 20 },
   aboutText: { fontSize: 14, color: "rgba(255,255,255,0.75)", lineHeight: 22 },
@@ -1594,7 +1594,7 @@ const cutStyles = StyleSheet.create({
   contactLabel: { fontSize: 16, color: "#34FF7A" },
 
   addrName: { fontSize: 15, color: "#FFFFFF", marginBottom: 4 },
-  addrLine: { fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 14 },
+  addrLine: { fontSize: 14, color: "rgba(255,255,255,0.55)", marginBottom: 14 },
   mapBox: { height: 120, backgroundColor: "#222222", borderRadius: 16, alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 16 },
   mapPin: { fontSize: 28 },
   mapText: { fontSize: 12, color: "rgba(255,255,255,0.4)", textAlign: "center" },
@@ -1622,7 +1622,7 @@ const cutStyles = StyleSheet.create({
   ratingSubtext: { fontSize: 13, color: "rgba(255,255,255,0.5)" },
   reviewStars: { fontSize: 15, color: "#f59e0b", marginBottom: 6 },
   reviewText: { fontSize: 14, color: "#FFFFFF", lineHeight: 22 },
-  reviewAuthor: { fontSize: 12, color: "#BBBBBB", marginTop: 8 },
+  reviewAuthor: { fontSize: 13, color: "#BBBBBB", marginTop: 8 },
 
   svcCardName: { fontSize: 15, color: "#FFFFFF", marginBottom: 14 },
   svcPriceRow: { flexDirection: "row", gap: 8 },
@@ -1657,7 +1657,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 20, borderWidth: 1, borderColor: "#222222", marginBottom: 12 },
   divider: { height: 1, backgroundColor: "#222222", marginVertical: 10 },
   infoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 4 },
-  infoKey: { fontSize: 13, color: "#BBBBBB" },
+  infoKey: { fontSize: 14, color: "#BBBBBB" },
   infoVal: { fontSize: 14, color: "#FFFFFF" },
   paymentCard: { backgroundColor: "#1A1A1A", borderRadius: 20, padding: 20, borderWidth: 1, borderColor: "#222222", marginBottom: 12 },
   paymentLabel: { fontSize: 13, color: "#FFFFFF", marginBottom: 14 },
