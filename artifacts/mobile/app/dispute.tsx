@@ -38,7 +38,7 @@ export default function DisputeScreen() {
   const topPadding = isWeb ? 67 : insets.top;
   const { userName } = useAuth();
 
-  const [purchaseId, setPurchaseId] = useState("");
+  const [jobCode, setJobCode] = useState("");
   const [customerName, setCustomerName] = useState(userName || "");
   const [serviceAddress, setServiceAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -81,6 +81,7 @@ export default function DisputeScreen() {
 
   function validate() {
     const errors: Record<string, boolean> = {};
+    if (!jobCode.trim()) errors.jobCode = true;
     if (!customerName.trim()) errors.customerName = true;
     if (!serviceAddress.trim()) errors.serviceAddress = true;
     if (!phoneNumber.trim()) errors.phoneNumber = true;
@@ -107,7 +108,7 @@ export default function DisputeScreen() {
 
     try {
       const payload: Record<string, string> = {
-        purchaseId: purchaseId.trim(),
+        jobCode: jobCode.trim(),
         customerName: customerName.trim(),
         serviceAddress: serviceAddress.trim(),
         phoneNumber: phoneNumber.trim(),
@@ -198,27 +199,34 @@ export default function DisputeScreen() {
         <View style={styles.infoBox}>
           <Ionicons name="information-circle-outline" size={18} color="#34FF7A" />
           <Text style={[styles.infoBoxText, { fontFamily: "Inter_400Regular" }]}>
-            All dispute details including your Stripe Purchase ID, contact info, and screenshot are sent directly to our support team for review.
+            All dispute details including your Job Code, contact info, and screenshot are sent directly to our support team for review.
           </Text>
         </View>
 
-        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Payment Info</Text>
+        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Job Info</Text>
 
         <View style={styles.fieldGroup}>
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_500Medium" }]}>
-            Stripe Purchase ID <Text style={styles.optional}>(optional)</Text>
+            Job Code <Text style={styles.required}>*</Text>
           </Text>
           <TextInput
-            style={[styles.input, { fontFamily: "Inter_400Regular", borderColor: "#2A2A2A" }]}
-            value={purchaseId}
-            onChangeText={setPurchaseId}
-            placeholder="e.g. TL-2026-10234"
+            style={[styles.input, { fontFamily: "Inter_400Regular", borderColor: fieldErrors.jobCode ? "#ef4444" : "#2A2A2A" }]}
+            value={jobCode}
+            onChangeText={(v) => { setJobCode(v); setFieldErrors((p) => ({ ...p, jobCode: false })); }}
+            placeholder="e.g. JOB-12345 or REC-98765"
             placeholderTextColor="#555"
             autoCapitalize="characters"
           />
-          <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
-            Found in your booking confirmation or payment receipt.
-          </Text>
+          {fieldErrors.jobCode ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 }}>
+              <Ionicons name="alert-circle-outline" size={13} color="#ef4444" />
+              <Text style={[{ fontSize: 12, color: "#ef4444" }, { fontFamily: "Inter_400Regular" }]}>Job Code is required to submit a dispute.</Text>
+            </View>
+          ) : (
+            <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+              Found in your booking confirmation or appointment details.
+            </Text>
+          )}
         </View>
 
         <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Your Information</Text>

@@ -43,9 +43,16 @@ Contains "TheLawnServices" — a dark-themed Expo mobile app for a landscaping b
 - `app/pay.tsx` — multi-step booking + payment flow; "Debit/Credit Card" opens Stripe Checkout via `expo-web-browser`
 - `app/(tabs)/wallet.tsx` — landscaper wallet with withdrawal options
 - `app/(tabs)/profile.tsx` — dual-mode (customer/landscaper) with role-based auth
-- `ALL_SERVICES` = `["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"]`
+- `ALL_SERVICES` = `["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal", "Tree Trimming & Pruning"]`
 - Platform commission: `NEW_CUSTOMER_FEE = 5`, `PLATFORM_COMMISSION_RATE = 0.03`
-- Recurring bookings: up to 3 specific dates per month (calendar picker in pay.tsx)
+- Recurring bookings: up to 4 specific dates per month (calendar picker in pay.tsx); recurring jobs get a `REC-XXXXX` code displayed in the summary
+- Tree services (Tree Removal, Tree Trimming & Pruning) use 4-tier **tree size** pricing (Small/Medium/Large/XLarge) both in booking (`pay.tsx`) and landscaper My Services (`index.tsx`)
+- Landscaper My Services: tree services show a 2×2 grid with "BASE RATE BY TREE SIZE"; non-tree services show 3-tier row "BASE RATE BY YARD SIZE"
+- Popular Services grid shows all 7 services with 🔥 flame on Mowing/Edging, Weeding/Mulching, Tree Trim & Pruning
+- Help & Resources opens the full AI-powered `HelpSupportModal` chatbot (not a stub list)
+- Dispute form requires `jobCode` (not optional); label is "Job Code *"
+- Accepted payment options: "Pay Now (Online)" (was "Stripe") + "In Person"
+- Customer settings: ZIP code field shows a note to confirm street address when changing ZIP
 
 ## Known Notes
 

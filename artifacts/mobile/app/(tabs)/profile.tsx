@@ -1256,10 +1256,17 @@ function CustomerSettingsModal({
                   value={zip}
                   onChangeText={(t) => { setZip(t.replace(/\D/g, "")); setErrors((e) => ({ ...e, zip: undefined })); }}
                 />
-                {errors.zip && (
+                {errors.zip ? (
                   <View style={custSettStyles.errRow}>
                     <Ionicons name="alert-circle-outline" size={13} color="#FF4444" />
                     <Text style={[custSettStyles.errText, { fontFamily: "Inter_400Regular" }]}>{errors.zip}</Text>
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 5 }}>
+                    <Ionicons name="information-circle-outline" size={13} color="#34FF7A" style={{ marginTop: 1 }} />
+                    <Text style={{ fontSize: 11, color: "#888", fontFamily: "Inter_400Regular", flex: 1 }}>
+                      Updating your ZIP code changes your service area. Please also confirm your street address above is current.
+                    </Text>
                   </View>
                 )}
 

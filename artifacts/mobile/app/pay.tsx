@@ -44,7 +44,7 @@ const PROFILE_TO_PAY_KEY: Record<string, PayKey> = {
 };
 
 const ALL_PAY_OPTIONS: { key: PayKey; label: string; ionIcon: string; displayName: string }[] = [
-  { key: "stripe",   label: "Pay Now",      ionIcon: "card",         displayName: "Stripe (Cards · Apple Pay · Google Pay)" },
+  { key: "stripe",   label: "Pay Now (Online)", ionIcon: "card",      displayName: "Pay Now (Online) · Cards · Apple Pay · Google Pay" },
   { key: "inperson", label: "Pay In Person", ionIcon: "cash-outline", displayName: "Pay In Person (Cash · Check · Other)" },
 ];
 
@@ -63,19 +63,28 @@ const SERVICE_OPTIONS: { label: string; icon: "cut-outline" | "flower-outline" |
   { label: "Tree Trimming & Pruning", icon: "leaf-outline",   estTime: "2–4 hrs" },
 ];
 
+const TREE_SERVICES = ["Tree Removal", "Tree Trimming & Pruning"];
+
 const YARD_SIZE_OPTIONS = [
   { key: "Small",  label: "Small",  sub: "< 5,000 sq ft" },
   { key: "Medium", label: "Medium", sub: "5,000–10,000 sq ft" },
   { key: "Large",  label: "Large",  sub: "10,000+ sq ft" },
 ];
 
+const TREE_SIZE_OPTIONS = [
+  { key: "Small",  label: "Small",  sub: "1 – 6 ft tall" },
+  { key: "Medium", label: "Medium", sub: "Up to 10 ft" },
+  { key: "Large",  label: "Large",  sub: "Up to 20 ft" },
+  { key: "XLarge", label: "Extra Large", sub: "Over 20 ft" },
+];
+
 const PRICE_MATRIX: Record<string, Record<string, number>> = {
-  "Mowing/Edging":            { Small: 45,   Medium: 70,   Large: 100  },
-  "Weeding/Mulching":         { Small: 90,   Medium: 130,  Large: 175  },
-  "Sod Installation":         { Small: 350,  Medium: 550,  Large: 850  },
-  "Artificial Turf":          { Small: 1200, Medium: 1800, Large: 2800 },
-  "Tree Removal":             { Small: 250,  Medium: 500,  Large: 900  },
-  "Tree Trimming & Pruning":  { Small: 150,  Medium: 280,  Large: 450  },
+  "Mowing/Edging":            { Small: 45,   Medium: 70,   Large: 100                },
+  "Weeding/Mulching":         { Small: 90,   Medium: 130,  Large: 175                },
+  "Sod Installation":         { Small: 350,  Medium: 550,  Large: 850                },
+  "Artificial Turf":          { Small: 1200, Medium: 1800, Large: 2800               },
+  "Tree Removal":             { Small: 250,  Medium: 500,  Large: 900,  XLarge: 1500 },
+  "Tree Trimming & Pruning":  { Small: 150,  Medium: 280,  Large: 450,  XLarge: 700  },
 };
 
 const PHOTO_ICONS = ["tree-outline", "camera-outline", "home-outline", "flower-outline", "leaf-outline", "leaf"] as const;
@@ -189,6 +198,8 @@ export default function PayScreen() {
   const [orderId, setOrderId] = useState<string>("");
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
   const [selectedYardSize, setSelectedYardSize] = useState<string | null>(null);
+  const isTreeSizeMode = selectedServices.size > 0 && [...selectedServices].some((s) => TREE_SERVICES.includes(s));
+  const activeSizeOptions = isTreeSizeMode ? TREE_SIZE_OPTIONS : YARD_SIZE_OPTIONS;
   const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
@@ -294,6 +305,11 @@ export default function PayScreen() {
   const [instrErr, setInstrErr] = useState<string | null>(null);
   const spinValue = useRef(new Animated.Value(0)).current;
 
+  const recurringJobCode = useMemo(() => {
+    const digits = Math.floor(10000 + Math.random() * 90000);
+    return `REC-${digits}`;
+  }, []);
+
   const basePrice =
     selectedServices.size > 0 && selectedYardSize
       ? [...selectedServices].reduce((sum, svc) => sum + (PRICE_MATRIX[svc]?.[selectedYardSize] ?? 0), 0)
@@ -328,6 +344,10 @@ export default function PayScreen() {
 
   const canContinueFromAvailability = selectedDateIdx !== null && selectedTime !== null;
   const canContinueFromDetails = selectedServices.size > 0 && serviceAddress.trim().length > 0 && selectedYardSize !== null;
+
+  useEffect(() => {
+    setSelectedYardSize(null);
+  }, [isTreeSizeMode]);
 
   useEffect(() => {
     if (payState === "processing") {
@@ -1105,19 +1125,19 @@ export default function PayScreen() {
             autoCorrect={false}
           />
 
-          {/* Yard Size */}
+          {/* Yard/Tree Size */}
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
-            What size is your yard?{" "}
+            {isTreeSizeMode ? "What size is the tree?" : "What size is your yard?"}{" "}
             <Text style={{ color: "#ef4444" }}>*</Text>
           </Text>
           <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
-            This determines your price
+            {isTreeSizeMode ? "Select the approximate height of the tree" : "This determines your price"}
           </Text>
-          <View style={styles.yardSizeRow}>
-            {YARD_SIZE_OPTIONS.map((ys) => (
+          <View style={[styles.yardSizeRow, isTreeSizeMode && { flexWrap: "wrap" }]}>
+            {activeSizeOptions.map((ys) => (
               <TouchableOpacity
                 key={ys.key}
-                style={[styles.yardChip, selectedYardSize === ys.key && styles.yardChipActive]}
+                style={[styles.yardChip, selectedYardSize === ys.key && styles.yardChipActive, isTreeSizeMode && { minWidth: "45%" }]}
                 onPress={() => {
                   setSelectedYardSize(ys.key);
                   Haptics.selectionAsync();
@@ -1261,7 +1281,7 @@ export default function PayScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.summaryService, { fontFamily: "Inter_600SemiBold" }]}>
-              {selectedServices.size > 0 ? [...selectedServices].join(" + ") : "Mowing/Edging"}{selectedYardSize ? ` · ${selectedYardSize} yard` : ""}
+              {selectedServices.size > 0 ? [...selectedServices].join(" + ") : "Mowing/Edging"}{selectedYardSize ? ` · ${selectedYardSize} ${isTreeSizeMode ? "tree" : "yard"}` : ""}
             </Text>
             {recurring && (
               <View style={styles.recurringBadge}>
@@ -1270,6 +1290,14 @@ export default function PayScreen() {
                   {recurringDays.length > 0
                     ? `${recurringDays.map((d) => ordinal(Number(d))).join(" · ")} of every month · until ${recurringEnd}`
                     : "Select days · Monthly"}
+                </Text>
+              </View>
+            )}
+            {recurring && (
+              <View style={[styles.recurringBadge, { marginTop: 3, backgroundColor: "#0F2A1A" }]}>
+                <Ionicons name="barcode-outline" size={11} color="#34FF7A" />
+                <Text style={[styles.recurringBadgeText, { fontFamily: "Inter_600SemiBold" }]}>
+                  Code: {recurringJobCode}
                 </Text>
               </View>
             )}

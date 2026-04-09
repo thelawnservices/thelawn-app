@@ -27,6 +27,7 @@ import { useNotifications, type ServiceNotification } from "@/contexts/notificat
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import { validateText } from "@/utils/moderation";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
+import HelpSupportModal from "@/components/HelpSupportModal";
 
 type FeedPost = {
   id: string; customerName: string; customerInitials: string; customerColor: string;
@@ -952,8 +953,8 @@ const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal", "Tree Trimming & Pruning"];
 
 const ACCEPTED_PAYMENT_OPTIONS = [
-  { value: "Stripe",    icon: "card" as const },
-  { value: "In Person", icon: "cash-outline" as const },
+  { value: "Pay Now (Online)", icon: "card" as const },
+  { value: "In Person",        icon: "cash-outline" as const },
 ];
 
 type ServiceAvail = { days: string[]; startTime: string; endTime: string };
@@ -992,9 +993,22 @@ const BASE_TIERS: PricingTier[] = [
   { label: "Large",  range: "5,000+ sq ft",          price: "$95" },
 ];
 
+const TREE_TIERS: PricingTier[] = [
+  { label: "Small",       range: "1 – 6 ft tall",   price: "$150" },
+  { label: "Medium",      range: "Up to 10 ft",      price: "$280" },
+  { label: "Large",       range: "Up to 20 ft",      price: "$450" },
+  { label: "Extra Large", range: "Over 20 ft",        price: "$700" },
+];
+
+const TREE_SERVICES_LIST = ["Tree Removal", "Tree Trimming & Pruning"];
+
 function makeDefaultPricing(): ServicePricing {
   const out: ServicePricing = {};
-  for (const svc of ALL_SERVICES) out[svc] = BASE_TIERS.map((t) => ({ ...t }));
+  for (const svc of ALL_SERVICES) {
+    out[svc] = TREE_SERVICES_LIST.includes(svc)
+      ? TREE_TIERS.map((t) => ({ ...t }))
+      : BASE_TIERS.map((t) => ({ ...t }));
+  }
   return out;
 }
 
@@ -1197,7 +1211,7 @@ function ServicesEditModal({ visible, onClose, isFirstSetup = false }: { visible
             {/* ── Per-Service: Availability + Pricing ───────── */}
             <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Availability & Pricing</Text>
             <Text style={[svcStyles.sectionHint, { fontFamily: "Inter_400Regular" }]}>
-              Configure working days, hours, and rates per yard size for each active service.
+              Configure working days, hours, and rates per yard/tree size for each active service.
             </Text>
 
             {offered.map((service, si) => (
@@ -1337,11 +1351,21 @@ function ServicesEditModal({ visible, onClose, isFirstSetup = false }: { visible
                   </TouchableOpacity>
                 </View>
 
-                {/* Pricing per service — 3-column compact grid */}
-                <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium" }]}>BASE RATE BY YARD SIZE</Text>
-                <View style={{ flexDirection: "row", gap: 8, marginBottom: 6 }}>
-                  {(pricing[service] ?? BASE_TIERS).map((tier, ti) => (
-                    <View key={tier.label} style={svcStyles.tierCell}>
+                {/* Pricing per service */}
+                <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium" }]}>
+                  {TREE_SERVICES_LIST.includes(service) ? "BASE RATE BY TREE SIZE" : "BASE RATE BY YARD SIZE"}
+                </Text>
+                <View style={[
+                  { gap: 8, marginBottom: 6 },
+                  TREE_SERVICES_LIST.includes(service)
+                    ? { flexDirection: "row", flexWrap: "wrap" }
+                    : { flexDirection: "row" }
+                ]}>
+                  {(pricing[service] ?? (TREE_SERVICES_LIST.includes(service) ? TREE_TIERS : BASE_TIERS)).map((tier, ti) => (
+                    <View key={tier.label} style={[
+                      svcStyles.tierCell,
+                      TREE_SERVICES_LIST.includes(service) && { width: "47%", flex: 0 }
+                    ]}>
                       <Text style={[svcStyles.tierCellLabel, { fontFamily: "Inter_600SemiBold" }]}>{tier.label}</Text>
                       <Text style={[svcStyles.tierCellRange, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
                         {tier.range}
@@ -2065,9 +2089,10 @@ export default function HomeScreen() {
         visible={vouchersVisible}
         onClose={() => setVouchersVisible(false)}
       />
-      <HelpResourcesModal
+      <HelpSupportModal
         visible={helpVisible}
         onClose={() => setHelpVisible(false)}
+        role={role === "landscaper" ? "landscaper" : "customer"}
       />
 
       {/* Push Notification Permission Modal – shown once after first login */}
@@ -2247,21 +2272,29 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
               Popular Services
             </Text>
-            <View style={styles.servicesGrid}>
+            <View style={[styles.servicesGrid, { flexWrap: "wrap" }]}>
               {[
-                { name: "Mowing/\nEdging",    icon: "cut-outline" as const,    est: "1–2 hrs" },
-                { name: "Weeding/\nMulching", icon: "flower-outline" as const, est: "2–4 hrs" },
-                { name: "Sod\nInstallation", icon: "grid-outline" as const,   est: "4–8 hrs" },
-                { name: "Artificial\nTurf",  icon: "layers-outline" as const, est: "10–20 hrs" },
+                { name: "Mowing/\nEdging",           icon: "cut-outline" as const,      est: "1–2 hrs",   hot: true  },
+                { name: "Weeding/\nMulching",         icon: "flower-outline" as const,   est: "2–4 hrs",   hot: true  },
+                { name: "Sod\nInstallation",          icon: "grid-outline" as const,     est: "4–8 hrs",   hot: false },
+                { name: "Artificial\nTurf",           icon: "layers-outline" as const,   est: "10–20 hrs", hot: false },
+                { name: "Full\nService",              icon: "star-outline" as const,     est: "3–6 hrs",   hot: false },
+                { name: "Tree\nRemoval",              icon: "cut-outline" as const,      est: "4–8 hrs",   hot: false },
+                { name: "Tree Trim &\nPruning",       icon: "leaf-outline" as const,     est: "2–4 hrs",   hot: true  },
               ].map((svc) => (
                 <TouchableOpacity
                   key={svc.name}
-                  style={styles.svcGridCard}
+                  style={[styles.svcGridCard, { width: "30%", margin: "1.5%" }]}
                   onPress={() => router.navigate("/(tabs)/search")}
                   activeOpacity={0.8}
                 >
+                  {svc.hot && (
+                    <View style={{ position: "absolute", top: 6, right: 6, zIndex: 1 }}>
+                      <Text style={{ fontSize: 13 }}>🔥</Text>
+                    </View>
+                  )}
                   <View style={styles.svcGridIconWrap}>
-                    <Ionicons name={svc.icon} size={28} color="#34FF7A" />
+                    <Ionicons name={svc.icon} size={26} color="#34FF7A" />
                   </View>
                   <Text style={[styles.svcGridName, { fontFamily: "Inter_500Medium" }]}>
                     {svc.name}
