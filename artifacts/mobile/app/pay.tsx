@@ -267,7 +267,7 @@ export default function PayScreen() {
     Haptics.selectionAsync();
     setRecurringDays((prev) => {
       if (prev.includes(dayStr)) return prev.filter((d) => d !== dayStr);
-      if (prev.length >= 3) return prev;
+      if (prev.length >= 4) return prev;
       return [...prev, dayStr].sort((a, b) => Number(a) - Number(b));
     });
   }
@@ -385,11 +385,11 @@ export default function PayScreen() {
       addNotification({
         icon: "calendar-outline",
         title: "New Booking Received",
-        sub: `${primaryService} booked for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. Please select 'Arrived at Location' when you reach the customer.`,
+        sub: `${primaryService} booked for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. Tap "Arrived at Location" when you get there, then notify your customer when you start work.`,
       });
       sendLocalPush(
-        "New Job Booking — Action Required",
-        `You have a new ${primaryService} booking for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. When you arrive, tap "Arrived at Location" before starting work.`
+        "New Job Booked — Action Required",
+        `New ${primaryService} booking for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. When you arrive, tap "Arrived at Location". Once you begin, notify your customer that work has started.`
       );
       setPayState("success");
       return;
@@ -467,11 +467,11 @@ export default function PayScreen() {
         addNotification({
           icon: "calendar-outline",
           title: "New Booking Received",
-          sub: `${primarySvc} booked for ${dateLabel2}${timeLabel2 ? ` at ${timeLabel2}` : ""}. Please select 'Arrived at Location' when you reach the customer.`,
+          sub: `${primarySvc} booked for ${dateLabel2}${timeLabel2 ? ` at ${timeLabel2}` : ""}. Tap "Arrived at Location" when you get there, then notify your customer when you start work.`,
         });
         sendLocalPush(
-          "New Job Booking — Action Required",
-          `You have a new ${primarySvc} booking for ${dateLabel2}${timeLabel2 ? ` at ${timeLabel2}` : ""}. When you arrive, tap "Arrived at Location" before starting work.`
+          "New Job Booked — Action Required",
+          `New ${primarySvc} booking for ${dateLabel2}${timeLabel2 ? ` at ${timeLabel2}` : ""}. When you arrive, tap "Arrived at Location". Once you begin, notify your customer that work has started.`
         );
         setPayState("success");
       }
@@ -505,13 +505,13 @@ export default function PayScreen() {
       return (
         <View style={[styles.fullCenter, { backgroundColor: "#0A0A0A", paddingBottom: bottomPadding + 20 }]}>
           <View style={[styles.lockIconBox, { backgroundColor: "#0d2e18" }]}>
-            <Ionicons name="handshake-outline" size={52} color="#34FF7A" />
+            <Ionicons name="cash-outline" size={52} color="#34FF7A" />
           </View>
           <Text style={[styles.successTitle, { fontFamily: "Inter_700Bold" }]}>
             Booking Confirmed!
           </Text>
           <Text style={[styles.successSub, { fontFamily: "Inter_400Regular" }]}>
-            Your appointment with {proName.split(" ")[0]} is scheduled. Pay them directly when they arrive — no funds are held online.
+            Your booking is confirmed! You'll receive a notification when {proName.split(" ")[0]} arrives at your location and when work begins.
           </Text>
 
           <View style={styles.escrowInfoBox}>
@@ -520,7 +520,7 @@ export default function PayScreen() {
                 <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>1</Text>
               </View>
               <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
-                {proName.split(" ")[0]} arrives on {selectedDateLabel} at {selectedTime}
+                You'll be notified when {proName.split(" ")[0]} arrives at your location
               </Text>
             </View>
             <View style={styles.escrowStep}>
@@ -528,7 +528,7 @@ export default function PayScreen() {
                 <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>2</Text>
               </View>
               <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
-                Work is completed to your satisfaction
+                You'll be notified again when work starts at your property
               </Text>
             </View>
             <View style={styles.escrowStep}>
@@ -536,7 +536,7 @@ export default function PayScreen() {
                 <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>3</Text>
               </View>
               <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
-                Pay ${total} directly to {proName.split(" ")[0]} in person
+                Pay ${total} directly to {proName.split(" ")[0]} when complete
               </Text>
             </View>
           </View>
@@ -585,7 +585,7 @@ export default function PayScreen() {
           Payment Held in Escrow
         </Text>
         <Text style={[styles.successSub, { fontFamily: "Inter_400Regular" }]}>
-          Funds will be released only after both you and {proName.split(" ")[0]} confirm the work is complete.
+          Your booking is confirmed! You'll be notified when {proName.split(" ")[0]} arrives and when work begins at your property.
         </Text>
 
         <View style={styles.escrowInfoBox}>
@@ -594,7 +594,7 @@ export default function PayScreen() {
               <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold" }]}>1</Text>
             </View>
             <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
-              Landscaper completes the job
+              You'll be notified when {proName.split(" ")[0]} arrives and starts work
             </Text>
           </View>
           <View style={styles.escrowStep}>
@@ -602,7 +602,7 @@ export default function PayScreen() {
               <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold" }]}>2</Text>
             </View>
             <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
-              You confirm you're satisfied
+              Approve the completed work within 24 hours
             </Text>
           </View>
           <View style={styles.escrowStep}>
@@ -610,7 +610,7 @@ export default function PayScreen() {
               <Text style={[styles.escrowStepNumText, { fontFamily: "Inter_700Bold" }]}>3</Text>
             </View>
             <Text style={[styles.escrowStepText, { fontFamily: "Inter_400Regular" }]}>
-              ${total} is released to {proName.split(" ")[0]}
+              ${total} is released to {proName.split(" ")[0]} from escrow
             </Text>
           </View>
         </View>
@@ -1400,7 +1400,7 @@ export default function PayScreen() {
         {isInPerson ? (
           <View style={[styles.escrowNotice, { borderColor: "#1A2A1A", backgroundColor: "#0d2e1844" }]}>
             <View style={styles.escrowNoticeTop}>
-              <Ionicons name="handshake-outline" size={16} color="#34FF7A" />
+              <Ionicons name="cash-outline" size={16} color="#34FF7A" />
               <Text style={[styles.escrowNoticeTitle, { fontFamily: "Inter_600SemiBold" }]}>
                 Pay in Person
               </Text>
@@ -1502,7 +1502,7 @@ export default function PayScreen() {
           {stripeLoading ? (
             <ActivityIndicator size="small" color="#000" />
           ) : (
-            <Ionicons name={isInPerson ? "handshake-outline" : "lock-closed"} size={18} color="#000" />
+            <Ionicons name={isInPerson ? "cash-outline" : "lock-closed"} size={18} color="#000" />
           )}
           <Text style={[styles.authorizeBtnText, { fontFamily: "Inter_700Bold" }]}>
             {stripeLoading
