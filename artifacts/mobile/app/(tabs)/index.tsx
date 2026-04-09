@@ -27,6 +27,7 @@ import { useJobs } from "@/contexts/jobs";
 import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import { validateText } from "@/utils/moderation";
+import { sendLocalPush } from "@/utils/pushNotifications";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import HelpSupportModal from "@/components/HelpSupportModal";
 import FeedbackModal from "@/components/FeedbackModal";
@@ -1955,6 +1956,10 @@ export default function HomeScreen() {
     setHomeAnnounceState("sending");
     setTimeout(() => {
       broadcastAnnouncement("GreenScape Pros", homeAnnounceTitle.trim(), homeAnnounceMsg.trim());
+      sendLocalPush(
+        `📢 GreenScape Pros: ${homeAnnounceTitle.trim()}`,
+        homeAnnounceMsg.trim()
+      );
       setHomeAnnounceState("sent");
       setTimeout(() => setHomeAnnounceVisible(false), 2200);
     }, 1800);

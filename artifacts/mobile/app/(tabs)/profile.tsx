@@ -28,6 +28,7 @@ import TermsModal from "@/components/TermsModal";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import HelpSupportModal from "@/components/HelpSupportModal";
 import { validateText, simulatePhotoReview, reviewImageWithAI } from "@/utils/moderation";
+import { sendLocalPush } from "@/utils/pushNotifications";
 import { useNotifications } from "@/contexts/notifications";
 
 const PAYMENT_METHODS = [
@@ -278,6 +279,10 @@ function LandscaperProfile({
     setAnnounceState("sending");
     setTimeout(() => {
       broadcastAnnouncement(profileName, announceTitle.trim(), announceMsg.trim(), expiresAt);
+      sendLocalPush(
+        `📢 ${profileName}: ${announceTitle.trim()}`,
+        announceMsg.trim()
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setAnnounceState("sent");
       setTimeout(() => setAnnounceVisible(false), 2800);
