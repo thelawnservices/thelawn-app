@@ -32,7 +32,7 @@ import { useNotifications } from "@/contexts/notifications";
 
 const PAYMENT_METHODS = [
   { label: "Stripe (Cards · Apple Pay · Google Pay)", value: "Stripe",    ionIcon: "card" as const,                  shortLabel: "Stripe" },
-  { label: "Pay In Person (Cash · Check · Other)",    value: "In Person", ionIcon: "people-circle-outline" as const, shortLabel: "In Person" },
+  { label: "Pay In Person (Cash · Check · Other)",    value: "In Person", ionIcon: "cash-outline" as const, shortLabel: "In Person" },
 ];
 
 export default function ProfileScreen() {

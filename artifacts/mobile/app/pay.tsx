@@ -40,8 +40,8 @@ const PROFILE_TO_PAY_KEY: Record<string, PayKey> = {
 };
 
 const ALL_PAY_OPTIONS: { key: PayKey; label: string; ionIcon: string; displayName: string }[] = [
-  { key: "stripe",   label: "Pay with Stripe", ionIcon: "card",                  displayName: "Stripe (Cards · Apple Pay · Google Pay)" },
-  { key: "inperson", label: "Pay In Person",   ionIcon: "people-circle-outline", displayName: "Pay In Person (Cash · Check · Other)" },
+  { key: "stripe",   label: "Pay Now",      ionIcon: "card",         displayName: "Stripe (Cards · Apple Pay · Google Pay)" },
+  { key: "inperson", label: "Pay In Person", ionIcon: "cash-outline", displayName: "Pay In Person (Cash · Check · Other)" },
 ];
 
 const TIP_OPTIONS = [
@@ -51,7 +51,7 @@ const TIP_OPTIONS = [
 ];
 
 const SERVICE_OPTIONS: { label: string; icon: "cut-outline" | "flower-outline" | "grid-outline" | "layers-outline"; estTime: string }[] = [
-  { label: "Mowing/Edging",     icon: "cut-outline",    estTime: "1–2 hrs" },
+  { label: "Mowing/Edging",     icon: "cut-outline",    estTime: "30min–1hr" },
   { label: "Weeding/Mulching",  icon: "flower-outline", estTime: "2–4 hrs" },
   { label: "Sod Installation",  icon: "grid-outline",   estTime: "4–8 hrs" },
   { label: "Artificial Turf",   icon: "layers-outline", estTime: "10–20 hrs" },
@@ -77,7 +77,7 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const SERVICE_DURATIONS: Record<string, number> = {
-  "Mowing/Edging":    120,
+  "Mowing/Edging":    60,
   "Weeding/Mulching": 240,
   "Sod Installation": 480,
   "Artificial Turf":  1200,
@@ -210,7 +210,7 @@ export default function PayScreen() {
       if (slotEnd > endMin) return false;
       return !slotsTaken.some(({ time, durationMinutes }) => {
         const bookedStart = parseTimeToMinutes(time);
-        const bookedEnd = bookedStart + durationMinutes;
+        const bookedEnd = bookedStart + durationMinutes + 60; // 1-hr buffer after each booking
         return slotStart < bookedEnd && slotEnd > bookedStart;
       });
     });
@@ -227,7 +227,7 @@ export default function PayScreen() {
       if (slotEnd > endMin) return "Outside hours";
       const conflict = slotsTaken.find(({ time, durationMinutes }) => {
         const bookedStart = parseTimeToMinutes(time);
-        const bookedEnd = bookedStart + durationMinutes;
+        const bookedEnd = bookedStart + durationMinutes + 60; // 1-hr buffer after each booking
         return slotStart < bookedEnd && slotEnd > bookedStart;
       });
       return conflict ? conflict.service : null;
@@ -1490,7 +1490,7 @@ export default function PayScreen() {
               ? "Opening Stripe Checkout..."
               : isInPerson
               ? `Confirm Booking · Pay In Person · $${total}`
-              : `Pay with Stripe · $${total}`}
+              : `Pay Now · $${total}`}
           </Text>
         </TouchableOpacity>
         <Text style={[styles.escrowDisclaimer, { fontFamily: "Inter_400Regular" }]}>

@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState } from "react";
 export type BookedSlot = { time: string; durationMinutes: number; service: string };
 
 export const SERVICE_BLOCK_MINUTES: Record<string, number> = {
-  "Mowing/Edging":    120,
+  "Mowing/Edging":    60,
   "Weeding/Mulching": 240,
   "Sod Installation": 480,
   "Artificial Turf":  1200,

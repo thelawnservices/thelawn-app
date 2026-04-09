@@ -822,7 +822,7 @@ const settStyles = StyleSheet.create({
 });
 
 const PAYMENT_OPTIONS = [
-  { id: "stripe",   label: "Pay with Stripe (Cards · Apple Pay · Google Pay)", icon: "" },
+  { id: "stripe",   label: "Pay Now (Cards · Apple Pay · Google Pay)", icon: "" },
   { id: "inperson", label: "Pay In Person (Cash · Check · Other)", icon: "" },
 ];
 
@@ -953,7 +953,7 @@ const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "
 
 const ACCEPTED_PAYMENT_OPTIONS = [
   { value: "Stripe",    icon: "card" as const },
-  { value: "In Person", icon: "people-circle-outline" as const },
+  { value: "In Person", icon: "cash-outline" as const },
 ];
 
 type ServiceAvail = { days: string[]; startTime: string; endTime: string };
