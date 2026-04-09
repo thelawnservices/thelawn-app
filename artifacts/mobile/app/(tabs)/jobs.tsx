@@ -14,16 +14,50 @@ import {
   Alert,
   Image,
   Animated,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import { useAuth } from "@/contexts/auth";
 import { useNotifications } from "@/contexts/notifications";
 import { simulatePhotoReview, validateText } from "@/utils/moderation";
 
-type JobStatus = "pending" | "arrived" | "started" | "completed";
+// ── Geo helpers ───────────────────────────────────────────────────────────────
+// Hardcoded lat/lon for demo customer address: "8910 45th Ave E, Ellenton, FL"
+const JOB_COORDS: Record<string, { lat: number; lon: number }> = {
+  a1: { lat: 27.5268, lon: -82.5302 },
+};
+
+function haversineDistanceMiles(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 3958.8; // Earth radius in miles
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Parse "Apr 12, 2026" / "Today" + "10:30 AM" → Date
+function parseJobDateTime(date: string, time: string): Date | null {
+  let full = date.trim();
+  if (full.toLowerCase() === "today") {
+    const now = new Date();
+    full = `${now.toLocaleString("en-US", { month: "short" })} ${now.getDate()}, ${now.getFullYear()}`;
+  } else if (!full.match(/\d{4}/)) {
+    full = `${full}, ${new Date().getFullYear()}`;
+  }
+  const d = new Date(`${full} ${time}`);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+type JobStatus = "pending" | "started" | "completed";
 
 const SHARED_ACTIVE_JOBS = [
   {
@@ -99,7 +133,7 @@ const STATUS_STEPS: { key: JobStatus; label: string }[] = [
 ];
 
 function statusOrder(s: JobStatus): number {
-  return { pending: 0, arrived: 1, started: 2, completed: 3 }[s];
+  return { pending: 0, started: 1, completed: 2 }[s];
 }
 
 type ChatMessage = { id: string; text: string; fromMe: boolean };
@@ -538,7 +572,85 @@ export default function JobsScreen() {
   const [jobStatuses, setJobStatuses] = useState<Record<string, JobStatus>>(
     Object.fromEntries(SHARED_ACTIVE_JOBS.map((j) => [j.id, "pending"]))
   );
+  const [autoCancelledJobs, setAutoCancelledJobs] = useState<Set<string>>(new Set());
   const [chatJobData, setChatJobData] = useState<{ landscaper?: string; customer?: string } | null>(null);
+
+  // ── Auto-cancel: if status stays "pending" 1 hr after appointment time ─────
+  useEffect(() => {
+    if (!isLandscaper) return;
+    const interval = setInterval(() => {
+      SHARED_ACTIVE_JOBS.forEach((job) => {
+        const apptDate = parseJobDateTime(job.date, job.time);
+        if (!apptDate) return;
+        const msSinceAppt = Date.now() - apptDate.getTime();
+        const alreadyCancelled = autoCancelledJobs.has(job.id);
+        const currentStatus = jobStatuses[job.id];
+        if (!alreadyCancelled && msSinceAppt >= 60 * 60 * 1000 && currentStatus === "pending") {
+          setAutoCancelledJobs((prev) => new Set([...prev, job.id]));
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          addNotification({
+            icon: "close-circle-outline",
+            title: "Job Auto-Cancelled",
+            sub: `${job.service} for ${job.customer} — work was not started within 1 hour. Customer has been refunded.`,
+          });
+          Alert.alert(
+            "Job Automatically Cancelled",
+            `You did not mark "${job.service}" as started within 1 hour of the appointment time (${job.time}).\n\nThe customer's payment has been automatically refunded. If you still show up, TheLawnServices is not responsible — any arrangements are between you and the customer.`,
+            [{ text: "Understood" }]
+          );
+        }
+      });
+    }, 30_000); // check every 30 s
+    return () => clearInterval(interval);
+  }, [isLandscaper, jobStatuses, autoCancelledJobs, addNotification]);
+
+  // ── GPS proximity: auto-advance to "started" when within 0.5 mi ──────────
+  useEffect(() => {
+    if (!isLandscaper) return;
+    let subscription: Location.LocationSubscription | null = null;
+
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+
+      subscription = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, distanceInterval: 50 },
+        (loc) => {
+          SHARED_ACTIVE_JOBS.forEach((job) => {
+            const target = JOB_COORDS[job.id];
+            if (!target) return;
+            const dist = haversineDistanceMiles(
+              loc.coords.latitude,
+              loc.coords.longitude,
+              target.lat,
+              target.lon
+            );
+            setJobStatuses((prev) => {
+              if (prev[job.id] === "pending" && dist <= 0.5) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                addNotification({
+                  icon: "construct-outline",
+                  title: "Work in Progress",
+                  sub: `You're within 0.5 mi of ${job.customer}'s address — ${job.service} marked as started.`,
+                });
+                setTimeout(() =>
+                  Alert.alert(
+                    "Work In Progress",
+                    `You're within 0.5 miles of the service address. Your status has been automatically set to "Work In Progress".`,
+                    [{ text: "OK" }]
+                  ), 400
+                );
+                return { ...prev, [job.id]: "started" };
+              }
+              return prev;
+            });
+          });
+        }
+      );
+    })();
+
+    return () => { subscription?.remove(); };
+  }, [isLandscaper, addNotification]);
   const [completionPhotos, setCompletionPhotos] = useState<Record<string, string[]>>({});
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
   const [photoModalJobId, setPhotoModalJobId] = useState<string | null>(null);
@@ -665,6 +777,7 @@ export default function JobsScreen() {
         {SHARED_ACTIVE_JOBS.map((job) => {
           const status = isLandscaper ? jobStatuses[job.id] : "pending";
           const isLandscaperComplete = isLandscaper && status === "completed";
+          const isAutoCancelled = autoCancelledJobs.has(job.id);
 
           return (
             <View key={job.id} style={styles.activeCard}>
@@ -845,8 +958,23 @@ export default function JobsScreen() {
                 </View>
               )}
 
-              {/* Landscaper-only: status advance buttons */}
-              {isLandscaper && (
+              {/* Auto-cancelled banner */}
+              {isAutoCancelled && (
+                <View style={styles.autoCancelBanner}>
+                  <Ionicons name="close-circle-outline" size={15} color="#FF4444" />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.autoCancelTitle, { fontFamily: "Inter_700Bold" }]}>
+                      Job Auto-Cancelled · Customer Refunded
+                    </Text>
+                    <Text style={[styles.autoCancelSub, { fontFamily: "Inter_400Regular" }]}>
+                      Work was not started within 1 hour of {job.time}. TheLawnServices is not involved if the landscaper still arrives — the parties must handle it independently.
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Landscaper-only: status advance buttons (hidden if auto-cancelled) */}
+              {isLandscaper && !isAutoCancelled && (
                 <View style={styles.statusRow}>
                   {STATUS_STEPS.map((step) => {
                     const done = statusOrder(status) >= statusOrder(step.key);
@@ -1108,6 +1236,28 @@ const styles = StyleSheet.create({
     color: "#BBBBBB",
     flex: 1,
     lineHeight: 16,
+  },
+
+  autoCancelBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: "#1A0505",
+    borderWidth: 1,
+    borderColor: "#3A1010",
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 4,
+  },
+  autoCancelTitle: {
+    fontSize: 13,
+    color: "#FF6666",
+    marginBottom: 4,
+  },
+  autoCancelSub: {
+    fontSize: 12,
+    color: "#BBBBBB",
+    lineHeight: 17,
   },
 });
 
