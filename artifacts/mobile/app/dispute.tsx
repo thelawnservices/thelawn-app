@@ -106,35 +106,26 @@ export default function DisputeScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      const formData = new FormData();
-      formData.append("purchaseId", purchaseId.trim());
-      formData.append("customerName", customerName.trim());
-      formData.append("serviceAddress", serviceAddress.trim());
-      formData.append("phoneNumber", phoneNumber.trim());
-      formData.append("landscaperName", landscaperName.trim());
-      formData.append("serviceDone", serviceDone.trim());
-      formData.append("additionalNotes", additionalNotes.trim());
+      const payload: Record<string, string> = {
+        purchaseId: purchaseId.trim(),
+        customerName: customerName.trim(),
+        serviceAddress: serviceAddress.trim(),
+        phoneNumber: phoneNumber.trim(),
+        landscaperName: landscaperName.trim(),
+        serviceDone: serviceDone.trim(),
+        additionalNotes: additionalNotes.trim(),
+      };
 
-      if (screenshot) {
-        if (Platform.OS === "web" && screenshot.base64) {
-          const byteString = atob(screenshot.base64);
-          const ab = new ArrayBuffer(byteString.length);
-          const ia = new Uint8Array(ab);
-          for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
-          const blob = new Blob([ab], { type: screenshot.mimeType ?? "image/jpeg" });
-          formData.append("screenshot", blob, screenshot.fileName ?? "screenshot.jpg");
-        } else {
-          formData.append("screenshot", {
-            uri: screenshot.uri,
-            name: screenshot.fileName ?? "screenshot.jpg",
-            type: screenshot.mimeType ?? "image/jpeg",
-          } as any);
-        }
+      if (screenshot?.base64) {
+        payload.screenshotBase64 = screenshot.base64;
+        payload.screenshotMimeType = screenshot.mimeType ?? "image/jpeg";
+        payload.screenshotFileName = screenshot.fileName ?? "screenshot.jpg";
       }
 
       const response = await fetch(`${API_BASE_URL}/api/disputes`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import multer from "multer";
 import nodemailer from "nodemailer";
 
@@ -19,16 +19,16 @@ function createTransporter() {
   });
 }
 
-router.post("/", upload.single("screenshot"), async (req, res) => {
-  const {
-    purchaseId,
-    customerName,
-    serviceAddress,
-    phoneNumber,
-    landscaperName,
-    serviceDone,
-    additionalNotes,
-  } = req.body;
+async function handleDispute(req: Request, res: Response) {
+  const body = req.body ?? {};
+
+  const purchaseId     = (body.purchaseId     ?? "").toString().trim();
+  const customerName   = (body.customerName   ?? "").toString().trim();
+  const serviceAddress = (body.serviceAddress ?? "").toString().trim();
+  const phoneNumber    = (body.phoneNumber    ?? "").toString().trim();
+  const landscaperName = (body.landscaperName ?? "").toString().trim();
+  const serviceDone    = (body.serviceDone    ?? "").toString().trim();
+  const additionalNotes = (body.additionalNotes ?? "").toString().trim();
 
   if (!customerName || !serviceAddress || !phoneNumber || !landscaperName || !serviceDone) {
     res.status(400).json({ error: "Missing required fields." });
@@ -92,7 +92,7 @@ router.post("/", upload.single("screenshot"), async (req, res) => {
           </tr>` : ""}
           <tr>
             <td style="padding: 14px 0; font-size: 13px; color: #666; font-weight: bold;">Screenshot</td>
-            <td style="padding: 14px 0; font-size: 14px; color: #111;">${req.file ? "✅ Attached below" : "No screenshot provided"}</td>
+            <td style="padding: 14px 0; font-size: 14px; color: #111;">${(req as any).file ? "✅ Attached below" : "No screenshot provided"}</td>
           </tr>
         </table>
 
@@ -107,11 +107,21 @@ router.post("/", upload.single("screenshot"), async (req, res) => {
   `;
 
   const attachments: nodemailer.Attachment[] = [];
-  if (req.file) {
+
+  const file = (req as any).file;
+  if (file) {
     attachments.push({
-      filename: req.file.originalname || `screenshot.${req.file.mimetype.split("/")[1] || "jpg"}`,
-      content: req.file.buffer,
-      contentType: req.file.mimetype,
+      filename: file.originalname || `screenshot.${file.mimetype.split("/")[1] || "jpg"}`,
+      content: file.buffer,
+      contentType: file.mimetype,
+    });
+  } else if (body.screenshotBase64 && body.screenshotMimeType) {
+    const base64Data = body.screenshotBase64.replace(/^data:[^;]+;base64,/, "");
+    const ext = body.screenshotMimeType.split("/")[1] || "jpg";
+    attachments.push({
+      filename: body.screenshotFileName || `screenshot.${ext}`,
+      content: Buffer.from(base64Data, "base64"),
+      contentType: body.screenshotMimeType,
     });
   }
 
@@ -129,6 +139,9 @@ router.post("/", upload.single("screenshot"), async (req, res) => {
     console.error("Dispute email error:", err);
     res.status(500).json({ error: "Failed to send dispute report. Please try again." });
   }
-});
+}
+
+// multipart/form-data (native mobile)
+router.post("/", upload.single("screenshot"), handleDispute);
 
 export default router;
