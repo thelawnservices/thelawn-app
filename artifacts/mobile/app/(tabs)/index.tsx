@@ -15,6 +15,7 @@ import {
   Image,
   Linking,
   Share,
+  KeyboardAvoidingView,
 } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -2039,6 +2040,11 @@ export default function HomeScreen() {
 
       {/* Send Announcement Modal */}
       <Modal visible={homeAnnounceVisible} transparent animationType="slide" onRequestClose={() => setHomeAnnounceVisible(false)}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={0}
+        >
         <Pressable style={styles.announceOverlay} onPress={() => { if (homeAnnounceState === "idle") setHomeAnnounceVisible(false); }}>
           <Pressable style={styles.announceSheet} onPress={(e) => e.stopPropagation()}>
             {homeAnnounceState === "sent" ? (
@@ -2112,6 +2118,7 @@ export default function HomeScreen() {
             )}
           </Pressable>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
       <SettingsModal
         visible={settingsVisible}
