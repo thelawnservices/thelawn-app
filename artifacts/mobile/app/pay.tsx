@@ -336,6 +336,11 @@ export default function PayScreen() {
   const [instrErr, setInstrErr] = useState<string | null>(null);
   const spinValue = useRef(new Animated.Value(0)).current;
 
+  // ── Stripe pre-warm: create session as soon as the review step opens ────
+  const [preWarmedUrl, setPreWarmedUrl] = useState<string | null>(null);
+  const [preWarmedSessionId, setPreWarmedSessionId] = useState<string | null>(null);
+  const preWarmInFlight = useRef(false);
+
   const recurringJobCode = useMemo(() => {
     const digits = Math.floor(10000 + Math.random() * 90000);
     return `REC-${digits}`;
@@ -384,6 +389,39 @@ export default function PayScreen() {
   useEffect(() => { if (!hasTreeService) setSelectedTreeSize(null); }, [hasTreeService]);
   useEffect(() => { if (!hasSodService)  setSelectedSodType(null);  }, [hasSodService]);
   useEffect(() => { if (!hasYardService) setSelectedYardSize(null); }, [hasYardService]);
+
+  // Pre-warm Stripe session the moment the review screen opens
+  useEffect(() => {
+    if (payState !== "review" || paymentMethod === "inperson" || !API_BASE_URL) return;
+    // Reset any stale session from a previous visit to the review step
+    if (preWarmedUrl) { setPreWarmedUrl(null); setPreWarmedSessionId(null); }
+    if (preWarmInFlight.current) return;
+    preWarmInFlight.current = true;
+    const primarySvc = [...selectedServices][0] ?? "Service";
+    fetch(`${API_BASE_URL}/api/payments/create-session`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobTotal: parseFloat(discountedBase.toFixed(2)),
+        isNewCustomer: false,
+        preferredPaymentMethod: paymentMethod,
+        proName,
+        serviceName: primarySvc,
+        serviceDate: selectedDateLabel ?? "TBD",
+        successUrl: `${API_BASE_URL}/api/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${API_BASE_URL}/api/payments/cancel`,
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.url && data?.sessionId) {
+          setPreWarmedUrl(data.url);
+          setPreWarmedSessionId(data.sessionId);
+        }
+      })
+      .catch(() => {})
+      .finally(() => { preWarmInFlight.current = false; });
+  }, [payState, paymentMethod]);
 
   useEffect(() => {
     if (payState === "processing") {
@@ -460,19 +498,29 @@ export default function PayScreen() {
     setOrderId(newOrderId);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+    const primaryService = [...selectedServices][0] ?? "Service";
+    const dateLabel = selectedDateLabel ?? "your scheduled date";
+    const timeLabel = selectedTime ?? "";
+
     if (isInPerson) {
-      const primaryService = [...selectedServices][0] ?? "Service";
-      const dateLabel = selectedDateLabel ?? "your scheduled date";
-      const timeLabel = selectedTime ?? "";
+      // Customer sees booking confirmation only
+      addNotification({
+        icon: "checkmark-circle-outline",
+        title: "Booking Confirmed!",
+        sub: `${primaryService} with ${proName} on ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. You'll be notified when they're on the way.`,
+        targetRole: "customer",
+      });
+      sendLocalPush(
+        "Booking Confirmed!",
+        `Your ${primaryService} with ${proName} is booked for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}.`
+      );
+      // Landscaper gets their action instructions separately
       addNotification({
         icon: "calendar-outline",
         title: "New Booking Received",
-        sub: `${primaryService} booked for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. Tap "Arrived at Location" when you get there, then notify your customer when you start work.`,
+        sub: `${primaryService} booked for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. Tap "Arrived at Location" when you get there, then notify your customer when work begins.`,
+        targetRole: "landscaper",
       });
-      sendLocalPush(
-        "New Job Booked — Action Required",
-        `New ${primaryService} booking for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. When you arrive, tap "Arrived at Location". Once you begin, notify your customer that work has started.`
-      );
       setPayState("success");
       return;
     }
@@ -489,38 +537,46 @@ export default function PayScreen() {
       setStripeLoading(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      const primaryService = [...selectedServices][0] ?? "Service";
-      const body = {
-        jobTotal: parseFloat(discountedBase.toFixed(2)),
-        isNewCustomer: false,
-        preferredPaymentMethod: paymentMethod,
-        proName,
-        serviceName: primaryService,
-        serviceDate: selectedDateLabel ?? "TBD",
-        successUrl: `${API_BASE_URL}/api/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${API_BASE_URL}/api/payments/cancel`,
-      };
+      let checkoutUrl: string;
+      let sessionId: string;
 
-      const response = await fetch(`${API_BASE_URL}/api/payments/create-session`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!response.ok) {
-        let errMsg = `Payment server error (${response.status})`;
-        try {
-          const err = await response.json();
-          errMsg = err.error ?? errMsg;
-        } catch {}
-        throw new Error(errMsg);
+      // Use the pre-warmed session if it's ready — opens Stripe instantly
+      if (preWarmedUrl && preWarmedSessionId) {
+        checkoutUrl = preWarmedUrl;
+        sessionId = preWarmedSessionId;
+        setPreWarmedUrl(null);
+        setPreWarmedSessionId(null);
+        setStripeSessionId(sessionId);
+      } else {
+        // Fall back to creating a fresh session (pre-warm wasn't ready yet)
+        const body = {
+          jobTotal: parseFloat(discountedBase.toFixed(2)),
+          isNewCustomer: false,
+          preferredPaymentMethod: paymentMethod,
+          proName,
+          serviceName: primaryService,
+          serviceDate: selectedDateLabel ?? "TBD",
+          successUrl: `${API_BASE_URL}/api/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${API_BASE_URL}/api/payments/cancel`,
+        };
+        const response = await fetch(`${API_BASE_URL}/api/payments/create-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!response.ok) {
+          let errMsg = `Payment server error (${response.status})`;
+          try { const err = await response.json(); errMsg = err.error ?? errMsg; } catch {}
+          throw new Error(errMsg);
+        }
+        const data = await response.json();
+        checkoutUrl = data.url;
+        sessionId = data.sessionId;
+        setStripeSessionId(sessionId);
       }
 
-      const data = await response.json();
-      setStripeSessionId(data.sessionId);
-
       // Open Stripe Checkout in the system browser
-      const result = await WebBrowser.openBrowserAsync(data.url, {
+      const result = await WebBrowser.openBrowserAsync(checkoutUrl, {
         toolbarColor: "#0A0A0A",
         controlsColor: "#34FF7A",
         dismissButtonStyle: "close",
@@ -533,9 +589,7 @@ export default function PayScreen() {
         for (let i = 0; i < 12; i++) {
           await new Promise((r) => setTimeout(r, 2000));
           try {
-            const statusRes = await fetch(
-              `${API_BASE_URL}/api/payments/session/${data.sessionId}`
-            );
+            const statusRes = await fetch(`${API_BASE_URL}/api/payments/session/${sessionId}`);
             if (statusRes.ok) {
               const statusData = await statusRes.json();
               if (statusData.paid) { paid = true; break; }
@@ -543,18 +597,24 @@ export default function PayScreen() {
           } catch {}
         }
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        const primarySvc = [...selectedServices][0] ?? "Service";
-        const dateLabel2 = selectedDateLabel ?? "your scheduled date";
-        const timeLabel2 = selectedTime ?? "";
+        // Customer sees their booking confirmation only
+        addNotification({
+          icon: "checkmark-circle-outline",
+          title: "Booking Confirmed!",
+          sub: `${primaryService} with ${proName} on ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. You'll be notified when they're on the way.`,
+          targetRole: "customer",
+        });
+        sendLocalPush(
+          "Booking Confirmed!",
+          `Your ${primaryService} with ${proName} is booked for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}.`
+        );
+        // Landscaper gets their action instructions separately
         addNotification({
           icon: "calendar-outline",
           title: "New Booking Received",
-          sub: `${primarySvc} booked for ${dateLabel2}${timeLabel2 ? ` at ${timeLabel2}` : ""}. Tap "Arrived at Location" when you get there, then notify your customer when you start work.`,
+          sub: `${primaryService} booked for ${dateLabel}${timeLabel ? ` at ${timeLabel}` : ""}. Tap "Arrived at Location" when you get there, then notify your customer when work begins.`,
+          targetRole: "landscaper",
         });
-        sendLocalPush(
-          "New Job Booked — Action Required",
-          `New ${primarySvc} booking for ${dateLabel2}${timeLabel2 ? ` at ${timeLabel2}` : ""}. When you arrive, tap "Arrived at Location". Once you begin, notify your customer that work has started.`
-        );
         setPayState("success");
       }
     } catch (err: any) {
