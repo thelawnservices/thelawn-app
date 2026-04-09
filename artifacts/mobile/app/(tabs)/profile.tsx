@@ -27,7 +27,7 @@ import { useLandscaperProfile } from "@/contexts/landscaperProfile";
 import TermsModal from "@/components/TermsModal";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import HelpSupportModal from "@/components/HelpSupportModal";
-import { validateText, simulatePhotoReview } from "@/utils/moderation";
+import { validateText, simulatePhotoReview, reviewImageWithAI } from "@/utils/moderation";
 import { useNotifications } from "@/contexts/notifications";
 
 const PAYMENT_METHODS = [
@@ -196,7 +196,7 @@ export default function ProfileScreen() {
 
 // ── Landscaper Profile – Cut App Style ────────────────────────────────────────
 
-type LandscaperTab = "info" | "reviews" | "services";
+type LandscaperTab = "info" | "reviews";
 type ReviewReply = { text: string; author: string; date: string };
 type ReviewItem = {
   text: string; author: string; date: string; stars: number;
@@ -217,7 +217,7 @@ function LandscaperProfile({
   helpVisible: boolean;
   setHelpVisible: (v: boolean) => void;
 }) {
-  const { setAvatarUri } = useAuth();
+  const { setAvatarUri, banUser } = useAuth();
   const { myServices, bookedSlots } = useLandscaperProfile();
   const { broadcastAnnouncement } = useNotifications();
   const lsRouter = useRouter();
@@ -364,8 +364,18 @@ function LandscaperProfile({
       quality: 0.85,
     });
     if (!result.canceled) {
-      setAvatarImage(result.assets[0].uri);
-      setAvatarUri(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      setAvatarImage(uri);
+      setAvatarUri(uri);
+      reviewImageWithAI(uri).then((review) => {
+        if (!review.approved) {
+          Alert.alert(
+            "Account Suspended",
+            "Your profile photo violated our community guidelines. Your account has been suspended.",
+            [{ text: "OK", onPress: banUser }]
+          );
+        }
+      });
     }
   }
 
@@ -377,7 +387,19 @@ function LandscaperProfile({
       aspect: [16, 9],
       quality: 0.85,
     });
-    if (!result.canceled) setHeroBackground(result.assets[0].uri);
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setHeroBackground(uri);
+      reviewImageWithAI(uri).then((review) => {
+        if (!review.approved) {
+          Alert.alert(
+            "Account Suspended",
+            "Your banner image violated our community guidelines. Your account has been suspended.",
+            [{ text: "OK", onPress: banUser }]
+          );
+        }
+      });
+    }
   }
 
   async function pickServicePhotos() {
@@ -400,7 +422,11 @@ function LandscaperProfile({
           });
           if (managed.status === "rejected") {
             setServicePhotos((prev) => prev.filter((p) => p !== uri));
-            Alert.alert("Photo Removed", "One of your photos didn't meet our community guidelines and was removed.");
+            Alert.alert(
+              "Account Suspended",
+              "A photo you uploaded violated our community guidelines. Your account has been suspended.",
+              [{ text: "OK", onPress: banUser }]
+            );
           }
         });
       });
@@ -668,7 +694,7 @@ function LandscaperProfile({
 
       {/* ── Tab Bar ─────────────────────────────────── */}
       <View style={cutStyles.tabBar}>
-        {(["info", "reviews", "services"] as LandscaperTab[]).map((tab) => (
+        {(["info", "reviews"] as LandscaperTab[]).map((tab) => (
           <TouchableOpacity
             key={tab}
             style={[cutStyles.tabItem, activeTab === tab && cutStyles.tabItemActive]}
@@ -714,91 +740,12 @@ function LandscaperProfile({
               </Text>
             </View>
 
-            {/* Service & Availability — read-only, reflects My Services settings */}
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>SERVICE & AVAILABILITY</Text>
-            <View style={cutStyles.card}>
-              {/* Location */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <Ionicons name="location-outline" size={18} color="#CCCCCC" />
-                <Text style={[cutStyles.addrLine, { fontFamily: "Inter_500Medium", color: "#fff" }]}>
-                  {profileCity}, {profileState} {profileZip}
-                </Text>
-              </View>
-
-              {/* Days available across all services */}
-              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 8 }]}>AVAILABLE DAYS</Text>
-              <View style={[availStyles.daysRow, { marginBottom: 16 }]}>
-                {DAYS.map((day) => (
-                  <View key={day} style={[availStyles.dayChip, allAvailDays[day] && availStyles.dayChipOn]}>
-                    <Text style={[availStyles.dayChipText, { fontFamily: "Inter_600SemiBold" }, allAvailDays[day] && availStyles.dayChipTextOn]}>
-                      {day}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
-              <View style={availStyles.readOnlyNote}>
-                <Ionicons name="information-circle-outline" size={14} color="#34FF7A" />
-                <Text style={[availStyles.readOnlyNoteText, { fontFamily: "Inter_400Regular" }]}>
-                  Hours and per-service availability are managed in{" "}
-                  <Text style={{ fontFamily: "Inter_600SemiBold", color: "#34FF7A" }}>My Services</Text>.
-                </Text>
-              </View>
-
-              {/* Monthly Schedule Calendar */}
-              <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_500Medium", marginBottom: 12, marginTop: 16 }]}>MONTHLY SCHEDULE (NEXT 4 WEEKS)</Text>
-              <View style={availStyles.calGrid}>
-                {monthDates.map((d, i) => {
-                  const dateKey = `${d.month} ${d.dateNum}, ${d.year}`;
-                  const hasBookings = (bookedSlots[dateKey] ?? []).length > 0;
-                  const isBlocked = (myServices.blockedDates ?? []).includes(dateKey);
-                  const isAvail = !!allAvailDays[d.label] && !isBlocked;
-                  const isCalSelected = calendarSelectedDate === dateKey;
-                  return (
-                    <TouchableOpacity
-                      key={i}
-                      style={[
-                        availStyles.calCell,
-                        isAvail && availStyles.calCellAvail,
-                        isBlocked && availStyles.calCellBlocked,
-                        isCalSelected && availStyles.calCellSelected,
-                        hasBookings && availStyles.calCellHasBookings,
-                      ]}
-                      onPress={() => setCalendarSelectedDate(isCalSelected ? null : dateKey)}
-                      activeOpacity={0.75}
-                    >
-                      <Text style={[availStyles.calCellLabel, { fontFamily: "Inter_400Regular" }, isAvail ? { color: "rgba(0,0,0,0.6)" } : isBlocked ? { color: "#EF4444" } : { color: "#777" }]}>
-                        {d.label.slice(0, 2)}
-                      </Text>
-                      <Text style={[availStyles.calCellDate, { fontFamily: "Inter_700Bold" }, isAvail ? { color: "#000" } : isBlocked ? { color: "#EF4444" } : { color: "#777" }]}>
-                        {d.dateNum}
-                      </Text>
-                      {isBlocked && <Text style={{ fontSize: 8, color: "#EF4444" }}>OFF</Text>}
-                      {hasBookings && !isBlocked && <View style={availStyles.calDot} />}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-              {calendarSelectedDate && (
-                <View style={availStyles.calSlotList}>
-                  <Text style={[availStyles.hoursLabel, { fontFamily: "Inter_600SemiBold", marginBottom: 8 }]}>
-                    {calendarSelectedDate}
-                  </Text>
-                  {(bookedSlots[calendarSelectedDate] ?? []).length === 0 ? (
-                    <Text style={[{ fontSize: 13, color: "#BBBBBB" }, { fontFamily: "Inter_400Regular" }]}>No bookings this day.</Text>
-                  ) : (
-                    (bookedSlots[calendarSelectedDate] ?? []).map((slot, i) => (
-                      <View key={i} style={availStyles.calSlotRow}>
-                        <Ionicons name="time-outline" size={14} color="#34FF7A" />
-                        <Text style={[availStyles.calSlotText, { fontFamily: "Inter_500Medium" }]}>{slot.time}</Text>
-                        <Text style={[availStyles.calSlotDur, { fontFamily: "Inter_400Regular" }]}>
-                          {slot.service} · {slot.durationMinutes} min
-                        </Text>
-                      </View>
-                    ))
-                  )}
-                </View>
-              )}
+            {/* Location */}
+            <View style={[cutStyles.card, { flexDirection: "row", alignItems: "center", gap: 8 }]}>
+              <Ionicons name="location-outline" size={18} color="#CCCCCC" />
+              <Text style={[cutStyles.addrLine, { fontFamily: "Inter_500Medium", color: "#fff" }]}>
+                {profileCity}, {profileState} {profileZip}
+              </Text>
             </View>
 
             {/* Photos of our work */}
@@ -975,41 +922,6 @@ function LandscaperProfile({
           </>
         )}
 
-        {/* ── SERVICES TAB ── */}
-        {activeTab === "services" && (
-          <>
-            <Text style={[cutStyles.sectionHeading, { fontFamily: "Inter_600SemiBold" }]}>OUR SERVICES & PRICING</Text>
-            <View style={availStyles.readOnlyNote}>
-              <Ionicons name="information-circle-outline" size={14} color="#34FF7A" />
-              <Text style={[availStyles.readOnlyNoteText, { fontFamily: "Inter_400Regular" }]}>
-                Prices are set per service in{" "}
-                <Text style={{ fontFamily: "Inter_600SemiBold", color: "#34FF7A" }}>My Services</Text>.
-              </Text>
-            </View>
-            {myServices.offered.map((svc) => {
-              const tiers = myServices.pricing[svc] ?? [];
-              return (
-                <View key={svc} style={[cutStyles.card, { marginBottom: 12 }]}>
-                  <Text style={[cutStyles.svcCardName, { fontFamily: "Inter_600SemiBold" }]}>{svc}</Text>
-                  <View style={cutStyles.svcPriceRow}>
-                    {tiers.map((tier) => (
-                      <View key={tier.label} style={cutStyles.svcPriceCell}>
-                        <Text style={[cutStyles.svcColLabel, { fontFamily: "Inter_400Regular" }]}>{tier.label}</Text>
-                        <Text style={[cutStyles.svcColSub, { fontFamily: "Inter_400Regular" }]}>{tier.range}</Text>
-                        <Text style={[cutStyles.svcPrice, { fontFamily: "Inter_700Bold" }]}>{tier.price}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              );
-            })}
-            {myServices.offered.length === 0 && (
-              <Text style={[{ fontSize: 13, color: "#777", textAlign: "center", marginTop: 12 }, { fontFamily: "Inter_400Regular" }]}>
-                No services enabled. Open My Services to configure them.
-              </Text>
-            )}
-          </>
-        )}
 
       </ScrollView>
 

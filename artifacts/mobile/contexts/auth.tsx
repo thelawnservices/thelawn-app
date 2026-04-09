@@ -8,8 +8,10 @@ interface AuthContextType {
   avatarUri: string | null;
   preferredPayment: string | null;
   needsServiceSetup: boolean;
+  isBanned: boolean;
   login: (r: Role) => void;
   logout: () => void;
+  banUser: () => void;
   setAvatarUri: (uri: string | null) => void;
   setPreferredPayment: (v: string | null) => void;
   setNeedsServiceSetup: (v: boolean) => void;
@@ -21,8 +23,10 @@ const AuthContext = createContext<AuthContextType>({
   avatarUri: null,
   preferredPayment: null,
   needsServiceSetup: false,
+  isBanned: false,
   login: () => {},
   logout: () => {},
+  banUser: () => {},
   setAvatarUri: () => {},
   setPreferredPayment: () => {},
   setNeedsServiceSetup: () => {},
@@ -38,14 +42,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [preferredPayment, setPreferredPayment] = useState<string | null>(null);
   const [needsServiceSetup, setNeedsServiceSetup] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
 
   const login = (r: Role) => setRole(r);
-  const logout = () => { setRole(null); setAvatarUri(null); setPreferredPayment(null); setNeedsServiceSetup(false); };
+  const logout = () => {
+    setRole(null);
+    setAvatarUri(null);
+    setPreferredPayment(null);
+    setNeedsServiceSetup(false);
+    setIsBanned(false);
+  };
+  const banUser = () => {
+    setIsBanned(true);
+    setRole(null);
+    setAvatarUri(null);
+    setPreferredPayment(null);
+    setNeedsServiceSetup(false);
+  };
 
   const userName = role ? ROLE_NAMES[role] : "";
 
   return (
-    <AuthContext.Provider value={{ role, userName, avatarUri, preferredPayment, needsServiceSetup, login, logout, setAvatarUri, setPreferredPayment, setNeedsServiceSetup }}>
+    <AuthContext.Provider value={{ role, userName, avatarUri, preferredPayment, needsServiceSetup, isBanned, login, logout, banUser, setAvatarUri, setPreferredPayment, setNeedsServiceSetup }}>
       {children}
     </AuthContext.Provider>
   );
