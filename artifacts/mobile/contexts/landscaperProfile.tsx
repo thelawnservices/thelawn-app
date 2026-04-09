@@ -63,7 +63,7 @@ const DEFAULT_MY_SERVICES: MyServicesState = {
     "Full Service":     { days: ["Mon","Wed","Fri"],             startTime: "8:00 AM", endTime: "5:00 PM" },
   },
   pricing: Object.fromEntries(ALL_SVC.map((s) => [s, BASE_TIERS.map((t) => ({ ...t }))])),
-  acceptedPayments: ["In Person", "Venmo"],
+  acceptedPayments: ["Stripe", "In Person"],
   blockedDates: [],
 };
 

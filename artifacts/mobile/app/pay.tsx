@@ -24,27 +24,24 @@ const API_BASE_URL = (process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 
 type PayState = "availability" | "details" | "review" | "processing" | "success";
 
-type PayKey = "applepay" | "debit" | "venmo" | "paypal" | "cashapp" | "zelle" | "inperson";
+type PayKey = "stripe" | "inperson";
 
 const PROFILE_TO_PAY_KEY: Record<string, PayKey> = {
-  "Apple Pay":  "applepay",
-  "Venmo":      "venmo",
-  "PayPal":     "paypal",
-  "Debit Card": "debit",
-  "Cash App":   "cashapp",
-  "Zelle":      "zelle",
+  "Stripe":     "stripe",
   "In Person":  "inperson",
+  // Legacy fallbacks — any old online method maps to Stripe
+  "Apple Pay":  "stripe",
+  "Venmo":      "stripe",
+  "PayPal":     "stripe",
+  "Debit Card": "stripe",
+  "Cash App":   "stripe",
+  "Zelle":      "stripe",
   "Check":      "inperson",
 };
 
 const ALL_PAY_OPTIONS: { key: PayKey; label: string; ionIcon: string; displayName: string }[] = [
-  { key: "applepay", label: "Apple Pay",             ionIcon: "logo-apple",           displayName: "Apple Pay" },
-  { key: "venmo",    label: "Venmo",                  ionIcon: "cash-outline",          displayName: "Venmo" },
-  { key: "paypal",   label: "PayPal",                 ionIcon: "card-outline",          displayName: "PayPal" },
-  { key: "cashapp",  label: "Cash App",               ionIcon: "phone-portrait-outline",displayName: "Cash App" },
-  { key: "zelle",    label: "Zelle",                  ionIcon: "flash-outline",         displayName: "Zelle" },
-  { key: "debit",    label: "Debit / Credit Card",    ionIcon: "card",                  displayName: "Debit / Credit Card" },
-  { key: "inperson", label: "Pay In Person",          ionIcon: "people-circle-outline", displayName: "Pay In Person (Cash · Check · Other)" },
+  { key: "stripe",   label: "Pay with Stripe", ionIcon: "card",                  displayName: "Stripe (Cards · Apple Pay · Google Pay)" },
+  { key: "inperson", label: "Pay In Person",   ionIcon: "people-circle-outline", displayName: "Pay In Person (Cash · Check · Other)" },
 ];
 
 const TIP_OPTIONS = [
@@ -344,18 +341,11 @@ export default function PayScreen() {
   };
 
   const validatePayment = (): string | true => {
-    if (paymentMethod === "inperson") return true;
-    if (paymentMethod === "applepay") return true;
-    // All digital payments are processed through Stripe — no local field validation needed
     return true;
   };
 
   const PAY_METHOD_LABELS: Record<string, string> = {
-    applepay: "Apple Pay",
-    debit: "Debit Card",
-    venmo: "Venmo",
-    paypal: "PayPal",
-    cashapp: "Cash App",
+    stripe:   "Stripe",
     inperson: "In Person",
   };
 
@@ -1440,9 +1430,9 @@ export default function PayScreen() {
           </View>
         )}
 
-        {/* Payment method grid — all options except Pay In Person in a 2-column grid */}
+        {/* Payment method grid — Stripe and In Person side by side */}
         <View style={styles.payMethodGrid}>
-          {allowedPayOptions.filter((o) => o.key !== "inperson").map((m) => (
+          {allowedPayOptions.map((m) => (
             <TouchableOpacity
               key={m.key}
               style={[styles.payMethodTile, paymentMethod === m.key && styles.payMethodTileActive]}
@@ -1451,26 +1441,11 @@ export default function PayScreen() {
             >
               <Ionicons name={m.ionIcon as any} size={28} color={paymentMethod === m.key ? "#34FF7A" : "#888"} />
               <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === m.key && styles.payMethodTileTextActive]}>
-                {m.key === "debit" ? "Debit / Card" : m.label}
+                {m.label}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
-
-        {/* Pay In Person — full-width */}
-        {allowedPayOptions.filter((o) => o.key === "inperson").map((m) => (
-          <TouchableOpacity
-            key={m.key}
-            style={[styles.payMethodTileFull, paymentMethod === m.key && styles.payMethodTileActive]}
-            onPress={() => { setPaymentMethod(m.key as PayKey); Haptics.selectionAsync(); }}
-            activeOpacity={0.8}
-          >
-            <Ionicons name={m.ionIcon as any} size={28} color={paymentMethod === m.key ? "#34FF7A" : "#888"} />
-            <Text style={[styles.payMethodTileText, { fontFamily: "Inter_500Medium" }, paymentMethod === m.key && styles.payMethodTileTextActive]}>
-              {m.displayName}
-            </Text>
-          </TouchableOpacity>
-        ))}
 
         {!isInPerson && (
           <View style={styles.stripeCardBlock}>

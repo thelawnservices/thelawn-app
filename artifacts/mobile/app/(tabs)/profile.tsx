@@ -31,12 +31,8 @@ import { validateText, simulatePhotoReview } from "@/utils/moderation";
 import { useNotifications } from "@/contexts/notifications";
 
 const PAYMENT_METHODS = [
-  { label: "Apple Pay",  value: "Apple Pay",  ionIcon: "logo-apple" as const,            shortLabel: "Apple Pay" },
-  { label: "Venmo",      value: "Venmo",       ionIcon: "cash-outline" as const,          shortLabel: "Venmo" },
-  { label: "PayPal",     value: "PayPal",      ionIcon: "card-outline" as const,          shortLabel: "PayPal" },
-  { label: "Debit Card", value: "Debit Card",  ionIcon: "card" as const,                  shortLabel: "Debit" },
-  { label: "Cash App",   value: "Cash App",    ionIcon: "phone-portrait-outline" as const, shortLabel: "Cash App" },
-  { label: "In Person",  value: "In Person",   ionIcon: "people-circle-outline" as const, shortLabel: "In Person" },
+  { label: "Stripe (Cards · Apple Pay · Google Pay)", value: "Stripe",    ionIcon: "card" as const,                  shortLabel: "Stripe" },
+  { label: "Pay In Person (Cash · Check · Other)",    value: "In Person", ionIcon: "people-circle-outline" as const, shortLabel: "In Person" },
 ];
 
 export default function ProfileScreen() {

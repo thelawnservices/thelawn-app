@@ -822,11 +822,8 @@ const settStyles = StyleSheet.create({
 });
 
 const PAYMENT_OPTIONS = [
-  { id: "applepay", label: " Apple Pay", icon: "" },
-  { id: "debit", label: "Debit Card", icon: "" },
-  { id: "venmo", label: "Venmo", icon: "" },
-  { id: "paypal", label: "PayPal", icon: "" },
-  { id: "cashapp", label: "Cash App", icon: "" },
+  { id: "stripe",   label: "Pay with Stripe (Cards · Apple Pay · Google Pay)", icon: "" },
+  { id: "inperson", label: "Pay In Person (Cash · Check · Other)", icon: "" },
 ];
 
 function PaymentMethodModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -955,12 +952,8 @@ const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
 
 const ACCEPTED_PAYMENT_OPTIONS = [
+  { value: "Stripe",    icon: "card" as const },
   { value: "In Person", icon: "people-circle-outline" as const },
-  { value: "Venmo",     icon: "phone-portrait-outline" as const },
-  { value: "PayPal",    icon: "card-outline" as const },
-  { value: "Cash App",  icon: "phone-portrait-outline" as const },
-  { value: "Zelle",     icon: "swap-horizontal-outline" as const },
-  { value: "Check",     icon: "document-outline" as const },
 ];
 
 type ServiceAvail = { days: string[]; startTime: string; endTime: string };
