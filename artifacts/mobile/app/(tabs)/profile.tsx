@@ -441,11 +441,6 @@ function LandscaperProfile({
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>Help & Support</Text>
               </TouchableOpacity>
               <View style={menuStyles.divider} />
-              <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); lsRouter.push("/dispute"); }}>
-                <Ionicons name="warning-outline" size={18} color="#f59e0b" />
-                <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#f59e0b" }]}>File a Dispute</Text>
-              </TouchableOpacity>
-              <View style={menuStyles.divider} />
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setPrivacyVisible(true); }}>
                 <Ionicons name="lock-closed-outline" size={18} color="#CCCCCC" />
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Privacy Settings</Text>

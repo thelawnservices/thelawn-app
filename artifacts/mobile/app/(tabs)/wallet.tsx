@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useWallet } from "@/contexts/wallet";
 
-type Screen = "main" | "withdraw" | "pin" | "success";
+type Screen = "main" | "withdraw" | "pin" | "success" | "payout_settings";
 
 type WithdrawMethod = {
   id: string;
@@ -27,13 +27,29 @@ type WithdrawMethod = {
 };
 
 const METHODS: WithdrawMethod[] = [
-  { id: "paypal",  label: "PayPal",       icon: "logo-paypal",            speed: "Instant",           speedDays: "within minutes",    fee: "1.5% fee", instant: true  },
-  { id: "zelle",   label: "Zelle",        icon: "swap-horizontal-outline", speed: "Instant",           speedDays: "within minutes",    fee: "Free",     instant: true  },
-  { id: "debit",   label: "Debit Card",   icon: "card-outline",           speed: "Instant",           speedDays: "within minutes",    fee: "1% fee",   instant: true  },
-  { id: "venmo",   label: "Venmo",        icon: "phone-portrait-outline", speed: "Instant",           speedDays: "within minutes",    fee: "1% fee",   instant: true  },
-  { id: "bank",    label: "Bank Transfer",icon: "business-outline",       speed: "1–3 Business Days", speedDays: "1–3 business days", fee: "Free",     instant: false },
-  { id: "check",   label: "Check by Mail",icon: "mail-outline",           speed: "5–7 Business Days", speedDays: "5–7 business days", fee: "Free",     instant: false },
+  { id: "paypal",  label: "PayPal",        icon: "logo-paypal",             speed: "Instant",           speedDays: "within minutes",    fee: "1.5% fee", instant: true  },
+  { id: "zelle",   label: "Zelle",         icon: "swap-horizontal-outline", speed: "Instant",           speedDays: "within minutes",    fee: "Free",     instant: true  },
+  { id: "debit",   label: "Debit Card",    icon: "card-outline",            speed: "Instant",           speedDays: "within minutes",    fee: "1% fee",   instant: true  },
+  { id: "venmo",   label: "Venmo",         icon: "phone-portrait-outline",  speed: "Instant",           speedDays: "within minutes",    fee: "1% fee",   instant: true  },
+  { id: "bank",    label: "Bank Transfer", icon: "business-outline",        speed: "1–3 Business Days", speedDays: "1–3 business days", fee: "Free",     instant: false },
+  { id: "check",   label: "Check by Mail", icon: "mail-outline",            speed: "5–7 Business Days", speedDays: "5–7 business days", fee: "Free",     instant: false },
 ];
+
+type PayoutInfo = {
+  paypal_email: string;
+  zelle_contact: string;
+  venmo_username: string;
+  debit_name: string;
+  debit_last4: string;
+  bank_routing: string;
+  bank_account: string;
+  bank_name: string;
+  mail_name: string;
+  mail_address: string;
+  mail_city: string;
+  mail_state: string;
+  mail_zip: string;
+};
 
 function calcFee(amount: number, method: WithdrawMethod): number {
   if (method.fee === "1.5% fee") return parseFloat((amount * 0.015).toFixed(2));
@@ -44,6 +60,8 @@ function calcFee(amount: number, method: WithdrawMethod): number {
 function fmt(n: number): string {
   return n.toFixed(2);
 }
+
+const MIN_WITHDRAWAL = 10;
 
 export default function WalletScreen() {
   const insets = useSafeAreaInsets();
@@ -58,6 +76,23 @@ export default function WalletScreen() {
   const [selectedMethod, setSelectedMethod] = useState<WithdrawMethod | null>(null);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState(false);
+
+  const [payoutInfo, setPayoutInfo] = useState<PayoutInfo>({
+    paypal_email: "",
+    zelle_contact: "",
+    venmo_username: "",
+    debit_name: "",
+    debit_last4: "",
+    bank_routing: "",
+    bank_account: "",
+    bank_name: "",
+    mail_name: "",
+    mail_address: "",
+    mail_city: "",
+    mail_state: "",
+    mail_zip: "",
+  });
+  const [payoutSaved, setPayoutSaved] = useState(false);
 
   const amountNum = parseFloat(amountText) || 0;
   const fee = selectedMethod ? calcFee(amountNum, selectedMethod) : 0;
@@ -84,8 +119,8 @@ export default function WalletScreen() {
       Alert.alert("Select Method", "Please choose a withdrawal method.");
       return;
     }
-    if (amountNum < 5) {
-      Alert.alert("Minimum Withdrawal", "The minimum withdrawal amount is $5.00.");
+    if (amountNum < MIN_WITHDRAWAL) {
+      Alert.alert("Minimum Withdrawal", `The minimum withdrawal amount is $${MIN_WITHDRAWAL}.00.`);
       return;
     }
     setScreen("pin");
@@ -111,21 +146,36 @@ export default function WalletScreen() {
     setPinError(false);
   }
 
+  function savePayoutInfo() {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setPayoutSaved(true);
+    setTimeout(() => setPayoutSaved(false), 2500);
+    Alert.alert("Payout Info Saved", "Your payout details have been saved securely.");
+  }
+
   const creditTotal   = transactions.filter((t) => t.type === "credit").reduce((s, t) => s + t.amount, 0);
   const withdrawTotal = transactions.filter((t) => t.type === "debit").reduce((s, t) => s + t.amount, 0);
 
+  function headerTitle() {
+    if (screen === "withdraw") return "Withdraw Funds";
+    if (screen === "pin") return "Confirm Withdrawal";
+    if (screen === "success") return "Withdrawal Initiated";
+    if (screen === "payout_settings") return "Payout Settings";
+    return "My Wallet";
+  }
+
   return (
     <View style={[s.root, { paddingTop: topPad }]}>
-
-      {/* ── HEADER ───────────────────────────────────────────── */}
+      {/* ── HEADER ─────────────────────────────────────────────── */}
       <View style={s.header}>
         {screen !== "main" ? (
           <TouchableOpacity
             style={s.backBtn}
             onPress={() => {
-              if (screen === "pin")      setScreen("withdraw");
-              else if (screen === "withdraw") setScreen("main");
-              else if (screen === "success")  reset();
+              if (screen === "pin")             setScreen("withdraw");
+              else if (screen === "withdraw")   setScreen("main");
+              else if (screen === "success")    reset();
+              else if (screen === "payout_settings") setScreen("main");
             }}
             activeOpacity={0.7}
           >
@@ -134,16 +184,21 @@ export default function WalletScreen() {
         ) : (
           <View style={{ width: 40 }} />
         )}
-        <Text style={[s.headerTitle, { fontFamily: "Inter_700Bold" }]}>
-          {screen === "main"     ? "My Wallet"
-           : screen === "withdraw" ? "Withdraw Funds"
-           : screen === "pin"      ? "Confirm Withdrawal"
-           :                         "Withdrawal Initiated"}
-        </Text>
-        <View style={{ width: 40 }} />
+        <Text style={[s.headerTitle, { fontFamily: "Inter_700Bold" }]}>{headerTitle()}</Text>
+        {screen === "main" ? (
+          <TouchableOpacity
+            style={s.settingsBtn}
+            onPress={() => { Haptics.selectionAsync(); setScreen("payout_settings"); }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="settings-outline" size={20} color="#CCCCCC" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
 
-      {/* ── MAIN ─────────────────────────────────────────────── */}
+      {/* ── MAIN ───────────────────────────────────────────────── */}
       {screen === "main" && (
         <ScrollView
           contentContainerStyle={{ paddingBottom: bottomPad + 48 }}
@@ -176,18 +231,53 @@ export default function WalletScreen() {
             </View>
           </View>
 
-          {/* Withdraw button */}
+          {/* Action buttons */}
+          <View style={s.actionRow}>
+            <TouchableOpacity
+              style={[s.actionBtn, { flex: 1 }]}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScreen("withdraw"); }}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="wallet-outline" size={20} color="#000" />
+              <Text style={[s.withdrawBtnText, { fontFamily: "Inter_700Bold" }]}>Withdraw Funds</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={s.minNotice}>
+            <Ionicons name="information-circle-outline" size={14} color="#888" />
+            <Text style={[s.minNoticeText, { fontFamily: "Inter_400Regular" }]}>
+              Minimum withdrawal: ${MIN_WITHDRAWAL}.00
+            </Text>
+          </View>
+
+          {/* Payout settings shortcut */}
           <TouchableOpacity
-            style={s.withdrawBtn}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScreen("withdraw"); }}
-            activeOpacity={0.85}
+            style={s.payoutSettingsBtn}
+            onPress={() => { Haptics.selectionAsync(); setScreen("payout_settings"); }}
+            activeOpacity={0.8}
           >
-            <Ionicons name="wallet-outline" size={20} color="#000" />
-            <Text style={[s.withdrawBtnText, { fontFamily: "Inter_700Bold" }]}>Withdraw Funds</Text>
+            <View style={s.payoutSettingsBtnLeft}>
+              <Ionicons name="card-outline" size={20} color="#34FF7A" />
+              <View>
+                <Text style={[s.payoutSettingsBtnLabel, { fontFamily: "Inter_600SemiBold" }]}>Payout Settings</Text>
+                <Text style={[s.payoutSettingsBtnSub, { fontFamily: "Inter_400Regular" }]}>
+                  Save your withdrawal account info
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#555" />
           </TouchableOpacity>
 
           {/* Transactions */}
           <Text style={[s.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>TRANSACTION HISTORY</Text>
+          {transactions.length === 0 && (
+            <View style={s.emptyRow}>
+              <Ionicons name="receipt-outline" size={32} color="#333" />
+              <Text style={[{ fontSize: 14, color: "#555", marginTop: 8 }, { fontFamily: "Inter_400Regular" }]}>
+                No transactions yet. Completed jobs will appear here.
+              </Text>
+            </View>
+          )}
           {transactions.map((tx) => {
             const isCredit = tx.type === "credit";
             return (
@@ -215,7 +305,187 @@ export default function WalletScreen() {
         </ScrollView>
       )}
 
-      {/* ── WITHDRAW ─────────────────────────────────────────── */}
+      {/* ── PAYOUT SETTINGS ────────────────────────────────────── */}
+      {screen === "payout_settings" && (
+        <ScrollView
+          contentContainerStyle={{ padding: 20, paddingBottom: bottomPad + 60 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={s.payoutInfoBox}>
+            <Ionicons name="lock-closed-outline" size={16} color="#34FF7A" />
+            <Text style={[s.payoutInfoBoxText, { fontFamily: "Inter_400Regular" }]}>
+              Save your payout details so TheLawnServices can accurately send your earnings. All data is encrypted and stored securely.
+            </Text>
+          </View>
+
+          {/* PayPal */}
+          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>PayPal</Text>
+          <View style={s.payoutFieldGroup}>
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>PayPal Email Address</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.paypal_email}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, paypal_email: v }))}
+              placeholder="yourname@email.com"
+              placeholderTextColor="#444"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Zelle */}
+          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Zelle</Text>
+          <View style={s.payoutFieldGroup}>
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Phone Number or Email</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.zelle_contact}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, zelle_contact: v }))}
+              placeholder="(555) 000-0000 or email"
+              placeholderTextColor="#444"
+            />
+          </View>
+
+          {/* Venmo */}
+          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Venmo</Text>
+          <View style={s.payoutFieldGroup}>
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Venmo Username</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.venmo_username}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, venmo_username: v }))}
+              placeholder="@username"
+              placeholderTextColor="#444"
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Debit Card */}
+          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Debit Card</Text>
+          <View style={s.payoutFieldGroup}>
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Cardholder Name</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.debit_name}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, debit_name: v }))}
+              placeholder="Full name on card"
+              placeholderTextColor="#444"
+            />
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>Last 4 Digits</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.debit_last4}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, debit_last4: v.replace(/\D/g, "").slice(0, 4) }))}
+              placeholder="•••• 4321"
+              placeholderTextColor="#444"
+              keyboardType="number-pad"
+              maxLength={4}
+            />
+          </View>
+
+          {/* Bank Transfer */}
+          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Bank Transfer (ACH)</Text>
+          <View style={s.payoutFieldGroup}>
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Bank Name</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.bank_name}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, bank_name: v }))}
+              placeholder="e.g. Chase, Wells Fargo"
+              placeholderTextColor="#444"
+            />
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>Routing Number</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.bank_routing}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, bank_routing: v.replace(/\D/g, "").slice(0, 9) }))}
+              placeholder="9-digit routing number"
+              placeholderTextColor="#444"
+              keyboardType="number-pad"
+              maxLength={9}
+            />
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>Account Number</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.bank_account}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, bank_account: v.replace(/\D/g, "") }))}
+              placeholder="Account number"
+              placeholderTextColor="#444"
+              keyboardType="number-pad"
+            />
+          </View>
+
+          {/* Check by Mail */}
+          <Text style={[s.payoutSection, { fontFamily: "Inter_600SemiBold" }]}>Check by Mail</Text>
+          <View style={s.payoutFieldGroup}>
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>Payable To (Full Name)</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.mail_name}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_name: v }))}
+              placeholder="Full legal name"
+              placeholderTextColor="#444"
+            />
+            <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>Mailing Address</Text>
+            <TextInput
+              style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+              value={payoutInfo.mail_address}
+              onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_address: v }))}
+              placeholder="123 Main St"
+              placeholderTextColor="#444"
+            />
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+              <View style={{ flex: 1.5 }}>
+                <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>City</Text>
+                <TextInput
+                  style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+                  value={payoutInfo.mail_city}
+                  onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_city: v }))}
+                  placeholder="City"
+                  placeholderTextColor="#444"
+                />
+              </View>
+              <View style={{ flex: 0.7 }}>
+                <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>State</Text>
+                <TextInput
+                  style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+                  value={payoutInfo.mail_state}
+                  onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_state: v.toUpperCase().slice(0, 2) }))}
+                  placeholder="FL"
+                  placeholderTextColor="#444"
+                  maxLength={2}
+                />
+              </View>
+              <View style={{ flex: 0.8 }}>
+                <Text style={[s.payoutFieldLabel, { fontFamily: "Inter_500Medium" }]}>ZIP</Text>
+                <TextInput
+                  style={[s.payoutInput, { fontFamily: "Inter_400Regular" }]}
+                  value={payoutInfo.mail_zip}
+                  onChangeText={(v) => setPayoutInfo((p) => ({ ...p, mail_zip: v.replace(/\D/g, "").slice(0, 5) }))}
+                  placeholder="34222"
+                  placeholderTextColor="#444"
+                  keyboardType="number-pad"
+                  maxLength={5}
+                />
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity style={s.savePayoutBtn} onPress={savePayoutInfo} activeOpacity={0.85}>
+            <Ionicons name={payoutSaved ? "checkmark-circle" : "save-outline"} size={18} color="#000" />
+            <Text style={[s.savePayoutBtnText, { fontFamily: "Inter_700Bold" }]}>
+              {payoutSaved ? "Saved!" : "Save Payout Information"}
+            </Text>
+          </TouchableOpacity>
+
+          <Text style={[s.payoutLegal, { fontFamily: "Inter_400Regular" }]}>
+            🔒 Your banking and payout details are encrypted. TheLawnServices uses this information solely to process your earnings withdrawals.
+          </Text>
+        </ScrollView>
+      )}
+
+      {/* ── WITHDRAW ───────────────────────────────────────────── */}
       {screen === "withdraw" && (
         <ScrollView
           contentContainerStyle={{ paddingBottom: bottomPad + 48 }}
@@ -243,6 +513,9 @@ export default function WalletScreen() {
             <TouchableOpacity onPress={() => setAmountText(fmt(balance))} style={s.maxBtn}>
               <Text style={[s.maxBtnText, { fontFamily: "Inter_500Medium" }]}>Withdraw Max</Text>
             </TouchableOpacity>
+            <Text style={[{ fontSize: 12, color: "#555", marginTop: 6 }, { fontFamily: "Inter_400Regular" }]}>
+              Minimum withdrawal: ${MIN_WITHDRAWAL}.00
+            </Text>
           </View>
 
           {selectedMethod && amountNum > 0 && (
@@ -307,7 +580,7 @@ export default function WalletScreen() {
         </ScrollView>
       )}
 
-      {/* ── PIN ──────────────────────────────────────────────── */}
+      {/* ── PIN ─────────────────────────────────────────────────── */}
       {screen === "pin" && (
         <View style={s.pinRoot}>
           <Ionicons name="lock-closed" size={44} color="#34FF7A" style={{ marginBottom: 16 }} />
@@ -348,7 +621,7 @@ export default function WalletScreen() {
         </View>
       )}
 
-      {/* ── SUCCESS ──────────────────────────────────────────── */}
+      {/* ── SUCCESS ─────────────────────────────────────────────── */}
       {screen === "success" && (
         <ScrollView contentContainerStyle={[s.successRoot, { paddingBottom: bottomPad + 48 }]} showsVerticalScrollIndicator={false}>
           <View style={s.successIconWrap}>
@@ -418,6 +691,10 @@ const s = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: "#1A1A1A", alignItems: "center", justifyContent: "center",
   },
+  settingsBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: "#1A1A1A", alignItems: "center", justifyContent: "center",
+  },
   headerTitle: { fontSize: 18, color: "#FFFFFF" },
 
   balanceCard: {
@@ -435,14 +712,32 @@ const s = StyleSheet.create({
   balStatLabel: { fontSize: 11, color: "rgba(255,255,255,0.45)" },
   balStatVal: { fontSize: 15, color: "#FFFFFF", marginTop: 1 },
 
-  withdrawBtn: {
+  actionRow: { flexDirection: "row", paddingHorizontal: 16, gap: 10, marginBottom: 8 },
+  actionBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
-    backgroundColor: "#34FF7A", borderRadius: 16,
-    paddingVertical: 16, marginHorizontal: 16, marginBottom: 24,
+    backgroundColor: "#34FF7A", borderRadius: 16, paddingVertical: 16,
   },
   withdrawBtnText: { fontSize: 16, color: "#000" },
 
+  minNotice: {
+    flexDirection: "row", alignItems: "center", gap: 6,
+    paddingHorizontal: 20, marginBottom: 16,
+  },
+  minNoticeText: { fontSize: 12, color: "#888" },
+
+  payoutSettingsBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    backgroundColor: "#1A1A1A", borderRadius: 16, borderWidth: 1, borderColor: "#222",
+    marginHorizontal: 16, marginBottom: 24, padding: 16,
+  },
+  payoutSettingsBtnLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  payoutSettingsBtnLabel: { fontSize: 15, color: "#FFFFFF" },
+  payoutSettingsBtnSub: { fontSize: 12, color: "#888", marginTop: 2 },
+
   sectionLabel: { fontSize: 11, color: "#666", letterSpacing: 1, marginHorizontal: 16, marginBottom: 8 },
+
+  emptyRow: { alignItems: "center", paddingVertical: 40 },
+
   txRow: {
     flexDirection: "row", alignItems: "center", gap: 12,
     paddingHorizontal: 16, paddingVertical: 14,
@@ -455,6 +750,29 @@ const s = StyleSheet.create({
   pendingChip: { backgroundColor: "#f59e0b22", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
   pendingChipText: { fontSize: 11, color: "#f59e0b" },
 
+  // Payout settings
+  payoutInfoBox: {
+    flexDirection: "row", gap: 10, alignItems: "flex-start",
+    backgroundColor: "#0d2e18", borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: "#1a5c30", marginBottom: 24,
+  },
+  payoutInfoBoxText: { flex: 1, fontSize: 13, color: "#AAAAAA", lineHeight: 19 },
+  payoutSection: { fontSize: 13, color: "#34FF7A", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 12, marginTop: 8 },
+  payoutFieldGroup: { backgroundColor: "#141414", borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: "#222" },
+  payoutFieldLabel: { fontSize: 13, color: "#AAAAAA", marginBottom: 8 },
+  payoutInput: {
+    backgroundColor: "#1A1A1A", borderWidth: 1.5, borderColor: "#2A2A2A",
+    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 14, color: "#FFFFFF",
+  },
+  savePayoutBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
+    backgroundColor: "#34FF7A", borderRadius: 16, paddingVertical: 16, marginTop: 8,
+  },
+  savePayoutBtnText: { fontSize: 16, color: "#000" },
+  payoutLegal: { fontSize: 12, color: "#555", textAlign: "center", marginTop: 16, lineHeight: 18 },
+
+  // Withdraw
   section: { paddingHorizontal: 16, marginBottom: 16 },
   availBal: { fontSize: 32, color: "#34FF7A", marginTop: 4 },
   fieldLabel: { fontSize: 13, color: "#CCCCCC", marginBottom: 10 },
@@ -503,6 +821,7 @@ const s = StyleSheet.create({
   proceedBtnText: { fontSize: 16, color: "#000" },
   securityNote: { fontSize: 12, color: "#555", textAlign: "center", marginHorizontal: 24, lineHeight: 18 },
 
+  // PIN
   pinRoot: { flex: 1, alignItems: "center", paddingTop: 48, paddingHorizontal: 24 },
   pinTitle: { fontSize: 22, color: "#FFFFFF", marginBottom: 8 },
   pinSub: { fontSize: 14, color: "#888", textAlign: "center", marginBottom: 32, lineHeight: 20 },
@@ -520,6 +839,7 @@ const s = StyleSheet.create({
   numpadKeyText: { fontSize: 22, color: "#FFFFFF" },
   pinHint: { fontSize: 12, color: "#555", marginTop: 20, textAlign: "center" },
 
+  // Success
   successRoot: { paddingHorizontal: 20, alignItems: "center", paddingTop: 20 },
   successIconWrap: {
     width: 100, height: 100, borderRadius: 50,

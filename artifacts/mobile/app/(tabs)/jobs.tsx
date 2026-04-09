@@ -22,6 +22,7 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/contexts/auth";
 import { useNotifications } from "@/contexts/notifications";
+import { useWallet } from "@/contexts/wallet";
 import { simulatePhotoReview, validateText } from "@/utils/moderation";
 import { requestPushPermissions, sendLocalPush } from "@/utils/pushNotifications";
 
@@ -40,7 +41,19 @@ function parseJobDateTime(date: string, time: string): Date | null {
 
 type JobStatus = "pending" | "arrived" | "started" | "completed";
 
-const SHARED_ACTIVE_JOBS = [
+type PayMethod = "stripe" | "inperson";
+
+const SHARED_ACTIVE_JOBS: Array<{
+  id: string;
+  service: string;
+  customer: string;
+  landscaper: string;
+  address: string;
+  date: string;
+  time: string;
+  paymentMethod: PayMethod;
+  amount: number;
+}> = [
   {
     id: "a1",
     service: "Mowing/Edging",
@@ -49,6 +62,8 @@ const SHARED_ACTIVE_JOBS = [
     address: "8910 45th Ave E, Ellenton, FL",
     date: "Today",
     time: "10:30 AM",
+    paymentMethod: "stripe",
+    amount: 85,
   },
 ];
 
@@ -550,6 +565,7 @@ export default function JobsScreen() {
   const { role } = useAuth();
   const isLandscaper = role === "landscaper";
   const { addNotification } = useNotifications();
+  const { addFunds } = useWallet();
 
   const [jobStatuses, setJobStatuses] = useState<Record<string, JobStatus>>(
     Object.fromEntries(SHARED_ACTIVE_JOBS.map((j) => [j.id, "pending"]))
@@ -590,6 +606,7 @@ export default function JobsScreen() {
   useEffect(() => {
     requestPushPermissions();
   }, []);
+
   const [completionPhotos, setCompletionPhotos] = useState<Record<string, string[]>>({});
   const [completedAt, setCompletedAt] = useState<Record<string, number>>({});
   const [photoModalJobId, setPhotoModalJobId] = useState<string | null>(null);
@@ -598,6 +615,29 @@ export default function JobsScreen() {
   const [customerApproved, setCustomerApproved] = useState<Record<string, "approved" | "disputed" | null>>({});
   const [disputeJobId, setDisputeJobId] = useState<string | null>(null);
   const [disputeMessages, setDisputeMessages] = useState<Record<string, { category: string; message: string }>>({});
+
+  // ── 24-hour auto-release: credit landscaper wallet if no customer action ──
+  useEffect(() => {
+    const interval = setInterval(() => {
+      SHARED_ACTIVE_JOBS.forEach((job) => {
+        const ts = completedAt[job.id];
+        if (!ts) return;
+        if (customerApproved[job.id]) return;
+        if (job.paymentMethod !== "stripe") return;
+        const deadline = ts + 24 * 3600 * 1000;
+        if (Date.now() >= deadline) {
+          setCustomerApproved((prev) => ({ ...prev, [job.id]: "approved" }));
+          addFunds(job.amount, `${job.service} — ${job.customer} (auto-released after 24h)`);
+          addNotification({
+            icon: "checkmark-circle",
+            title: "Payment Auto-Released",
+            sub: `${job.service} payment of $${job.amount.toFixed(2)} has been added to your wallet after the 24-hour review window.`,
+          });
+        }
+      });
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [completedAt, customerApproved, addFunds, addNotification]);
 
   function advanceStatus(jobId: string, next: JobStatus) {
     const current = jobStatuses[jobId];
@@ -743,8 +783,9 @@ export default function JobsScreen() {
         </Text>
 
         {SHARED_ACTIVE_JOBS.map((job) => {
-          const status = isLandscaper ? jobStatuses[job.id] : "pending";
-          const isLandscaperComplete = isLandscaper && status === "completed";
+          const actualStatus = jobStatuses[job.id];
+          const status = actualStatus;
+          const isLandscaperComplete = isLandscaper && actualStatus === "completed";
           const isAutoCancelled = autoCancelledJobs.has(job.id);
 
           return (
@@ -865,28 +906,42 @@ export default function JobsScreen() {
                           onPress={() => {
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                             setCustomerApproved((prev) => ({ ...prev, [job.id]: "approved" }));
+                            if (job.paymentMethod === "stripe") {
+                              addFunds(job.amount, `${job.service} — approved by ${job.customer}`);
+                            }
                             Alert.alert("Work Approved", "Payment has been released to the landscaper. Thank you!");
                           }}
                         >
                           <Ionicons name="checkmark-circle-outline" size={16} color="#000" />
                           <Text style={[jobPhotoStyles.approveBtnText, { fontFamily: "Inter_700Bold" }]}>Approve Work</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity
-                          style={jobPhotoStyles.disputeBtn}
-                          activeOpacity={0.85}
-                          onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            setDisputeJobId(job.id);
-                          }}
-                        >
-                          <Ionicons name="alert-circle-outline" size={16} color="#FF4444" />
-                          <Text style={[jobPhotoStyles.disputeBtnText, { fontFamily: "Inter_600SemiBold" }]}>Dispute Work</Text>
-                        </TouchableOpacity>
+                        {job.paymentMethod === "stripe" ? (
+                          <TouchableOpacity
+                            style={jobPhotoStyles.disputeBtn}
+                            activeOpacity={0.85}
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                              setDisputeJobId(job.id);
+                            }}
+                          >
+                            <Ionicons name="alert-circle-outline" size={16} color="#FF4444" />
+                            <Text style={[jobPhotoStyles.disputeBtnText, { fontFamily: "Inter_600SemiBold" }]}>Dispute Work</Text>
+                          </TouchableOpacity>
+                        ) : (
+                          <View style={jobPhotoStyles.inPersonNote}>
+                            <Ionicons name="cash-outline" size={14} color="#f59e0b" />
+                            <Text style={[jobPhotoStyles.inPersonNoteText, { fontFamily: "Inter_400Regular" }]}>
+                              In-person payment — please resolve any issues directly with your landscaper. TheLawnServices is not responsible for in-person payment disputes.
+                            </Text>
+                          </View>
+                        )}
                       </View>
                     )}
-                    <Text style={[jobPhotoStyles.autoExpireText, { fontFamily: "Inter_400Regular" }]}>
-                      If no action is taken within 24 hours, the order is automatically sent to TheLawnServices for further review.
-                    </Text>
+                    {job.paymentMethod === "stripe" && (
+                      <Text style={[jobPhotoStyles.autoExpireText, { fontFamily: "Inter_400Regular" }]}>
+                        If no action is taken within 24 hours, payment is automatically released to the landscaper.
+                      </Text>
+                    )}
                   </View>
                 );
               })()}
@@ -911,9 +966,9 @@ export default function JobsScreen() {
                     </Text>
                   </View>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Ionicons name="mail-outline" size={12} color="#34FF7A" />
+                    <Ionicons name="shield-checkmark-outline" size={12} color="#34FF7A" />
                     <Text style={[{ fontSize: 11, color: "#34FF7A" }, { fontFamily: "Inter_500Medium" }]}>
-                      Sent to TheLawnServices@gmail.com
+                      Sent to TheLawnServices — under review
                     </Text>
                   </View>
                   {disputeMessages[job.id] && (
@@ -1392,6 +1447,12 @@ const jobPhotoStyles = StyleSheet.create({
   },
   disputeBtnText: { fontSize: 13, color: "#FF4444" },
   autoExpireText: { fontSize: 11, color: "#888", lineHeight: 17 },
+  inPersonNote: {
+    flex: 1, flexDirection: "row", alignItems: "flex-start", gap: 8,
+    backgroundColor: "#1C1400", borderRadius: 12, borderWidth: 1, borderColor: "#f59e0b33",
+    padding: 10,
+  },
+  inPersonNoteText: { flex: 1, fontSize: 11, color: "#f59e0b", lineHeight: 16 },
 });
 
 const dispStyles = StyleSheet.create({

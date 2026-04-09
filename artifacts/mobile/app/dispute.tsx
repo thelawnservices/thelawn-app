@@ -151,12 +151,12 @@ export default function DisputeScreen() {
             Dispute Submitted
           </Text>
           <Text style={[styles.successSub, { fontFamily: "Inter_400Regular" }]}>
-            Your dispute has been sent to The Lawn Services team at TheLawnServices@gmail.com. We'll review the details and follow up with you shortly.
+            Your dispute has been received by TheLawnServices. Our team will review the details and follow up with you shortly.
           </Text>
           <View style={styles.successBadge}>
-            <Ionicons name="mail-outline" size={16} color="#34FF7A" />
+            <Ionicons name="shield-checkmark-outline" size={16} color="#34FF7A" />
             <Text style={[styles.successBadgeText, { fontFamily: "Inter_500Medium" }]}>
-              TheLawnServices@gmail.com
+              Sent to TheLawnServices
             </Text>
           </View>
           <TouchableOpacity style={styles.doneBtn} onPress={() => router.replace("/")} activeOpacity={0.85}>
@@ -355,8 +355,8 @@ export default function DisputeScreen() {
         <View style={styles.emailNoticeRow}>
           <Ionicons name="send-outline" size={15} color="#34FF7A" />
           <Text style={[styles.emailNoticeText, { fontFamily: "Inter_400Regular" }]}>
-            Your dispute will be emailed directly to{" "}
-            <Text style={{ color: "#34FF7A" }}>TheLawnServices@gmail.com</Text> with all the details above.
+            Your dispute will be sent directly to{" "}
+            <Text style={{ color: "#34FF7A" }}>TheLawnServices</Text> with all the details above for review.
           </Text>
         </View>
 
