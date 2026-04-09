@@ -201,9 +201,25 @@ export default function PayScreen() {
   const [orderId, setOrderId] = useState<string>("");
   const [selectedServices, setSelectedServices] = useState<Set<string>>(new Set());
   const [selectedYardSize, setSelectedYardSize] = useState<string | null>(null);
-  const isTreeSizeMode = selectedServices.size > 0 && [...selectedServices].some((s) => TREE_SERVICES.includes(s));
-  const isSodMode      = selectedServices.size > 0 && [...selectedServices].some((s) => SOD_SERVICES.includes(s)) && !isTreeSizeMode;
-  const activeSizeOptions = isTreeSizeMode ? TREE_SIZE_OPTIONS : isSodMode ? SOD_TYPE_OPTIONS : YARD_SIZE_OPTIONS;
+  const [selectedTreeSize, setSelectedTreeSize] = useState<string | null>(null);
+  const [selectedSodType,  setSelectedSodType]  = useState<string | null>(null);
+
+  const hasTreeService = [...selectedServices].some((s) => TREE_SERVICES.includes(s));
+  const hasSodService  = [...selectedServices].some((s) => SOD_SERVICES.includes(s));
+  const hasYardService = [...selectedServices].some((s) => !TREE_SERVICES.includes(s) && !SOD_SERVICES.includes(s));
+
+  function getPriceForService(svc: string): number {
+    if (TREE_SERVICES.includes(svc)) return PRICE_MATRIX[svc]?.[selectedTreeSize ?? ""] ?? 0;
+    if (SOD_SERVICES.includes(svc))  return PRICE_MATRIX[svc]?.[selectedSodType  ?? ""] ?? 0;
+    return PRICE_MATRIX[svc]?.[selectedYardSize ?? ""] ?? 0;
+  }
+
+  function getServiceTilePrice(svcLabel: string): string | null {
+    if (TREE_SERVICES.includes(svcLabel)) return selectedTreeSize ? `$${PRICE_MATRIX[svcLabel]?.[selectedTreeSize] ?? "–"}` : null;
+    if (SOD_SERVICES.includes(svcLabel))  return selectedSodType  ? `$${PRICE_MATRIX[svcLabel]?.[selectedSodType]  ?? "–"}` : null;
+    return selectedYardSize ? `$${PRICE_MATRIX[svcLabel]?.[selectedYardSize] ?? "–"}` : null;
+  }
+
   const [selectedDateIdx, setSelectedDateIdx] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
@@ -315,8 +331,8 @@ export default function PayScreen() {
   }, []);
 
   const basePrice =
-    selectedServices.size > 0 && selectedYardSize
-      ? [...selectedServices].reduce((sum, svc) => sum + (PRICE_MATRIX[svc]?.[selectedYardSize] ?? 0), 0)
+    selectedServices.size > 0
+      ? Math.max(45, [...selectedServices].reduce((sum, svc) => sum + getPriceForService(svc), 0))
       : 45;
 
   const discountSavings: number = (() => {
@@ -347,11 +363,16 @@ export default function PayScreen() {
   const total = (discountedBase + tip + fee).toFixed(2);
 
   const canContinueFromAvailability = selectedDateIdx !== null && selectedTime !== null;
-  const canContinueFromDetails = selectedServices.size > 0 && serviceAddress.trim().length > 0 && selectedYardSize !== null;
+  const canContinueFromDetails =
+    selectedServices.size > 0 &&
+    serviceAddress.trim().length > 0 &&
+    (!hasTreeService || selectedTreeSize !== null) &&
+    (!hasSodService  || selectedSodType  !== null) &&
+    (!hasYardService || selectedYardSize !== null);
 
-  useEffect(() => {
-    setSelectedYardSize(null);
-  }, [isTreeSizeMode, isSodMode]);
+  useEffect(() => { if (!hasTreeService) setSelectedTreeSize(null); }, [hasTreeService]);
+  useEffect(() => { if (!hasSodService)  setSelectedSodType(null);  }, [hasSodService]);
+  useEffect(() => { if (!hasYardService) setSelectedYardSize(null); }, [hasYardService]);
 
   useEffect(() => {
     if (payState === "processing") {
@@ -1082,23 +1103,23 @@ export default function PayScreen() {
                   <Text style={[styles.serviceEstTime, { fontFamily: "Inter_400Regular" }, isSelected && { color: "#34FF7A88" }]}>
                     Est. {svc.estTime}
                   </Text>
-                  {selectedYardSize && (
+                  {getServiceTilePrice(svc.label) !== null && (
                     <Text style={[styles.serviceTilePrice, { fontFamily: "Inter_600SemiBold" }, isSelected && { color: "#34FF7A" }]}>
-                      ${PRICE_MATRIX[svc.label]?.[selectedYardSize] ?? "–"}
+                      {getServiceTilePrice(svc.label)}
                     </Text>
                   )}
                 </TouchableOpacity>
               );
             })}
           </View>
-          {selectedServices.size > 1 && selectedYardSize && (
+          {selectedServices.size > 1 && canContinueFromDetails && (
             <View style={styles.multiServiceTotal}>
               <View style={styles.multiServiceTotalTop}>
                 <Text style={[styles.multiServiceTotalLabel, { fontFamily: "Inter_500Medium" }]}>
                   {selectedServices.size} Services Selected
                 </Text>
                 <Text style={[styles.multiServiceTotalPrice, { fontFamily: "Inter_700Bold" }]}>
-                  ${[...selectedServices].reduce((s, n) => s + (PRICE_MATRIX[n]?.[selectedYardSize] ?? 0), 0)}
+                  ${[...selectedServices].reduce((s, n) => s + getPriceForService(n), 0)}
                 </Text>
               </View>
               <Text style={[styles.multiServiceTotalNames, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>
@@ -1129,39 +1150,106 @@ export default function PayScreen() {
             autoCorrect={false}
           />
 
-          {/* Yard/Tree Size */}
-          <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
-            {isTreeSizeMode ? "What size is the tree?" : isSodMode ? "What type of sod?" : "What size is your yard?"}{" "}
-            <Text style={{ color: "#ef4444" }}>*</Text>
-          </Text>
-          <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
-            {isTreeSizeMode ? "Select the approximate height of the tree" : isSodMode ? "Choose the sod variety — this sets your price" : "This determines your price"}
-          </Text>
-          <View style={[styles.yardSizeRow, (isTreeSizeMode || isSodMode) && { flexWrap: "wrap" }]}>
-            {activeSizeOptions.map((ys) => (
-              <TouchableOpacity
-                key={ys.key}
-                style={[styles.yardChip, selectedYardSize === ys.key && styles.yardChipActive, (isTreeSizeMode || isSodMode) && { minWidth: "45%" }]}
-                onPress={() => {
-                  setSelectedYardSize(ys.key);
-                  Haptics.selectionAsync();
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={[styles.yardChipLabel, { fontFamily: "Inter_600SemiBold" }, selectedYardSize === ys.key && styles.yardChipLabelActive]}>
-                  {ys.label}
-                </Text>
-                <Text style={[styles.yardChipSub, { fontFamily: "Inter_400Regular" }, selectedYardSize === ys.key && styles.yardChipSubActive]}>
-                  {ys.sub}
-                </Text>
-                {selectedServices.size > 0 && (
-                  <Text style={[styles.yardChipPrice, { fontFamily: "Inter_700Bold" }, selectedYardSize === ys.key && { color: "#34FF7A" }]}>
-                    ${[...selectedServices].reduce((s, n) => s + (PRICE_MATRIX[n]?.[ys.key] ?? 0), 0)}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
+          {/* SOD TYPE — shown when Sod Installation is selected */}
+          {hasSodService && (
+            <>
+              <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
+                What type of sod?{" "}
+                <Text style={{ color: "#ef4444" }}>*</Text>
+              </Text>
+              <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+                For Sod Installation — choose the sod variety
+              </Text>
+              <View style={[styles.yardSizeRow, { flexWrap: "wrap" }]}>
+                {SOD_TYPE_OPTIONS.map((ys) => (
+                  <TouchableOpacity
+                    key={ys.key}
+                    style={[styles.yardChip, selectedSodType === ys.key && styles.yardChipActive, { minWidth: "45%" }]}
+                    onPress={() => { setSelectedSodType(ys.key); Haptics.selectionAsync(); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.yardChipLabel, { fontFamily: "Inter_600SemiBold" }, selectedSodType === ys.key && styles.yardChipLabelActive]}>
+                      {ys.label}
+                    </Text>
+                    <Text style={[styles.yardChipSub, { fontFamily: "Inter_400Regular" }, selectedSodType === ys.key && styles.yardChipSubActive]}>
+                      {ys.sub}
+                    </Text>
+                    <Text style={[styles.yardChipPrice, { fontFamily: "Inter_700Bold" }, selectedSodType === ys.key && { color: "#34FF7A" }]}>
+                      ${PRICE_MATRIX["Sod Installation"]?.[ys.key] ?? "–"}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* TREE SIZE — shown when Tree Removal is selected */}
+          {hasTreeService && (
+            <>
+              <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
+                What size is the tree?{" "}
+                <Text style={{ color: "#ef4444" }}>*</Text>
+              </Text>
+              <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+                For Tree Removal — select the approximate tree height
+              </Text>
+              <View style={[styles.yardSizeRow, { flexWrap: "wrap" }]}>
+                {TREE_SIZE_OPTIONS.map((ys) => (
+                  <TouchableOpacity
+                    key={ys.key}
+                    style={[styles.yardChip, selectedTreeSize === ys.key && styles.yardChipActive, { minWidth: "45%" }]}
+                    onPress={() => { setSelectedTreeSize(ys.key); Haptics.selectionAsync(); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.yardChipLabel, { fontFamily: "Inter_600SemiBold" }, selectedTreeSize === ys.key && styles.yardChipLabelActive]}>
+                      {ys.label}
+                    </Text>
+                    <Text style={[styles.yardChipSub, { fontFamily: "Inter_400Regular" }, selectedTreeSize === ys.key && styles.yardChipSubActive]}>
+                      {ys.sub}
+                    </Text>
+                    <Text style={[styles.yardChipPrice, { fontFamily: "Inter_700Bold" }, selectedTreeSize === ys.key && { color: "#34FF7A" }]}>
+                      ${PRICE_MATRIX["Tree Removal"]?.[ys.key] ?? "–"}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* YARD SIZE — shown when non-tree, non-sod services are selected */}
+          {hasYardService && (
+            <>
+              <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
+                What size is your yard?{" "}
+                <Text style={{ color: "#ef4444" }}>*</Text>
+              </Text>
+              <Text style={[styles.fieldHint, { fontFamily: "Inter_400Regular" }]}>
+                {hasTreeService || hasSodService
+                  ? `For ${[...selectedServices].filter(s => !TREE_SERVICES.includes(s) && !SOD_SERVICES.includes(s)).join(" & ")} — this determines your price`
+                  : "This determines your price"}
+              </Text>
+              <View style={styles.yardSizeRow}>
+                {YARD_SIZE_OPTIONS.map((ys) => (
+                  <TouchableOpacity
+                    key={ys.key}
+                    style={[styles.yardChip, selectedYardSize === ys.key && styles.yardChipActive]}
+                    onPress={() => { setSelectedYardSize(ys.key); Haptics.selectionAsync(); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.yardChipLabel, { fontFamily: "Inter_600SemiBold" }, selectedYardSize === ys.key && styles.yardChipLabelActive]}>
+                      {ys.label}
+                    </Text>
+                    <Text style={[styles.yardChipSub, { fontFamily: "Inter_400Regular" }, selectedYardSize === ys.key && styles.yardChipSubActive]}>
+                      {ys.sub}
+                    </Text>
+                    <Text style={[styles.yardChipPrice, { fontFamily: "Inter_700Bold" }, selectedYardSize === ys.key && { color: "#34FF7A" }]}>
+                      ${[...selectedServices].filter(s => !TREE_SERVICES.includes(s) && !SOD_SERVICES.includes(s)).reduce((sum, s) => sum + (PRICE_MATRIX[s]?.[ys.key] ?? 0), 0)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
 
           <Text style={[styles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>
             Special Instructions
@@ -1250,8 +1338,12 @@ export default function PayScreen() {
                 ? "Select a service type"
                 : !serviceAddress.trim()
                 ? "Enter a service address"
-                : !selectedYardSize
-                ? isSodMode ? "Select sod type" : "Select your yard size"
+                : hasSodService && !selectedSodType
+                ? "Select sod type"
+                : hasTreeService && !selectedTreeSize
+                ? "Select tree size"
+                : hasYardService && !selectedYardSize
+                ? "Select yard size"
                 : "Continue to Review & Pay"}
             </Text>
             {canContinueFromDetails && (
@@ -1285,7 +1377,13 @@ export default function PayScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.summaryService, { fontFamily: "Inter_600SemiBold" }]}>
-              {selectedServices.size > 0 ? [...selectedServices].join(" + ") : "Mowing/Edging"}{selectedYardSize ? ` · ${selectedYardSize}${isTreeSizeMode ? " tree" : isSodMode ? " sod" : " yard"}` : ""}
+              {selectedServices.size > 0
+                ? [...selectedServices].map((svc) => {
+                    if (TREE_SERVICES.includes(svc)) return selectedTreeSize ? `${svc} · ${selectedTreeSize} tree` : svc;
+                    if (SOD_SERVICES.includes(svc))  return selectedSodType  ? `${svc} · ${selectedSodType} sod`  : svc;
+                    return selectedYardSize ? `${svc} · ${selectedYardSize} yard` : svc;
+                  }).join("  +  ")
+                : "Mowing/Edging"}
             </Text>
             {recurring && (
               <View style={styles.recurringBadge}>
