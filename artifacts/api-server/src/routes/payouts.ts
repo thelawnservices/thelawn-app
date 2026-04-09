@@ -132,13 +132,15 @@ router.get("/account-status/:accountId", async (req, res) => {
 // ── POST /api/payouts/withdraw ────────────────────────────────────────────────
 // Transfers funds from the platform to the landscaper's Connect account,
 // then immediately triggers a payout to their bank/card.
+// Pass instant=true for instant debit card payouts (1.5% fee applies).
 router.post("/withdraw", async (req, res) => {
   try {
     const stripe = await getUncachableStripeClient();
-    const { accountId, amount, description } = req.body as {
+    const { accountId, amount, description, instant } = req.body as {
       accountId: string;
       amount: number;
       description?: string;
+      instant?: boolean;
     };
 
     if (!accountId) return res.status(400).json({ error: "accountId is required" });
@@ -155,8 +157,8 @@ router.post("/withdraw", async (req, res) => {
       description: description ?? "Wallet withdrawal — TheLawnServices",
     });
 
-    // Step 2: Trigger an immediate payout from the Connect account to their bank/card
-    // (This runs as the connected account using the `stripeAccount` option)
+    // Step 2: Trigger a payout from the Connect account to their bank/card.
+    // instant=true uses `method: "instant"` for debit card instant payouts.
     let payout: any = null;
     try {
       payout = await stripe.payouts.create(
@@ -165,6 +167,7 @@ router.post("/withdraw", async (req, res) => {
           currency: "usd",
           description: description ?? "Wallet payout — TheLawnServices",
           statement_descriptor: "THELAWNSERVICES",
+          ...(instant ? { method: "instant" } : {}),
         },
         { stripeAccount: accountId }
       );
@@ -179,11 +182,14 @@ router.post("/withdraw", async (req, res) => {
       payoutId: payout?.id ?? null,
       amount: transfer.amount / 100,
       status: payout?.status ?? "transfer_only",
-      arrivalDate: payout?.arrival_date
-        ? new Date(payout.arrival_date * 1000).toLocaleDateString("en-US", {
-            month: "short", day: "numeric", year: "numeric",
-          })
-        : null,
+      instant: instant ?? false,
+      arrivalDate: instant
+        ? "Within minutes"
+        : payout?.arrival_date
+          ? new Date(payout.arrival_date * 1000).toLocaleDateString("en-US", {
+              month: "short", day: "numeric", year: "numeric",
+            })
+          : null,
     });
   } catch (err: any) {
     console.error("withdraw error:", err.message);

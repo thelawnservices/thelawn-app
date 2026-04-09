@@ -32,7 +32,7 @@ type Step =
   | "landscaper-register"
   | "verify-code";
 
-const SPECIALTIES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
+const SPECIALTIES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal", "Tree Trimming & Pruning"];
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();

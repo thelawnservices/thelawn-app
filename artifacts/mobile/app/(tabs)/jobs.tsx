@@ -45,6 +45,7 @@ type PayMethod = "stripe" | "inperson";
 
 const SHARED_ACTIVE_JOBS: Array<{
   id: string;
+  code: string;
   service: string;
   customer: string;
   landscaper: string;
@@ -56,6 +57,7 @@ const SHARED_ACTIVE_JOBS: Array<{
 }> = [
   {
     id: "a1",
+    code: "JOB-84712",
     service: "Mowing/Edging",
     customer: "Zamire Smith",
     landscaper: "GreenScape Pros",
@@ -70,7 +72,8 @@ const SHARED_ACTIVE_JOBS: Array<{
 const SHARED_COMPLETED_JOBS = [
   {
     id: "c1",
-    service: "Hedge Trimming",
+    code: "JOB-61293",
+    service: "Mowing/Edging",
     customer: "Marcus T.",
     landscaper: "GreenScape Pros",
     address: "88 Palmetto Ave, Ellenton, FL",
@@ -79,6 +82,7 @@ const SHARED_COMPLETED_JOBS = [
   },
   {
     id: "c2",
+    code: "JOB-38847",
     service: "Weeding/Mulching",
     customer: "Alex T.",
     landscaper: "GreenScape Pros",
@@ -123,10 +127,9 @@ const SERVICE_HISTORY = [
   },
 ];
 
-const STATUS_STEPS: { key: JobStatus; label: string }[] = [
-  { key: "arrived", label: "Arrived at Location" },
-  { key: "started", label: "Work Started" },
-  { key: "completed", label: "Completed" },
+const STATUS_STEPS: { key: JobStatus; label: string; icon: string }[] = [
+  { key: "started",   label: "Arrived & Work Started", icon: "location-outline" },
+  { key: "completed", label: "Mark as Complete",        icon: "checkmark-circle-outline" },
 ];
 
 function statusOrder(s: JobStatus): number {
@@ -632,12 +635,44 @@ export default function JobsScreen() {
             icon: "checkmark-circle",
             title: "Payment Auto-Released",
             sub: `${job.service} payment of $${job.amount.toFixed(2)} has been added to your wallet after the 24-hour review window.`,
+            targetRole: "landscaper",
           });
         }
       });
     }, 30_000);
     return () => clearInterval(interval);
   }, [completedAt, customerApproved, addFunds, addNotification]);
+
+  // ── 10-minute arrival alert: remind landscaper if they haven't confirmed ─
+  const [arrivalAlertSent, setArrivalAlertSent] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!isLandscaper) return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    SHARED_ACTIVE_JOBS.forEach((job) => {
+      const jobDt = parseJobDateTime(job.date, job.time);
+      if (!jobDt) return;
+      const alertTime = jobDt.getTime() + 10 * 60 * 1000;
+      const delay = alertTime - Date.now();
+      if (delay <= 0) return;
+      const t = setTimeout(() => {
+        const currentStatus = jobStatuses[job.id] ?? "pending";
+        if (statusOrder(currentStatus) < statusOrder("started") && !arrivalAlertSent.has(job.id)) {
+          setArrivalAlertSent((prev) => new Set([...prev, job.id]));
+          sendLocalPush(
+            "⏰ Confirm Arrival Now",
+            `It's been 10 minutes since your ${job.service} appointment (${job.time}). Tap "Arrived & Work Started" to notify your customer.`
+          );
+          Alert.alert(
+            "Arrival Reminder",
+            `Your ${job.service} appointment was at ${job.time}. Please tap "Arrived & Work Started" to confirm arrival for your customer.\n\nJob Code: ${job.code}`,
+            [{ text: "Got It" }]
+          );
+        }
+      }, delay);
+      timers.push(t);
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [isLandscaper, jobStatuses, arrivalAlertSent]);
 
   function advanceStatus(jobId: string, next: JobStatus) {
     const current = jobStatuses[jobId];
@@ -651,40 +686,23 @@ export default function JobsScreen() {
     setJobStatuses((prev) => ({ ...prev, [jobId]: next }));
     const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
 
-    if (next === "arrived" && statusOrder(current) < statusOrder("arrived")) {
+    if (next === "started" && statusOrder(current) < statusOrder("started")) {
+      // Combined arrived + started: notify customer of both events at once
       addNotification({
         icon: "location-outline",
-        title: "Landscaper Arrived",
-        sub: `Your landscaper has arrived at the location for ${job?.service ?? "your job"}`,
+        title: "Landscaper Arrived & Work Started",
+        sub: `Your landscaper has arrived and begun ${job?.service ?? "work"} at your location.`,
+        targetRole: "customer",
       });
       sendLocalPush(
-        "Your Landscaper Has Arrived",
-        `${job?.landscaper ?? "Your landscaper"} is at the location and will begin ${job?.service ?? "work"} shortly.`
+        "Your Landscaper Has Arrived & Started",
+        `${job?.landscaper ?? "Your landscaper"} has arrived and is now working on your ${job?.service ?? "job"}.`
       );
       setTimeout(() => {
         Alert.alert(
-          "Customer Notified",
-          `${job?.customer ?? "The customer"} has been notified that you've arrived at the service location. You may now start work.`,
-          [{ text: "OK" }]
-        );
-      }, 300);
-    }
-
-    if (next === "started" && statusOrder(current) < statusOrder("started")) {
-      addNotification({
-        icon: "construct-outline",
-        title: "Work Has Started",
-        sub: `${isLandscaper ? "You've" : "Your landscaper has"} started work on ${job?.service ?? "your job"}`,
-      });
-      sendLocalPush(
-        "Work Has Started",
-        `${job?.landscaper ?? "Your landscaper"} has begun ${job?.service ?? "work"} at your property.`
-      );
-      setTimeout(() => {
-        Alert.alert(
-          "Customer Notified",
-          "The customer has been notified that you've arrived and work has started.",
-          [{ text: "OK" }]
+          "Customer Notified ✓",
+          `${job?.customer ?? "The customer"} has been notified that you've arrived and work has started. Your job code is ${job?.code ?? jobId}.`,
+          [{ text: "Got It" }]
         );
       }, 300);
     }
@@ -713,19 +731,28 @@ export default function JobsScreen() {
       });
     }
     const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
+    // Notify customer that work is done (customer-targeted)
     addNotification({
       icon: "checkmark-circle",
-      title: "Work Complete!",
-      sub: `${job?.service ?? "Your job"} has been completed. Awaiting customer approval.`,
+      title: "Work Complete — Action Needed",
+      sub: `${job?.landscaper ?? "Your landscaper"} has finished ${job?.service ?? "your job"}. Review & approve within 24 hours.`,
+      targetRole: "customer",
+    });
+    // Notify landscaper that customer was notified (landscaper-targeted)
+    addNotification({
+      icon: "checkmark-circle-outline",
+      title: "Job Marked Complete",
+      sub: `${job?.service ?? "Job"} (${job?.code ?? jobId}) marked complete. Customer has 24 hours to approve.`,
+      targetRole: "landscaper",
     });
     sendLocalPush(
       "Work Has Been Completed",
-      `${job?.landscaper ?? "Your landscaper"} has finished ${job?.service ?? "work"}. You have 24 hours to approve or dispute.`
+      `${job?.landscaper ?? "Your landscaper"} has finished ${job?.service ?? "work"}. You have 24 hours to approve or dispute. Job Code: ${job?.code ?? jobId}`
     );
     setTimeout(() => {
       Alert.alert(
-        "Customer Notified",
-        `${job?.customer ?? "The customer"} has been notified and has 24 hours to approve or dispute the work. Payment is held in escrow until approved.`,
+        "Customer Notified ✓",
+        `${job?.customer ?? "The customer"} has been notified and has 24 hours to approve or dispute. Payment is held in escrow.\n\nJob Code: ${job?.code ?? jobId}`,
         [{ text: "OK" }]
       );
     }, 400);
@@ -836,6 +863,10 @@ export default function JobsScreen() {
               <View style={styles.metaRow}>
                 <Ionicons name="time-outline" size={12} color="#CCCCCC" />
                 <Text style={[styles.metaText, { fontFamily: "Inter_400Regular" }]}>{job.date} · {job.time}</Text>
+              </View>
+              <View style={styles.metaRow}>
+                <Ionicons name="barcode-outline" size={12} color="#34FF7A" />
+                <Text style={[styles.metaText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>{job.code}</Text>
               </View>
 
               {/* Completion photos (if landscaper attached) */}
@@ -1014,8 +1045,12 @@ export default function JobsScreen() {
                         onPress={() => advanceStatus(job.id, step.key)}
                         activeOpacity={done ? 1 : 0.8}
                       >
-                        {done && <Ionicons name="checkmark" size={11} color="#000" />}
-                        <Text style={[styles.stepBtnText, { fontFamily: "Inter_500Medium" }, done && styles.stepBtnTextDone]}>
+                        <Ionicons
+                          name={(done ? "checkmark-circle" : step.icon) as any}
+                          size={13}
+                          color={done ? "#000" : "#34FF7A"}
+                        />
+                        <Text style={[styles.stepBtnText, { fontFamily: "Inter_600SemiBold" }, done && styles.stepBtnTextDone]}>
                           {step.label}
                         </Text>
                       </TouchableOpacity>
@@ -1054,6 +1089,10 @@ export default function JobsScreen() {
               <View style={[styles.metaRow, { marginTop: 6 }]}>
                 <Ionicons name="time-outline" size={12} color="#CCCCCC" />
                 <Text style={[styles.metaText, { fontFamily: "Inter_400Regular", color: "#BBBBBB" }]}>{job.date} · {job.time}</Text>
+              </View>
+              <View style={[styles.metaRow, { marginTop: 2 }]}>
+                <Ionicons name="barcode-outline" size={12} color="#34FF7A" />
+                <Text style={[styles.metaText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>{job.code}</Text>
               </View>
             </View>
           ))

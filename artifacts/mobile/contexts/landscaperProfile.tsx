@@ -3,11 +3,13 @@ import React, { createContext, useContext, useState } from "react";
 export type BookedSlot = { time: string; durationMinutes: number; service: string };
 
 export const SERVICE_BLOCK_MINUTES: Record<string, number> = {
-  "Mowing/Edging":    60,
-  "Weeding/Mulching": 240,
-  "Sod Installation": 480,
-  "Artificial Turf":  1200,
-  "Full Service":     240,
+  "Mowing/Edging":            60,
+  "Weeding/Mulching":         240,
+  "Sod Installation":         480,
+  "Artificial Turf":          1200,
+  "Full Service":             240,
+  "Tree Removal":             360,
+  "Tree Trimming & Pruning":  180,
 };
 
 export type LandscaperAvailability = {
@@ -45,7 +47,7 @@ export type MyServicesState = {
   blockedDates:     string[];   // "Apr 10, 2026" style keys the landscaper marked off
 };
 
-const ALL_SVC = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
+const ALL_SVC = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal", "Tree Trimming & Pruning"];
 
 const BASE_TIERS: PricingTierItem[] = [
   { label: "Small",  range: "Up to 2,000 sq ft",  price: "$45" },
@@ -56,11 +58,13 @@ const BASE_TIERS: PricingTierItem[] = [
 const DEFAULT_MY_SERVICES: MyServicesState = {
   offered: [...ALL_SVC],
   avail: {
-    "Mowing/Edging":    { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "8:00 AM", endTime: "6:00 PM" },
-    "Weeding/Mulching": { days: ["Tue","Thu"],                   startTime: "9:00 AM", endTime: "5:00 PM" },
-    "Sod Installation": { days: ["Mon","Wed","Fri"],             startTime: "7:00 AM", endTime: "5:00 PM" },
-    "Artificial Turf":  { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "7:00 AM", endTime: "4:00 PM" },
-    "Full Service":     { days: ["Mon","Wed","Fri"],             startTime: "8:00 AM", endTime: "5:00 PM" },
+    "Mowing/Edging":            { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "8:00 AM", endTime: "6:00 PM" },
+    "Weeding/Mulching":         { days: ["Tue","Thu"],                   startTime: "9:00 AM", endTime: "5:00 PM" },
+    "Sod Installation":         { days: ["Mon","Wed","Fri"],             startTime: "7:00 AM", endTime: "5:00 PM" },
+    "Artificial Turf":          { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "7:00 AM", endTime: "4:00 PM" },
+    "Full Service":             { days: ["Mon","Wed","Fri"],             startTime: "8:00 AM", endTime: "5:00 PM" },
+    "Tree Removal":             { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "7:00 AM", endTime: "4:00 PM" },
+    "Tree Trimming & Pruning":  { days: ["Mon","Tue","Wed","Thu","Fri"], startTime: "8:00 AM", endTime: "5:00 PM" },
   },
   pricing: Object.fromEntries(ALL_SVC.map((s) => [s, BASE_TIERS.map((t) => ({ ...t }))])),
   acceptedPayments: ["Stripe", "In Person"],

@@ -7,6 +7,7 @@ export type ServiceNotification = {
   sub: string;
   type?: "service" | "announcement";
   timestamp?: string;
+  targetRole?: "landscaper" | "customer" | "both";
 };
 
 export type ActiveDiscount = {
@@ -21,6 +22,7 @@ export type ActiveDiscount = {
 type NotificationsContextType = {
   notifications: ServiceNotification[];
   addNotification: (n: Omit<ServiceNotification, "id">) => void;
+  getNotificationsForRole: (role: "landscaper" | "customer") => ServiceNotification[];
   broadcastAnnouncement: (landscaperName: string, title: string, message: string, expiresAt?: string) => void;
   clearNotifications: () => void;
   activeDiscounts: ActiveDiscount[];
@@ -30,6 +32,7 @@ type NotificationsContextType = {
 const NotificationsContext = createContext<NotificationsContextType>({
   notifications: [],
   addNotification: () => {},
+  getNotificationsForRole: () => [],
   broadcastAnnouncement: () => {},
   clearNotifications: () => {},
   activeDiscounts: [],
@@ -107,13 +110,17 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     setNotifications([]);
   }
 
+  function getNotificationsForRole(role: "landscaper" | "customer"): ServiceNotification[] {
+    return notifications.filter((n) => !n.targetRole || n.targetRole === role || n.targetRole === "both");
+  }
+
   function getDiscountForPro(name: string): ActiveDiscount | null {
     return activeDiscounts.find((d) => d.landscaperName === name) ?? null;
   }
 
   return (
     <NotificationsContext.Provider
-      value={{ notifications, addNotification, broadcastAnnouncement, clearNotifications, activeDiscounts, getDiscountForPro }}
+      value={{ notifications, addNotification, getNotificationsForRole, broadcastAnnouncement, clearNotifications, activeDiscounts, getDiscountForPro }}
     >
       {children}
     </NotificationsContext.Provider>

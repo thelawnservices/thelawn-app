@@ -22,13 +22,13 @@ import { useAuth } from "@/contexts/auth";
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
 const SERVICES = [
-  "Lawn Mowing",
-  "Edging",
-  "Weeding",
-  "Mulching",
+  "Mowing/Edging",
+  "Weeding/Mulching",
   "Sod Installation",
   "Artificial Turf",
   "Full Service",
+  "Tree Removal",
+  "Tree Trimming & Pruning",
   "Other",
 ];
 

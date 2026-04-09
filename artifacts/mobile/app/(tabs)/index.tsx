@@ -949,7 +949,7 @@ const helpStyles = StyleSheet.create({
 });
 
 const ALL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"];
+const ALL_SERVICES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service", "Tree Removal", "Tree Trimming & Pruning"];
 
 const ACCEPTED_PAYMENT_OPTIONS = [
   { value: "Stripe",    icon: "card" as const },
@@ -974,11 +974,13 @@ function buildTimeSlots(): string[] {
 const TIME_SLOTS = buildTimeSlots();
 
 const DEFAULT_AVAIL: AvailState = {
-  "Mowing/Edging":    { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "8:00 AM",  endTime: "6:00 PM"  },
-  "Weeding/Mulching": { days: ["Tue", "Thu"],                       startTime: "9:00 AM",  endTime: "5:00 PM"  },
-  "Sod Installation": { days: ["Mon", "Wed", "Fri"],                startTime: "7:00 AM",  endTime: "5:00 PM"  },
-  "Artificial Turf":  { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "7:00 AM",  endTime: "4:00 PM"  },
-  "Full Service":     { days: ["Mon", "Wed", "Fri"],                startTime: "8:00 AM",  endTime: "5:00 PM"  },
+  "Mowing/Edging":            { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "8:00 AM",  endTime: "6:00 PM"  },
+  "Weeding/Mulching":         { days: ["Tue", "Thu"],                       startTime: "9:00 AM",  endTime: "5:00 PM"  },
+  "Sod Installation":         { days: ["Mon", "Wed", "Fri"],                startTime: "7:00 AM",  endTime: "5:00 PM"  },
+  "Artificial Turf":          { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "7:00 AM",  endTime: "4:00 PM"  },
+  "Full Service":             { days: ["Mon", "Wed", "Fri"],                startTime: "8:00 AM",  endTime: "5:00 PM"  },
+  "Tree Removal":             { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "7:00 AM",  endTime: "4:00 PM"  },
+  "Tree Trimming & Pruning":  { days: ["Mon", "Tue", "Wed", "Thu", "Fri"], startTime: "8:00 AM",  endTime: "5:00 PM"  },
 };
 
 type PricingTier = { label: string; range: string; price: string };
@@ -1870,7 +1872,7 @@ export default function HomeScreen() {
   const notifEnabledRef = React.useRef(notifEnabled);
   notifEnabledRef.current = notifEnabled;
 
-  const { notifications: notifItems, broadcastAnnouncement } = useNotifications();
+  const { notifications: notifItems, getNotificationsForRole, broadcastAnnouncement } = useNotifications();
   const [missedCount, setMissedCount] = useState(0);
   const [homeAnnounceVisible, setHomeAnnounceVisible] = useState(false);
   const [homeAnnounceTitle, setHomeAnnounceTitle] = useState("");
@@ -2125,7 +2127,7 @@ export default function HomeScreen() {
       <NotificationsPanel
         visible={notifVisible}
         onClose={() => setNotifVisible(false)}
-        items={notifItems}
+        items={getNotificationsForRole(isLandscaper ? "landscaper" : "customer")}
         notifEnabled={notifEnabled}
         onToggleEnabled={() => {
           setNotifEnabled((v) => {

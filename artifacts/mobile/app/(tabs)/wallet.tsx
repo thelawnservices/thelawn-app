@@ -21,7 +21,7 @@ const MIN_WITHDRAWAL = 10;
 
 type Screen = "main" | "withdraw" | "pin" | "success" | "payout_settings";
 
-type PayoutMethodId = "stripe" | "paypal" | "zelle" | "venmo" | "check";
+type PayoutMethodId = "stripe_instant" | "stripe" | "paypal" | "zelle" | "venmo" | "check";
 
 type WithdrawMethod = {
   id: PayoutMethodId;
@@ -36,6 +36,17 @@ type WithdrawMethod = {
 };
 
 const METHODS: WithdrawMethod[] = [
+  {
+    id: "stripe_instant",
+    label: "Instant Debit Card Payout",
+    icon: "flash-outline",
+    speed: "Within Minutes",
+    speedDays: "within minutes",
+    fee: "1.5% fee",
+    feeRate: 0.015,
+    isStripe: true,
+    instant: true,
+  },
   {
     id: "stripe",
     label: "Stripe Bank Payout",
@@ -226,6 +237,11 @@ export default function WalletScreen() {
       return;
     }
 
+    const isInstant = selectedMethod?.id === "stripe_instant";
+    const feeRate   = selectedMethod?.feeRate ?? 0;
+    const fee       = parseFloat((amountNum * feeRate).toFixed(2));
+    const netAmount = parseFloat((amountNum - fee).toFixed(2));
+
     try {
       const res = await fetch(`${API_URL}/api/payouts/withdraw`, {
         method: "POST",
@@ -233,17 +249,19 @@ export default function WalletScreen() {
         body: JSON.stringify({
           accountId: stripeAccountId,
           amount: amountNum,
-          description: `TheLawnServices wallet withdrawal — $${fmt(amountNum)}`,
+          instant: isInstant,
+          description: `TheLawnServices ${isInstant ? "instant " : ""}withdrawal — $${fmt(amountNum)}${fee > 0 ? ` (fee: $${fmt(fee)})` : ""}`,
         }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      recordWithdrawal(amountNum, "Stripe Bank Payout");
+      // Deduct fee from wallet if applicable
+      recordWithdrawal(amountNum, selectedMethod?.label ?? "Stripe Payout");
       setWithdrawResult({
         transferId: data.transferId,
         payoutId: data.payoutId,
-        arrivalDate: data.arrivalDate,
+        arrivalDate: data.arrivalDate ?? (isInstant ? "Within minutes" : null),
         status: data.status,
       });
       setScreen("success");
@@ -275,9 +293,22 @@ export default function WalletScreen() {
       if (stripeStatus !== "connected") {
         Alert.alert(
           "Stripe Not Connected",
-          "Please connect your Stripe payout account in Payout Settings before using Stripe Bank Payout.",
+          "Please connect your Stripe payout account in Payout Settings before using this withdrawal option.",
           [
             { text: "Go to Settings", onPress: () => { setScreen("payout_settings"); } },
+            { text: "Cancel", style: "cancel" },
+          ]
+        );
+        return;
+      }
+      if (selectedMethod.id === "stripe_instant") {
+        const fee = parseFloat((amountNum * 0.015).toFixed(2));
+        const net = parseFloat((amountNum - fee).toFixed(2));
+        Alert.alert(
+          "Confirm Instant Payout",
+          `A 1.5% fee applies to instant debit card payouts.\n\nWithdrawal: $${fmt(amountNum)}\nFee: $${fmt(fee)}\nYou receive: $${fmt(net)}\n\nFunds arrive within minutes.`,
+          [
+            { text: "Confirm", onPress: executeStripeWithdrawal },
             { text: "Cancel", style: "cancel" },
           ]
         );
@@ -718,10 +749,15 @@ export default function WalletScreen() {
                     <Ionicons name={m.icon as any} size={20} color={active ? "#000" : stripeBlocked ? "#444" : "#CCCCCC"} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                       <Text style={[s.methodLabel, { fontFamily: "Inter_600SemiBold" }, active && { color: "#34FF7A" }, stripeBlocked && { color: "#444" }]}>
                         {m.label}
                       </Text>
+                      {m.instant && (
+                        <View style={{ paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6, backgroundColor: "#FFD70022" }}>
+                          <Text style={{ fontSize: 10, fontFamily: "Inter_700Bold", color: "#FFD700", letterSpacing: 0.5 }}>⚡ INSTANT</Text>
+                        </View>
+                      )}
                       {m.isStripe && (
                         <View style={[s.stripeTag, { backgroundColor: isStripeConnected ? "#34FF7A22" : "#ffffff0a" }]}>
                           <Text style={[s.stripeTagText, { fontFamily: "Inter_600SemiBold", color: isStripeConnected ? "#34FF7A" : "#555" }]}>

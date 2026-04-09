@@ -10,7 +10,9 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -52,11 +54,13 @@ const TIP_OPTIONS = [
   { label: "20%", value: 0.2 },
 ];
 
-const SERVICE_OPTIONS: { label: string; icon: "cut-outline" | "flower-outline" | "grid-outline" | "layers-outline"; estTime: string }[] = [
-  { label: "Mowing/Edging",     icon: "cut-outline",    estTime: "30min–1hr" },
-  { label: "Weeding/Mulching",  icon: "flower-outline", estTime: "2–4 hrs" },
-  { label: "Sod Installation",  icon: "grid-outline",   estTime: "4–8 hrs" },
-  { label: "Artificial Turf",   icon: "layers-outline", estTime: "10–20 hrs" },
+const SERVICE_OPTIONS: { label: string; icon: "cut-outline" | "flower-outline" | "grid-outline" | "layers-outline" | "leaf-outline"; estTime: string }[] = [
+  { label: "Mowing/Edging",           icon: "cut-outline",    estTime: "30min–1hr" },
+  { label: "Weeding/Mulching",        icon: "flower-outline", estTime: "2–4 hrs" },
+  { label: "Sod Installation",        icon: "grid-outline",   estTime: "4–8 hrs" },
+  { label: "Artificial Turf",         icon: "layers-outline", estTime: "10–20 hrs" },
+  { label: "Tree Removal",            icon: "cut-outline",    estTime: "4–8 hrs" },
+  { label: "Tree Trimming & Pruning", icon: "leaf-outline",   estTime: "2–4 hrs" },
 ];
 
 const YARD_SIZE_OPTIONS = [
@@ -66,10 +70,12 @@ const YARD_SIZE_OPTIONS = [
 ];
 
 const PRICE_MATRIX: Record<string, Record<string, number>> = {
-  "Mowing/Edging":    { Small: 45,   Medium: 70,   Large: 100  },
-  "Weeding/Mulching": { Small: 90,   Medium: 130,  Large: 175  },
-  "Sod Installation": { Small: 350,  Medium: 550,  Large: 850  },
-  "Artificial Turf":  { Small: 1200, Medium: 1800, Large: 2800 },
+  "Mowing/Edging":            { Small: 45,   Medium: 70,   Large: 100  },
+  "Weeding/Mulching":         { Small: 90,   Medium: 130,  Large: 175  },
+  "Sod Installation":         { Small: 350,  Medium: 550,  Large: 850  },
+  "Artificial Turf":          { Small: 1200, Medium: 1800, Large: 2800 },
+  "Tree Removal":             { Small: 250,  Medium: 500,  Large: 900  },
+  "Tree Trimming & Pruning":  { Small: 150,  Medium: 280,  Large: 450  },
 };
 
 const PHOTO_ICONS = ["tree-outline", "camera-outline", "home-outline", "flower-outline", "leaf-outline", "leaf"] as const;
@@ -79,11 +85,13 @@ const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const SERVICE_DURATIONS: Record<string, number> = {
-  "Mowing/Edging":    60,
-  "Weeding/Mulching": 240,
-  "Sod Installation": 480,
-  "Artificial Turf":  1200,
-  "Full Service":     240,
+  "Mowing/Edging":            60,
+  "Weeding/Mulching":         240,
+  "Sod Installation":         480,
+  "Artificial Turf":          1200,
+  "Full Service":             240,
+  "Tree Removal":             360,
+  "Tree Trimming & Pruning":  180,
 };
 
 function parseTimeToMinutes(t: string): number {
@@ -281,7 +289,7 @@ export default function PayScreen() {
   const [customTipAmount, setCustomTipAmount] = useState("");
   const [serviceAddress, setServiceAddress] = useState("");
   const [instructions, setInstructions] = useState("");
-  const [photos, setPhotos] = useState<PhotoIcon[]>([]);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PayKey>(defaultPayKey);
   const [instrErr, setInstrErr] = useState<string | null>(null);
   const spinValue = useRef(new Animated.Value(0)).current;
@@ -338,13 +346,31 @@ export default function PayScreen() {
     outputRange: ["0deg", "360deg"],
   });
 
-  const addPhoto = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (photos.length >= 6) {
+  const addPhoto = async () => {
+    if (photoUris.length >= 6) {
       Alert.alert("Max Photos", "You can attach up to 6 photos.");
       return;
     }
-    setPhotos((prev) => [...prev, PHOTO_ICONS[prev.length % PHOTO_ICONS.length]]);
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission Required", "Please allow photo access to attach photos of the job.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      selectionLimit: 6 - photoUris.length,
+      quality: 0.85,
+    });
+    if (!result.canceled && result.assets.length > 0) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setPhotoUris((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, 6));
+    }
+  };
+
+  const removePhoto = (idx: number) => {
+    Haptics.selectionAsync();
+    setPhotoUris((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const validatePayment = (): string | true => {
@@ -1146,22 +1172,32 @@ export default function PayScreen() {
             Help the pro understand the scope of work
           </Text>
 
-          {photos.length > 0 && (
+          {photoUris.length > 0 && (
             <View style={styles.photoGrid}>
-              {photos.map((icon, i) => (
-                <View key={i} style={[styles.photoTile, { alignItems: "center", justifyContent: "center" }]}>
-                  <Ionicons name={icon} size={36} color="#34FF7A" />
-                </View>
+              {photoUris.map((uri, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={styles.photoTile}
+                  onPress={() => removePhoto(i)}
+                  activeOpacity={0.8}
+                >
+                  <Image source={{ uri }} style={{ width: "100%", height: "100%", borderRadius: 10 }} />
+                  <View style={{ position: "absolute", top: 4, right: 4, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 8, padding: 2 }}>
+                    <Ionicons name="close" size={12} color="#fff" />
+                  </View>
+                </TouchableOpacity>
               ))}
             </View>
           )}
 
-          <TouchableOpacity style={styles.addPhotoBtn} onPress={addPhoto}>
-            <Ionicons name="camera-outline" size={22} color="#34FF7A" />
-            <Text style={[styles.addPhotoBtnText, { fontFamily: "Inter_500Medium" }]}>
-              + Add Photo
-            </Text>
-          </TouchableOpacity>
+          {photoUris.length < 6 && (
+            <TouchableOpacity style={styles.addPhotoBtn} onPress={addPhoto}>
+              <Ionicons name="camera-outline" size={22} color="#34FF7A" />
+              <Text style={[styles.addPhotoBtnText, { fontFamily: "Inter_500Medium" }]}>
+                {photoUris.length === 0 ? "Browse & Attach Photos" : `+ Add More (${photoUris.length}/6)`}
+              </Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
 
         <View style={[styles.bottomBar, { paddingBottom: bottomPadding + 12 }]}>
