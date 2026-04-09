@@ -606,6 +606,7 @@ function SettingsModal({
   const [sendingCode, setSendingCode] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [newAddress, setNewAddress] = useState("");
+  const [newZip, setNewZip] = useState("");
   const demoCode = useRef("");
 
   function handleSendCode() {
@@ -647,6 +648,7 @@ function SettingsModal({
     setEnteredCode("");
     setCodeSent(false);
     setNewAddress("");
+    setNewZip("");
     demoCode.current = "";
     onClose();
   }
@@ -719,15 +721,24 @@ function SettingsModal({
 
           <View style={settStyles.divider} />
 
-          <Text style={[settStyles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 4 }]}>Change ZIP Code</Text>
+          <Text style={[settStyles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginTop: 4 }]}>Update Service Address</Text>
           <Text style={[settStyles.codeHint, { fontFamily: "Inter_400Regular", marginBottom: 14 }]}>
-            Update your service area ZIP code here
+            Enter your new street address and ZIP code so landscapers can find you.
           </Text>
           <TextInput
             style={[settStyles.input, { fontFamily: "Inter_400Regular" }]}
             value={newAddress}
             onChangeText={setNewAddress}
-            placeholder="New ZIP code (e.g. 34222)"
+            placeholder="Street address (e.g. 123 Palm Ave, Ellenton, FL)"
+            placeholderTextColor="#777"
+            autoCapitalize="words"
+            returnKeyType="next"
+          />
+          <TextInput
+            style={[settStyles.input, { fontFamily: "Inter_400Regular", marginTop: 10 }]}
+            value={newZip}
+            onChangeText={setNewZip}
+            placeholder="ZIP code (e.g. 34222)"
             placeholderTextColor="#777"
             keyboardType="numeric"
             maxLength={5}
@@ -736,21 +747,29 @@ function SettingsModal({
             style={settStyles.primaryBtn}
             onPress={() => {
               if (!newAddress.trim()) {
-                Alert.alert("Missing field", "Please enter a ZIP code.");
+                Alert.alert("Missing field", "Please enter your street address.");
                 return;
               }
-              if (newAddress.trim().length < 5) {
+              if (!newZip.trim()) {
+                Alert.alert("Missing field", "Please enter your ZIP code.");
+                return;
+              }
+              if (newZip.trim().length < 5) {
                 Alert.alert("Invalid ZIP", "Please enter a valid 5-digit ZIP code.");
                 return;
               }
-              Alert.alert("ZIP Code Saved", "Your service area ZIP code has been updated.");
+              Alert.alert(
+                "Address Saved",
+                `Your service address has been updated to:\n${newAddress.trim()}, ${newZip.trim()}`
+              );
               setNewAddress("");
+              setNewZip("");
               onClose();
             }}
             activeOpacity={0.85}
           >
             <Text style={[settStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-              Save ZIP Code
+              Save Address
             </Text>
           </TouchableOpacity>
         </Pressable>

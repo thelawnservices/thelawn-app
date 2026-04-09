@@ -52,7 +52,7 @@ Contains "TheLawnServices" — a dark-themed Expo mobile app for a landscaping b
 - Help & Resources opens the full AI-powered `HelpSupportModal` chatbot (not a stub list)
 - Dispute form requires `jobCode` (not optional); label is "Job Code *"
 - Accepted payment options: "Pay Now (Online)" (was "Stripe") + "In Person"
-- Customer settings: ZIP code field shows a note to confirm street address when changing ZIP
+- Customer settings: "Update Service Address" section requires both street address and ZIP code (two separate inputs); both validated before saving
 
 ## Known Notes
 
