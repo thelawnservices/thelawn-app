@@ -238,8 +238,12 @@ export default function PayScreen() {
   }, [selectedDateIdx, bookedSlots, rollingDates, bookingDurationMinutes, availability.endTime]);
   const [recurring, setRecurring] = useState(false);
   const [recurringDays, setRecurringDays] = useState<string[]>([]);
-  const [recurringStart, setRecurringStart] = useState("Apr 7, 2026");
-  const [recurringEnd, setRecurringEnd] = useState("Apr 7, 2027");
+  const _defaultEnd = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  })();
+  const [recurringEnd, setRecurringEnd] = useState(_defaultEnd);
 
   // Monthly calendar state
   const _now = new Date();
@@ -838,10 +842,10 @@ export default function PayScreen() {
             <View style={styles.recurringExpandBox}>
               {/* Calendar header */}
               <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginBottom: 4 }]}>
-                Pick Up to 3 Days Per Month
+                Pick Up to 4 Days Per Month
               </Text>
               <Text style={[styles.recurringNote, { fontFamily: "Inter_400Regular", marginBottom: 12 }]}>
-                Select up to 3 dates each month. Your landscaper will visit on these dates every month.
+                Select up to 4 dates each month. Your landscaper will visit on these dates every month for 1 year.
               </Text>
 
               {/* Month nav */}
@@ -872,7 +876,7 @@ export default function PayScreen() {
                 {Array.from({ length: calDaysInMonth }, (_, i) => i + 1).map((day) => {
                   const dayStr = String(day);
                   const selected = recurringDays.includes(dayStr);
-                  const maxed = recurringDays.length >= 3 && !selected;
+                  const maxed = recurringDays.length >= 4 && !selected;
                   return (
                     <TouchableOpacity
                       key={day}
@@ -899,15 +903,15 @@ export default function PayScreen() {
 
               {/* Selection count hint */}
               <View style={styles.calHintRow}>
-                {[0, 1, 2].map((i) => (
+                {[0, 1, 2, 3].map((i) => (
                   <View key={i} style={[styles.calDot, recurringDays.length > i && styles.calDotFilled]} />
                 ))}
                 <Text style={[styles.calHintText, { fontFamily: "Inter_400Regular" }]}>
                   {recurringDays.length === 0
-                    ? "Tap dates to select (up to 3)"
-                    : recurringDays.length === 3
-                    ? "Max 3 dates selected"
-                    : `${recurringDays.length} of 3 dates chosen`}
+                    ? "Tap dates to select (up to 4)"
+                    : recurringDays.length === 4
+                    ? "Max 4 dates selected"
+                    : `${recurringDays.length} of 4 dates chosen`}
                 </Text>
               </View>
 
@@ -921,35 +925,21 @@ export default function PayScreen() {
                 </View>
               )}
 
-              {/* Date range */}
-              <View style={[styles.recurringDateRow, { marginTop: 14 }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.recurringDateLabel, { fontFamily: "Inter_400Regular" }]}>
-                    Start Date
-                  </Text>
-                  <TextInput
-                    style={[styles.recurringDateInput, { fontFamily: "Inter_400Regular" }]}
-                    value={recurringStart}
-                    onChangeText={setRecurringStart}
-                    placeholder="Apr 7, 2026"
-                    placeholderTextColor="#777"
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.recurringDateLabel, { fontFamily: "Inter_400Regular" }]}>
-                    End Date
-                  </Text>
-                  <TextInput
-                    style={[styles.recurringDateInput, { fontFamily: "Inter_400Regular" }]}
-                    value={recurringEnd}
-                    onChangeText={setRecurringEnd}
-                    placeholder="Apr 7, 2027"
-                    placeholderTextColor="#777"
-                  />
-                </View>
+              {/* End Date only */}
+              <View style={{ marginTop: 14 }}>
+                <Text style={[styles.recurringDateLabel, { fontFamily: "Inter_400Regular" }]}>
+                  End Date (1 year from today by default)
+                </Text>
+                <TextInput
+                  style={[styles.recurringDateInput, { fontFamily: "Inter_400Regular" }]}
+                  value={recurringEnd}
+                  onChangeText={setRecurringEnd}
+                  placeholder="Apr 9, 2027"
+                  placeholderTextColor="#777"
+                />
               </View>
-              <Text style={[styles.recurringNote, { fontFamily: "Inter_400Regular" }]}>
-                Each appointment is charged separately after dual confirmation.
+              <Text style={[styles.recurringNote, { fontFamily: "Inter_400Regular", marginTop: 10 }]}>
+                Each appointment is charged separately after dual confirmation. Your schedule runs monthly until the end date.
               </Text>
             </View>
           )}
@@ -1241,7 +1231,9 @@ export default function PayScreen() {
               <View style={styles.recurringBadge}>
                 <Ionicons name="repeat" size={11} color="#34FF7A" />
                 <Text style={[styles.recurringBadgeText, { fontFamily: "Inter_500Medium" }]}>
-                  {recurringDays.length > 0 ? recurringDays.join(" · ") : "Select days"} · Monthly
+                  {recurringDays.length > 0
+                    ? `${recurringDays.map((d) => ordinal(Number(d))).join(" · ")} of every month · until ${recurringEnd}`
+                    : "Select days · Monthly"}
                 </Text>
               </View>
             )}
