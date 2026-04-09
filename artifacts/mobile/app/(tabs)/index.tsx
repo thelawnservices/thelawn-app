@@ -2297,27 +2297,28 @@ export default function HomeScreen() {
                 { name: "Sod Installation",        icon: "grid-outline" as const,   est: "4–8 hrs",   hot: false },
                 { name: "Tree Removal",            icon: "cut-outline" as const,    est: "4–8 hrs",   hot: false },
               ].map((svc) => (
-                <TouchableOpacity
-                  key={svc.name}
-                  style={styles.svcGridCard}
-                  onPress={() => router.navigate("/(tabs)/search")}
-                  activeOpacity={0.8}
-                >
+                <View key={svc.name} style={styles.svcGridCardWrap}>
                   {svc.hot && (
                     <View style={styles.svcHotBadge}>
                       <Text style={{ fontSize: 9, fontFamily: "Inter_600SemiBold", color: "#FF6B35" }}>🔥 HOT</Text>
                     </View>
                   )}
-                  <View style={styles.svcGridIconWrap}>
-                    <Ionicons name={svc.icon} size={28} color="#34FF7A" />
-                  </View>
-                  <Text style={[styles.svcGridName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
-                    {svc.name}
-                  </Text>
-                  <Text style={[styles.svcGridUpdated, { fontFamily: "Inter_400Regular" }]}>
-                    Est. {svc.est}
-                  </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.svcGridCard}
+                    onPress={() => router.navigate("/(tabs)/search")}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.svcGridIconWrap}>
+                      <Ionicons name={svc.icon} size={28} color="#34FF7A" />
+                    </View>
+                    <Text style={[styles.svcGridName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
+                      {svc.name}
+                    </Text>
+                    <Text style={[styles.svcGridUpdated, { fontFamily: "Inter_400Regular" }]}>
+                      Est. {svc.est}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               ))}
             </ScrollView>
           </>
@@ -3145,6 +3146,11 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 28,
   },
+  svcGridCardWrap: {
+    alignItems: "center",
+    paddingTop: 14,
+    position: "relative",
+  },
   svcGridCard: {
     width: 108,
     backgroundColor: "#161616",
@@ -3155,19 +3161,20 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderColor: "#262626",
-    position: "relative",
     overflow: "hidden",
   },
   svcHotBadge: {
+    position: "absolute",
+    top: 0,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#2A1200",
-    borderRadius: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderWidth: 1,
-    borderColor: "#FF6B3530",
-    marginBottom: 2,
+    borderColor: "#FF6B3560",
+    zIndex: 10,
   },
   svcGridIconWrap: {
     width: 56,
