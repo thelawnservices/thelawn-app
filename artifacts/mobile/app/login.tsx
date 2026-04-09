@@ -37,7 +37,7 @@ const SPECIALTIES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "A
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
-  const { login } = useAuth();
+  const { login, setNeedsServiceSetup } = useAuth();
   const [step, setStep] = useState<Step>("welcome");
   const [errors, setErrors] = useState<string | null>(null);
 
@@ -70,6 +70,8 @@ export default function LoginScreen() {
   const [lZipCode, setLZipCode] = useState("");
   const [years, setYears] = useState("");
 
+  const [pendingIsRegistration, setPendingIsRegistration] = useState(false);
+
   // Role selection modal
   const [showRoleModal, setShowRoleModal] = useState(false);
 
@@ -87,6 +89,9 @@ export default function LoginScreen() {
 
   function go(role: "customer" | "landscaper") {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (role === "landscaper" && pendingIsRegistration) {
+      setNeedsServiceSetup(true);
+    }
     login(role);
     router.replace("/(tabs)");
   }
@@ -123,6 +128,7 @@ export default function LoginScreen() {
       return;
     }
     setErrors(null);
+    setPendingIsRegistration(false);
     go("landscaper");
   }
 
@@ -151,6 +157,7 @@ export default function LoginScreen() {
     }
     setErrors(null);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setPendingIsRegistration(true);
     setPendingRole("landscaper");
     setTimeout(() => setShowPasskey(true), 800);
   }

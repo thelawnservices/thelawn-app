@@ -7,10 +7,12 @@ interface AuthContextType {
   userName: string;
   avatarUri: string | null;
   preferredPayment: string | null;
+  needsServiceSetup: boolean;
   login: (r: Role) => void;
   logout: () => void;
   setAvatarUri: (uri: string | null) => void;
   setPreferredPayment: (v: string | null) => void;
+  setNeedsServiceSetup: (v: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,10 +20,12 @@ const AuthContext = createContext<AuthContextType>({
   userName: "",
   avatarUri: null,
   preferredPayment: null,
+  needsServiceSetup: false,
   login: () => {},
   logout: () => {},
   setAvatarUri: () => {},
   setPreferredPayment: () => {},
+  setNeedsServiceSetup: () => {},
 });
 
 const ROLE_NAMES: Record<Role, string> = {
@@ -33,14 +37,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<Role | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [preferredPayment, setPreferredPayment] = useState<string | null>(null);
+  const [needsServiceSetup, setNeedsServiceSetup] = useState(false);
 
   const login = (r: Role) => setRole(r);
-  const logout = () => { setRole(null); setAvatarUri(null); setPreferredPayment(null); };
+  const logout = () => { setRole(null); setAvatarUri(null); setPreferredPayment(null); setNeedsServiceSetup(false); };
 
   const userName = role ? ROLE_NAMES[role] : "";
 
   return (
-    <AuthContext.Provider value={{ role, userName, avatarUri, preferredPayment, login, logout, setAvatarUri, setPreferredPayment }}>
+    <AuthContext.Provider value={{ role, userName, avatarUri, preferredPayment, needsServiceSetup, login, logout, setAvatarUri, setPreferredPayment, setNeedsServiceSetup }}>
       {children}
     </AuthContext.Provider>
   );

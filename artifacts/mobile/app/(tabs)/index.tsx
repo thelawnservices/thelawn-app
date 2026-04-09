@@ -1024,7 +1024,7 @@ function buildMonthGrid() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function ServicesEditModal({ visible, onClose, isFirstSetup = false }: { visible: boolean; onClose: () => void; isFirstSetup?: boolean }) {
   const { myServices, saveMyServices, bookedSlots } = useLandscaperProfile();
 
   const [offered, setOffered]   = useState<string[]>(() => [...myServices.offered]);
@@ -1119,6 +1119,20 @@ function ServicesEditModal({ visible, onClose }: { visible: boolean; onClose: ()
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+
+            {isFirstSetup && (
+              <View style={svcStyles.setupBanner}>
+                <Ionicons name="star-outline" size={18} color="#34FF7A" />
+                <View style={{ flex: 1 }}>
+                  <Text style={[svcStyles.setupBannerTitle, { fontFamily: "Inter_700Bold" }]}>
+                    Welcome to TheLawnServices!
+                  </Text>
+                  <Text style={[svcStyles.setupBannerBody, { fontFamily: "Inter_400Regular" }]}>
+                    Set up your services, availability, and pricing so customers can find and book you. This step is required before you can receive bookings.
+                  </Text>
+                </View>
+              </View>
+            )}
 
             {/* ── Services I Offer ───────────────────────────── */}
             <Text style={[svcStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Services I Offer</Text>
@@ -1599,6 +1613,13 @@ const svcStyles = StyleSheet.create({
   title: { fontSize: 20, color: "#FFFFFF" },
   sectionLabel: { fontSize: 15, color: "#FFFFFF", marginBottom: 6 },
   sectionHint: { fontSize: 12, color: "#777", marginBottom: 14, lineHeight: 18 },
+  setupBanner: {
+    flexDirection: "row", alignItems: "flex-start", gap: 12,
+    backgroundColor: "#0A1F12", borderWidth: 1, borderColor: "#1E5C30",
+    borderRadius: 16, padding: 16, marginBottom: 24,
+  },
+  setupBannerTitle: { fontSize: 14, color: "#34FF7A", marginBottom: 4 },
+  setupBannerBody: { fontSize: 12, color: "#999", lineHeight: 18 },
   chipsRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
   chip: {
     flexDirection: "row", alignItems: "center", gap: 7,
@@ -1795,7 +1816,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
-  const { logout, role, avatarUri, userName } = useAuth();
+  const { logout, role, avatarUri, userName, needsServiceSetup, setNeedsServiceSetup } = useAuth();
   const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "G" : "Z");
   const { acceptJob } = useJobs();
   const { addBookedSlot } = useLandscaperProfile();
@@ -1827,7 +1848,19 @@ export default function HomeScreen() {
   const [vouchersVisible, setVouchersVisible] = useState(false);
   const [helpVisible, setHelpVisible] = useState(false);
   const [servicesEditVisible, setServicesEditVisible] = useState(false);
+  const [servicesIsFirstSetup, setServicesIsFirstSetup] = useState(false);
   const [paymentHistoryVisible, setPaymentHistoryVisible] = useState(false);
+
+  useEffect(() => {
+    if (needsServiceSetup && role === "landscaper") {
+      const t = setTimeout(() => {
+        setServicesIsFirstSetup(true);
+        setServicesEditVisible(true);
+        setNeedsServiceSetup(false);
+      }, 600);
+      return () => clearTimeout(t);
+    }
+  }, [needsServiceSetup, role]);
   const [feedLiked, setFeedLiked] = useState<Set<string>>(new Set());
   const [feedCounts, setFeedCounts] = useState<Record<string, number>>(
     Object.fromEntries(HOME_FEED_POSTS.map((p) => [p.id, p.likes]))
@@ -1940,7 +1973,8 @@ export default function HomeScreen() {
       />
       <ServicesEditModal
         visible={servicesEditVisible}
-        onClose={() => setServicesEditVisible(false)}
+        isFirstSetup={servicesIsFirstSetup}
+        onClose={() => { setServicesEditVisible(false); setServicesIsFirstSetup(false); }}
       />
       <PaymentHistoryModal
         visible={paymentHistoryVisible}

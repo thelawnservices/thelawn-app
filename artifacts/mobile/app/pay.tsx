@@ -417,8 +417,12 @@ export default function PayScreen() {
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error ?? "Failed to create payment session");
+        let errMsg = `Payment server error (${response.status})`;
+        try {
+          const err = await response.json();
+          errMsg = err.error ?? errMsg;
+        } catch {}
+        throw new Error(errMsg);
       }
 
       const data = await response.json();
