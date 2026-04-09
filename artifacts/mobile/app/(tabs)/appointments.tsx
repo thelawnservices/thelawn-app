@@ -405,6 +405,8 @@ function RecurringSeriesCard({
 
   // Dispute modal state
   const [dispModalVisible, setDispModalVisible] = useState(false);
+  const [dispJobCode, setDispJobCode] = useState("");
+  const [dispJobCodeErr, setDispJobCodeErr] = useState<string | null>(null);
   const [dispDesc, setDispDesc] = useState("");
   const [dispDescErr, setDispDescErr] = useState<string | null>(null);
   const [dispPhotos, setDispPhotos] = useState<string[]>([]);
@@ -426,6 +428,8 @@ function RecurringSeriesCard({
   }
 
   function openDisputeModal() {
+    setDispJobCode("");
+    setDispJobCodeErr(null);
     setDispDesc("");
     setDispDescErr(null);
     setDispPhotos([]);
@@ -434,12 +438,23 @@ function RecurringSeriesCard({
   }
 
   function submitDispute() {
+    let hasErr = false;
+    if (!dispJobCode.trim()) {
+      setDispJobCodeErr("Please enter the Job Number from your job card.");
+      hasErr = true;
+    } else {
+      setDispJobCodeErr(null);
+    }
     if (!dispDesc.trim() || dispDesc.trim().length < 10) {
       setDispDescErr("Please describe the issue in at least 10 characters.");
+      hasErr = true;
+    } else {
+      setDispDescErr(null);
+    }
+    if (hasErr) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
-    setDispDescErr(null);
     setDispSubmitting(true);
     setTimeout(() => {
       setDispModalVisible(false);
@@ -760,8 +775,29 @@ function RecurringSeriesCard({
               </Text>
             </View>
 
-            {/* Description */}
+            {/* Job Number */}
             <Text style={[dispStyles.fieldLabel, { fontFamily: "Inter_600SemiBold" }]}>
+              Job Number *
+            </Text>
+            <Text style={[dispStyles.infoBannerText, { fontFamily: "Inter_400Regular", color: "#888", marginBottom: 8 }]}>
+              Found on your job card (e.g. JOB-84712)
+            </Text>
+            <TextInput
+              style={[dispStyles.descInput, { minHeight: 48 }, dispJobCodeErr && dispStyles.inputErr, { fontFamily: "Inter_500Medium" }]}
+              placeholder="JOB-XXXXX"
+              placeholderTextColor="#555"
+              value={dispJobCode}
+              onChangeText={(t) => { setDispJobCode(t.toUpperCase()); if (dispJobCodeErr) setDispJobCodeErr(null); }}
+              autoCapitalize="characters"
+              returnKeyType="next"
+              editable={!dispSubmitting}
+            />
+            {dispJobCodeErr && (
+              <Text style={[dispStyles.errText, { fontFamily: "Inter_400Regular", marginBottom: 10 }]}>{dispJobCodeErr}</Text>
+            )}
+
+            {/* Description */}
+            <Text style={[dispStyles.fieldLabel, { fontFamily: "Inter_600SemiBold", marginTop: 6 }]}>
               Describe the Issue *
             </Text>
             <TextInput

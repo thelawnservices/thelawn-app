@@ -273,6 +273,8 @@ function DisputeModal({
   onClose: () => void;
   onSubmit: (jobId: string, category: string, message: string) => void;
 }) {
+  const [jobCodeInput, setJobCodeInput] = useState("");
+  const [jobCodeErr, setJobCodeErr] = useState<string | null>(null);
   const [category, setCategory] = useState("");
   const [message, setMessage] = useState("");
   const [submitState, setSubmitState] = useState<"idle" | "sending" | "sent">("idle");
@@ -281,12 +283,15 @@ function DisputeModal({
   const successOpacity = useRef(new Animated.Value(0)).current;
 
   function reset() {
+    setJobCodeInput(""); setJobCodeErr(null);
     setCategory(""); setMessage(""); setSubmitState("idle");
     setMsgErr(null); setCatErr(false); successOpacity.setValue(0);
   }
 
   function handleSubmit() {
     let hasErr = false;
+    if (!jobCodeInput.trim()) { setJobCodeErr("Please enter the Job Number from your job card."); hasErr = true; }
+    else { setJobCodeErr(null); }
     if (!category) { setCatErr(true); hasErr = true; }
     if (!message.trim()) { setMsgErr("Please describe the issue before submitting."); hasErr = true; }
     else {
@@ -353,8 +358,35 @@ function DisputeModal({
               </Text>
             </View>
 
+            {/* Job Number */}
+            <Text style={[dispStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Job Number *</Text>
+            <Text style={[dispStyles.sectionSub, { fontFamily: "Inter_400Regular" }]}>
+              Found on your job card (e.g. JOB-84712)
+            </Text>
+            <TextInput
+              style={[
+                dispStyles.messageInput,
+                { minHeight: 48, paddingTop: 14, paddingBottom: 14 },
+                jobCodeErr ? dispStyles.messageInputError : null,
+                { fontFamily: "Inter_500Medium" },
+              ]}
+              placeholder="JOB-XXXXX"
+              placeholderTextColor="#555"
+              value={jobCodeInput}
+              onChangeText={(t) => { setJobCodeInput(t.toUpperCase()); if (jobCodeErr) setJobCodeErr(null); }}
+              autoCapitalize="characters"
+              returnKeyType="next"
+              editable={submitState === "idle"}
+            />
+            {jobCodeErr && (
+              <View style={[dispStyles.errRow, { marginBottom: 12 }]}>
+                <Ionicons name="alert-circle-outline" size={13} color="#FF4444" />
+                <Text style={[dispStyles.errText, { fontFamily: "Inter_400Regular" }]}>{jobCodeErr}</Text>
+              </View>
+            )}
+
             {/* Category */}
-            <Text style={[dispStyles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>What's the issue? *</Text>
+            <Text style={[dispStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 8 }]}>What's the issue? *</Text>
             {catErr && (
               <View style={dispStyles.errRow}>
                 <Ionicons name="alert-circle-outline" size={13} color="#FF4444" />
