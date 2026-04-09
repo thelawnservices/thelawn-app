@@ -585,7 +585,7 @@ function RecurringSeriesCard({
             <View style={rcStyles.expiredBox}>
               <Ionicons name="warning-outline" size={15} color="#FF4444" />
               <Text style={[rcStyles.expiredText, { fontFamily: "Inter_600SemiBold" }]}>
-                Review window expired · Sent to TheLawnServices for further review
+                Review window expired · Payment auto-released to landscaper
               </Text>
             </View>
           ) : (
@@ -656,7 +656,7 @@ function RecurringSeriesCard({
             <View style={rcStyles.autoExpireNote}>
               <Ionicons name="mail-outline" size={12} color="#888" />
               <Text style={[rcStyles.autoExpireText, { fontFamily: "Inter_400Regular" }]}>
-                If no action is taken within 24 hours, the order will automatically be sent to TheLawnServices for further review.
+                If no action is taken within 24 hours, payment will automatically be released to your landscaper.
               </Text>
             </View>
           )}
@@ -1223,7 +1223,7 @@ export default function AppointmentsScreen() {
                     setTimeout(() => {
                       Alert.alert(
                         "Customer Notified",
-                        "Zamire Smith has been notified that the job is complete. They have 24 hours to approve or dispute. Payment will be released upon approval.",
+                        "Zamire Smith has been notified that the job is complete. They have 24 hours to approve or dispute. If no action is taken within 24 hours, payment will be automatically released to you.",
                         [{ text: "OK" }]
                       );
                     }, 400);
@@ -1285,8 +1285,8 @@ export default function AppointmentsScreen() {
                       <Ionicons name="time-outline" size={13} color={isExpired ? "#FF4444" : "#FFAA00"} />
                       <Text style={[lsRecStyles.customerTimerText, { fontFamily: "Inter_400Regular", color: isExpired ? "#FF4444" : "#BBBBBB" }]}>
                         {isExpired
-                          ? "Customer window expired · Order sent to dispute team"
-                          : `Customer has ${String(rh).padStart(2, "0")}h ${String(rm).padStart(2, "0")}m to review`}
+                          ? "Customer window expired · Payment auto-released to you"
+                          : `Customer has ${String(rh).padStart(2, "0")}h ${String(rm).padStart(2, "0")}m to approve or dispute`}
                       </Text>
                     </View>
 
