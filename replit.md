@@ -3,6 +3,7 @@
 ## Overview
 
 pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Contains "TheLawnServices" — a dark-themed Expo mobile app for a landscaping booking marketplace.
 
 ## Stack
 
@@ -14,7 +15,9 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Database**: PostgreSQL + Drizzle ORM
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+- **Build**: esbuild (CJS bundle — stripe + stripe-replit-sync externalized)
+- **Payments**: Stripe (connected via Replit integration, test mode)
+- **Mobile**: Expo (React Native) — `artifacts/mobile`
 
 ## Key Commands
 
@@ -23,5 +26,30 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
+
+## Stripe Integration
+
+- Connected via Replit Stripe connector (sandbox/test mode)
+- `artifacts/api-server/src/stripeClient.ts` — fetches live credentials dynamically via `REPL_IDENTITY`
+- `artifacts/api-server/src/routes/payments.ts` — `/api/payments/create-session`, `/session/:id`, `/success`, `/cancel`
+- `artifacts/api-server/src/webhookHandlers.ts` — processes Stripe webhooks via `stripe-replit-sync`
+- Webhook registered at `/api/stripe/webhook` (before `express.json()` middleware)
+- `EXPO_PUBLIC_API_URL` env var points to API server for mobile app Stripe calls
+- Commission: 3% platform fee + $5 new customer fee (routes to TheLawnServices@gmail.com via PayPal manually)
+
+## Mobile App (artifacts/mobile)
+
+- **Accent**: `#34FF7A` on `#0A0A0A` dark background
+- `app/pay.tsx` — multi-step booking + payment flow; "Debit/Credit Card" opens Stripe Checkout via `expo-web-browser`
+- `app/(tabs)/wallet.tsx` — landscaper wallet with withdrawal options
+- `app/(tabs)/profile.tsx` — dual-mode (customer/landscaper) with role-based auth
+- `ALL_SERVICES` = `["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Artificial Turf", "Full Service"]`
+- Platform commission: `NEW_CUSTOMER_FEE = 5`, `PLATFORM_COMMISSION_RATE = 0.03`
+- Recurring bookings: up to 3 specific dates per month (calendar picker in pay.tsx)
+
+## Known Notes
+
+- `path-to-regexp@8.x` (used by Express 5 → router@2.2.0) is ESM-only; pnpm symlinks must be correct. Run `pnpm install` if "Cannot find module 'path-to-regexp'" error appears.
+- `stripe` and `stripe-replit-sync` are externalized in esbuild to avoid bundling issues.
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
