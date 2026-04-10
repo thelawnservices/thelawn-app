@@ -104,7 +104,7 @@ const METHODS: WithdrawMethod[] = [
   },
 ];
 
-type StripeStatus = "idle" | "loading" | "connected" | "needs_info" | "error";
+type StripeStatus = "idle" | "loading" | "connected" | "needs_info" | "error" | "unavailable";
 
 type ManualPayoutInfo = {
   paypal_email: string;
@@ -196,6 +196,11 @@ export default function WalletScreen() {
           body: JSON.stringify({ email: "landscaper@example.com" }),
         });
         const createData = await createRes.json();
+        // Stripe Connect not enabled on the platform — show friendly in-app state
+        if (createData.errorCode === "CONNECT_NOT_ENABLED") {
+          setStripeStatus("unavailable");
+          return;
+        }
         if (createData.error) throw new Error(createData.error);
         accountId = createData.accountId;
         setStripeAccountId(accountId);
@@ -216,7 +221,7 @@ export default function WalletScreen() {
         if (accountId) checkStripeStatus(accountId);
       }, 3000);
     } catch (err: any) {
-      Alert.alert("Stripe Connection Error", err.message ?? "Failed to connect Stripe account.");
+      Alert.alert("Connection Error", err.message ?? "Failed to connect Stripe account.");
       setStripeStatus("error");
     } finally {
       setStripeConnecting(false);
@@ -504,6 +509,36 @@ export default function WalletScreen() {
             The fastest way to receive your earnings. Connect once and we'll transfer directly to your bank account or debit card via Stripe.
           </Text>
 
+          {/* ── Stripe Connect unavailable banner ── */}
+          {stripeStatus === "unavailable" ? (
+            <View style={[s.stripeConnectCard, { backgroundColor: "#1a1200", borderColor: "#FFAA0033" }]}>
+              <View style={s.stripeConnectTop}>
+                <View style={[s.stripeConnectIcon, { backgroundColor: "#FFAA0022" }]}>
+                  <Ionicons name="time-outline" size={28} color="#FFAA00" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.stripeConnectTitle, { fontFamily: "Inter_700Bold", color: "#FFAA00" }]}>
+                    Bank Payout — Coming Soon
+                  </Text>
+                  <Text style={[s.stripeConnectSub, { fontFamily: "Inter_400Regular" }]}>
+                    Direct bank payouts via Stripe are being activated for this platform. In the meantime, use the{" "}
+                    <Text style={{ fontFamily: "Inter_600SemiBold", color: "#FFFFFF" }}>Manual Payout options</Text>
+                    {" "}below (PayPal, Zelle, or Venmo) — TheLawnServices processes these within 1–3 business days.
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[s.stripeConnectBtn, { backgroundColor: "#FFAA0022", borderWidth: 1, borderColor: "#FFAA0055" }]}
+                onPress={() => setStripeStatus("idle")}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="refresh-outline" size={17} color="#FFAA00" />
+                <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_700Bold", color: "#FFAA00" }]}>
+                  Try Again
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
           <View style={[s.stripeConnectCard, isStripeConnected ? s.stripeConnectCardOn : s.stripeConnectCardOff]}>
             <View style={s.stripeConnectTop}>
               <View style={[s.stripeConnectIcon, { backgroundColor: isStripeConnected ? "#34FF7A22" : "#222" }]}>
@@ -582,6 +617,7 @@ export default function WalletScreen() {
               </Text>
             </View>
           </View>
+          )}
 
           {/* ── Manual payout details ── */}
           <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold", marginTop: 28 }]}>Manual Payout Details</Text>

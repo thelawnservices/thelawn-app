@@ -27,7 +27,24 @@ router.post("/create-connect-account", async (req, res) => {
     res.json({ accountId: account.id });
   } catch (err: any) {
     console.error("create-connect-account error:", err.message);
-    res.status(500).json({ error: err.message ?? "Failed to create Connect account" });
+
+    // Stripe returns this message when the platform account has not enabled
+    // the Connect product at https://dashboard.stripe.com/connect
+    const msg: string = err?.message ?? "";
+    if (
+      msg.includes("signed up for Connect") ||
+      msg.includes("dashboard.stripe.com/connect") ||
+      err?.code === "account_invalid"
+    ) {
+      return res.status(503).json({
+        errorCode: "CONNECT_NOT_ENABLED",
+        error:
+          "Stripe bank payouts are not yet activated for this platform. " +
+          "Use the Manual Payout options (PayPal, Zelle, or Venmo) below while this is being set up.",
+      });
+    }
+
+    res.status(500).json({ error: msg || "Failed to create Connect account" });
   }
 });
 
