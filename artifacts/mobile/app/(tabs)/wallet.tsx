@@ -22,7 +22,7 @@ const MIN_WITHDRAWAL = 10;
 
 type Screen = "main" | "withdraw" | "success" | "payout_settings";
 
-type PayoutMethodId = "stripe_instant" | "apple_cash" | "paypal" | "zelle" | "venmo" | "check";
+type PayoutMethodId = "stripe_instant" | "stripe_standard";
 
 type WithdrawMethod = {
   id: PayoutMethodId;
@@ -32,92 +32,34 @@ type WithdrawMethod = {
   speedDays: string;
   fee: string;
   feeRate: number;
-  isStripe: boolean;
   instant: boolean;
 };
 
 const METHODS: WithdrawMethod[] = [
   {
     id: "stripe_instant",
-    label: "Instant Debit / Apple Wallet",
+    label: "Instant Payout",
     icon: "flash-outline",
     speed: "Within Minutes",
     speedDays: "within minutes",
     fee: "1.5% fee",
     feeRate: 0.015,
-    isStripe: true,
     instant: true,
   },
   {
-    id: "apple_cash",
-    label: "Apple Cash",
-    icon: "logo-apple",
-    speed: "Manual · Same Day",
-    speedDays: "same day",
-    fee: "No fee",
-    feeRate: 0,
-    isStripe: false,
-    instant: false,
-  },
-  {
-    id: "paypal",
-    label: "PayPal",
-    icon: "logo-paypal",
-    speed: "Manual · 2–3 Days",
-    speedDays: "2–3 business days",
-    fee: "No fee",
-    feeRate: 0,
-    isStripe: false,
-    instant: false,
-  },
-  {
-    id: "zelle",
-    label: "Zelle",
-    icon: "swap-horizontal-outline",
-    speed: "Manual · 1–2 Days",
+    id: "stripe_standard",
+    label: "Standard Bank Transfer",
+    icon: "business-outline",
+    speed: "1–2 Business Days",
     speedDays: "1–2 business days",
     fee: "No fee",
     feeRate: 0,
-    isStripe: false,
-    instant: false,
-  },
-  {
-    id: "venmo",
-    label: "Venmo",
-    icon: "phone-portrait-outline",
-    speed: "Manual · 2–3 Days",
-    speedDays: "2–3 business days",
-    fee: "No fee",
-    feeRate: 0,
-    isStripe: false,
-    instant: false,
-  },
-  {
-    id: "check",
-    label: "Check by Mail",
-    icon: "mail-outline",
-    speed: "Manual · 5–7 Days",
-    speedDays: "5–7 business days",
-    fee: "No fee",
-    feeRate: 0,
-    isStripe: false,
     instant: false,
   },
 ];
 
 type StripeStatus = "idle" | "loading" | "connected" | "needs_info" | "error";
 
-type ManualPayoutInfo = {
-  apple_cash_contact: string;
-  paypal_email: string;
-  zelle_contact: string;
-  venmo_username: string;
-  mail_name: string;
-  mail_address: string;
-  mail_city: string;
-  mail_state: string;
-  mail_zip: string;
-};
 
 function fmt(n: number): string {
   return n.toFixed(2);
@@ -147,19 +89,6 @@ export default function WalletScreen() {
   const [stripeStatus, setStripeStatus] = useState<StripeStatus>("idle");
   const [stripeConnecting, setStripeConnecting] = useState(false);
 
-  // Manual payout info
-  const [manualInfo, setManualInfo] = useState<ManualPayoutInfo>({
-    apple_cash_contact: "",
-    paypal_email: "",
-    zelle_contact: "",
-    venmo_username: "",
-    mail_name: "",
-    mail_address: "",
-    mail_city: "",
-    mail_state: "",
-    mail_zip: "",
-  });
-  const [manualSaved, setManualSaved] = useState(false);
 
   const amountNum = parseFloat(amountText) || 0;
   const isStripeConnected = stripeStatus === "connected";
@@ -311,54 +240,39 @@ export default function WalletScreen() {
       return;
     }
 
+    // Both methods require Stripe onboarding
+    if (!isStripeConnected) {
+      Alert.alert(
+        "Stripe Account Required",
+        "Complete your Stripe onboarding in Payout Settings to enable automatic payouts. It only takes about 2 minutes.",
+        [
+          { text: "Open Settings", onPress: () => setScreen("payout_settings") },
+          { text: "Cancel", style: "cancel" },
+        ]
+      );
+      return;
+    }
+
     if (selectedMethod.id === "stripe_instant") {
-      if (!isStripeConnected) {
-        Alert.alert(
-          "Stripe Account Required",
-          "Complete your Stripe onboarding in Payout Settings to enable instant payouts. You can add a debit card during onboarding.",
-          [
-            { text: "Open Settings", onPress: () => setScreen("payout_settings") },
-            { text: "Cancel", style: "cancel" },
-          ]
-        );
-        return;
-      }
       const fee = parseFloat((amountNum * 0.015).toFixed(2));
       const net = parseFloat((amountNum - fee).toFixed(2));
       Alert.alert(
         "Confirm Instant Payout",
-        `A 1.5% fee applies to instant debit card payouts.\n\nWithdrawal: $${fmt(amountNum)}\nFee: $${fmt(fee)}\nYou receive: $${fmt(net)}\n\nFunds arrive within minutes.`,
+        `A 1.5% fee applies to instant payouts.\n\nWithdrawal: $${fmt(amountNum)}\nFee: $${fmt(fee)}\nYou receive: $${fmt(net)}\n\nFunds arrive within minutes.`,
         [
           { text: "Confirm", onPress: () => executeStripeWithdrawal() },
           { text: "Cancel", style: "cancel" },
         ]
       );
     } else {
-      // Build a human-readable payout details string for the admin email
-      let payoutDetails = "";
-      if (selectedMethod.id === "apple_cash") {
-        payoutDetails = `Apple Cash Phone/Email: ${manualInfo.apple_cash_contact || "Not provided"}`;
-      } else if (selectedMethod.id === "paypal") {
-        payoutDetails = `PayPal Email: ${manualInfo.paypal_email || "Not provided"}`;
-      } else if (selectedMethod.id === "zelle") {
-        payoutDetails = `Zelle Phone/Email: ${manualInfo.zelle_contact || "Not provided"}`;
-      } else if (selectedMethod.id === "venmo") {
-        payoutDetails = `Venmo Username: ${manualInfo.venmo_username || "Not provided"}`;
-      } else if (selectedMethod.id === "check") {
-        payoutDetails = [
-          `Name: ${manualInfo.mail_name || "Not provided"}`,
-          `Address: ${manualInfo.mail_address || "Not provided"}`,
-          `City: ${manualInfo.mail_city || "Not provided"}`,
-          `State: ${manualInfo.mail_state || "Not provided"}`,
-          `ZIP: ${manualInfo.mail_zip || "Not provided"}`,
-        ].join("\n");
-      }
-
-      // Deduct from wallet immediately and notify admin
-      recordWithdrawal(amountNum, selectedMethod.label, payoutDetails);
-      setWithdrawResult(null);
-      setScreen("success");
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert(
+        "Confirm Bank Transfer",
+        `Your funds will be automatically sent to your bank account.\n\nAmount: $${fmt(amountNum)}\nFee: None\nArrival: 1–2 business days`,
+        [
+          { text: "Confirm", onPress: () => executeStripeWithdrawal() },
+          { text: "Cancel", style: "cancel" },
+        ]
+      );
     }
   }
 
@@ -368,16 +282,6 @@ export default function WalletScreen() {
     setSelectedMethod(null);
     setWithdrawResult(null);
     if (userName) refreshWallet(userName);
-  }
-
-  function saveManualInfo() {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setManualSaved(true);
-    setTimeout(() => setManualSaved(false), 2500);
-    Alert.alert(
-      "Info Saved",
-      "Your payout details have been saved. TheLawnServices will use these when processing manual payouts."
-    );
   }
 
   const creditTotal   = transactions.filter((t) => t.type === "credit").reduce((s, t) => s + t.amount, 0);
@@ -654,115 +558,6 @@ export default function WalletScreen() {
             </View>
           </View>
 
-          <View style={{ height: 28 }} />
-
-          {/* ── Manual payout details ── */}
-          <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold", marginTop: 8 }]}>
-            Manual Payout Details
-          </Text>
-          <Text style={[s.payoutSectionSub, { fontFamily: "Inter_400Regular" }]}>
-            For Apple Cash, PayPal, Zelle, Venmo, or check payouts, save your info below. TheLawnServices processes these manually — Apple Cash same day, others within 1–3 business days.
-          </Text>
-
-          <View style={s.manualGroup}>
-            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>🍎 Apple Cash (Phone or Email)</Text>
-            <TextInput
-              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
-              value={manualInfo.apple_cash_contact}
-              onChangeText={(v) => setManualInfo((p) => ({ ...p, apple_cash_contact: v }))}
-              placeholder="(555) 000-0000 or Apple ID email"
-              placeholderTextColor="#444"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={s.manualGroup}>
-            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>PayPal Email</Text>
-            <TextInput
-              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
-              value={manualInfo.paypal_email}
-              onChangeText={(v) => setManualInfo((p) => ({ ...p, paypal_email: v }))}
-              placeholder="yourname@email.com"
-              placeholderTextColor="#444"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={s.manualGroup}>
-            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>Zelle (Phone or Email)</Text>
-            <TextInput
-              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
-              value={manualInfo.zelle_contact}
-              onChangeText={(v) => setManualInfo((p) => ({ ...p, zelle_contact: v }))}
-              placeholder="(555) 000-0000 or email"
-              placeholderTextColor="#444"
-            />
-          </View>
-
-          <View style={s.manualGroup}>
-            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>Venmo Username</Text>
-            <TextInput
-              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
-              value={manualInfo.venmo_username}
-              onChangeText={(v) => setManualInfo((p) => ({ ...p, venmo_username: v }))}
-              placeholder="@username"
-              placeholderTextColor="#444"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <View style={s.manualGroup}>
-            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>Check — Payable To</Text>
-            <TextInput
-              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
-              value={manualInfo.mail_name}
-              onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_name: v }))}
-              placeholder="Full legal name"
-              placeholderTextColor="#444"
-            />
-            <TextInput
-              style={[s.manualInput, { fontFamily: "Inter_400Regular", marginTop: 8 }]}
-              value={manualInfo.mail_address}
-              onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_address: v }))}
-              placeholder="Mailing address"
-              placeholderTextColor="#444"
-            />
-            <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-              <TextInput
-                style={[s.manualInput, { fontFamily: "Inter_400Regular", flex: 2 }]}
-                value={manualInfo.mail_city}
-                onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_city: v }))}
-                placeholder="City"
-                placeholderTextColor="#444"
-              />
-              <TextInput
-                style={[s.manualInput, { fontFamily: "Inter_400Regular", flex: 0.7 }]}
-                value={manualInfo.mail_state}
-                onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_state: v.toUpperCase().slice(0, 2) }))}
-                placeholder="FL"
-                placeholderTextColor="#444"
-                maxLength={2}
-              />
-              <TextInput
-                style={[s.manualInput, { fontFamily: "Inter_400Regular", flex: 1 }]}
-                value={manualInfo.mail_zip}
-                onChangeText={(v) => setManualInfo((p) => ({ ...p, mail_zip: v.replace(/\D/g, "").slice(0, 5) }))}
-                placeholder="ZIP"
-                placeholderTextColor="#444"
-                keyboardType="number-pad"
-                maxLength={5}
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity style={s.saveManualBtn} onPress={saveManualInfo} activeOpacity={0.85}>
-            <Ionicons name={manualSaved ? "checkmark-circle" : "save-outline"} size={18} color="#000" />
-            <Text style={[s.saveManualBtnText, { fontFamily: "Inter_700Bold" }]}>
-              {manualSaved ? "Saved!" : "Save Payout Details"}
-            </Text>
-          </TouchableOpacity>
         </ScrollView>
       )}
 
@@ -805,51 +600,27 @@ export default function WalletScreen() {
 
             {METHODS.map((m) => {
               const active = selectedMethod?.id === m.id;
-              const methodReady = m.id === "stripe_instant" ? isStripeConnected : true;
-              const isBlocked = m.id === "stripe_instant" && !isStripeConnected;
-
-              const tagLabel =
-                m.id === "stripe_instant"
-                  ? isStripeConnected
-                    ? "✓ Connected"
-                    : stripeStatus === "needs_info"
-                    ? "Setup Incomplete"
-                    : "Setup Required"
-                  : null;
-              const tagColor = methodReady ? "#34FF7A22" : "#ffffff0a";
-              const tagTextColor = methodReady ? "#34FF7A" : "#555";
+              const stripeTag = isStripeConnected
+                ? "✓ Connected"
+                : stripeStatus === "needs_info"
+                ? "Setup Incomplete"
+                : "Setup Required";
+              const tagColor = isStripeConnected ? "#34FF7A22" : "#ffffff0a";
+              const tagTextColor = isStripeConnected ? "#34FF7A" : "#555";
 
               return (
                 <TouchableOpacity
                   key={m.id}
-                  style={[
-                    s.methodRow,
-                    active && s.methodRowActive,
-                    isBlocked && s.methodRowDisabled,
-                  ]}
-                  onPress={() => {
-                    if (isBlocked) {
-                      Alert.alert(
-                        "Stripe Setup Required",
-                        "Complete Stripe onboarding in Payout Settings to enable instant payouts.",
-                        [
-                          { text: "Open Settings", onPress: () => setScreen("payout_settings") },
-                          { text: "Cancel", style: "cancel" },
-                        ]
-                      );
-                      return;
-                    }
-                    setSelectedMethod(m);
-                    Haptics.selectionAsync();
-                  }}
-                  activeOpacity={isBlocked ? 1 : 0.8}
+                  style={[s.methodRow, active && s.methodRowActive]}
+                  onPress={() => { setSelectedMethod(m); Haptics.selectionAsync(); }}
+                  activeOpacity={0.8}
                 >
-                  <View style={[s.methodIconWrap, active && s.methodIconWrapActive, isBlocked && { backgroundColor: "#111" }]}>
-                    <Ionicons name={m.icon as any} size={20} color={active ? "#000" : isBlocked ? "#444" : "#CCCCCC"} />
+                  <View style={[s.methodIconWrap, active && s.methodIconWrapActive]}>
+                    <Ionicons name={m.icon as any} size={20} color={active ? "#000" : "#CCCCCC"} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <Text style={[s.methodLabel, { fontFamily: "Inter_600SemiBold" }, active && { color: "#34FF7A" }, isBlocked && { color: "#444" }]}>
+                      <Text style={[s.methodLabel, { fontFamily: "Inter_600SemiBold" }, active && { color: "#34FF7A" }]}>
                         {m.label}
                       </Text>
                       {m.instant && (
@@ -857,60 +628,54 @@ export default function WalletScreen() {
                           <Text style={{ fontSize: 10, fontFamily: "Inter_700Bold", color: "#FFD700", letterSpacing: 0.5 }}>⚡ INSTANT</Text>
                         </View>
                       )}
-                      {tagLabel && (
-                        <View style={[s.stripeTag, { backgroundColor: tagColor }]}>
-                          <Text style={[s.stripeTagText, { fontFamily: "Inter_600SemiBold", color: tagTextColor }]}>
-                            {tagLabel}
-                          </Text>
-                        </View>
-                      )}
+                      <View style={[s.stripeTag, { backgroundColor: tagColor }]}>
+                        <Text style={[s.stripeTagText, { fontFamily: "Inter_600SemiBold", color: tagTextColor }]}>
+                          {stripeTag}
+                        </Text>
+                      </View>
                     </View>
                     <View style={{ flexDirection: "row", gap: 6, marginTop: 3 }}>
-                      {m.isStripe ? (
-                        <View style={[s.speedChip, { backgroundColor: methodReady ? "#34FF7A15" : "#1a1a1a" }]}>
-                          <Ionicons name="flash-outline" size={10} color={methodReady ? "#34FF7A" : "#555"} />
-                          <Text style={[s.speedChipText, { fontFamily: "Inter_500Medium", color: methodReady ? "#34FF7A" : "#555" }]}>
-                            {m.speed}
-                          </Text>
-                        </View>
-                      ) : (
-                        <View style={s.manualChip}>
-                          <Text style={[s.manualChipText, { fontFamily: "Inter_400Regular" }]}>{m.speed}</Text>
+                      <View style={[s.speedChip, { backgroundColor: isStripeConnected ? "#34FF7A15" : "#1a1a1a" }]}>
+                        <Ionicons name={m.instant ? "flash-outline" : "time-outline"} size={10} color={isStripeConnected ? "#34FF7A" : "#555"} />
+                        <Text style={[s.speedChipText, { fontFamily: "Inter_500Medium", color: isStripeConnected ? "#34FF7A" : "#555" }]}>
+                          {m.speed}
+                        </Text>
+                      </View>
+                      {m.feeRate > 0 && (
+                        <View style={[s.speedChip, { backgroundColor: "#FFD70011" }]}>
+                          <Text style={[s.speedChipText, { fontFamily: "Inter_500Medium", color: "#FFD700" }]}>{m.fee}</Text>
                         </View>
                       )}
-                      {m.feeRate > 0 && (
-                        <View style={s.manualChip}>
-                          <Text style={[s.manualChipText, { fontFamily: "Inter_400Regular" }]}>{m.fee}</Text>
+                      {m.feeRate === 0 && (
+                        <View style={[s.speedChip, { backgroundColor: "#34FF7A11" }]}>
+                          <Text style={[s.speedChipText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>No fee</Text>
                         </View>
                       )}
                     </View>
                   </View>
-                  {active && !isBlocked && <Ionicons name="checkmark-circle" size={22} color="#34FF7A" />}
-                  {isBlocked && <Ionicons name="lock-closed-outline" size={18} color="#444" />}
+                  {active && <Ionicons name="checkmark-circle" size={22} color="#34FF7A" />}
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          {selectedMethod && !selectedMethod.isStripe && (
+          {!isStripeConnected && (
             <View style={s.manualNote}>
               <Ionicons name="information-circle-outline" size={16} color="#f59e0b" />
               <Text style={[s.manualNoteText, { fontFamily: "Inter_400Regular" }]}>
-                Manual payouts are reviewed and processed by TheLawnServices within 1–3 business days. Make sure your payout details are saved in Settings.
+                One-time setup required. Go to Payout Settings, connect your Stripe account, and all future withdrawals are 100% automatic — no TheLawn involvement.
               </Text>
             </View>
           )}
 
           <TouchableOpacity style={s.proceedBtn} onPress={proceedFromWithdraw} activeOpacity={0.85}>
             <Ionicons
-              name={selectedMethod?.id === "stripe_instant" ? "flash-outline" : "send-outline"}
+              name={selectedMethod?.id === "stripe_instant" ? "flash-outline" : "arrow-forward-outline"}
               size={18}
               color="#000"
             />
             <Text style={[s.proceedBtnText, { fontFamily: "Inter_700Bold" }]}>
-              {selectedMethod?.id === "stripe_instant"
-                ? "⚡ Withdraw Instantly"
-                : "Submit Withdrawal Request"}
+              {selectedMethod?.id === "stripe_instant" ? "⚡ Withdraw Instantly" : "Withdraw Funds"}
             </Text>
           </TouchableOpacity>
 
@@ -930,7 +695,7 @@ export default function WalletScreen() {
             <Ionicons name="checkmark-circle" size={72} color="#34FF7A" />
           </View>
           <Text style={[s.successTitle, { fontFamily: "Inter_700Bold" }]}>
-            {selectedMethod?.isStripe ? "Payout Initiated!" : "Request Submitted!"}
+            Payout Initiated!
           </Text>
 
           <View style={s.successCard}>
@@ -968,14 +733,14 @@ export default function WalletScreen() {
 
           <View style={s.successNote}>
             <Ionicons
-              name={selectedMethod?.isStripe ? "card-outline" : "time-outline"}
+              name="card-outline"
               size={18}
               color="#34FF7A"
             />
             <Text style={[s.successNoteText, { fontFamily: "Inter_400Regular" }]}>
-              {selectedMethod?.isStripe
-                ? "Your funds have been transferred via Stripe and are on their way to your bank or debit card."
-                : `Your manual payout request has been submitted. TheLawnServices will send funds to your ${selectedMethod?.label} account within 1–3 business days.`}
+              {selectedMethod?.id === "stripe_instant"
+                ? "Your funds have been transferred via Stripe and are on their way to your bank or debit card within minutes."
+                : "Your funds have been transferred via Stripe and will arrive in your bank account within 1–2 business days."}
             </Text>
           </View>
 
