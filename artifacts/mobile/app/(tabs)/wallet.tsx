@@ -22,7 +22,7 @@ const MIN_WITHDRAWAL = 10;
 
 type Screen = "main" | "withdraw" | "success" | "payout_settings";
 
-type PayoutMethodId = "stripe_instant" | "paypal" | "zelle" | "venmo" | "check";
+type PayoutMethodId = "stripe_instant" | "apple_cash" | "paypal" | "zelle" | "venmo" | "check";
 
 type WithdrawMethod = {
   id: PayoutMethodId;
@@ -39,7 +39,7 @@ type WithdrawMethod = {
 const METHODS: WithdrawMethod[] = [
   {
     id: "stripe_instant",
-    label: "Instant Debit Card Payout",
+    label: "Instant Debit / Apple Wallet",
     icon: "flash-outline",
     speed: "Within Minutes",
     speedDays: "within minutes",
@@ -47,6 +47,17 @@ const METHODS: WithdrawMethod[] = [
     feeRate: 0.015,
     isStripe: true,
     instant: true,
+  },
+  {
+    id: "apple_cash",
+    label: "Apple Cash",
+    icon: "logo-apple",
+    speed: "Manual · Same Day",
+    speedDays: "same day",
+    fee: "No fee",
+    feeRate: 0,
+    isStripe: false,
+    instant: false,
   },
   {
     id: "paypal",
@@ -97,6 +108,7 @@ const METHODS: WithdrawMethod[] = [
 type StripeStatus = "idle" | "loading" | "connected" | "needs_info" | "error";
 
 type ManualPayoutInfo = {
+  apple_cash_contact: string;
   paypal_email: string;
   zelle_contact: string;
   venmo_username: string;
@@ -137,6 +149,7 @@ export default function WalletScreen() {
 
   // Manual payout info
   const [manualInfo, setManualInfo] = useState<ManualPayoutInfo>({
+    apple_cash_contact: "",
     paypal_email: "",
     zelle_contact: "",
     venmo_username: "",
@@ -323,7 +336,9 @@ export default function WalletScreen() {
     } else {
       // Build a human-readable payout details string for the admin email
       let payoutDetails = "";
-      if (selectedMethod.id === "paypal") {
+      if (selectedMethod.id === "apple_cash") {
+        payoutDetails = `Apple Cash Phone/Email: ${manualInfo.apple_cash_contact || "Not provided"}`;
+      } else if (selectedMethod.id === "paypal") {
         payoutDetails = `PayPal Email: ${manualInfo.paypal_email || "Not provided"}`;
       } else if (selectedMethod.id === "zelle") {
         payoutDetails = `Zelle Phone/Email: ${manualInfo.zelle_contact || "Not provided"}`;
@@ -475,10 +490,10 @@ export default function WalletScreen() {
               </Text>
               <Text style={[s.stripeBannerSub, { fontFamily: "Inter_400Regular" }]}>
                 {isStripeConnected
-                  ? "Instant debit card withdrawals enabled. Tap to manage."
+                  ? "Instant payouts to your bank, debit card, or Apple Wallet. Tap to manage."
                   : stripeStatus === "needs_info"
                   ? "Finish onboarding to activate payouts — tap to continue."
-                  : "Receive payments directly to your bank or debit card."}
+                  : "Receive payments directly to your bank, debit card, or Apple Wallet."}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color="#555" />
@@ -578,10 +593,10 @@ export default function WalletScreen() {
                 </Text>
                 <Text style={[s.stripeConnectSub, { fontFamily: "Inter_400Regular" }]}>
                   {isStripeConnected
-                    ? "Your payouts are fully activated. Withdraw directly to your bank or debit card."
+                    ? "Your payouts are fully activated. Withdraw directly to your bank, debit card, or Apple Wallet-linked card."
                     : stripeStatus === "needs_info"
                     ? "Stripe needs more information to activate your payouts. Tap below to continue."
-                    : "Set up your Stripe account to receive direct payouts. You'll add your bank or debit card during onboarding."}
+                    : "Set up your Stripe account to receive direct payouts. Add your bank, debit card, or Apple Wallet-linked card during onboarding."}
                 </Text>
               </View>
             </View>
@@ -591,8 +606,8 @@ export default function WalletScreen() {
               <View style={s.howItWorks}>
                 {[
                   { icon: "person-outline", text: "Verify your identity with Stripe (takes ~2 min)" },
-                  { icon: "card-outline", text: "Add your bank account or debit card" },
-                  { icon: "flash-outline", text: "Withdraw earnings instantly from your wallet" },
+                  { icon: "card-outline", text: "Add your bank, debit card, or Apple Wallet-linked card" },
+                  { icon: "flash-outline", text: "Withdraw earnings instantly — lands in Apple Wallet within minutes" },
                 ].map((step, i) => (
                   <View key={i} style={s.howItWorksRow}>
                     <View style={s.howItWorksIcon}>
@@ -646,8 +661,21 @@ export default function WalletScreen() {
             Manual Payout Details
           </Text>
           <Text style={[s.payoutSectionSub, { fontFamily: "Inter_400Regular" }]}>
-            For PayPal, Zelle, Venmo, or check payouts, save your info below. TheLawnServices processes these manually within 1–3 business days.
+            For Apple Cash, PayPal, Zelle, Venmo, or check payouts, save your info below. TheLawnServices processes these manually — Apple Cash same day, others within 1–3 business days.
           </Text>
+
+          <View style={s.manualGroup}>
+            <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>🍎 Apple Cash (Phone or Email)</Text>
+            <TextInput
+              style={[s.manualInput, { fontFamily: "Inter_400Regular" }]}
+              value={manualInfo.apple_cash_contact}
+              onChangeText={(v) => setManualInfo((p) => ({ ...p, apple_cash_contact: v }))}
+              placeholder="(555) 000-0000 or Apple ID email"
+              placeholderTextColor="#444"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
 
           <View style={s.manualGroup}>
             <Text style={[s.manualFieldLabel, { fontFamily: "Inter_500Medium" }]}>PayPal Email</Text>
