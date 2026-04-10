@@ -48,17 +48,6 @@ const METHODS: WithdrawMethod[] = [
     instant: true,
   },
   {
-    id: "stripe",
-    label: "Stripe Bank Payout",
-    icon: "card-outline",
-    speed: "1–2 Business Days",
-    speedDays: "1–2 business days",
-    fee: "No fee",
-    feeRate: 0,
-    isStripe: true,
-    instant: false,
-  },
-  {
     id: "paypal",
     label: "PayPal",
     icon: "logo-paypal",
@@ -480,27 +469,27 @@ export default function WalletScreen() {
             </View>
           </View>
 
-          {/* Stripe Connect status banner */}
+          {/* Payout method status banner */}
           <TouchableOpacity
-            style={[s.stripeBanner, isStripeConnected ? s.stripeBannerConnected : s.stripeBannerDisconnected]}
+            style={[s.stripeBanner, debitCard ? s.stripeBannerConnected : s.stripeBannerDisconnected]}
             onPress={() => { Haptics.selectionAsync(); setScreen("payout_settings"); }}
             activeOpacity={0.8}
           >
-            <View style={[s.stripeIconWrap, { backgroundColor: isStripeConnected ? "#34FF7A22" : "#1a1a1a" }]}>
+            <View style={[s.stripeIconWrap, { backgroundColor: debitCard ? "#34FF7A22" : "#1a1a1a" }]}>
               <Ionicons
-                name={isStripeConnected ? "checkmark-circle" : "card-outline"}
+                name={debitCard ? "flash" : "flash-outline"}
                 size={22}
-                color={isStripeConnected ? "#34FF7A" : "#888"}
+                color={debitCard ? "#34FF7A" : "#888"}
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[s.stripeBannerTitle, { fontFamily: "Inter_600SemiBold", color: isStripeConnected ? "#34FF7A" : "#FFFFFF" }]}>
-                {isStripeConnected ? "Stripe Payout Account Connected" : "Connect Your Bank via Stripe"}
+              <Text style={[s.stripeBannerTitle, { fontFamily: "Inter_600SemiBold", color: debitCard ? "#34FF7A" : "#FFFFFF" }]}>
+                {debitCard ? `⚡ ${debitCard.brand} •••• ${debitCard.last4} — Ready` : "Add Debit Card for Instant Payouts"}
               </Text>
               <Text style={[s.stripeBannerSub, { fontFamily: "Inter_400Regular" }]}>
-                {isStripeConnected
-                  ? "Direct bank payouts are enabled. Tap to manage."
-                  : "Connect once — withdraw earnings directly to your bank."}
+                {debitCard
+                  ? "Instant withdrawals enabled. Tap to manage."
+                  : "Withdraw your earnings within minutes — tap to set up."}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color="#555" />
@@ -712,122 +701,6 @@ export default function WalletScreen() {
           )}
 
           <View style={{ height: 28 }} />
-
-          {/* ── Stripe Connect ── */}
-          <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold" }]}>Stripe Bank Payout</Text>
-          <Text style={[s.payoutSectionSub, { fontFamily: "Inter_400Regular" }]}>
-            The fastest way to receive your earnings. Connect once and we'll transfer directly to your bank account or debit card via Stripe.
-          </Text>
-
-          {/* ── Stripe Connect unavailable banner ── */}
-          {stripeStatus === "unavailable" ? (
-            <View style={[s.stripeConnectCard, { backgroundColor: "#1a1200", borderColor: "#FFAA0033" }]}>
-              <View style={s.stripeConnectTop}>
-                <View style={[s.stripeConnectIcon, { backgroundColor: "#FFAA0022" }]}>
-                  <Ionicons name="time-outline" size={28} color="#FFAA00" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.stripeConnectTitle, { fontFamily: "Inter_700Bold", color: "#FFAA00" }]}>
-                    Bank Payout — Coming Soon
-                  </Text>
-                  <Text style={[s.stripeConnectSub, { fontFamily: "Inter_400Regular" }]}>
-                    Direct bank payouts via Stripe are being activated for this platform. In the meantime, use the{" "}
-                    <Text style={{ fontFamily: "Inter_600SemiBold", color: "#FFFFFF" }}>Manual Payout options</Text>
-                    {" "}below (PayPal, Zelle, or Venmo) — TheLawnServices processes these within 1–3 business days.
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={[s.stripeConnectBtn, { backgroundColor: "#FFAA0022", borderWidth: 1, borderColor: "#FFAA0055" }]}
-                onPress={() => setStripeStatus("idle")}
-                activeOpacity={0.85}
-              >
-                <Ionicons name="refresh-outline" size={17} color="#FFAA00" />
-                <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_700Bold", color: "#FFAA00" }]}>
-                  Try Again
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-          <View style={[s.stripeConnectCard, isStripeConnected ? s.stripeConnectCardOn : s.stripeConnectCardOff]}>
-            <View style={s.stripeConnectTop}>
-              <View style={[s.stripeConnectIcon, { backgroundColor: isStripeConnected ? "#34FF7A22" : "#222" }]}>
-                <Ionicons
-                  name={isStripeConnected ? "checkmark-circle" : "card-outline"}
-                  size={28}
-                  color={isStripeConnected ? "#34FF7A" : "#CCCCCC"}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.stripeConnectTitle, { fontFamily: "Inter_700Bold", color: isStripeConnected ? "#34FF7A" : "#FFFFFF" }]}>
-                  {isStripeConnected
-                    ? "Stripe Account Connected"
-                    : stripeStatus === "needs_info"
-                    ? "Additional Info Required"
-                    : "Not Connected"}
-                </Text>
-                <Text style={[s.stripeConnectSub, { fontFamily: "Inter_400Regular" }]}>
-                  {isStripeConnected
-                    ? `Account ID: ${stripeAccountId}`
-                    : stripeStatus === "needs_info"
-                    ? "Your Stripe account needs more information before payouts are enabled."
-                    : "Connect your bank account or debit card to receive payouts."}
-                </Text>
-              </View>
-            </View>
-
-            {/* How it works */}
-            {!isStripeConnected && (
-              <View style={s.howItWorks}>
-                {[
-                  { icon: "finger-print-outline", text: "Stripe verifies your identity securely" },
-                  { icon: "business-outline",     text: "Add your bank account or debit card" },
-                  { icon: "flash-outline",         text: "Withdraw earnings directly from your wallet" },
-                ].map((item, i) => (
-                  <View key={i} style={s.howItWorksRow}>
-                    <View style={s.howItWorksIcon}>
-                      <Ionicons name={item.icon as any} size={14} color="#34FF7A" />
-                    </View>
-                    <Text style={[s.howItWorksText, { fontFamily: "Inter_400Regular" }]}>{item.text}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            <TouchableOpacity
-              style={[s.stripeConnectBtn, isStripeConnected && s.stripeConnectBtnAlt]}
-              onPress={connectStripe}
-              activeOpacity={0.85}
-              disabled={stripeConnecting}
-            >
-              {stripeConnecting ? (
-                <ActivityIndicator size="small" color={isStripeConnected ? "#34FF7A" : "#000"} />
-              ) : (
-                <Ionicons
-                  name={isStripeConnected ? "open-outline" : "link-outline"}
-                  size={17}
-                  color={isStripeConnected ? "#34FF7A" : "#000"}
-                />
-              )}
-              <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_700Bold", color: isStripeConnected ? "#34FF7A" : "#000" }]}>
-                {stripeConnecting
-                  ? "Opening Stripe..."
-                  : isStripeConnected
-                  ? "Manage Stripe Account"
-                  : stripeStatus === "needs_info"
-                  ? "Complete Stripe Setup"
-                  : "Connect with Stripe"}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={s.stripeLegal}>
-              <Ionicons name="lock-closed-outline" size={12} color="#555" />
-              <Text style={[s.stripeLegalText, { fontFamily: "Inter_400Regular" }]}>
-                Powered by Stripe. Your banking details are never stored on TheLawnServices servers.
-              </Text>
-            </View>
-          </View>
-          )}
 
           {/* ── Manual payout details ── */}
           <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold", marginTop: 28 }]}>Manual Payout Details</Text>
@@ -1057,14 +930,26 @@ export default function WalletScreen() {
           )}
 
           <TouchableOpacity style={s.proceedBtn} onPress={proceedFromWithdraw} activeOpacity={0.85}>
-            <Ionicons name={selectedMethod?.isStripe ? "card-outline" : "send-outline"} size={18} color="#000" />
+            <Ionicons
+              name={
+                selectedMethod?.id === "stripe_instant" ? "flash-outline"
+                : selectedMethod?.isStripe ? "card-outline"
+                : "send-outline"
+              }
+              size={18}
+              color="#000"
+            />
             <Text style={[s.proceedBtnText, { fontFamily: "Inter_700Bold" }]}>
-              {selectedMethod?.isStripe ? "Withdraw via Stripe" : "Submit Withdrawal Request"}
+              {selectedMethod?.id === "stripe_instant"
+                ? "⚡ Withdraw Instantly"
+                : selectedMethod?.isStripe
+                ? "Withdraw via Stripe"
+                : "Submit Withdrawal Request"}
             </Text>
           </TouchableOpacity>
 
           <Text style={[s.securityNote, { fontFamily: "Inter_400Regular" }]}>
-            🔒 All withdrawals are secured by Stripe. Your banking details are never stored by TheLawnServices.
+            🔒 Withdrawals are processed securely. Your banking details are never stored by TheLawnServices.
           </Text>
         </ScrollView>
       )}
