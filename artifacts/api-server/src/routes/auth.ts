@@ -38,6 +38,30 @@ router.post("/register", async (req, res) => {
       return res.status(409).json({ error: "Username already taken. Please choose another." });
     }
 
+    // Cross-role uniqueness: email and phone must not be registered under the opposite role
+    const oppositeRole = role === "customer" ? "landscaper" : "customer";
+    const emailConflict = await pool.query(
+      "SELECT id FROM lawn_users WHERE email = $1 AND role = $2",
+      [email.trim().toLowerCase(), oppositeRole]
+    );
+    if (emailConflict.rows.length > 0) {
+      return res.status(409).json({
+        error: `This email is already registered as a ${oppositeRole}. Each email can only belong to one account type.`,
+      });
+    }
+
+    if (phone && phone.replace(/\D/g, "").length >= 7) {
+      const phoneConflict = await pool.query(
+        "SELECT id FROM lawn_users WHERE phone = $1 AND role = $2",
+        [phone.trim(), oppositeRole]
+      );
+      if (phoneConflict.rows.length > 0) {
+        return res.status(409).json({
+          error: `This phone number is already registered as a ${oppositeRole}. Each phone number can only belong to one account type.`,
+        });
+      }
+    }
+
     const passwordHash = await bcrypt.hash(password, 12);
 
     const result = await pool.query(

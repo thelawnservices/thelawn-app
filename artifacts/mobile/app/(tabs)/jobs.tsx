@@ -524,6 +524,11 @@ function JobCompletionPhotoModal({
   }
 
   function handleSubmit() {
+    if (photos.length === 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert("Photos Required", "Please add at least 1 photo of the completed work before submitting.");
+      return;
+    }
     onSubmit(photos);
     setPhotos([]);
     onClose();
@@ -544,7 +549,7 @@ function JobCompletionPhotoModal({
           </View>
 
           <Text style={[jcpStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>
-            Add up to 4 photos of the completed work. The customer will see these when reviewing your submission.
+            At least 1 photo is required. Add up to 4 photos of the completed work — the customer will see these when reviewing your submission.
           </Text>
 
           {photos.length > 0 && (
@@ -578,16 +583,22 @@ function JobCompletionPhotoModal({
           )}
 
           <View style={jcpStyles.infoNote}>
-            <Ionicons name="shield-checkmark-outline" size={14} color="#34FF7A" />
-            <Text style={[jcpStyles.infoText, { fontFamily: "Inter_400Regular" }]}>
-              Photos optional. After submitting, the customer has 24 hours to approve or dispute.
+            <Ionicons name="alert-circle-outline" size={14} color={photos.length === 0 ? "#f59e0b" : "#34FF7A"} />
+            <Text style={[jcpStyles.infoText, { fontFamily: "Inter_400Regular", color: photos.length === 0 ? "#f59e0b" : "#888" }]}>
+              {photos.length === 0
+                ? "1–4 photos required to submit. After submitting, the customer has 24 hours to approve or dispute."
+                : `${photos.length} photo${photos.length > 1 ? "s" : ""} added. After submitting, the customer has 24 hours to approve or dispute.`}
             </Text>
           </View>
 
-          <TouchableOpacity style={jcpStyles.submitBtn} onPress={handleSubmit} activeOpacity={0.85}>
-            <Ionicons name="checkmark-circle-outline" size={18} color="#000" />
-            <Text style={[jcpStyles.submitBtnText, { fontFamily: "Inter_700Bold" }]}>
-              {photos.length > 0 ? `Submit ${photos.length} Photo${photos.length > 1 ? "s" : ""} & Notify Customer` : "Mark Complete & Notify Customer"}
+          <TouchableOpacity
+            style={[jcpStyles.submitBtn, photos.length === 0 && jcpStyles.submitBtnDisabled]}
+            onPress={handleSubmit}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="checkmark-circle-outline" size={18} color={photos.length === 0 ? "#555" : "#000"} />
+            <Text style={[jcpStyles.submitBtnText, { fontFamily: "Inter_700Bold", color: photos.length === 0 ? "#555" : "#000" }]}>
+              {photos.length > 0 ? `Submit ${photos.length} Photo${photos.length > 1 ? "s" : ""} & Notify Customer` : "Add Photos to Continue"}
             </Text>
           </TouchableOpacity>
         </Pressable>
@@ -1479,6 +1490,9 @@ const jcpStyles = StyleSheet.create({
   submitBtn: {
     backgroundColor: "#34FF7A", borderRadius: 20, paddingVertical: 16,
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+  },
+  submitBtnDisabled: {
+    backgroundColor: "#1a1a1a", borderWidth: 1, borderColor: "#2a2a2a",
   },
   submitBtnText: { fontSize: 14, color: "#000" },
 });
