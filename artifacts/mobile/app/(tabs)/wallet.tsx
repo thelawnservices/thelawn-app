@@ -18,7 +18,7 @@ import { useWallet } from "@/contexts/wallet";
 import { useAuth } from "@/contexts/auth";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
-const MIN_WITHDRAWAL = 10;
+const MIN_WITHDRAWAL = 0;
 
 type Screen = "main" | "withdraw" | "success" | "payout_settings";
 
@@ -235,10 +235,6 @@ export default function WalletScreen() {
       Alert.alert("Select Method", "Please choose a withdrawal method.");
       return;
     }
-    if (amountNum < MIN_WITHDRAWAL) {
-      Alert.alert("Minimum Withdrawal", `The minimum withdrawal amount is $${MIN_WITHDRAWAL}.00.`);
-      return;
-    }
 
     // Both methods require Stripe onboarding
     if (!isStripeConnected) {
@@ -416,9 +412,6 @@ export default function WalletScreen() {
             <Text style={[s.withdrawBtnText, { fontFamily: "Inter_700Bold" }]}>Withdraw Funds</Text>
           </TouchableOpacity>
 
-          <Text style={[s.minNoticeText, { fontFamily: "Inter_400Regular" }]}>
-            Minimum withdrawal: ${MIN_WITHDRAWAL}.00
-          </Text>
 
           {/* Transactions */}
           <Text style={[s.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>TRANSACTION HISTORY</Text>
@@ -589,9 +582,6 @@ export default function WalletScreen() {
             <TouchableOpacity onPress={() => setAmountText(fmt(balance))} style={s.maxBtn}>
               <Text style={[s.maxBtnText, { fontFamily: "Inter_500Medium" }]}>Withdraw Max</Text>
             </TouchableOpacity>
-            <Text style={[{ fontSize: 12, color: "#555", marginTop: 6 }, { fontFamily: "Inter_400Regular" }]}>
-              Minimum: ${MIN_WITHDRAWAL}.00
-            </Text>
           </View>
 
           {/* Method selection */}

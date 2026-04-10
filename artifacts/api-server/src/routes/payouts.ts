@@ -168,8 +168,7 @@ router.post("/withdraw", async (req, res) => {
     };
 
     if (!accountId) return res.status(400).json({ error: "accountId is required" });
-    if (!amount || amount <= 0) return res.status(400).json({ error: "Invalid amount" });
-    if (amount < 10) return res.status(400).json({ error: "Minimum withdrawal is $10.00" });
+    if (!amount || amount <= 0) return res.status(400).json({ error: "Amount must be greater than $0" });
 
     const amountCents = Math.round(amount * 100);
 
