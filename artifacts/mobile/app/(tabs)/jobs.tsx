@@ -727,12 +727,12 @@ export default function JobsScreen() {
       addNotification({
         icon: "location-outline",
         title: "Landscaper Arrived & Work Started",
-        sub: `Your landscaper has arrived and begun ${job?.service ?? "work"} at your location.`,
+        sub: `${job?.landscaper ?? "Your landscaper"} has arrived and begun your ${job?.service ?? "service"} — ${job?.date ?? ""} at ${job?.time ?? ""}`,
         targetRole: "customer",
       });
       sendLocalPush(
-        "Your Landscaper Has Arrived & Started",
-        `${job?.landscaper ?? "Your landscaper"} has arrived and is now working on your ${job?.service ?? "job"}.`
+        "🌿 Your Landscaper Has Arrived",
+        `${job?.landscaper ?? "Your landscaper"} has arrived and started your ${job?.service ?? "job"} — ${job?.date ?? ""} at ${job?.time ?? ""}. Job: ${job?.code ?? jobId}`
       );
       setTimeout(() => {
         Alert.alert(
@@ -770,20 +770,13 @@ export default function JobsScreen() {
     // Notify customer that work is done (customer-targeted)
     addNotification({
       icon: "checkmark-circle",
-      title: "Work Complete — Action Needed",
-      sub: `${job?.landscaper ?? "Your landscaper"} has finished ${job?.service ?? "your job"}. Review & approve within 24 hours.`,
+      title: "Job Complete — Action Needed",
+      sub: `${job?.landscaper ?? "Your landscaper"} has completed your ${job?.service ?? "service"} — ${job?.date ?? ""} at ${job?.time ?? ""}. Review & approve within 24 hours.`,
       targetRole: "customer",
     });
-    // Notify landscaper that customer was notified (landscaper-targeted)
-    addNotification({
-      icon: "checkmark-circle-outline",
-      title: "Job Marked Complete",
-      sub: `${job?.service ?? "Job"} (${job?.code ?? jobId}) marked complete. Customer has 24 hours to approve.`,
-      targetRole: "landscaper",
-    });
     sendLocalPush(
-      "Work Has Been Completed",
-      `${job?.landscaper ?? "Your landscaper"} has finished ${job?.service ?? "work"}. You have 24 hours to approve or dispute. Job Code: ${job?.code ?? jobId}`
+      "✅ Job Complete — Action Needed",
+      `${job?.landscaper ?? "Your landscaper"} has finished your ${job?.service ?? "service"} — ${job?.date ?? ""} at ${job?.time ?? ""}. Approve or dispute within 24 hrs. Job: ${job?.code ?? jobId}`
     );
     setTimeout(() => {
       Alert.alert(

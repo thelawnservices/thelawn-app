@@ -5,7 +5,7 @@ Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
-    shouldSetBadge: false,
+    shouldSetBadge: true,
     shouldShowBanner: true,
     shouldShowList: true,
   }),
@@ -19,7 +19,7 @@ export async function requestPushPermissions(): Promise<boolean> {
   return status === "granted";
 }
 
-export async function sendLocalPush(title: string, body: string): Promise<void> {
+export async function sendLocalPush(title: string, body: string, subtitle?: string): Promise<void> {
   if (Platform.OS === "web") return;
   try {
     const { status } = await Notifications.getPermissionsAsync();
@@ -30,10 +30,11 @@ export async function sendLocalPush(title: string, body: string): Promise<void> 
       content: {
         title,
         body,
+        subtitle: subtitle ?? "TheLawn Services",
         sound: true,
+        data: { source: "TheLawnServices" },
       },
       trigger: null,
     });
-  } catch (_) {
-  }
+  } catch (_) {}
 }

@@ -115,6 +115,26 @@ const LANDSCAPER_INCOMING = [
   },
 ];
 
+function parseTimeToMinutes(t: string): number {
+  const s = t.trim().toLowerCase();
+  if (s.includes("morning")) return 8 * 60;
+  if (s.includes("afternoon")) return 12 * 60;
+  if (s.includes("evening")) return 17 * 60;
+  if (s === "flexible" || s === "anytime" || s === "tbd") return 8 * 60;
+  const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return 8 * 60;
+  let h = parseInt(m[1]);
+  const min = parseInt(m[2]);
+  const ap = m[3].toUpperCase();
+  if (ap === "PM" && h !== 12) h += 12;
+  if (ap === "AM" && h === 12) h = 0;
+  return h * 60 + min;
+}
+
+function slotsOverlap(startA: number, durA: number, startB: number, durB: number): boolean {
+  return startA < startB + durB && startB < startA + durA;
+}
+
 const STATUS_CONFIG: Record<RequestStatus, { label: string; color: string; bg: string; icon: "time-outline" | "checkmark-circle-outline" | "close-circle-outline" | "leaf" | "reload-outline" }> = {
   pending: { label: "Pending", color: "#FFAA00", bg: "#2A1F00", icon: "time-outline" },
   accepted: { label: "Accepted", color: "#34FF7A", bg: "#0d2e18", icon: "checkmark-circle-outline" },
@@ -385,7 +405,7 @@ export default function RequestsScreen() {
   const topPadding = isWeb ? 67 : insets.top;
   const { role } = useAuth();
   const { acceptJob } = useJobs();
-  const { addBookedSlot } = useLandscaperProfile();
+  const { addBookedSlot, bookedSlots } = useLandscaperProfile();
 
   const isLandscaper = role === "landscaper";
 
@@ -394,12 +414,27 @@ export default function RequestsScreen() {
   const [extraRequests, setExtraRequests] = useState<typeof CUSTOMER_REQUESTS>([]);
 
   function handleAccept(id: string, service: string, customer: string, budget: string, rawDate: string, rawTime: string, address: string) {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setAccepted((prev) => [...prev, id]);
-    acceptJob({ id, service, customer, address, date: rawDate, time: rawTime, budget });
     const blockMins = SERVICE_BLOCK_MINUTES[service] ?? 120;
     const dateKey = normalizeDateKey(rawDate);
     const timeKey = normalizeTime(rawTime);
+    const newStart = parseTimeToMinutes(timeKey);
+
+    const existingSlots = bookedSlots[dateKey] ?? [];
+    const conflict = existingSlots.find((slot) =>
+      slotsOverlap(newStart, blockMins, parseTimeToMinutes(slot.time), slot.durationMinutes)
+    );
+    if (conflict) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert(
+        "Time Conflict",
+        `You already have a ${conflict.service} booked on ${rawDate} around ${conflict.time}. You can't accept two jobs at the same time.\n\nFinish or cancel your existing booking before accepting this one.`
+      );
+      return;
+    }
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setAccepted((prev) => [...prev, id]);
+    acceptJob({ id, service, customer, address, date: rawDate, time: rawTime, budget });
     addBookedSlot(dateKey, timeKey, blockMins, service);
     Alert.alert(
       "Job Accepted ✓",

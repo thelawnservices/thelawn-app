@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
-import { useLandscaperProfile } from "@/contexts/landscaperProfile";
+import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import { useNotifications } from "@/contexts/notifications";
 
 const FILTERS = ["All", "Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Tree Removal"];
@@ -81,6 +81,26 @@ const PROS = [
   },
 ];
 
+function parseSearchTimeToMinutes(t: string): number {
+  const s = t.trim().toLowerCase();
+  if (s.includes("morning")) return 8 * 60;
+  if (s.includes("afternoon")) return 12 * 60;
+  if (s.includes("evening")) return 17 * 60;
+  if (s === "flexible" || s === "anytime" || s === "tbd") return 8 * 60;
+  const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return 8 * 60;
+  let h = parseInt(m[1]);
+  const min = parseInt(m[2]);
+  const ap = m[3].toUpperCase();
+  if (ap === "PM" && h !== 12) h += 12;
+  if (ap === "AM" && h === 12) h = 0;
+  return h * 60 + min;
+}
+
+function searchSlotsOverlap(startA: number, durA: number, startB: number, durB: number): boolean {
+  return startA < startB + durB && startB < startA + durA;
+}
+
 const SORT_OPTIONS = ["Recommended", "Closest", "Highest Rated", "Price: Low to High", "Price: High to Low"];
 const PRICE_RANGES = [
   { label: "Any Price", min: 0,   max: Infinity },
@@ -111,6 +131,7 @@ export default function SearchScreen() {
   const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
   const [selectedPro, setSelectedPro] = useState<(typeof PROS)[0] | null>(null);
   const { acceptJob, knownCustomers } = useJobs();
+  const { bookedSlots, addBookedSlot } = useLandscaperProfile();
   const { getDiscountForPro } = useNotifications();
 
   const filtered = PROS.filter((p) => {
@@ -292,6 +313,28 @@ export default function SearchScreen() {
                           {
                             text: effectiveIsNew ? `Accept · Receive $${net}` : "Accept at " + req.budget,
                             onPress: () => {
+                              const blockMins = SERVICE_BLOCK_MINUTES[req.service] ?? 120;
+                              const rawTime = req.time ?? "Flexible";
+                              const normTime =
+                                rawTime.toLowerCase().includes("morning") ? "8:00 AM" :
+                                rawTime.toLowerCase().includes("afternoon") ? "12:00 PM" :
+                                rawTime.toLowerCase().includes("evening") ? "5:00 PM" :
+                                (rawTime.toLowerCase() === "flexible" || rawTime.toLowerCase() === "anytime" || rawTime.toLowerCase() === "tbd") ? "8:00 AM" :
+                                rawTime;
+                              const parts = req.date.trim().split(/\s+/);
+                              const dateKey = parts.length === 2 ? `${parts[0]} ${parts[1]}, ${new Date().getFullYear()}` : req.date;
+                              const newStart = parseSearchTimeToMinutes(normTime);
+                              const existingSlots = bookedSlots[dateKey] ?? [];
+                              const conflict = existingSlots.find((slot) =>
+                                searchSlotsOverlap(newStart, blockMins, parseSearchTimeToMinutes(slot.time), slot.durationMinutes)
+                              );
+                              if (conflict) {
+                                Alert.alert(
+                                  "Time Conflict",
+                                  `You already have a ${conflict.service} booked on ${req.date} around ${conflict.time}. You can't accept two jobs at the same time.\n\nCancel your existing booking before accepting this one.`
+                                );
+                                return;
+                              }
                               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                               setAcceptedIds((prev) => [...prev, req.id]);
                               acceptJob({
@@ -307,6 +350,7 @@ export default function SearchScreen() {
                                 zip: req.zip,
                                 phone: req.phone,
                               });
+                              addBookedSlot(dateKey, normTime, blockMins, req.service);
                               Alert.alert(
                                 "Job Accepted ✓",
                                 effectiveIsNew
