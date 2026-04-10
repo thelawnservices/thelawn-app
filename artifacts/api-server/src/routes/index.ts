@@ -6,10 +6,12 @@ import payoutsRouter from "./payouts";
 import feedbackRouter from "./feedback";
 import moderateImageRouter from "./moderateImage";
 import walletRouter from "./wallet";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use("/auth", authRouter);
 router.use("/payments", paymentsRouter);
 router.use("/disputes", disputesRouter);
 router.use("/payouts", payoutsRouter);

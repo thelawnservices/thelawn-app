@@ -2,14 +2,31 @@ import React, { createContext, useContext, useState } from "react";
 
 type Role = "customer" | "landscaper";
 
+export interface LawnUser {
+  id: number;
+  username: string;
+  role: Role;
+  displayName: string;
+  email: string;
+  phone: string;
+  address: string;
+  zipCode: string;
+  city: string;
+  state: string;
+  businessName: string;
+  services: string;
+  yearsExperience: string;
+}
+
 interface AuthContextType {
   role: Role | null;
+  user: LawnUser | null;
   userName: string;
   avatarUri: string | null;
   preferredPayment: string | null;
   needsServiceSetup: boolean;
   isBanned: boolean;
-  login: (r: Role) => void;
+  login: (user: LawnUser) => void;
   logout: () => void;
   banUser: () => void;
   setAvatarUri: (uri: string | null) => void;
@@ -19,6 +36,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   role: null,
+  user: null,
   userName: "",
   avatarUri: null,
   preferredPayment: null,
@@ -32,38 +50,41 @@ const AuthContext = createContext<AuthContextType>({
   setNeedsServiceSetup: () => {},
 });
 
-const ROLE_NAMES: Record<Role, string> = {
-  customer: "Zamire Smith",
-  landscaper: "GreenScape Pros",
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRole] = useState<Role | null>(null);
+  const [user, setUser] = useState<LawnUser | null>(null);
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [preferredPayment, setPreferredPayment] = useState<string | null>(null);
   const [needsServiceSetup, setNeedsServiceSetup] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
 
-  const login = (r: Role) => setRole(r);
+  const role = user?.role ?? null;
+  const userName = user?.displayName ?? "";
+
+  const login = (u: LawnUser) => setUser(u);
+
   const logout = () => {
-    setRole(null);
+    setUser(null);
     setAvatarUri(null);
     setPreferredPayment(null);
     setNeedsServiceSetup(false);
     setIsBanned(false);
   };
+
   const banUser = () => {
     setIsBanned(true);
-    setRole(null);
+    setUser(null);
     setAvatarUri(null);
     setPreferredPayment(null);
     setNeedsServiceSetup(false);
   };
 
-  const userName = role ? ROLE_NAMES[role] : "";
-
   return (
-    <AuthContext.Provider value={{ role, userName, avatarUri, preferredPayment, needsServiceSetup, isBanned, login, logout, banUser, setAvatarUri, setPreferredPayment, setNeedsServiceSetup }}>
+    <AuthContext.Provider value={{
+      role, user, userName, avatarUri, preferredPayment,
+      needsServiceSetup, isBanned,
+      login, logout, banUser,
+      setAvatarUri, setPreferredPayment, setNeedsServiceSetup,
+    }}>
       {children}
     </AuthContext.Provider>
   );

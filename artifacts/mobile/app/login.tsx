@@ -11,14 +11,17 @@ import {
   Image,
   Modal,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "@/contexts/auth";
+import { useAuth, LawnUser } from "@/contexts/auth";
 import TermsModal from "@/components/TermsModal";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
 const { height: SCREEN_H } = Dimensions.get("window");
 const LOGO_H = Math.min(280, Math.max(200, SCREEN_H * 0.38));
@@ -71,6 +74,7 @@ export default function LoginScreen() {
   const [years, setYears] = useState("");
 
   const [pendingIsRegistration, setPendingIsRegistration] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Role selection modal
   const [showRoleModal, setShowRoleModal] = useState(false);
@@ -85,66 +89,118 @@ export default function LoginScreen() {
   const botPad = isWeb ? 40 : insets.bottom + 20;
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
   const [showPasskey, setShowPasskey] = useState(false);
-  const [pendingRole, setPendingRole] = useState<"customer" | "landscaper" | null>(null);
+  const [pendingUser, setPendingUser] = useState<LawnUser | null>(null);
 
-  function go(role: "customer" | "landscaper") {
+  function go(user: LawnUser) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (role === "landscaper" && pendingIsRegistration) {
+    if (user.role === "landscaper" && pendingIsRegistration) {
       setNeedsServiceSetup(true);
     }
-    login(role);
+    login(user);
     router.replace("/(tabs)");
   }
 
   function finishPasskey() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setShowPasskey(false);
-    if (pendingRole) go(pendingRole);
+    if (pendingUser) go(pendingUser);
   }
 
   function skipPasskey() {
     setShowPasskey(false);
-    if (pendingRole) go(pendingRole);
+    if (pendingUser) go(pendingUser);
   }
 
   function handlePasskeyLogin(role: "customer" | "landscaper") {
     Haptics.selectionAsync();
-    setPendingRole(role);
-    setShowPasskey(true);
+    // Passkey login without credentials - not supported with real auth
+    // This button is kept for UX but will prompt user to use username/password
+    setErrors("Please sign in with your username and password.");
   }
 
-  function handleCustomerLogin() {
+  async function handleCustomerLogin() {
     if (!custUsername.trim() || !password.trim()) {
       setErrors("Please enter your username and password");
       return;
     }
     setErrors(null);
-    go("customer");
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: custUsername.trim(), password, role: "customer" }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErrors(data.error ?? "Login failed"); return; }
+      go(data.user as LawnUser);
+    } catch {
+      setErrors("Could not connect to server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleLandscaperLogin() {
+  async function handleLandscaperLogin() {
     if (!landUsername.trim() || !password.trim()) {
       setErrors("Please enter your username and password");
       return;
     }
     setErrors(null);
-    setPendingIsRegistration(false);
-    go("landscaper");
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: landUsername.trim(), password, role: "landscaper" }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErrors(data.error ?? "Login failed"); return; }
+      setPendingIsRegistration(false);
+      go(data.user as LawnUser);
+    } catch {
+      setErrors("Could not connect to server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleCustomerRegister() {
+  async function handleCustomerRegister() {
     if (!regUsername.trim() || !firstName.trim() || !lastName.trim() || !email.trim() || !regPassword.trim() || !phone.trim() || !address.trim() || !zipCode.trim()) {
       setErrors("Please fill in all fields including Username and ZIP Code");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
     setErrors(null);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setPendingRole("customer");
-    setTimeout(() => setShowPasskey(true), 800);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: regUsername.trim(),
+          role: "customer",
+          password: regPassword,
+          displayName: `${firstName.trim()} ${lastName.trim()}`,
+          email: email.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          zipCode: zipCode.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErrors(data.error ?? "Registration failed"); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); return; }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setPendingUser(data.user as LawnUser);
+      setTimeout(() => setShowPasskey(true), 400);
+    } catch {
+      setErrors("Could not connect to server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleLandscaperRegister() {
+  async function handleLandscaperRegister() {
     if (!lRegUsername.trim() || !businessName.trim() || !lEmail.trim() || !lPassword.trim() || !lPhone.trim() || !lCity.trim() || !state.trim() || !lZipCode.trim()) {
       setErrors("Please fill all required fields: Username, Business Name, Email, Password, Phone, City, State, and ZIP.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -156,10 +212,37 @@ export default function LoginScreen() {
       return;
     }
     setErrors(null);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setPendingIsRegistration(true);
-    setPendingRole("landscaper");
-    setTimeout(() => setShowPasskey(true), 800);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: lRegUsername.trim(),
+          role: "landscaper",
+          password: lPassword,
+          displayName: businessName.trim(),
+          email: lEmail.trim(),
+          phone: lPhone.trim(),
+          city: lCity.trim(),
+          state: state.trim(),
+          zipCode: lZipCode.trim(),
+          businessName: businessName.trim(),
+          services: selectedServices.join(", "),
+          yearsExperience: years.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErrors(data.error ?? "Registration failed"); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); return; }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setPendingIsRegistration(true);
+      setPendingUser(data.user as LawnUser);
+      setTimeout(() => setShowPasskey(true), 400);
+    } catch {
+      setErrors("Could not connect to server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleSendForgotCode() {
@@ -182,7 +265,8 @@ export default function LoginScreen() {
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setErrors(null);
-    go(forgotRole);
+    // After password reset, redirect back to login to sign in with new credentials
+    navBack(forgotRole === "customer" ? "customer-login" : "landscaper-login");
   }
 
   function navBack(to: Step) {
@@ -222,7 +306,6 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.welcomeFooter}>
-          <Text style={[styles.demoNote, { fontFamily: "Inter_400Regular" }]}>Demo mode – tap to continue</Text>
           <View style={styles.consentRow}>
             <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}>By continuing you agree to our </Text>
             <TouchableOpacity onPress={() => setTermsDoc("terms")} activeOpacity={0.7}>
@@ -327,12 +410,8 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("customer")} activeOpacity={0.85}>
-            <Ionicons name="finger-print" size={22} color="#34FF7A" />
-            <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in using Passcode saved on iPhone</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleCustomerLogin} activeOpacity={0.88}>
-            <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in</Text>
+          <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleCustomerLogin} disabled={loading} activeOpacity={0.88}>
+            {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in</Text>}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowRoleModal(true)} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
             <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? <Text style={{ color: "#34FF7A" }}>Register here</Text></Text>
@@ -390,12 +469,8 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("landscaper")} activeOpacity={0.85}>
-            <Ionicons name="finger-print" size={22} color="#34FF7A" />
-            <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in using Passcode saved on iPhone</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleLandscaperLogin} activeOpacity={0.88}>
-            <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in</Text>
+          <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleLandscaperLogin} disabled={loading} activeOpacity={0.88}>
+            {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in</Text>}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowRoleModal(true)} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
             <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? <Text style={{ color: "#34FF7A" }}>Register here</Text></Text>
@@ -464,8 +539,8 @@ export default function LoginScreen() {
           <Field label="ZIP Code (required)">
             <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={zipCode} onChangeText={setZipCode} placeholder="34222" placeholderTextColor="#777" keyboardType="numeric" maxLength={5} />
           </Field>
-          <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleCustomerRegister} activeOpacity={0.88}>
-            <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Account</Text>
+          <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleCustomerRegister} disabled={loading} activeOpacity={0.88}>
+            {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Account</Text>}
           </TouchableOpacity>
           <View style={[styles.consentRow, { marginTop: 16 }]}>
             <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}>By registering you agree to our </Text>
@@ -560,8 +635,8 @@ export default function LoginScreen() {
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={setYears} placeholder="e.g. 5" placeholderTextColor="#777" keyboardType="numeric" maxLength={2} />
         </Field>
 
-        <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleLandscaperRegister} activeOpacity={0.88}>
-          <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Landscaper Account</Text>
+        <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleLandscaperRegister} disabled={loading} activeOpacity={0.88}>
+          {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Landscaper Account</Text>}
         </TouchableOpacity>
         <View style={[styles.consentRow, { marginTop: 16 }]}>
           <Text style={[styles.consentText, { fontFamily: "Inter_400Regular" }]}>By registering you agree to our </Text>

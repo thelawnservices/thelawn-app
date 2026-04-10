@@ -32,6 +32,25 @@ export async function initLawnTables() {
       account_id      TEXT NOT NULL,
       created_at      TIMESTAMPTZ DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS lawn_users (
+      id              SERIAL PRIMARY KEY,
+      username        TEXT NOT NULL,
+      role            TEXT NOT NULL CHECK (role IN ('customer','landscaper')),
+      password_hash   TEXT NOT NULL,
+      display_name    TEXT NOT NULL,
+      email           TEXT NOT NULL,
+      phone           TEXT DEFAULT '',
+      address         TEXT DEFAULT '',
+      zip_code        TEXT DEFAULT '',
+      city            TEXT DEFAULT '',
+      state           TEXT DEFAULT '',
+      business_name   TEXT DEFAULT '',
+      services        TEXT DEFAULT '',
+      years_experience TEXT DEFAULT '',
+      created_at      TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE (username, role)
+    );
   `);
   logger.info("Lawn DB tables ready");
 }
