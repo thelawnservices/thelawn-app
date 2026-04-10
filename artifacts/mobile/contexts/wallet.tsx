@@ -16,7 +16,7 @@ interface WalletContextType {
   transactions: WalletTransaction[];
   loading: boolean;
   addFunds: (amount: number, description: string) => void;
-  recordWithdrawal: (amount: number, method: string) => void;
+  recordWithdrawal: (amount: number, method: string, payoutDetails?: string) => void;
   refreshWallet: (name: string) => Promise<void>;
 }
 
@@ -76,7 +76,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setBalance((p) => p + amount);
   };
 
-  const recordWithdrawal = (amount: number, method: string) => {
+  const recordWithdrawal = (amount: number, method: string, payoutDetails?: string) => {
     const tx: WalletTransaction = {
       id: Date.now().toString(),
       type: "debit",
@@ -88,13 +88,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setTransactions((p) => [tx, ...p]);
     setBalance((p) => p - amount);
 
-    // Persist to DB if we know the landscaper name
+    // Persist to DB and trigger admin email (for manual methods)
     const name = landscaperNameRef.current;
     if (name && API_URL) {
       fetch(`${API_URL}/api/wallet/record-withdrawal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ landscaperName: name, amount, method, status: "pending" }),
+        body: JSON.stringify({ landscaperName: name, amount, method, payoutDetails, status: "pending" }),
       }).catch(() => {});
     }
   };

@@ -1,5 +1,45 @@
 import { Router, type IRouter } from "express";
+import nodemailer from "nodemailer";
 import { pool } from "../db";
+
+function createTransporter() {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return null;
+  return nodemailer.createTransport({ service: "gmail", auth: { user, pass } });
+}
+
+async function sendWithdrawalEmail(
+  landscaperName: string,
+  amount: number,
+  method: string,
+  payoutDetails: string,
+) {
+  const transporter = createTransporter();
+  if (!transporter) return;
+  const amountFmt = `$${amount.toFixed(2)}`;
+  const now = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+  await transporter.sendMail({
+    from: `"TheLawn Payouts" <${process.env.GMAIL_USER}>`,
+    to: "TheLawnServices@gmail.com",
+    subject: `💸 Withdrawal Request — ${landscaperName} — ${amountFmt} via ${method}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:560px;margin:auto;background:#0a0a0a;color:#fff;border-radius:12px;padding:32px;">
+        <h2 style="color:#34FF7A;margin:0 0 8px">Withdrawal Request</h2>
+        <p style="color:#aaa;margin:0 0 24px;font-size:14px">Submitted ${now}</p>
+        <table style="width:100%;border-collapse:collapse;font-size:15px">
+          <tr><td style="padding:10px 0;color:#888;width:140px">Landscaper</td><td style="color:#fff;font-weight:600">${landscaperName}</td></tr>
+          <tr><td style="padding:10px 0;color:#888">Amount</td><td style="color:#34FF7A;font-weight:700;font-size:20px">${amountFmt}</td></tr>
+          <tr><td style="padding:10px 0;color:#888">Method</td><td style="color:#fff">${method}</td></tr>
+          <tr><td style="padding:10px 0;color:#888;vertical-align:top">Payout Info</td><td style="color:#fff;white-space:pre-line">${payoutDetails || "No details provided"}</td></tr>
+        </table>
+        <div style="margin-top:24px;padding:16px;background:#1a1a1a;border-radius:8px;border-left:3px solid #34FF7A">
+          <p style="margin:0;font-size:13px;color:#aaa">⚡ The landscaper's wallet balance has already been deducted. Please process this payout as soon as possible.</p>
+        </div>
+      </div>
+    `,
+  });
+}
 
 const router: IRouter = Router();
 
@@ -109,13 +149,14 @@ router.post("/credit", async (req, res) => {
 });
 
 // ── POST /api/wallet/record-withdrawal ───────────────────────────────────
-// Records a withdrawal in the DB after a Stripe payout is initiated.
+// Records a withdrawal in the DB and emails the admin for manual methods.
 router.post("/record-withdrawal", async (req, res) => {
-  const { landscaperName, amount, method, stripeTransferId, stripePayoutId, status } =
+  const { landscaperName, amount, method, payoutDetails, stripeTransferId, stripePayoutId, status } =
     req.body as {
       landscaperName: string;
       amount: number;
       method: string;
+      payoutDetails?: string;
       stripeTransferId?: string;
       stripePayoutId?: string;
       status?: string;
@@ -131,6 +172,15 @@ router.post("/record-withdrawal", async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [landscaperName, amount, method, stripeTransferId ?? null, stripePayoutId ?? null, status ?? "pending"]
     );
+
+    // For manual methods (not Stripe), email admin to process the payout
+    const isManual = !stripeTransferId;
+    if (isManual) {
+      sendWithdrawalEmail(landscaperName, amount, method, payoutDetails ?? "").catch(
+        (err) => console.error("Withdrawal email error:", err)
+      );
+    }
+
     res.json({ success: true });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

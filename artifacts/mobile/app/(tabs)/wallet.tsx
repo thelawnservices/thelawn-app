@@ -321,8 +321,26 @@ export default function WalletScreen() {
         ]
       );
     } else {
-      // Manual payout — record locally + DB
-      recordWithdrawal(amountNum, selectedMethod.label);
+      // Build a human-readable payout details string for the admin email
+      let payoutDetails = "";
+      if (selectedMethod.id === "paypal") {
+        payoutDetails = `PayPal Email: ${manualInfo.paypal_email || "Not provided"}`;
+      } else if (selectedMethod.id === "zelle") {
+        payoutDetails = `Zelle Phone/Email: ${manualInfo.zelle_contact || "Not provided"}`;
+      } else if (selectedMethod.id === "venmo") {
+        payoutDetails = `Venmo Username: ${manualInfo.venmo_username || "Not provided"}`;
+      } else if (selectedMethod.id === "check") {
+        payoutDetails = [
+          `Name: ${manualInfo.mail_name || "Not provided"}`,
+          `Address: ${manualInfo.mail_address || "Not provided"}`,
+          `City: ${manualInfo.mail_city || "Not provided"}`,
+          `State: ${manualInfo.mail_state || "Not provided"}`,
+          `ZIP: ${manualInfo.mail_zip || "Not provided"}`,
+        ].join("\n");
+      }
+
+      // Deduct from wallet immediately and notify admin
+      recordWithdrawal(amountNum, selectedMethod.label, payoutDetails);
       setWithdrawResult(null);
       setScreen("success");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
