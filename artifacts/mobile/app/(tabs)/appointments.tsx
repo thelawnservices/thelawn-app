@@ -959,7 +959,7 @@ export default function AppointmentsScreen() {
     size:      j.size,
     notes:     j.notes,
   }));
-  const { instances, completionPhotos, markedDoneAt, markDone, releasePayment, disputeInstance } = useRecurring();
+  const { instances, completionPhotos, markedDoneAt, markDone, releasePayment, disputeInstance, advanceStatus } = useRecurring();
   const { addNotification } = useNotifications();
 
   // Landscaper: which instance is awaiting photo modal
@@ -1027,8 +1027,9 @@ export default function AppointmentsScreen() {
   ];
 
   // Recurring instances split by status for landscaper view
+  const activeRecurring   = instances.filter((i) => i.status === "arrived" || i.status === "started");
   const upcomingRecurring = instances.filter((i) => i.status === "upcoming");
-  const pendingRecurring = instances.filter((i) => i.status === "pending_approval");
+  const pendingRecurring  = instances.filter((i) => i.status === "pending_approval");
   const completedRecurring = instances.filter((i) => i.status === "completed");
 
   // ── LANDSCAPER VIEW ────────────────────────────────────────────────────────
@@ -1142,7 +1143,7 @@ export default function AppointmentsScreen() {
             </Text>
           )}
 
-          {totalActive === 0 && allLsCancelledAppts.length === 0 && upcomingRecurring.length === 0 && pendingRecurring.length === 0 ? (
+          {totalActive === 0 && allLsCancelledAppts.length === 0 && activeRecurring.length === 0 && upcomingRecurring.length === 0 && pendingRecurring.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={40} color="#555" />
               <Text style={[styles.emptyText, { fontFamily: "Inter_500Medium" }]}>No scheduled appointments</Text>
@@ -1205,8 +1206,121 @@ export default function AppointmentsScreen() {
             ))
           )}
 
+          {/* ── My Jobs (active recurring — arrived or started) ── */}
+          {activeRecurring.length > 0 && (
+            <>
+              <View style={styles.sectionDivider} />
+              <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>My Jobs</Text>
+              {activeRecurring.map((inst) => (
+                <View key={inst.id} style={[styles.lsCard, myJobStyles.activeCard]}>
+                  {/* Status badge */}
+                  <View style={[myJobStyles.statusBadge, inst.status === "started" && myJobStyles.statusBadgeStarted]}>
+                    <Ionicons
+                      name={inst.status === "arrived" ? "location" : "hammer-outline"}
+                      size={12}
+                      color={inst.status === "arrived" ? "#FFAA00" : "#34FF7A"}
+                    />
+                    <Text style={[myJobStyles.statusBadgeText, { fontFamily: "Inter_700Bold", color: inst.status === "arrived" ? "#FFAA00" : "#34FF7A" }]}>
+                      {inst.status === "arrived" ? "ARRIVED" : "IN PROGRESS"}
+                    </Text>
+                  </View>
+
+                  {/* Service + price */}
+                  <View style={styles.lsTopRow}>
+                    <View style={styles.lsServiceBadge}>
+                      <Ionicons name="repeat" size={13} color="#34FF7A" />
+                      <Text style={[styles.lsServiceText, { fontFamily: "Inter_600SemiBold" }]}>{inst.service}</Text>
+                    </View>
+                    <Text style={[styles.lsBudget, { fontFamily: "Inter_700Bold" }]}>{inst.price}</Text>
+                  </View>
+
+                  {/* Date / time */}
+                  <View style={styles.lsMetaRow}>
+                    <Ionicons name="calendar-outline" size={13} color="#CCCCCC" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_500Medium" }]}>{inst.date} at {inst.time}</Text>
+                  </View>
+
+                  {/* Customer */}
+                  <View style={styles.lsMetaRow}>
+                    <Ionicons name="person-outline" size={13} color="#CCCCCC" />
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>Zamire Smith</Text>
+                  </View>
+
+                  {/* Address */}
+                  <TouchableOpacity
+                    style={styles.lsMetaRow}
+                    activeOpacity={0.7}
+                    onPress={() => { Haptics.selectionAsync(); openMaps(inst.address); }}
+                  >
+                    <Ionicons name="location-outline" size={13} color="#34FF7A" />
+                    <Text style={[styles.lsMetaText, styles.mapAddressLink, { fontFamily: "Inter_400Regular" }]} numberOfLines={1}>
+                      {inst.address}
+                    </Text>
+                    <Ionicons name="navigate-outline" size={12} color="#34FF7A" />
+                  </TouchableOpacity>
+
+                  {/* Call / Text */}
+                  <View style={styles.lsContactRow}>
+                    <TouchableOpacity
+                      style={styles.lsCallBtn}
+                      activeOpacity={0.8}
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`tel:${RECURRING_CUSTOMER_PHONE}`); }}
+                    >
+                      <Ionicons name="call" size={14} color="#000" />
+                      <Text style={[styles.lsCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.lsTextBtn}
+                      activeOpacity={0.8}
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`sms:${RECURRING_CUSTOMER_PHONE}`); }}
+                    >
+                      <Ionicons name="chatbubble-outline" size={14} color="#FFFFFF" />
+                      <Text style={[styles.lsTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* Action button */}
+                  {inst.status === "arrived" && (
+                    <TouchableOpacity
+                      style={myJobStyles.startBtn}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        Alert.alert(
+                          "Start Work?",
+                          `Begin ${inst.service} for Zamire Smith?\n\nThe customer will be notified that work has started.`,
+                          [
+                            { text: "Not Yet", style: "cancel" },
+                            { text: "Start Work", onPress: () => { advanceStatus(inst.id, "started"); addNotification({ icon: "hammer-outline", title: "Work Started", sub: `You started ${inst.service} for Zamire Smith.` }); } },
+                          ]
+                        );
+                      }}
+                    >
+                      <Ionicons name="hammer-outline" size={16} color="#000" />
+                      <Text style={[myJobStyles.startBtnText, { fontFamily: "Inter_700Bold" }]}>Start Work</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {inst.status === "started" && (
+                    <TouchableOpacity
+                      style={myJobStyles.completeBtn}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        setPhotoModalInstId(inst.id);
+                      }}
+                    >
+                      <Ionicons name="checkmark-circle-outline" size={16} color="#000" />
+                      <Text style={[myJobStyles.completeBtnText, { fontFamily: "Inter_700Bold" }]}>Mark Complete with Photos</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </>
+          )}
+
           {/* ── Recurring Jobs ── */}
-          {(upcomingRecurring.length > 0 || pendingRecurring.length > 0) && (
+          {(activeRecurring.length > 0 || upcomingRecurring.length > 0 || pendingRecurring.length > 0) && (
             <>
               <View style={styles.sectionDivider} />
               <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>Recurring Jobs</Text>
@@ -1326,7 +1440,7 @@ export default function AppointmentsScreen() {
                 );
               })}
 
-              {/* Upcoming recurring — Mark as Done */}
+              {/* Upcoming recurring — awaiting service date */}
               {upcomingRecurring.map((inst) => (
                 <View key={inst.id} style={[styles.lsCard, lsRecStyles.recurringCard]}>
                   <View style={styles.lsTopRow}>
@@ -1362,17 +1476,16 @@ export default function AppointmentsScreen() {
                       <Text style={[styles.lsTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
                     </TouchableOpacity>
                   </View>
-                  <TouchableOpacity
-                    style={lsRecStyles.markDoneBtn}
-                    activeOpacity={0.85}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      setPhotoModalInstId(inst.id);
-                    }}
-                  >
-                    <Ionicons name="checkmark-circle-outline" size={16} color="#000" />
-                    <Text style={[lsRecStyles.markDoneBtnText, { fontFamily: "Inter_700Bold" }]}>Mark as Done</Text>
-                  </TouchableOpacity>
+
+                  {/* Locked notice — cannot mark done early */}
+                  <View style={myJobStyles.lockedNotice}>
+                    <Ionicons name="lock-closed-outline" size={13} color="#FFAA00" />
+                    <Text style={[myJobStyles.lockedNoticeText, { fontFamily: "Inter_400Regular" }]}>
+                      Available on {inst.date}. When the service date arrives this job will move to{" "}
+                      <Text style={{ fontFamily: "Inter_600SemiBold", color: "#FFFFFF" }}>My Jobs</Text>
+                      {" "}where you must mark Arrived → Start Work → Complete with photos.
+                    </Text>
+                  </View>
                 </View>
               ))}
             </>
@@ -2040,4 +2153,37 @@ const dispStyles = StyleSheet.create({
   submitBtnText: { fontSize: 16, color: "#FFFFFF" },
   cancelBtn: { paddingVertical: 12, alignItems: "center" },
   cancelBtnText: { fontSize: 14, color: "#BBBBBB" },
+});
+
+const myJobStyles = StyleSheet.create({
+  activeCard: {
+    borderLeftWidth: 3,
+    borderLeftColor: "#34FF7A",
+  },
+  statusBadge: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    alignSelf: "flex-start",
+    backgroundColor: "#2A2000", borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 4, marginBottom: 8,
+  },
+  statusBadgeStarted: { backgroundColor: "#0D2B1A" },
+  statusBadgeText: { fontSize: 11 },
+  startBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#FFAA00", borderRadius: 22,
+    paddingVertical: 13, marginTop: 10,
+  },
+  startBtnText: { fontSize: 14, color: "#000" },
+  completeBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#34FF7A", borderRadius: 22,
+    paddingVertical: 13, marginTop: 10,
+  },
+  completeBtnText: { fontSize: 14, color: "#000" },
+  lockedNotice: {
+    flexDirection: "row", alignItems: "flex-start", gap: 7,
+    backgroundColor: "#1A1500", borderRadius: 10, borderWidth: 1, borderColor: "#2E2500",
+    paddingVertical: 10, paddingHorizontal: 12, marginTop: 10,
+  },
+  lockedNoticeText: { fontSize: 12, color: "#AAAAAA", flex: 1, lineHeight: 18 },
 });
