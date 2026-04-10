@@ -344,26 +344,45 @@ export default function WalletScreen() {
       return;
     }
 
-    if (selectedMethod.isStripe) {
-      if (stripeStatus !== "connected") {
+    if (selectedMethod.id === "stripe_instant") {
+      // ── Instant debit card payout ────────────────────────────────
+      if (!debitCard) {
         Alert.alert(
-          "Stripe Not Connected",
-          "Please connect your Stripe payout account in Payout Settings before using this withdrawal option.",
+          "Add Debit Card",
+          "Go to Payout Settings to add your debit card for instant payouts.",
           [
-            { text: "Go to Settings", onPress: () => { setScreen("payout_settings"); } },
+            { text: "Open Settings", onPress: () => setScreen("payout_settings") },
             { text: "Cancel", style: "cancel" },
           ]
         );
         return;
       }
-      if (selectedMethod.id === "stripe_instant") {
-        const fee = parseFloat((amountNum * 0.015).toFixed(2));
-        const net = parseFloat((amountNum - fee).toFixed(2));
+      const fee = parseFloat((amountNum * 0.015).toFixed(2));
+      const net = parseFloat((amountNum - fee).toFixed(2));
+      Alert.alert(
+        "Confirm Instant Payout",
+        `A 1.5% fee applies to instant debit card payouts.\n\nWithdrawal: $${fmt(amountNum)}\nFee: $${fmt(fee)}\nYou receive: $${fmt(net)}\n\nFunds arrive within minutes.`,
+        [
+          {
+            text: "Confirm",
+            onPress: () => {
+              recordWithdrawal(amountNum, selectedMethod.label);
+              setWithdrawResult({ arrivalDate: "Within minutes", status: "instant" });
+              setScreen("success");
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            },
+          },
+          { text: "Cancel", style: "cancel" },
+        ]
+      );
+    } else if (selectedMethod.isStripe) {
+      // ── Other Stripe methods (require Stripe Connect) ────────────
+      if (stripeStatus !== "connected") {
         Alert.alert(
-          "Confirm Instant Payout",
-          `A 1.5% fee applies to instant debit card payouts.\n\nWithdrawal: $${fmt(amountNum)}\nFee: $${fmt(fee)}\nYou receive: $${fmt(net)}\n\nFunds arrive within minutes.`,
+          "Stripe Not Connected",
+          "Please connect your Stripe payout account in Payout Settings before using this withdrawal option.",
           [
-            { text: "Confirm", onPress: executeStripeWithdrawal },
+            { text: "Go to Settings", onPress: () => setScreen("payout_settings") },
             { text: "Cancel", style: "cancel" },
           ]
         );
@@ -371,7 +390,7 @@ export default function WalletScreen() {
       }
       executeStripeWithdrawal();
     } else {
-      // Manual payout — record locally and submit request
+      // ── Manual payout — record locally ───────────────────────────
       recordWithdrawal(amountNum, selectedMethod.label);
       setWithdrawResult(null);
       setScreen("success");
