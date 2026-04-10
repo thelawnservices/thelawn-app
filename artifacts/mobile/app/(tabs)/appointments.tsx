@@ -935,47 +935,18 @@ function RecurringSeriesCard({
   );
 }
 
-// ── Static landscaper data ──────────────────────────────────────────────────
-const LANDSCAPER_SCHEDULED = [
-  {
-    id: "s1",
-    service: "Mowing/Edging",
-    size: "Medium",
-    customer: "Alex T.",
-    address: "8910 45th Ave E, Ellenton, FL",
-    phone: "(941) 555-0192",
-    date: "Apr 14",
-    time: "9:00 AM",
-    budget: "$70",
-    note: null as string | null,
-  },
-  {
-    id: "s2",
-    service: "Weeding/Mulching",
-    size: "Small",
-    customer: "Maria K.",
-    address: "22 Palmetto Dr, Bradenton, FL",
-    phone: "(941) 555-3381",
-    date: "Apr 15",
-    time: "11:00 AM",
-    budget: "$90",
-    note: "Gate code: 4892" as string | null,
-  },
-  {
-    id: "s3",
-    service: "Sod Installation",
-    size: "Small",
-    customer: "Sarah B.",
-    address: "14 Manatee Ave, Ellenton, FL",
-    phone: "(941) 555-7743",
-    date: "Apr 17",
-    time: "10:00 AM",
-    budget: "$30",
-    note: null as string | null,
-  },
-];
-
-type LsAppt = typeof LANDSCAPER_SCHEDULED[0];
+type LsAppt = {
+  id: string;
+  service: string;
+  size: string;
+  customer: string;
+  address: string;
+  phone: string;
+  date: string;
+  time: string;
+  budget: string;
+  note: string | null;
+};
 
 // ── Main screen ─────────────────────────────────────────────────────────────
 export default function AppointmentsScreen() {
@@ -1052,12 +1023,9 @@ export default function AppointmentsScreen() {
     );
   }
 
-  const visibleScheduled = LANDSCAPER_SCHEDULED.filter((a) => !cancelledIds.includes(a.id));
+  const visibleScheduled: LsAppt[] = [];
 
-  const allCustomerAppts: CustomerAppt[] = [
-    ...SINGLE_UPCOMING,
-    ...acceptedAsAppts,
-  ];
+  const allCustomerAppts: CustomerAppt[] = [...acceptedAsAppts];
 
   const upcomingCustomerAppts = allCustomerAppts.filter(
     (a) => !customerCancelledIds.includes(a.id)

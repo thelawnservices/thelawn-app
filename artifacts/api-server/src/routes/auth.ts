@@ -118,6 +118,44 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// POST /api/auth/change-password
+router.post("/change-password", async (req, res) => {
+  try {
+    const { username, role, currentPassword, newPassword } = req.body as {
+      username: string; role: string; currentPassword: string; newPassword: string;
+    };
+    if (!username || !role || !currentPassword || !newPassword) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+    const result = await pool.query(
+      "SELECT * FROM lawn_users WHERE username = $1 AND role = $2",
+      [username.toLowerCase().trim(), role]
+    );
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: "Account not found." });
+    }
+    const user = result.rows[0];
+    const match = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!match) {
+      return res.status(401).json({ error: "Current password is incorrect." });
+    }
+    const pwError = validatePassword(newPassword);
+    if (pwError) return res.status(400).json({ error: pwError });
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ error: "New password must be different from your current password." });
+    }
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await pool.query(
+      "UPDATE lawn_users SET password_hash = $1 WHERE id = $2",
+      [newHash, user.id]
+    );
+    return res.json({ success: true });
+  } catch (err: any) {
+    console.error("Change password error:", err);
+    return res.status(500).json({ error: "Failed to change password. Please try again." });
+  }
+});
+
 function validatePassword(pw: string): string | null {
   if (pw.length < 8)                return "Password must be at least 8 characters.";
   if (!/[A-Z]/.test(pw))           return "Password must include at least one uppercase letter.";

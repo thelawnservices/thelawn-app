@@ -26,11 +26,14 @@ import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 import { useNotifications, type ServiceNotification } from "@/contexts/notifications";
 import { useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
+import { useWallet, type WalletTransaction } from "@/contexts/wallet";
 import { validateText } from "@/utils/moderation";
 import { sendLocalPush } from "@/utils/pushNotifications";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import HelpSupportModal from "@/components/HelpSupportModal";
 import FeedbackModal from "@/components/FeedbackModal";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
 type FeedPost = {
   id: string; customerName: string; customerInitials: string; customerColor: string;
@@ -67,39 +70,18 @@ function normalizeTime(raw: string): string {
 }
 
 
-const LANDSCAPER_QUICK_STATS = [
-  { label: "Jobs Completed", value: "7", icon: "checkmark-circle" as const, iconColor: "#34C759" },
-  { label: "Avg Rating",     value: "4.9", icon: "star" as const,             iconColor: "#f59e0b" },
-  { label: "This Week",      value: "$420", icon: "cash" as const,             iconColor: "#34FF7A" },
-];
-
-// ── Completed jobs static demo data ─────────────────────────────────────────
-type CompletedJob = {
-  id: string;
-  service: string;
-  size: "Small" | "Medium" | "Large";
-  customer: string;
-  initials: string;
-  avatarColor: string;
-  date: string;
-  payout: string;
-  stars: number;
-  note?: string;
-};
-
-const COMPLETED_JOBS_DATA: CompletedJob[] = [
-  { id: "c1", service: "Mowing/Edging",    size: "Medium", customer: "Sarah M.",   initials: "SM", avatarColor: "#166D42", date: "Apr 6, 2026",  payout: "$65",  stars: 5 },
-  { id: "c2", service: "Weeding/Mulching", size: "Large",  customer: "Marcus T.",  initials: "MT", avatarColor: "#2C5282", date: "Apr 3, 2026",  payout: "$95",  stars: 5, note: "Left gate open for access. Great work!" },
-  { id: "c3", service: "Full Service",     size: "Medium", customer: "Alex R.",    initials: "AR", avatarColor: "#6B21A8", date: "Mar 30, 2026", payout: "$130", stars: 5 },
-  { id: "c4", service: "Mowing/Edging",    size: "Small",  customer: "Diana L.",   initials: "DL", avatarColor: "#92400E", date: "Mar 27, 2026", payout: "$45",  stars: 4 },
-  { id: "c5", service: "Sod Installation", size: "Large",  customer: "Kevin W.",   initials: "KW", avatarColor: "#1E40AF", date: "Mar 22, 2026", payout: "$120", stars: 5, note: "Professional and efficient. Will book again." },
-  { id: "c6", service: "Artificial Turf",  size: "Medium", customer: "Priya S.",   initials: "PS", avatarColor: "#065F46", date: "Mar 18, 2026", payout: "$95",  stars: 5 },
-  { id: "c7", service: "Mowing/Edging",    size: "Small",  customer: "James B.",   initials: "JB", avatarColor: "#7F1D1D", date: "Mar 14, 2026", payout: "$45",  stars: 4 },
-];
-
-function CompletedJobsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function CompletedJobsModal({
+  visible,
+  onClose,
+  transactions,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  transactions: WalletTransaction[];
+}) {
   const insets = useSafeAreaInsets();
-  const totalEarned = COMPLETED_JOBS_DATA.reduce((sum, j) => sum + parseInt(j.payout.replace("$", "")), 0);
+  const credits = transactions.filter((t) => t.type === "credit" && t.status === "completed");
+  const totalEarned = credits.reduce((sum, t) => sum + t.amount, 0);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -107,84 +89,65 @@ function CompletedJobsModal({ visible, onClose }: { visible: boolean; onClose: (
         <Pressable style={{ flex: 1 }} onPress={onClose} />
         <View style={[cjStyles.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}>
 
-          {/* Header */}
           <View style={cjStyles.header}>
             <View>
               <Text style={[cjStyles.title, { fontFamily: "Inter_700Bold" }]}>Jobs Completed</Text>
-              <Text style={[cjStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>Your recent service history</Text>
+              <Text style={[cjStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>Your service earnings history</Text>
             </View>
             <TouchableOpacity onPress={onClose} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Ionicons name="close" size={22} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
 
-          {/* Summary banner */}
           <View style={cjStyles.summaryBanner}>
             <View style={cjStyles.summaryItem}>
-              <Text style={[cjStyles.summaryNum, { fontFamily: "Inter_700Bold" }]}>{COMPLETED_JOBS_DATA.length}</Text>
+              <Text style={[cjStyles.summaryNum, { fontFamily: "Inter_700Bold" }]}>{credits.length}</Text>
               <Text style={[cjStyles.summaryLabel, { fontFamily: "Inter_400Regular" }]}>Jobs</Text>
             </View>
             <View style={cjStyles.summaryDivider} />
             <View style={cjStyles.summaryItem}>
-              <Text style={[cjStyles.summaryNum, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>${totalEarned}</Text>
+              <Text style={[cjStyles.summaryNum, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>
+                ${totalEarned.toFixed(0)}
+              </Text>
               <Text style={[cjStyles.summaryLabel, { fontFamily: "Inter_400Regular" }]}>Total Earned</Text>
-            </View>
-            <View style={cjStyles.summaryDivider} />
-            <View style={cjStyles.summaryItem}>
-              <Text style={[cjStyles.summaryNum, { fontFamily: "Inter_700Bold", color: "#f59e0b" }]}>4.9 ★</Text>
-              <Text style={[cjStyles.summaryLabel, { fontFamily: "Inter_400Regular" }]}>Avg Rating</Text>
             </View>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}>
-            {COMPLETED_JOBS_DATA.map((job, i) => (
-              <View key={job.id} style={[cjStyles.jobCard, i === COMPLETED_JOBS_DATA.length - 1 && { borderBottomWidth: 0 }]}>
-                {/* Top row: avatar + info */}
-                <View style={cjStyles.jobTopRow}>
-                  <View style={[cjStyles.avatar, { backgroundColor: job.avatarColor }]}>
-                    <Text style={[cjStyles.avatarText, { fontFamily: "Inter_700Bold" }]}>{job.initials}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[cjStyles.customerName, { fontFamily: "Inter_600SemiBold" }]}>{job.customer}</Text>
-                    <View style={cjStyles.metaRow}>
-                      <Ionicons name="calendar-outline" size={11} color="#888" />
-                      <Text style={[cjStyles.metaText, { fontFamily: "Inter_400Regular" }]}>{job.date}</Text>
-                      <Text style={cjStyles.dot}>·</Text>
-                      <Ionicons name="resize-outline" size={11} color="#888" />
-                      <Text style={[cjStyles.metaText, { fontFamily: "Inter_400Regular" }]}>{job.size} Yard</Text>
+          {credits.length === 0 ? (
+            <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 60, gap: 10 }}>
+              <Ionicons name="briefcase-outline" size={44} color="#333" />
+              <Text style={[{ fontSize: 15, color: "#888", textAlign: "center", fontFamily: "Inter_500Medium" }]}>
+                No completed jobs yet
+              </Text>
+              <Text style={[{ fontSize: 13, color: "#555", textAlign: "center", fontFamily: "Inter_400Regular" }]}>
+                Earnings from completed jobs will appear here
+              </Text>
+            </View>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 16 }}>
+              {credits.map((tx, i) => (
+                <View key={tx.id} style={[cjStyles.jobCard, i === credits.length - 1 && { borderBottomWidth: 0 }]}>
+                  <View style={cjStyles.jobTopRow}>
+                    <View style={[cjStyles.avatar, { backgroundColor: "#166D42" }]}>
+                      <Ionicons name="leaf" size={16} color="#34FF7A" />
                     </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[cjStyles.customerName, { fontFamily: "Inter_600SemiBold" }]}>{tx.description}</Text>
+                      <View style={cjStyles.metaRow}>
+                        <Ionicons name="calendar-outline" size={11} color="#888" />
+                        <Text style={[cjStyles.metaText, { fontFamily: "Inter_400Regular" }]}>{tx.date}</Text>
+                      </View>
+                    </View>
+                    <Text style={[cjStyles.payout, { fontFamily: "Inter_700Bold" }]}>${tx.amount.toFixed(2)}</Text>
                   </View>
-                  <Text style={[cjStyles.payout, { fontFamily: "Inter_700Bold" }]}>{job.payout}</Text>
-                </View>
-
-                {/* Service badge + stars + note */}
-                <View style={cjStyles.jobBottomRow}>
-                  <View style={cjStyles.serviceBadge}>
-                    <Ionicons name="leaf" size={11} color="#34FF7A" />
-                    <Text style={[cjStyles.serviceBadgeText, { fontFamily: "Inter_600SemiBold" }]}>{job.service}</Text>
-                  </View>
-                  <View style={cjStyles.starsRow}>
-                    {[1,2,3,4,5].map((s) => (
-                      <Ionicons key={s} name="star" size={11} color={s <= job.stars ? "#f59e0b" : "#333"} />
-                    ))}
+                  <View style={cjStyles.completedBadge}>
+                    <Ionicons name="checkmark-circle" size={12} color="#34FF7A" />
+                    <Text style={[cjStyles.completedBadgeText, { fontFamily: "Inter_600SemiBold" }]}>Completed · Payment Released</Text>
                   </View>
                 </View>
-
-                {job.note && (
-                  <View style={cjStyles.noteRow}>
-                    <Ionicons name="chatbubble-outline" size={11} color="#555" />
-                    <Text style={[cjStyles.noteText, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>{job.note}</Text>
-                  </View>
-                )}
-
-                {/* Completed badge */}
-                <View style={cjStyles.completedBadge}>
-                  <Ionicons name="checkmark-circle" size={12} color="#34FF7A" />
-                  <Text style={[cjStyles.completedBadgeText, { fontFamily: "Inter_600SemiBold" }]}>Completed · Payment Released</Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </ScrollView>
+          )}
         </View>
       </View>
     </Modal>
@@ -602,56 +565,50 @@ function SettingsModal({
   visible: boolean;
   onClose: () => void;
 }) {
+  const { user, role } = useAuth();
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [codeSent, setCodeSent] = useState(false);
-  const [enteredCode, setEnteredCode] = useState("");
-  const [sendingCode, setSendingCode] = useState(false);
-  const [verifying, setVerifying] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [newAddress, setNewAddress] = useState("");
   const [newZip, setNewZip] = useState("");
-  const demoCode = useRef("");
 
-  function handleSendCode() {
-    if (!newPassword.trim()) {
-      Alert.alert("Missing field", "Please enter a new password first.");
+  async function handleChangePassword() {
+    if (!currentPassword.trim()) {
+      Alert.alert("Missing field", "Please enter your current password.");
       return;
     }
-    setSendingCode(true);
-    demoCode.current = Math.floor(100000 + Math.random() * 900000).toString();
-    setTimeout(() => {
-      setSendingCode(false);
-      setCodeSent(true);
-      Alert.alert(
-        "Verification Code Sent",
-        `A 6-digit code has been sent to your registered email.\n\nDemo code: ${demoCode.current}`
-      );
-    }, 1200);
-  }
-
-  function handleVerify() {
-    if (enteredCode.trim() === demoCode.current) {
-      setVerifying(true);
-      setTimeout(() => {
-        setVerifying(false);
+    if (!newPassword.trim() || newPassword.length < 6) {
+      Alert.alert("Weak password", "New password must be at least 6 characters.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/change-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user?.username, role, currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        Alert.alert("Error", data.error ?? "Failed to update password. Please try again.");
+      } else {
         Alert.alert("Password Updated", "Your password has been changed successfully.");
+        setCurrentPassword("");
         setNewPassword("");
-        setEnteredCode("");
-        setCodeSent(false);
-        demoCode.current = "";
         onClose();
-      }, 1000);
-    } else {
-      Alert.alert("Incorrect Code", "The verification code you entered is incorrect.");
+      }
+    } catch {
+      Alert.alert("Error", "Network error — please check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
   }
 
   function handleClose() {
+    setCurrentPassword("");
     setNewPassword("");
-    setEnteredCode("");
-    setCodeSent(false);
     setNewAddress("");
     setNewZip("");
-    demoCode.current = "";
     onClose();
   }
 
@@ -670,56 +627,34 @@ function SettingsModal({
 
           <TextInput
             style={[settStyles.input, { fontFamily: "Inter_400Regular" }]}
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            placeholder="Current Password"
+            placeholderTextColor="#777"
+            secureTextEntry
+          />
+          <TextInput
+            style={[settStyles.input, { fontFamily: "Inter_400Regular", marginTop: 10 }]}
             value={newPassword}
             onChangeText={setNewPassword}
-            placeholder="New Password"
+            placeholder="New Password (min 6 characters)"
             placeholderTextColor="#777"
             secureTextEntry
           />
 
           <TouchableOpacity
-            style={[settStyles.primaryBtn, sendingCode && settStyles.primaryBtnLoading]}
-            onPress={sendingCode ? undefined : handleSendCode}
+            style={[settStyles.primaryBtn, saving && settStyles.primaryBtnLoading, { marginTop: 14 }]}
+            onPress={saving ? undefined : handleChangePassword}
             activeOpacity={0.85}
           >
-            {sendingCode ? (
+            {saving ? (
               <ActivityIndicator size="small" color="#000" />
             ) : (
               <Text style={[settStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-                Send Verification Code to Email
+                Update Password
               </Text>
             )}
           </TouchableOpacity>
-
-          {codeSent && (
-            <View style={settStyles.codeSection}>
-              <Text style={[settStyles.codeHint, { fontFamily: "Inter_400Regular" }]}>
-                We sent a 6-digit code to your registered email.
-              </Text>
-              <TextInput
-                style={[settStyles.codeInput, { fontFamily: "Inter_600SemiBold" }]}
-                value={enteredCode}
-                onChangeText={setEnteredCode}
-                placeholder="Enter 6-digit code"
-                placeholderTextColor="#777"
-                keyboardType="number-pad"
-                maxLength={6}
-              />
-              <TouchableOpacity
-                style={[settStyles.primaryBtn, verifying && settStyles.primaryBtnLoading]}
-                onPress={verifying ? undefined : handleVerify}
-                activeOpacity={0.85}
-              >
-                {verifying ? (
-                  <ActivityIndicator size="small" color="#000" />
-                ) : (
-                  <Text style={[settStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-                    Verify & Update Password
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          )}
 
           <View style={settStyles.divider} />
 
@@ -1873,7 +1808,30 @@ export default function HomeScreen() {
   const topPadding = isWeb ? 67 : insets.top;
   const { logout, role, avatarUri, userName, needsServiceSetup, setNeedsServiceSetup } = useAuth();
   const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "G" : "Z");
-  const { acceptJob } = useJobs();
+  const { acceptJob, acceptedJobs } = useJobs();
+  const { balance, transactions, refreshWallet } = useWallet();
+
+  useEffect(() => {
+    if (role === "landscaper" && userName) {
+      refreshWallet(userName);
+    }
+  }, [role, userName]);
+
+  const weekStart = useMemo(() => {
+    const d = new Date(); d.setDate(d.getDate() - d.getDay()); d.setHours(0,0,0,0); return d;
+  }, []);
+
+  const thisWeekEarnings = useMemo(() => {
+    return transactions
+      .filter((t) => t.type === "credit" && t.status === "completed" && new Date(t.date) >= weekStart)
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions, weekStart]);
+
+  const landscaperQuickStats = useMemo(() => [
+    { label: "Jobs Completed", value: String(transactions.filter(t => t.type === "credit" && t.status === "completed").length), icon: "checkmark-circle" as const, iconColor: "#34C759" },
+    { label: "This Week",      value: `$${thisWeekEarnings.toFixed(0)}`,  icon: "cash" as const, iconColor: "#34FF7A" },
+    { label: "Balance",        value: `$${balance.toFixed(0)}`,           icon: "cash" as const, iconColor: "#34FF7A" },
+  ], [transactions, thisWeekEarnings, balance]);
   const { addBookedSlot } = useLandscaperProfile();
   const [prosLoaded, setProsLoaded] = useState(false);
   const [selectedPro, setSelectedPro] = useState<TrustedPro | null>(null);
@@ -1955,9 +1913,9 @@ export default function HomeScreen() {
     }
     setHomeAnnounceState("sending");
     setTimeout(() => {
-      broadcastAnnouncement("GreenScape Pros", homeAnnounceTitle.trim(), homeAnnounceMsg.trim());
+      broadcastAnnouncement(userName || "Your Landscaper", homeAnnounceTitle.trim(), homeAnnounceMsg.trim());
       sendLocalPush(
-        `📢 GreenScape Pros: ${homeAnnounceTitle.trim()}`,
+        `📢 ${userName || "Your Landscaper"}: ${homeAnnounceTitle.trim()}`,
         homeAnnounceMsg.trim()
       );
       setHomeAnnounceState("sent");
@@ -2375,7 +2333,7 @@ export default function HomeScreen() {
         {/* Quick Stats — landscapers only, shown first */}
         {role === "landscaper" && (
           <View style={styles.statsRow}>
-            {LANDSCAPER_QUICK_STATS.map((s, i) => (
+            {landscaperQuickStats.map((s, i) => (
               <AnimatedStatCard
                 key={s.label}
                 stat={s}
@@ -2383,9 +2341,7 @@ export default function HomeScreen() {
                 onPress={
                   s.label === "Jobs Completed"
                     ? () => { Haptics.selectionAsync(); setCompletedJobsVisible(true); }
-                    : s.label === "Avg Rating"
-                    ? () => router.navigate("/(tabs)/profile")
-                    : s.label === "This Week"
+                    : s.label === "Balance" || s.label === "This Week"
                     ? () => router.navigate("/(tabs)/wallet")
                     : undefined
                 }
@@ -2400,59 +2356,83 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold" }]}>
               Upcoming Appointment
             </Text>
-            <View style={styles.appointmentCard}>
-              {/* Main info row — taps to open full appointments */}
+            {acceptedJobs.length === 0 ? (
               <TouchableOpacity
-                style={styles.apptMainRow}
-                onPress={() => router.navigate("/(tabs)/appointments")}
+                style={[styles.appointmentCard, { alignItems: "center", paddingVertical: 24, gap: 6 }]}
                 activeOpacity={0.8}
+                onPress={() => router.navigate("/(tabs)/appointments")}
               >
-                <View style={styles.apptIcon}>
-                  <Ionicons name="leaf" size={22} color="#34FF7A" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
-                    Lawn Mowing
-                  </Text>
-                  <Text style={[styles.apptSub, { fontFamily: "Inter_400Regular" }]}>
-                    April 12 • 10:30 AM • John Rivera
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
+                <Ionicons name="calendar-outline" size={28} color="#444" />
+                <Text style={[{ fontSize: 14, color: "#666", fontFamily: "Inter_400Regular" }]}>
+                  No upcoming appointments
+                </Text>
+                <Text style={[{ fontSize: 12, color: "#34FF7A", fontFamily: "Inter_500Medium" }]}>
+                  Accept requests to fill your schedule →
+                </Text>
               </TouchableOpacity>
+            ) : (() => {
+              const nextJob = acceptedJobs[0];
+              return (
+                <View style={styles.appointmentCard}>
+                  <TouchableOpacity
+                    style={styles.apptMainRow}
+                    onPress={() => router.navigate("/(tabs)/appointments")}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.apptIcon}>
+                      <Ionicons name="leaf" size={22} color="#34FF7A" />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.apptTitle, { fontFamily: "Inter_600SemiBold" }]}>
+                        {nextJob.service}
+                      </Text>
+                      <Text style={[styles.apptSub, { fontFamily: "Inter_400Regular" }]}>
+                        {nextJob.date} • {nextJob.time} • {nextJob.customer}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color="#34FF7A" />
+                  </TouchableOpacity>
 
-              {/* Divider */}
-              <View style={styles.apptDivider} />
+                  <View style={styles.apptDivider} />
 
-              {/* Call & Text buttons */}
-              <View style={styles.apptContactRow}>
-                <TouchableOpacity
-                  style={styles.apptCallBtn}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    Linking.openURL("tel:+19415550000").catch(() =>
-                      Alert.alert("Calling John Rivera…", "Connecting you to your customer.\n\n(Demo — no real number)")
-                    )
-                  }
-                >
-                  <Ionicons name="call-outline" size={17} color="#000" />
-                  <Text style={[styles.apptCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
-                </TouchableOpacity>
+                  <View style={styles.apptContactRow}>
+                    <TouchableOpacity
+                      style={styles.apptCallBtn}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        if (nextJob.phone) {
+                          Linking.openURL(`tel:${nextJob.phone}`).catch(() =>
+                            Alert.alert("Cannot Call", "Unable to open dialer on this device.")
+                          );
+                        } else {
+                          Alert.alert("No Phone Number", "This customer has not provided a phone number.");
+                        }
+                      }}
+                    >
+                      <Ionicons name="call-outline" size={17} color="#000" />
+                      <Text style={[styles.apptCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.apptTextBtn}
-                  activeOpacity={0.8}
-                  onPress={() =>
-                    Linking.openURL("sms:+19415550000").catch(() =>
-                      Alert.alert("Text John Rivera", "Opening messages for your customer.\n\n(Demo — no real number)")
-                    )
-                  }
-                >
-                  <Ionicons name="chatbubble-outline" size={17} color="#34FF7A" />
-                  <Text style={[styles.apptTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+                    <TouchableOpacity
+                      style={styles.apptTextBtn}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        if (nextJob.phone) {
+                          Linking.openURL(`sms:${nextJob.phone}`).catch(() =>
+                            Alert.alert("Cannot Text", "Unable to open messages on this device.")
+                          );
+                        } else {
+                          Alert.alert("No Phone Number", "This customer has not provided a phone number.");
+                        }
+                      }}
+                    >
+                      <Ionicons name="chatbubble-outline" size={17} color="#34FF7A" />
+                      <Text style={[styles.apptTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })()}
           </>
         )}
 
@@ -2568,6 +2548,7 @@ export default function HomeScreen() {
       <CompletedJobsModal
         visible={completedJobsVisible}
         onClose={() => setCompletedJobsVisible(false)}
+        transactions={transactions}
       />
 
       {/* Favorites Modal — customers only */}
