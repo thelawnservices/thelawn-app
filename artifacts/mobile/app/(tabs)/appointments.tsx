@@ -1307,9 +1307,21 @@ export default function AppointmentsScreen() {
                       </View>
                     )}
 
-                    <Text style={[lsRecStyles.awaitingNote, { fontFamily: "Inter_400Regular" }]}>
-                      You marked this job complete. Waiting for the customer to confirm and release payment.
-                    </Text>
+                    {isExpired ? (
+                      <View style={lsRecStyles.autoPayBanner}>
+                        <Ionicons name="checkmark-circle" size={14} color="#34FF7A" />
+                        <Text style={[lsRecStyles.autoPayBannerText, { fontFamily: "Inter_600SemiBold" }]}>
+                          24-hour window closed — payment has been automatically released to you.
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={lsRecStyles.autoPayNote}>
+                        <Ionicons name="information-circle-outline" size={13} color="#888" />
+                        <Text style={[lsRecStyles.awaitingNote, { fontFamily: "Inter_400Regular" }]}>
+                          You marked this job complete. If the customer takes no action within 24 hours of completion, payment will be automatically released to you.
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 );
               })}
@@ -1792,7 +1804,14 @@ const lsRecStyles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
   },
   awaitingBadgeText: { fontSize: 12, color: "#FFAA00" },
-  awaitingNote: { fontSize: 12, color: "#CCCCCC", lineHeight: 18 },
+  awaitingNote: { fontSize: 12, color: "#CCCCCC", lineHeight: 18, flex: 1 },
+  autoPayNote: { flexDirection: "row", alignItems: "flex-start", gap: 6, marginTop: 4 },
+  autoPayBanner: {
+    flexDirection: "row", alignItems: "center", gap: 7, marginTop: 6,
+    backgroundColor: "#0D2B1A", borderRadius: 8, paddingVertical: 8, paddingHorizontal: 10,
+    borderWidth: 1, borderColor: "#1A5C32",
+  },
+  autoPayBannerText: { fontSize: 12, color: "#34FF7A", flex: 1, lineHeight: 17 },
   customerTimerRow: {
     flexDirection: "row", alignItems: "center", gap: 6,
     backgroundColor: "#0f0f0f", borderRadius: 10,
