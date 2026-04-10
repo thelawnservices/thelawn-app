@@ -158,6 +158,18 @@ export default function WalletScreen() {
   });
   const [manualSaved, setManualSaved] = useState(false);
 
+  // Debit card state for instant payout
+  const [debitCard, setDebitCard] = useState<{
+    name: string; last4: string; expiry: string; brand: string;
+  } | null>(null);
+  const [showDebitCardForm, setShowDebitCardForm] = useState(false);
+  const [cardName, setCardName]     = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv]       = useState("");
+  const [cvvVisible, setCvvVisible] = useState(false);
+  const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
+
   const amountNum = parseFloat(amountText) || 0;
 
   // Check Stripe account status on load if we have an account ID
@@ -182,6 +194,55 @@ export default function WalletScreen() {
     } catch {
       setStripeStatus("error");
     }
+  }
+
+  // ── Debit card helpers ────────────────────────────────────────────────────
+  function detectCardBrand(num: string): string {
+    const n = num.replace(/\s/g, "");
+    if (/^4/.test(n))           return "Visa";
+    if (/^5[1-5]/.test(n))     return "Mastercard";
+    if (/^3[47]/.test(n))      return "Amex";
+    if (/^6(?:011|5)/.test(n)) return "Discover";
+    return "Card";
+  }
+
+  function formatCardNumber(text: string): string {
+    const digits = text.replace(/\D/g, "").slice(0, 16);
+    return digits.replace(/(.{4})/g, "$1 ").trim();
+  }
+
+  function formatExpiry(text: string): string {
+    const digits = text.replace(/\D/g, "").slice(0, 4);
+    if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return digits;
+  }
+
+  function saveDebitCard() {
+    const errs: Record<string, string> = {};
+    const digits = cardNumber.replace(/\s/g, "");
+    if (!cardName.trim())            errs.name   = "Cardholder name is required";
+    if (digits.length < 13)          errs.number = "Enter a valid card number";
+    const [mm, yy] = cardExpiry.split("/");
+    const month = parseInt(mm ?? "0", 10);
+    const year  = parseInt(`20${yy ?? "00"}`, 10);
+    const now = new Date();
+    if (!mm || !yy || month < 1 || month > 12 || year < now.getFullYear() ||
+        (year === now.getFullYear() && month < now.getMonth() + 1)) {
+      errs.expiry = "Enter a valid expiry date";
+    }
+    if (!cardCvv || cardCvv.length < 3) errs.cvv = "Enter your CVV";
+    setCardErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    setDebitCard({
+      name:  cardName.trim(),
+      last4: digits.slice(-4),
+      expiry: cardExpiry,
+      brand: detectCardBrand(cardNumber),
+    });
+    setShowDebitCardForm(false);
+    setCardNumber(""); setCardCvv(""); setCardErrors({});
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
 
   async function connectStripe() {
@@ -503,6 +564,155 @@ export default function WalletScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          {/* ── Debit Card for Instant Payout ── */}
+          <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold" }]}>
+            ⚡ Instant Debit Card Payout
+          </Text>
+          <Text style={[s.payoutSectionSub, { fontFamily: "Inter_400Regular" }]}>
+            Add your debit card to receive instant payouts within minutes. A 1.5% fee applies to instant transfers.
+          </Text>
+
+          {/* Saved card display */}
+          {debitCard && !showDebitCardForm ? (
+            <View style={s.debitCardSaved}>
+              <View style={s.debitCardSavedTop}>
+                <View style={[s.stripeConnectIcon, { backgroundColor: "#34FF7A22" }]}>
+                  <Ionicons name="card" size={26} color="#34FF7A" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.stripeConnectTitle, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>
+                    {debitCard.brand} •••• {debitCard.last4}
+                  </Text>
+                  <Text style={[s.stripeConnectSub, { fontFamily: "Inter_400Regular" }]}>
+                    {debitCard.name}  ·  Exp {debitCard.expiry}
+                  </Text>
+                </View>
+                <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7, backgroundColor: "#FFD70022" }}>
+                  <Text style={{ fontSize: 10, fontFamily: "Inter_700Bold", color: "#FFD700" }}>⚡ INSTANT</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <TouchableOpacity
+                  style={[s.stripeConnectBtn, { flex: 1, backgroundColor: "transparent", borderWidth: 1, borderColor: "#34FF7A44" }]}
+                  onPress={() => { setCardName(debitCard.name); setCardExpiry(debitCard.expiry); setShowDebitCardForm(true); }}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="create-outline" size={15} color="#34FF7A" />
+                  <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_600SemiBold", color: "#34FF7A" }]}>Edit Card</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[s.stripeConnectBtn, { flex: 1, backgroundColor: "transparent", borderWidth: 1, borderColor: "#FF444433" }]}
+                  onPress={() => { setDebitCard(null); setCardName(""); setCardNumber(""); setCardExpiry(""); setCardCvv(""); }}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="trash-outline" size={15} color="#FF4444" />
+                  <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_600SemiBold", color: "#FF4444" }]}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={s.debitCardForm}>
+              {/* Cardholder Name */}
+              <View style={s.cardFieldWrap}>
+                <Text style={[s.cardFieldLabel, { fontFamily: "Inter_500Medium" }]}>Cardholder Name</Text>
+                <TextInput
+                  style={[s.cardInput, { fontFamily: "Inter_400Regular" }, cardErrors.name ? s.cardInputError : {}]}
+                  placeholder="Full name on card"
+                  placeholderTextColor="#444"
+                  value={cardName}
+                  onChangeText={setCardName}
+                  autoCapitalize="words"
+                />
+                {cardErrors.name ? <Text style={s.cardError}>{cardErrors.name}</Text> : null}
+              </View>
+
+              {/* Card Number */}
+              <View style={s.cardFieldWrap}>
+                <Text style={[s.cardFieldLabel, { fontFamily: "Inter_500Medium" }]}>Card Number</Text>
+                <View style={[s.cardInputRow, cardErrors.number ? s.cardInputError : {}]}>
+                  <Ionicons name="card-outline" size={18} color="#555" style={{ marginLeft: 14 }} />
+                  <TextInput
+                    style={[s.cardInputFlex, { fontFamily: "Inter_400Regular" }]}
+                    placeholder="1234 5678 9012 3456"
+                    placeholderTextColor="#444"
+                    keyboardType="number-pad"
+                    value={cardNumber}
+                    onChangeText={(t) => setCardNumber(formatCardNumber(t))}
+                    maxLength={19}
+                  />
+                  {cardNumber.length > 0 && (
+                    <Text style={[s.cardBrandBadge, { fontFamily: "Inter_600SemiBold" }]}>
+                      {detectCardBrand(cardNumber)}
+                    </Text>
+                  )}
+                </View>
+                {cardErrors.number ? <Text style={s.cardError}>{cardErrors.number}</Text> : null}
+              </View>
+
+              {/* Expiry + CVV side by side */}
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <View style={[s.cardFieldWrap, { flex: 1 }]}>
+                  <Text style={[s.cardFieldLabel, { fontFamily: "Inter_500Medium" }]}>Expiry</Text>
+                  <TextInput
+                    style={[s.cardInput, { fontFamily: "Inter_400Regular" }, cardErrors.expiry ? s.cardInputError : {}]}
+                    placeholder="MM/YY"
+                    placeholderTextColor="#444"
+                    keyboardType="number-pad"
+                    value={cardExpiry}
+                    onChangeText={(t) => setCardExpiry(formatExpiry(t))}
+                    maxLength={5}
+                  />
+                  {cardErrors.expiry ? <Text style={s.cardError}>{cardErrors.expiry}</Text> : null}
+                </View>
+                <View style={[s.cardFieldWrap, { flex: 1 }]}>
+                  <Text style={[s.cardFieldLabel, { fontFamily: "Inter_500Medium" }]}>CVV</Text>
+                  <View style={[s.cardInputRow, cardErrors.cvv ? s.cardInputError : {}]}>
+                    <TextInput
+                      style={[s.cardInputFlex, { fontFamily: "Inter_400Regular" }]}
+                      placeholder="•••"
+                      placeholderTextColor="#444"
+                      keyboardType="number-pad"
+                      secureTextEntry={!cvvVisible}
+                      value={cardCvv}
+                      onChangeText={(t) => setCardCvv(t.replace(/\D/g, "").slice(0, 4))}
+                      maxLength={4}
+                    />
+                    <TouchableOpacity onPress={() => setCvvVisible((v) => !v)} style={{ paddingRight: 12 }}>
+                      <Ionicons name={cvvVisible ? "eye-off-outline" : "eye-outline"} size={16} color="#555" />
+                    </TouchableOpacity>
+                  </View>
+                  {cardErrors.cvv ? <Text style={s.cardError}>{cardErrors.cvv}</Text> : null}
+                </View>
+              </View>
+
+              {/* Save / Cancel */}
+              <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
+                <TouchableOpacity style={[s.stripeConnectBtn, { flex: 1 }]} onPress={saveDebitCard} activeOpacity={0.85}>
+                  <Ionicons name="checkmark-outline" size={17} color="#000" />
+                  <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_700Bold", color: "#000" }]}>Save Card</Text>
+                </TouchableOpacity>
+                {showDebitCardForm && (
+                  <TouchableOpacity
+                    style={[s.stripeConnectBtn, { flex: 1, backgroundColor: "transparent", borderWidth: 1, borderColor: "#333" }]}
+                    onPress={() => { setShowDebitCardForm(false); setCardErrors({}); }}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_600SemiBold", color: "#888" }]}>Cancel</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View style={s.stripeLegal}>
+                <Ionicons name="lock-closed-outline" size={12} color="#555" />
+                <Text style={[s.stripeLegalText, { fontFamily: "Inter_400Regular" }]}>
+                  Your card details are encrypted. Only the last 4 digits are stored on this device.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <View style={{ height: 28 }} />
+
           {/* ── Stripe Connect ── */}
           <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold" }]}>Stripe Bank Payout</Text>
           <Text style={[s.payoutSectionSub, { fontFamily: "Inter_400Regular" }]}>
@@ -753,8 +963,18 @@ export default function WalletScreen() {
 
             {METHODS.map((m) => {
               const active = selectedMethod?.id === m.id;
-              const stripeReady = m.isStripe && isStripeConnected;
-              const stripeBlocked = m.isStripe && !isStripeConnected;
+              // Instant debit card uses saved card, bank payout uses Stripe Connect
+              const isInstantCard = m.id === "stripe_instant";
+              const methodReady = isInstantCard ? !!debitCard : m.isStripe ? isStripeConnected : true;
+              const isBlocked   = m.isStripe && !methodReady;
+
+              const tagLabel = isInstantCard
+                ? debitCard ? `✓ ${debitCard.brand} ••${debitCard.last4}` : "Setup Required"
+                : m.isStripe
+                ? isStripeConnected ? "✓ Connected" : "Setup Required"
+                : null;
+              const tagColor = methodReady ? "#34FF7A22" : "#ffffff0a";
+              const tagTextColor = methodReady ? "#34FF7A" : "#555";
 
               return (
                 <TouchableOpacity
@@ -762,13 +982,15 @@ export default function WalletScreen() {
                   style={[
                     s.methodRow,
                     active && s.methodRowActive,
-                    stripeBlocked && s.methodRowDisabled,
+                    isBlocked && s.methodRowDisabled,
                   ]}
                   onPress={() => {
-                    if (stripeBlocked) {
+                    if (isBlocked) {
                       Alert.alert(
-                        "Connect Stripe First",
-                        "Go to Payout Settings to connect your Stripe account for direct bank payouts.",
+                        isInstantCard ? "Add Debit Card" : "Connect Stripe First",
+                        isInstantCard
+                          ? "Go to Payout Settings to add your debit card for instant payouts."
+                          : "Go to Payout Settings to connect your Stripe account for direct bank payouts.",
                         [
                           { text: "Open Settings", onPress: () => setScreen("payout_settings") },
                           { text: "Cancel", style: "cancel" },
@@ -779,14 +1001,14 @@ export default function WalletScreen() {
                     setSelectedMethod(m);
                     Haptics.selectionAsync();
                   }}
-                  activeOpacity={stripeBlocked ? 1 : 0.8}
+                  activeOpacity={isBlocked ? 1 : 0.8}
                 >
-                  <View style={[s.methodIconWrap, active && s.methodIconWrapActive, stripeBlocked && { backgroundColor: "#111" }]}>
-                    <Ionicons name={m.icon as any} size={20} color={active ? "#000" : stripeBlocked ? "#444" : "#CCCCCC"} />
+                  <View style={[s.methodIconWrap, active && s.methodIconWrapActive, isBlocked && { backgroundColor: "#111" }]}>
+                    <Ionicons name={m.icon as any} size={20} color={active ? "#000" : isBlocked ? "#444" : "#CCCCCC"} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <Text style={[s.methodLabel, { fontFamily: "Inter_600SemiBold" }, active && { color: "#34FF7A" }, stripeBlocked && { color: "#444" }]}>
+                      <Text style={[s.methodLabel, { fontFamily: "Inter_600SemiBold" }, active && { color: "#34FF7A" }, isBlocked && { color: "#444" }]}>
                         {m.label}
                       </Text>
                       {m.instant && (
@@ -794,19 +1016,19 @@ export default function WalletScreen() {
                           <Text style={{ fontSize: 10, fontFamily: "Inter_700Bold", color: "#FFD700", letterSpacing: 0.5 }}>⚡ INSTANT</Text>
                         </View>
                       )}
-                      {m.isStripe && (
-                        <View style={[s.stripeTag, { backgroundColor: isStripeConnected ? "#34FF7A22" : "#ffffff0a" }]}>
-                          <Text style={[s.stripeTagText, { fontFamily: "Inter_600SemiBold", color: isStripeConnected ? "#34FF7A" : "#555" }]}>
-                            {isStripeConnected ? "✓ Connected" : "Setup Required"}
+                      {tagLabel && (
+                        <View style={[s.stripeTag, { backgroundColor: tagColor }]}>
+                          <Text style={[s.stripeTagText, { fontFamily: "Inter_600SemiBold", color: tagTextColor }]}>
+                            {tagLabel}
                           </Text>
                         </View>
                       )}
                     </View>
                     <View style={{ flexDirection: "row", gap: 6, marginTop: 3 }}>
                       {m.isStripe ? (
-                        <View style={[s.speedChip, { backgroundColor: isStripeConnected ? "#34FF7A15" : "#1a1a1a" }]}>
-                          <Ionicons name="flash-outline" size={10} color={isStripeConnected ? "#34FF7A" : "#555"} />
-                          <Text style={[s.speedChipText, { fontFamily: "Inter_500Medium", color: isStripeConnected ? "#34FF7A" : "#555" }]}>
+                        <View style={[s.speedChip, { backgroundColor: methodReady ? "#34FF7A15" : "#1a1a1a" }]}>
+                          <Ionicons name="flash-outline" size={10} color={methodReady ? "#34FF7A" : "#555"} />
+                          <Text style={[s.speedChipText, { fontFamily: "Inter_500Medium", color: methodReady ? "#34FF7A" : "#555" }]}>
                             {m.speed}
                           </Text>
                         </View>
@@ -817,8 +1039,8 @@ export default function WalletScreen() {
                       )}
                     </View>
                   </View>
-                  {active && !stripeBlocked && <Ionicons name="checkmark-circle" size={22} color="#34FF7A" />}
-                  {stripeBlocked && <Ionicons name="lock-closed-outline" size={18} color="#444" />}
+                  {active && !isBlocked && <Ionicons name="checkmark-circle" size={22} color="#34FF7A" />}
+                  {isBlocked && <Ionicons name="lock-closed-outline" size={18} color="#444" />}
                 </TouchableOpacity>
               );
             })}
@@ -1007,6 +1229,33 @@ const s = StyleSheet.create({
 
   stripeLegal: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
   stripeLegalText: { flex: 1, fontSize: 11, color: "#555", lineHeight: 16 },
+
+  // Debit card form
+  debitCardSaved: {
+    backgroundColor: "#0d2e18", borderRadius: 20, borderWidth: 1,
+    borderColor: "#34FF7A33", padding: 20, gap: 14, marginBottom: 4,
+  },
+  debitCardSavedTop: { flexDirection: "row", alignItems: "center", gap: 14 },
+  debitCardForm: {
+    backgroundColor: "#141414", borderRadius: 20, borderWidth: 1,
+    borderColor: "#222", padding: 20, gap: 14, marginBottom: 4,
+  },
+  cardFieldWrap: { gap: 6 },
+  cardFieldLabel: { fontSize: 13, color: "#888" },
+  cardInput: {
+    backgroundColor: "#1A1A1A", borderWidth: 1.5, borderColor: "#2A2A2A",
+    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, color: "#FFFFFF",
+  },
+  cardInputRow: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#1A1A1A", borderWidth: 1.5, borderColor: "#2A2A2A",
+    borderRadius: 10,
+  },
+  cardInputFlex: { flex: 1, paddingHorizontal: 10, paddingVertical: 12, fontSize: 15, color: "#FFFFFF" },
+  cardInputError: { borderColor: "#FF4444" },
+  cardBrandBadge: { fontSize: 11, color: "#888", paddingRight: 12 },
+  cardError: { fontSize: 11, color: "#FF4444", marginTop: 2 },
 
   manualGroup: { backgroundColor: "#141414", borderRadius: 14, borderWidth: 1, borderColor: "#222", padding: 16, marginBottom: 12 },
   manualFieldLabel: { fontSize: 13, color: "#888", marginBottom: 8 },
