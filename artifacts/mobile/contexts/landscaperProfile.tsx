@@ -96,21 +96,23 @@ const DEFAULT_MY_SERVICES: MyServicesState = {
 // ── Context ───────────────────────────────────────────────────────────────────
 
 type LandscaperProfileContextType = {
-  availability:    LandscaperAvailability;
-  saveAvailability:(a: LandscaperAvailability) => void;
-  bookedSlots:     Record<string, BookedSlot[]>;
-  addBookedSlot:   (dateKey: string, time: string, durationMinutes: number, service: string) => void;
-  myServices:      MyServicesState;
-  saveMyServices:  (s: MyServicesState) => void;
+  availability:      LandscaperAvailability;
+  saveAvailability:  (a: LandscaperAvailability) => void;
+  bookedSlots:       Record<string, BookedSlot[]>;
+  addBookedSlot:     (dateKey: string, time: string, durationMinutes: number, service: string) => void;
+  removeBookedSlot:  (dateKey: string, time: string) => void;
+  myServices:        MyServicesState;
+  saveMyServices:    (s: MyServicesState) => void;
 };
 
 const LandscaperProfileContext = createContext<LandscaperProfileContextType>({
-  availability:    DEFAULT_AVAIL,
-  saveAvailability:() => {},
-  bookedSlots:     {},
-  addBookedSlot:   () => {},
-  myServices:      DEFAULT_MY_SERVICES,
-  saveMyServices:  () => {},
+  availability:     DEFAULT_AVAIL,
+  saveAvailability: () => {},
+  bookedSlots:      {},
+  addBookedSlot:    () => {},
+  removeBookedSlot: () => {},
+  myServices:       DEFAULT_MY_SERVICES,
+  saveMyServices:   () => {},
 });
 
 export function LandscaperProfileProvider({ children }: { children: React.ReactNode }) {
@@ -123,10 +125,19 @@ export function LandscaperProfileProvider({ children }: { children: React.ReactN
   }
 
   function addBookedSlot(dateKey: string, time: string, durationMinutes: number, service: string) {
-    setBookedSlots((prev) => ({
-      ...prev,
-      [dateKey]: [...(prev[dateKey] ?? []), { time, durationMinutes, service }],
-    }));
+    setBookedSlots((prev) => {
+      const existing = prev[dateKey] ?? [];
+      // Idempotent: don't add duplicate (same time+service)
+      if (existing.some((s) => s.time === time && s.service === service)) return prev;
+      return { ...prev, [dateKey]: [...existing, { time, durationMinutes, service }] };
+    });
+  }
+
+  function removeBookedSlot(dateKey: string, time: string) {
+    setBookedSlots((prev) => {
+      const filtered = (prev[dateKey] ?? []).filter((s) => s.time !== time);
+      return { ...prev, [dateKey]: filtered };
+    });
   }
 
   function saveMyServices(s: MyServicesState) {
@@ -135,7 +146,7 @@ export function LandscaperProfileProvider({ children }: { children: React.ReactN
 
   return (
     <LandscaperProfileContext.Provider
-      value={{ availability, saveAvailability, bookedSlots, addBookedSlot, myServices, saveMyServices }}
+      value={{ availability, saveAvailability, bookedSlots, addBookedSlot, removeBookedSlot, myServices, saveMyServices }}
     >
       {children}
     </LandscaperProfileContext.Provider>
