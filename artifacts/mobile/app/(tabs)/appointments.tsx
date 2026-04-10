@@ -290,7 +290,16 @@ function CompletionPhotoModal({
     }
   }
 
+  const MIN_PHOTOS = 2;
+  const MAX_PHOTOS = 4;
+  const canSubmit = photos.length >= MIN_PHOTOS;
+
   function handleSubmit() {
+    if (!canSubmit) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      Alert.alert("Photos Required", `Please add at least ${MIN_PHOTOS} photos showing the completed work before submitting.`);
+      return;
+    }
     onSubmit(photos);
     setPhotos([]);
     onClose();
@@ -311,8 +320,35 @@ function CompletionPhotoModal({
           </View>
 
           <Text style={[cpStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>
-            Add up to 4 photos showing the completed work. These will be shared with the customer to support their approval.
+            At least 2 photos are required (up to 4). These will be shared with the customer to confirm the completed work.
           </Text>
+
+          {/* Photo counter progress */}
+          <View style={cpStyles.photoCounterRow}>
+            {[0, 1, 2, 3].map((i) => (
+              <View
+                key={i}
+                style={[
+                  cpStyles.photoCounterDot,
+                  i < photos.length && cpStyles.photoCounterDotFilled,
+                  i < MIN_PHOTOS && i >= photos.length && cpStyles.photoCounterDotRequired,
+                ]}
+              >
+                {i < photos.length ? (
+                  <Ionicons name="checkmark" size={10} color="#000" />
+                ) : (
+                  <Text style={[cpStyles.photoCounterNum, { fontFamily: "Inter_700Bold" }]}>{i + 1}</Text>
+                )}
+              </View>
+            ))}
+            <Text style={[cpStyles.photoCounterLabel, { fontFamily: "Inter_400Regular" }]}>
+              {photos.length < MIN_PHOTOS
+                ? `${MIN_PHOTOS - photos.length} more required`
+                : photos.length === MAX_PHOTOS
+                ? "Maximum reached"
+                : `${photos.length} of ${MAX_PHOTOS} added`}
+            </Text>
+          </View>
 
           {/* Photo grid */}
           {photos.length > 0 && (
@@ -333,7 +369,7 @@ function CompletionPhotoModal({
           )}
 
           {/* Add photo buttons */}
-          {photos.length < 4 && (
+          {photos.length < MAX_PHOTOS && (
             <View style={cpStyles.addRow}>
               <TouchableOpacity style={cpStyles.addBtn} onPress={pickFromCamera} activeOpacity={0.8}>
                 <Ionicons name="camera-outline" size={18} color="#34FF7A" />
@@ -346,17 +382,29 @@ function CompletionPhotoModal({
             </View>
           )}
 
-          <View style={cpStyles.infoNote}>
-            <Ionicons name="information-circle-outline" size={14} color="#CCCCCC" />
-            <Text style={[cpStyles.infoText, { fontFamily: "Inter_400Regular" }]}>
-              Photos are optional — tap "Submit" to notify the customer without photos.
+          <View style={[cpStyles.infoNote, !canSubmit && cpStyles.infoNoteWarn]}>
+            <Ionicons
+              name={canSubmit ? "checkmark-circle-outline" : "alert-circle-outline"}
+              size={14}
+              color={canSubmit ? "#34FF7A" : "#FFAA00"}
+            />
+            <Text style={[cpStyles.infoText, { fontFamily: "Inter_400Regular", color: canSubmit ? "#CCCCCC" : "#FFAA00" }]}>
+              {canSubmit
+                ? "Photo requirement met — you're ready to submit."
+                : `${MIN_PHOTOS - photos.length} more photo${MIN_PHOTOS - photos.length > 1 ? "s" : ""} required before you can submit.`}
             </Text>
           </View>
 
-          <TouchableOpacity style={cpStyles.submitBtn} onPress={handleSubmit} activeOpacity={0.85}>
-            <Ionicons name="checkmark-circle-outline" size={18} color="#000" />
-            <Text style={[cpStyles.submitBtnText, { fontFamily: "Inter_700Bold" }]}>
-              {photos.length > 0 ? `Submit ${photos.length} Photo${photos.length > 1 ? "s" : ""} & Notify Customer` : "Submit & Notify Customer"}
+          <TouchableOpacity
+            style={[cpStyles.submitBtn, !canSubmit && cpStyles.submitBtnDisabled]}
+            onPress={handleSubmit}
+            activeOpacity={canSubmit ? 0.85 : 1}
+          >
+            <Ionicons name="checkmark-circle-outline" size={18} color={canSubmit ? "#000" : "#666"} />
+            <Text style={[cpStyles.submitBtnText, { fontFamily: "Inter_700Bold", color: canSubmit ? "#000" : "#666" }]}>
+              {canSubmit
+                ? `Submit ${photos.length} Photo${photos.length > 1 ? "s" : ""} & Notify Customer`
+                : `Add ${MIN_PHOTOS - photos.length} More Photo${MIN_PHOTOS - photos.length > 1 ? "s" : ""} to Continue`}
             </Text>
           </TouchableOpacity>
         </Pressable>
@@ -1970,16 +2018,30 @@ const cpStyles = StyleSheet.create({
     borderWidth: 1, borderColor: "#1a4a2a",
   },
   addBtnText: { fontSize: 14, color: "#34FF7A" },
+  photoCounterRow: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+  },
+  photoCounterDot: {
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: "#222", borderWidth: 1.5, borderColor: "#444",
+    alignItems: "center", justifyContent: "center",
+  },
+  photoCounterDotFilled: { backgroundColor: "#34FF7A", borderColor: "#34FF7A" },
+  photoCounterDotRequired: { borderColor: "#FFAA00", borderStyle: "dashed" },
+  photoCounterNum: { fontSize: 10, color: "#888" },
+  photoCounterLabel: { fontSize: 12, color: "#888", marginLeft: 4, flex: 1 },
   infoNote: {
     flexDirection: "row", alignItems: "flex-start", gap: 8,
     backgroundColor: "#1A1A1A", borderRadius: 12,
     paddingHorizontal: 12, paddingVertical: 10,
   },
+  infoNoteWarn: { backgroundColor: "#1A1200", borderWidth: 1, borderColor: "#2E2000" },
   infoText: { fontSize: 12, color: "#BBBBBB", flex: 1, lineHeight: 18 },
   submitBtn: {
     backgroundColor: "#34FF7A", borderRadius: 20, paddingVertical: 16,
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
   },
+  submitBtnDisabled: { backgroundColor: "#1A1A1A", borderWidth: 1, borderColor: "#333" },
   submitBtnText: { fontSize: 15, color: "#000" },
 });
 
