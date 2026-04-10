@@ -20,8 +20,47 @@ import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth, LawnUser } from "@/contexts/auth";
 import TermsModal from "@/components/TermsModal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
+
+// ── Password helpers ─────────────────────────────────────────────
+const PW_CHECKS = [
+  { key: "len",   label: "At least 8 characters",        test: (p: string) => p.length >= 8 },
+  { key: "upper", label: "One uppercase letter (A–Z)",   test: (p: string) => /[A-Z]/.test(p) },
+  { key: "lower", label: "One lowercase letter (a–z)",   test: (p: string) => /[a-z]/.test(p) },
+  { key: "num",   label: "One number (0–9)",             test: (p: string) => /[0-9]/.test(p) },
+  { key: "spec",  label: "One special character (!@#$%)", test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+];
+
+function pwStrength(pw: string) {
+  const passed = PW_CHECKS.filter((c) => c.test(pw)).length;
+  return { passed, total: PW_CHECKS.length, checks: PW_CHECKS.map((c) => ({ ...c, ok: c.test(pw) })) };
+}
+
+function PasswordStrengthMeter({ value }: { value: string }) {
+  if (!value) return null;
+  const { passed, total, checks } = pwStrength(value);
+  const color = passed <= 2 ? "#ef4444" : passed <= 3 ? "#f59e0b" : passed === 4 ? "#facc15" : "#34FF7A";
+  return (
+    <View style={{ marginTop: 6, marginBottom: 2 }}>
+      <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
+        {Array.from({ length: total }).map((_, i) => (
+          <View key={i} style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: i < passed ? color : "#2a2a2a" }} />
+        ))}
+      </View>
+      {checks.map((c) => (
+        <View key={c.key} style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 3 }}>
+          <Ionicons name={c.ok ? "checkmark-circle" : "ellipse-outline"} size={14} color={c.ok ? "#34FF7A" : "#555"} />
+          <Text style={{ fontSize: 12, color: c.ok ? "#34FF7A" : "#666" }}>{c.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const PASSKEY_STORAGE_KEY = (role: string) => `lawn_passkey_user_${role}`;
 
 const { height: SCREEN_H } = Dimensions.get("window");
 const LOGO_H = Math.min(280, Math.max(200, SCREEN_H * 0.38));
@@ -60,6 +99,8 @@ export default function LoginScreen() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [zipCode, setZipCode] = useState("");
+  const [regCity, setRegCity] = useState("");
+  const [regState, setRegState] = useState("");
 
   // Landscaper reg
   const [lRegUsername, setLRegUsername] = useState("");
@@ -100,10 +141,25 @@ export default function LoginScreen() {
     router.replace("/(tabs)");
   }
 
-  function finishPasskey() {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  async function finishPasskey() {
+    if (!pendingUser) return;
     setShowPasskey(false);
-    if (pendingUser) go(pendingUser);
+    try {
+      if (!isWeb) {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const enrolled = await LocalAuthentication.isEnrolledAsync();
+        if (hasHardware && enrolled) {
+          const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: "Set up passkey for TheLawn",
+            fallbackLabel: "Use password instead",
+          });
+          if (!result.success) { go(pendingUser); return; }
+        }
+      }
+      await AsyncStorage.setItem(PASSKEY_STORAGE_KEY(pendingUser.role), JSON.stringify(pendingUser));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (_) {}
+    go(pendingUser);
   }
 
   function skipPasskey() {
@@ -111,11 +167,31 @@ export default function LoginScreen() {
     if (pendingUser) go(pendingUser);
   }
 
-  function handlePasskeyLogin(role: "customer" | "landscaper") {
+  async function handlePasskeyLogin(role: "customer" | "landscaper") {
     Haptics.selectionAsync();
-    // Passkey login without credentials - not supported with real auth
-    // This button is kept for UX but will prompt user to use username/password
-    setErrors("Please sign in with your username and password.");
+    setErrors(null);
+    try {
+      const stored = await AsyncStorage.getItem(PASSKEY_STORAGE_KEY(role));
+      if (!stored) {
+        setErrors("No passkey saved on this device. Sign in with your username and password first.");
+        return;
+      }
+      if (!isWeb) {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const enrolled = await LocalAuthentication.isEnrolledAsync();
+        if (hasHardware && enrolled) {
+          const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: "Sign in to TheLawn",
+            fallbackLabel: "Use password instead",
+          });
+          if (!result.success) return;
+        }
+      }
+      const user = JSON.parse(stored) as LawnUser;
+      go(user);
+    } catch {
+      setErrors("Passkey sign-in failed. Please use your username and password.");
+    }
   }
 
   async function handleCustomerLogin() {
@@ -133,7 +209,16 @@ export default function LoginScreen() {
       });
       const data = await res.json();
       if (!res.ok) { setErrors(data.error ?? "Login failed"); return; }
-      go(data.user as LawnUser);
+      const user = data.user as LawnUser;
+      // Offer passkey setup if not already saved on this device
+      const existing = await AsyncStorage.getItem(PASSKEY_STORAGE_KEY("customer")).catch(() => null);
+      if (!existing) {
+        setPendingUser(user);
+        setPendingIsRegistration(false);
+        setShowPasskey(true);
+      } else {
+        go(user);
+      }
     } catch {
       setErrors("Could not connect to server. Please try again.");
     } finally {
@@ -156,8 +241,16 @@ export default function LoginScreen() {
       });
       const data = await res.json();
       if (!res.ok) { setErrors(data.error ?? "Login failed"); return; }
+      const user = data.user as LawnUser;
       setPendingIsRegistration(false);
-      go(data.user as LawnUser);
+      // Offer passkey setup if not already saved on this device
+      const existing = await AsyncStorage.getItem(PASSKEY_STORAGE_KEY("landscaper")).catch(() => null);
+      if (!existing) {
+        setPendingUser(user);
+        setShowPasskey(true);
+      } else {
+        go(user);
+      }
     } catch {
       setErrors("Could not connect to server. Please try again.");
     } finally {
@@ -166,8 +259,14 @@ export default function LoginScreen() {
   }
 
   async function handleCustomerRegister() {
-    if (!regUsername.trim() || !firstName.trim() || !lastName.trim() || !email.trim() || !regPassword.trim() || !phone.trim() || !address.trim() || !zipCode.trim()) {
-      setErrors("Please fill in all fields including Username and ZIP Code");
+    if (!regUsername.trim() || !firstName.trim() || !lastName.trim() || !email.trim() || !regPassword.trim() || !phone.trim() || !address.trim() || !regCity.trim() || !regState.trim() || !zipCode.trim()) {
+      setErrors("Please fill in all required fields including City, State, and ZIP Code");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    const { passed } = pwStrength(regPassword);
+    if (passed < 5) {
+      setErrors("Please choose a stronger password meeting all requirements below.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
@@ -185,6 +284,8 @@ export default function LoginScreen() {
           email: email.trim(),
           phone: phone.trim(),
           address: address.trim(),
+          city: regCity.trim(),
+          state: regState.trim(),
           zipCode: zipCode.trim(),
         }),
       });
@@ -208,6 +309,12 @@ export default function LoginScreen() {
     }
     if (selectedServices.length === 0) {
       setErrors("Please select at least one service you provide.");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    const { passed } = pwStrength(lPassword);
+    if (passed < 5) {
+      setErrors("Please choose a stronger password meeting all requirements below.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
@@ -410,8 +517,12 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
+          <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("customer")} activeOpacity={0.85}>
+            <Ionicons name="finger-print" size={22} color="#34FF7A" />
+            <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Passkey</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleCustomerLogin} disabled={loading} activeOpacity={0.88}>
-            {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in</Text>}
+            {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Password</Text>}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowRoleModal(true)} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
             <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? <Text style={{ color: "#34FF7A" }}>Register here</Text></Text>
@@ -469,8 +580,12 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
+          <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("landscaper")} activeOpacity={0.85}>
+            <Ionicons name="finger-print" size={22} color="#34FF7A" />
+            <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Passkey</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleLandscaperLogin} disabled={loading} activeOpacity={0.88}>
-            {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in</Text>}
+            {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Password</Text>}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setShowRoleModal(true)} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
             <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Don't have an account? <Text style={{ color: "#34FF7A" }}>Register here</Text></Text>
@@ -529,16 +644,31 @@ export default function LoginScreen() {
           </Field>
           <Field label="Password">
             <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={regPassword} onChangeText={setRegPassword} placeholder="••••••••" placeholderTextColor="#777" secureTextEntry />
+            <PasswordStrengthMeter value={regPassword} />
           </Field>
           <Field label="Phone Number">
             <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={phone} onChangeText={setPhone} placeholder="(555) 000-0000" placeholderTextColor="#777" keyboardType="phone-pad" />
           </Field>
           <Field label="Service Address (private)">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={address} onChangeText={setAddress} placeholder="8910 45th Ave E, Ellenton, FL" placeholderTextColor="#777" autoCapitalize="words" />
+            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={address} onChangeText={setAddress} placeholder="8910 45th Ave E" placeholderTextColor="#777" autoCapitalize="words" />
           </Field>
-          <Field label="ZIP Code (required)">
-            <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={zipCode} onChangeText={setZipCode} placeholder="34222" placeholderTextColor="#777" keyboardType="numeric" maxLength={5} />
-          </Field>
+          <View style={styles.rowFields}>
+            <View style={{ flex: 1 }}>
+              <Field label="City">
+                <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={regCity} onChangeText={setRegCity} placeholder="Ellenton" placeholderTextColor="#777" autoCapitalize="words" />
+              </Field>
+            </View>
+            <View style={{ flex: 0.7 }}>
+              <Field label="State">
+                <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={regState} onChangeText={(v) => setRegState(v.toUpperCase().slice(0, 2))} placeholder="FL" placeholderTextColor="#777" autoCapitalize="characters" maxLength={2} />
+              </Field>
+            </View>
+            <View style={{ flex: 0.9 }}>
+              <Field label="ZIP Code">
+                <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={zipCode} onChangeText={setZipCode} placeholder="34222" placeholderTextColor="#777" keyboardType="numeric" maxLength={5} />
+              </Field>
+            </View>
+          </View>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleCustomerRegister} disabled={loading} activeOpacity={0.88}>
             {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Account</Text>}
           </TouchableOpacity>
@@ -586,6 +716,7 @@ export default function LoginScreen() {
         </Field>
         <Field label="Password">
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lPassword} onChangeText={setLPassword} placeholder="••••••••" placeholderTextColor="#777" secureTextEntry />
+          <PasswordStrengthMeter value={lPassword} />
         </Field>
         <Field label="Phone Number">
           <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={lPhone} onChangeText={setLPhone} placeholder="(555) 000-0000" placeholderTextColor="#777" keyboardType="phone-pad" />

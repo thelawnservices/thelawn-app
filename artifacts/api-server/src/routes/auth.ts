@@ -25,6 +25,10 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "Invalid role" });
     }
 
+    // Strong password enforcement
+    const pwError = validatePassword(password);
+    if (pwError) return res.status(400).json({ error: pwError });
+
     // Check username already taken for same role
     const existing = await pool.query(
       "SELECT id FROM lawn_users WHERE username = $1 AND role = $2",
@@ -89,6 +93,15 @@ router.post("/login", async (req, res) => {
     return res.status(500).json({ error: "Login failed. Please try again." });
   }
 });
+
+function validatePassword(pw: string): string | null {
+  if (pw.length < 8)                return "Password must be at least 8 characters.";
+  if (!/[A-Z]/.test(pw))           return "Password must include at least one uppercase letter.";
+  if (!/[a-z]/.test(pw))           return "Password must include at least one lowercase letter.";
+  if (!/[0-9]/.test(pw))           return "Password must include at least one number.";
+  if (!/[^A-Za-z0-9]/.test(pw))   return "Password must include at least one special character (e.g. !@#$%).";
+  return null;
+}
 
 function sanitize(u: any) {
   return {
