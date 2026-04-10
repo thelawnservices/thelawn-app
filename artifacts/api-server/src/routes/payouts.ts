@@ -59,7 +59,11 @@ router.post("/onboarding-link", async (req, res) => {
       return res.status(400).json({ error: "accountId is required" });
     }
 
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const replitDomain = process.env["REPLIT_DOMAINS"]?.split(",")[0];
+    const baseUrl = replitDomain
+      ? `https://${replitDomain}`
+      : `https://${req.get("host")}`;
+
     const link = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${baseUrl}/api/payouts/onboarding-refresh?accountId=${accountId}`,
@@ -113,7 +117,10 @@ router.get("/onboarding-refresh", async (req, res) => {
   }
   try {
     const stripe = await getUncachableStripeClient();
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const replitDomain = process.env["REPLIT_DOMAINS"]?.split(",")[0];
+    const baseUrl = replitDomain
+      ? `https://${replitDomain}`
+      : `https://${req.get("host")}`;
     const link = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${baseUrl}/api/payouts/onboarding-refresh?accountId=${accountId}`,
