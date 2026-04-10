@@ -299,6 +299,7 @@ export default function SearchScreen() {
                                 service: req.service,
                                 size: req.size,
                                 customer: req.customer,
+                                address: req.address,
                                 date: req.date,
                                 time: req.time,
                                 budget: req.budget,

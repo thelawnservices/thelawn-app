@@ -393,10 +393,10 @@ export default function RequestsScreen() {
   const [newModalVisible, setNewModalVisible] = useState(false);
   const [extraRequests, setExtraRequests] = useState<typeof CUSTOMER_REQUESTS>([]);
 
-  function handleAccept(id: string, service: string, customer: string, budget: string, rawDate: string, rawTime: string) {
+  function handleAccept(id: string, service: string, customer: string, budget: string, rawDate: string, rawTime: string, address: string) {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setAccepted((prev) => [...prev, id]);
-    acceptJob({ id, service, customer, address: "", date: rawDate, time: rawTime, budget });
+    acceptJob({ id, service, customer, address, date: rawDate, time: rawTime, budget });
     const blockMins = SERVICE_BLOCK_MINUTES[service] ?? 120;
     const dateKey = normalizeDateKey(rawDate);
     const timeKey = normalizeTime(rawTime);
@@ -516,7 +516,7 @@ export default function RequestsScreen() {
                               { text: "Cancel", style: "cancel" },
                               {
                                 text: `Accept at ${req.budget}`,
-                                onPress: () => handleAccept(req.id, req.service, req.customer, req.budget, req.date, req.time),
+                                onPress: () => handleAccept(req.id, req.service, req.customer, req.budget, req.date, req.time, req.address),
                               },
                             ]
                           );

@@ -1125,6 +1125,22 @@ export default function AppointmentsScreen() {
                       </>
                     )}
                   </View>
+                  {job.address ? (
+                    <TouchableOpacity
+                      style={styles.lsMetaRow}
+                      activeOpacity={0.7}
+                      onPress={() => { Haptics.selectionAsync(); openMaps(job.address); }}
+                    >
+                      <Ionicons name="location-outline" size={13} color="#34FF7A" />
+                      <Text
+                        style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }, styles.mapAddressLink]}
+                        numberOfLines={1}
+                      >
+                        {job.address}
+                      </Text>
+                      <Ionicons name="navigate-outline" size={12} color="#34FF7A" />
+                    </TouchableOpacity>
+                  ) : null}
                   {job.phone && (
                     <View style={styles.lsContactRow}>
                       <TouchableOpacity
