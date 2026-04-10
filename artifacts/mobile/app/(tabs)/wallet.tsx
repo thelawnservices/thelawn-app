@@ -15,13 +15,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useWallet } from "@/contexts/wallet";
+import { useAuth } from "@/contexts/auth";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 const MIN_WITHDRAWAL = 10;
 
-type Screen = "main" | "withdraw" | "pin" | "success" | "payout_settings";
+type Screen = "main" | "withdraw" | "success" | "payout_settings";
 
-type PayoutMethodId = "stripe_instant" | "stripe" | "paypal" | "zelle" | "venmo" | "check";
+type PayoutMethodId = "stripe_instant" | "paypal" | "zelle" | "venmo" | "check";
 
 type WithdrawMethod = {
   id: PayoutMethodId;
@@ -93,7 +94,7 @@ const METHODS: WithdrawMethod[] = [
   },
 ];
 
-type StripeStatus = "idle" | "loading" | "connected" | "needs_info" | "error" | "unavailable";
+type StripeStatus = "idle" | "loading" | "connected" | "needs_info" | "error";
 
 type ManualPayoutInfo = {
   paypal_email: string;
@@ -116,23 +117,23 @@ export default function WalletScreen() {
   const topPad = isWeb ? 67 : insets.top;
   const bottomPad = isWeb ? 0 : insets.bottom;
 
-  const { balance, transactions, recordWithdrawal } = useWallet();
+  const { balance, transactions, loading, recordWithdrawal, refreshWallet } = useWallet();
+  const { userName } = useAuth();
 
   const [screen, setScreen] = useState<Screen>("main");
   const [amountText, setAmountText] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<WithdrawMethod | null>(null);
-  const [pin, setPin] = useState("");
-
-  // Stripe Connect state
-  const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
-  const [stripeStatus, setStripeStatus] = useState<StripeStatus>("idle");
-  const [stripeConnecting, setStripeConnecting] = useState(false);
   const [withdrawResult, setWithdrawResult] = useState<{
     transferId?: string;
     payoutId?: string | null;
     arrivalDate?: string | null;
     status?: string;
   } | null>(null);
+
+  // Stripe Connect state
+  const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
+  const [stripeStatus, setStripeStatus] = useState<StripeStatus>("idle");
+  const [stripeConnecting, setStripeConnecting] = useState(false);
 
   // Manual payout info
   const [manualInfo, setManualInfo] = useState<ManualPayoutInfo>({
@@ -147,91 +148,42 @@ export default function WalletScreen() {
   });
   const [manualSaved, setManualSaved] = useState(false);
 
-  // Debit card state for instant payout
-  const [debitCard, setDebitCard] = useState<{
-    name: string; last4: string; expiry: string; brand: string;
-  } | null>(null);
-  const [showDebitCardForm, setShowDebitCardForm] = useState(false);
-  const [cardName, setCardName]     = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardCvv, setCardCvv]       = useState("");
-  const [cvvVisible, setCvvVisible] = useState(false);
-  const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
-
   const amountNum = parseFloat(amountText) || 0;
+  const isStripeConnected = stripeStatus === "connected";
 
-  // Check Stripe account status on load if we have an account ID
+  // ── On mount: load real wallet + Connect account ──────────────────────────
   useEffect(() => {
-    if (stripeAccountId) {
-      checkStripeStatus(stripeAccountId);
+    if (userName) {
+      refreshWallet(userName);
+      loadConnectAccount(userName);
     }
-  }, [stripeAccountId]);
+  }, [userName]);
+
+  async function loadConnectAccount(name: string) {
+    try {
+      const res = await fetch(`${API_URL}/api/wallet/connect-account?name=${encodeURIComponent(name)}`);
+      const data = await res.json();
+      if (data.accountId) {
+        setStripeAccountId(data.accountId);
+        checkStripeStatus(data.accountId);
+      }
+    } catch {}
+  }
 
   async function checkStripeStatus(accountId: string) {
+    setStripeStatus("loading");
     try {
       const res = await fetch(`${API_URL}/api/payouts/account-status/${accountId}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       if (data.payoutsEnabled) {
         setStripeStatus("connected");
-      } else if (data.detailsSubmitted) {
-        setStripeStatus("needs_info");
       } else {
         setStripeStatus("needs_info");
       }
     } catch {
       setStripeStatus("error");
     }
-  }
-
-  // ── Debit card helpers ────────────────────────────────────────────────────
-  function detectCardBrand(num: string): string {
-    const n = num.replace(/\s/g, "");
-    if (/^4/.test(n))           return "Visa";
-    if (/^5[1-5]/.test(n))     return "Mastercard";
-    if (/^3[47]/.test(n))      return "Amex";
-    if (/^6(?:011|5)/.test(n)) return "Discover";
-    return "Card";
-  }
-
-  function formatCardNumber(text: string): string {
-    const digits = text.replace(/\D/g, "").slice(0, 16);
-    return digits.replace(/(.{4})/g, "$1 ").trim();
-  }
-
-  function formatExpiry(text: string): string {
-    const digits = text.replace(/\D/g, "").slice(0, 4);
-    if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return digits;
-  }
-
-  function saveDebitCard() {
-    const errs: Record<string, string> = {};
-    const digits = cardNumber.replace(/\s/g, "");
-    if (!cardName.trim())            errs.name   = "Cardholder name is required";
-    if (digits.length < 13)          errs.number = "Enter a valid card number";
-    const [mm, yy] = cardExpiry.split("/");
-    const month = parseInt(mm ?? "0", 10);
-    const year  = parseInt(`20${yy ?? "00"}`, 10);
-    const now = new Date();
-    if (!mm || !yy || month < 1 || month > 12 || year < now.getFullYear() ||
-        (year === now.getFullYear() && month < now.getMonth() + 1)) {
-      errs.expiry = "Enter a valid expiry date";
-    }
-    if (!cardCvv || cardCvv.length < 3) errs.cvv = "Enter your CVV";
-    setCardErrors(errs);
-    if (Object.keys(errs).length > 0) return;
-
-    setDebitCard({
-      name:  cardName.trim(),
-      last4: digits.slice(-4),
-      expiry: cardExpiry,
-      brand: detectCardBrand(cardNumber),
-    });
-    setShowDebitCardForm(false);
-    setCardNumber(""); setCardCvv(""); setCardErrors({});
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
 
   async function connectStripe() {
@@ -243,17 +195,28 @@ export default function WalletScreen() {
         const createRes = await fetch(`${API_URL}/api/payouts/create-connect-account`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: "landscaper@example.com" }),
+          body: JSON.stringify({ email: "" }),
         });
         const createData = await createRes.json();
-        // Stripe Connect not enabled on the platform — show friendly in-app state
         if (createData.errorCode === "CONNECT_NOT_ENABLED") {
-          setStripeStatus("unavailable");
+          Alert.alert(
+            "Stripe Connect Not Enabled",
+            "Please contact TheLawnServices support to enable payouts for your account."
+          );
           return;
         }
         if (createData.error) throw new Error(createData.error);
-        accountId = createData.accountId;
+        accountId = createData.accountId as string;
         setStripeAccountId(accountId);
+
+        // Save to DB so it persists across sessions
+        if (userName && accountId) {
+          await fetch(`${API_URL}/api/wallet/save-connect-account`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ landscaperName: userName, accountId }),
+          });
+        }
       }
 
       const linkRes = await fetch(`${API_URL}/api/payouts/onboarding-link`, {
@@ -266,10 +229,10 @@ export default function WalletScreen() {
 
       await Linking.openURL(linkData.url);
 
-      // After returning from Stripe, check status
+      // After returning from Stripe onboarding, re-check status
       setTimeout(() => {
         if (accountId) checkStripeStatus(accountId);
-      }, 3000);
+      }, 4000);
     } catch (err: any) {
       Alert.alert("Connection Error", err.message ?? "Failed to connect Stripe account.");
       setStripeStatus("error");
@@ -280,22 +243,13 @@ export default function WalletScreen() {
 
   async function executeStripeWithdrawal() {
     if (!stripeAccountId) {
-      Alert.alert("Not Connected", "Please connect your Stripe account first.");
-      return;
-    }
-    if (amountNum < MIN_WITHDRAWAL) {
-      Alert.alert("Minimum Withdrawal", `The minimum withdrawal is $${MIN_WITHDRAWAL}.00.`);
-      return;
-    }
-    if (amountNum > balance) {
-      Alert.alert("Insufficient Funds", `Your available balance is $${fmt(balance)}.`);
+      Alert.alert("Not Connected", "Please complete Stripe onboarding in Payout Settings first.");
       return;
     }
 
     const isInstant = selectedMethod?.id === "stripe_instant";
-    const feeRate   = selectedMethod?.feeRate ?? 0;
-    const fee       = parseFloat((amountNum * feeRate).toFixed(2));
-    const netAmount = parseFloat((amountNum - fee).toFixed(2));
+    const feeRate = selectedMethod?.feeRate ?? 0;
+    const fee = parseFloat((amountNum * feeRate).toFixed(2));
 
     try {
       const res = await fetch(`${API_URL}/api/payouts/withdraw`, {
@@ -305,13 +259,13 @@ export default function WalletScreen() {
           accountId: stripeAccountId,
           amount: amountNum,
           instant: isInstant,
-          description: `TheLawnServices ${isInstant ? "instant " : ""}withdrawal — $${fmt(amountNum)}${fee > 0 ? ` (fee: $${fmt(fee)})` : ""}`,
+          description: `TheLawnServices ${isInstant ? "instant " : ""}payout — $${fmt(amountNum)}`,
         }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      // Deduct fee from wallet if applicable
+      // Record in DB and local state
       recordWithdrawal(amountNum, selectedMethod?.label ?? "Stripe Payout");
       setWithdrawResult({
         transferId: data.transferId,
@@ -345,11 +299,10 @@ export default function WalletScreen() {
     }
 
     if (selectedMethod.id === "stripe_instant") {
-      // ── Instant debit card payout ────────────────────────────────
-      if (!debitCard) {
+      if (!isStripeConnected) {
         Alert.alert(
-          "Add Debit Card",
-          "Go to Payout Settings to add your debit card for instant payouts.",
+          "Stripe Account Required",
+          "Complete your Stripe onboarding in Payout Settings to enable instant payouts. You can add a debit card during onboarding.",
           [
             { text: "Open Settings", onPress: () => setScreen("payout_settings") },
             { text: "Cancel", style: "cancel" },
@@ -363,34 +316,12 @@ export default function WalletScreen() {
         "Confirm Instant Payout",
         `A 1.5% fee applies to instant debit card payouts.\n\nWithdrawal: $${fmt(amountNum)}\nFee: $${fmt(fee)}\nYou receive: $${fmt(net)}\n\nFunds arrive within minutes.`,
         [
-          {
-            text: "Confirm",
-            onPress: () => {
-              recordWithdrawal(amountNum, selectedMethod.label);
-              setWithdrawResult({ arrivalDate: "Within minutes", status: "instant" });
-              setScreen("success");
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            },
-          },
+          { text: "Confirm", onPress: () => executeStripeWithdrawal() },
           { text: "Cancel", style: "cancel" },
         ]
       );
-    } else if (selectedMethod.isStripe) {
-      // ── Other Stripe methods (require Stripe Connect) ────────────
-      if (stripeStatus !== "connected") {
-        Alert.alert(
-          "Stripe Not Connected",
-          "Please connect your Stripe payout account in Payout Settings before using this withdrawal option.",
-          [
-            { text: "Go to Settings", onPress: () => setScreen("payout_settings") },
-            { text: "Cancel", style: "cancel" },
-          ]
-        );
-        return;
-      }
-      executeStripeWithdrawal();
     } else {
-      // ── Manual payout — record locally ───────────────────────────
+      // Manual payout — record locally + DB
       recordWithdrawal(amountNum, selectedMethod.label);
       setWithdrawResult(null);
       setScreen("success");
@@ -402,28 +333,29 @@ export default function WalletScreen() {
     setScreen("main");
     setAmountText("");
     setSelectedMethod(null);
-    setPin("");
     setWithdrawResult(null);
+    if (userName) refreshWallet(userName);
   }
 
   function saveManualInfo() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setManualSaved(true);
     setTimeout(() => setManualSaved(false), 2500);
-    Alert.alert("Info Saved", "Your payout details have been saved. TheLawnServices will use these when processing manual payouts.");
+    Alert.alert(
+      "Info Saved",
+      "Your payout details have been saved. TheLawnServices will use these when processing manual payouts."
+    );
   }
 
   const creditTotal   = transactions.filter((t) => t.type === "credit").reduce((s, t) => s + t.amount, 0);
   const withdrawTotal = transactions.filter((t) => t.type === "debit").reduce((s, t) => s + t.amount, 0);
 
   function headerTitle() {
-    if (screen === "withdraw")       return "Withdraw Funds";
-    if (screen === "success")        return "Withdrawal Initiated";
+    if (screen === "withdraw")        return "Withdraw Funds";
+    if (screen === "success")         return "Withdrawal Initiated";
     if (screen === "payout_settings") return "Payout Settings";
     return "My Wallet";
   }
-
-  const isStripeConnected = stripeStatus === "connected";
 
   return (
     <View style={[s.root, { paddingTop: topPad }]}>
@@ -433,9 +365,8 @@ export default function WalletScreen() {
           <TouchableOpacity
             style={s.backBtn}
             onPress={() => {
-              if (screen === "success")          reset();
-              else if (screen === "payout_settings") setScreen("main");
-              else                               setScreen("main");
+              if (screen === "success") reset();
+              else setScreen("main");
             }}
             activeOpacity={0.7}
           >
@@ -460,15 +391,24 @@ export default function WalletScreen() {
 
       {/* ── MAIN ─────────────────────────────────────────────────── */}
       {screen === "main" && (
-        <ScrollView contentContainerStyle={{ paddingBottom: bottomPad + 48 }} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: bottomPad + 48 }}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Balance card */}
           <View style={s.balanceCard}>
             <View style={s.badge}>
               <Ionicons name="shield-checkmark" size={13} color="#34FF7A" />
-              <Text style={[s.badgeText, { fontFamily: "Inter_500Medium" }]}>FDIC Protected · Stripe Secured</Text>
+              <Text style={[s.badgeText, { fontFamily: "Inter_500Medium" }]}>
+                FDIC Protected · Stripe Secured
+              </Text>
             </View>
             <Text style={[s.balLabel, { fontFamily: "Inter_400Regular" }]}>Available Balance</Text>
-            <Text style={[s.balAmount, { fontFamily: "Inter_700Bold" }]}>${fmt(balance)}</Text>
+            {loading ? (
+              <ActivityIndicator color="#34FF7A" style={{ marginVertical: 12 }} />
+            ) : (
+              <Text style={[s.balAmount, { fontFamily: "Inter_700Bold" }]}>${fmt(balance)}</Text>
+            )}
             <View style={s.balStats}>
               <View style={s.balStat}>
                 <Ionicons name="arrow-down-circle" size={16} color="#34FF7A" />
@@ -488,27 +428,39 @@ export default function WalletScreen() {
             </View>
           </View>
 
-          {/* Payout method status banner */}
+          {/* Stripe Connect status banner */}
           <TouchableOpacity
-            style={[s.stripeBanner, debitCard ? s.stripeBannerConnected : s.stripeBannerDisconnected]}
+            style={[
+              s.stripeBanner,
+              isStripeConnected ? s.stripeBannerConnected : s.stripeBannerDisconnected,
+            ]}
             onPress={() => { Haptics.selectionAsync(); setScreen("payout_settings"); }}
             activeOpacity={0.8}
           >
-            <View style={[s.stripeIconWrap, { backgroundColor: debitCard ? "#34FF7A22" : "#1a1a1a" }]}>
+            <View style={[s.stripeIconWrap, { backgroundColor: isStripeConnected ? "#34FF7A22" : "#1a1a1a" }]}>
               <Ionicons
-                name={debitCard ? "flash" : "flash-outline"}
+                name={isStripeConnected ? "flash" : "flash-outline"}
                 size={22}
-                color={debitCard ? "#34FF7A" : "#888"}
+                color={isStripeConnected ? "#34FF7A" : "#888"}
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[s.stripeBannerTitle, { fontFamily: "Inter_600SemiBold", color: debitCard ? "#34FF7A" : "#FFFFFF" }]}>
-                {debitCard ? `⚡ ${debitCard.brand} •••• ${debitCard.last4} — Ready` : "Add Debit Card for Instant Payouts"}
+              <Text style={[
+                s.stripeBannerTitle,
+                { fontFamily: "Inter_600SemiBold", color: isStripeConnected ? "#34FF7A" : "#FFFFFF" },
+              ]}>
+                {isStripeConnected
+                  ? "⚡ Stripe Payouts Ready"
+                  : stripeStatus === "needs_info"
+                  ? "Stripe Onboarding Incomplete"
+                  : "Set Up Stripe Payouts"}
               </Text>
               <Text style={[s.stripeBannerSub, { fontFamily: "Inter_400Regular" }]}>
-                {debitCard
-                  ? "Instant withdrawals enabled. Tap to manage."
-                  : "Withdraw your earnings within minutes — tap to set up."}
+                {isStripeConnected
+                  ? "Instant debit card withdrawals enabled. Tap to manage."
+                  : stripeStatus === "needs_info"
+                  ? "Finish onboarding to activate payouts — tap to continue."
+                  : "Receive payments directly to your bank or debit card."}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color="#555" />
@@ -517,7 +469,10 @@ export default function WalletScreen() {
           {/* Withdraw button */}
           <TouchableOpacity
             style={s.withdrawBtn}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setScreen("withdraw"); }}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setScreen("withdraw");
+            }}
             activeOpacity={0.85}
           >
             <Ionicons name="wallet-outline" size={20} color="#000" />
@@ -530,7 +485,7 @@ export default function WalletScreen() {
 
           {/* Transactions */}
           <Text style={[s.sectionLabel, { fontFamily: "Inter_600SemiBold" }]}>TRANSACTION HISTORY</Text>
-          {transactions.length === 0 && (
+          {transactions.length === 0 && !loading && (
             <View style={s.emptyRow}>
               <Ionicons name="receipt-outline" size={32} color="#333" />
               <Text style={[{ fontSize: 14, color: "#555", marginTop: 8, textAlign: "center" }, { fontFamily: "Inter_400Regular" }]}>
@@ -572,157 +527,106 @@ export default function WalletScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Debit Card for Instant Payout ── */}
+          {/* ── Stripe Connect Section ── */}
           <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold" }]}>
-            ⚡ Instant Debit Card Payout
+            ⚡ Instant Stripe Payouts
           </Text>
           <Text style={[s.payoutSectionSub, { fontFamily: "Inter_400Regular" }]}>
-            Add your debit card to receive instant payouts within minutes. A 1.5% fee applies to instant transfers.
+            Connect your Stripe account to receive instant payouts to your bank account or debit card. A 1.5% fee applies to instant transfers.
           </Text>
 
-          {/* Saved card display */}
-          {debitCard && !showDebitCardForm ? (
-            <View style={s.debitCardSaved}>
-              <View style={s.debitCardSavedTop}>
-                <View style={[s.stripeConnectIcon, { backgroundColor: "#34FF7A22" }]}>
-                  <Ionicons name="card" size={26} color="#34FF7A" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.stripeConnectTitle, { fontFamily: "Inter_700Bold", color: "#34FF7A" }]}>
-                    {debitCard.brand} •••• {debitCard.last4}
-                  </Text>
-                  <Text style={[s.stripeConnectSub, { fontFamily: "Inter_400Regular" }]}>
-                    {debitCard.name}  ·  Exp {debitCard.expiry}
-                  </Text>
-                </View>
-                <View style={{ paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7, backgroundColor: "#FFD70022" }}>
-                  <Text style={{ fontSize: 10, fontFamily: "Inter_700Bold", color: "#FFD700" }}>⚡ INSTANT</Text>
-                </View>
-              </View>
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                <TouchableOpacity
-                  style={[s.stripeConnectBtn, { flex: 1, backgroundColor: "transparent", borderWidth: 1, borderColor: "#34FF7A44" }]}
-                  onPress={() => { setCardName(debitCard.name); setCardExpiry(debitCard.expiry); setShowDebitCardForm(true); }}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons name="create-outline" size={15} color="#34FF7A" />
-                  <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_600SemiBold", color: "#34FF7A" }]}>Edit Card</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[s.stripeConnectBtn, { flex: 1, backgroundColor: "transparent", borderWidth: 1, borderColor: "#FF444433" }]}
-                  onPress={() => { setDebitCard(null); setCardName(""); setCardNumber(""); setCardExpiry(""); setCardCvv(""); }}
-                  activeOpacity={0.85}
-                >
-                  <Ionicons name="trash-outline" size={15} color="#FF4444" />
-                  <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_600SemiBold", color: "#FF4444" }]}>Remove</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <View style={s.debitCardForm}>
-              {/* Cardholder Name */}
-              <View style={s.cardFieldWrap}>
-                <Text style={[s.cardFieldLabel, { fontFamily: "Inter_500Medium" }]}>Cardholder Name</Text>
-                <TextInput
-                  style={[s.cardInput, { fontFamily: "Inter_400Regular" }, cardErrors.name ? s.cardInputError : {}]}
-                  placeholder="Full name on card"
-                  placeholderTextColor="#444"
-                  value={cardName}
-                  onChangeText={setCardName}
-                  autoCapitalize="words"
+          <View style={[s.stripeConnectCard, isStripeConnected ? s.stripeConnectCardOn : s.stripeConnectCardOff]}>
+            <View style={s.stripeConnectTop}>
+              <View style={[
+                s.stripeConnectIcon,
+                { backgroundColor: isStripeConnected ? "#34FF7A22" : "#1e1e1e" },
+              ]}>
+                <Ionicons
+                  name={isStripeConnected ? "checkmark-circle" : stripeStatus === "needs_info" ? "alert-circle-outline" : "card-outline"}
+                  size={28}
+                  color={isStripeConnected ? "#34FF7A" : stripeStatus === "needs_info" ? "#f59e0b" : "#888"}
                 />
-                {cardErrors.name ? <Text style={s.cardError}>{cardErrors.name}</Text> : null}
               </View>
-
-              {/* Card Number */}
-              <View style={s.cardFieldWrap}>
-                <Text style={[s.cardFieldLabel, { fontFamily: "Inter_500Medium" }]}>Card Number</Text>
-                <View style={[s.cardInputRow, cardErrors.number ? s.cardInputError : {}]}>
-                  <Ionicons name="card-outline" size={18} color="#555" style={{ marginLeft: 14 }} />
-                  <TextInput
-                    style={[s.cardInputFlex, { fontFamily: "Inter_400Regular" }]}
-                    placeholder="1234 5678 9012 3456"
-                    placeholderTextColor="#444"
-                    keyboardType="number-pad"
-                    value={cardNumber}
-                    onChangeText={(t) => setCardNumber(formatCardNumber(t))}
-                    maxLength={19}
-                  />
-                  {cardNumber.length > 0 && (
-                    <Text style={[s.cardBrandBadge, { fontFamily: "Inter_600SemiBold" }]}>
-                      {detectCardBrand(cardNumber)}
-                    </Text>
-                  )}
-                </View>
-                {cardErrors.number ? <Text style={s.cardError}>{cardErrors.number}</Text> : null}
-              </View>
-
-              {/* Expiry + CVV side by side */}
-              <View style={{ flexDirection: "row", gap: 12 }}>
-                <View style={[s.cardFieldWrap, { flex: 1 }]}>
-                  <Text style={[s.cardFieldLabel, { fontFamily: "Inter_500Medium" }]}>Expiry</Text>
-                  <TextInput
-                    style={[s.cardInput, { fontFamily: "Inter_400Regular" }, cardErrors.expiry ? s.cardInputError : {}]}
-                    placeholder="MM/YY"
-                    placeholderTextColor="#444"
-                    keyboardType="number-pad"
-                    value={cardExpiry}
-                    onChangeText={(t) => setCardExpiry(formatExpiry(t))}
-                    maxLength={5}
-                  />
-                  {cardErrors.expiry ? <Text style={s.cardError}>{cardErrors.expiry}</Text> : null}
-                </View>
-                <View style={[s.cardFieldWrap, { flex: 1 }]}>
-                  <Text style={[s.cardFieldLabel, { fontFamily: "Inter_500Medium" }]}>CVV</Text>
-                  <View style={[s.cardInputRow, cardErrors.cvv ? s.cardInputError : {}]}>
-                    <TextInput
-                      style={[s.cardInputFlex, { fontFamily: "Inter_400Regular" }]}
-                      placeholder="•••"
-                      placeholderTextColor="#444"
-                      keyboardType="number-pad"
-                      secureTextEntry={!cvvVisible}
-                      value={cardCvv}
-                      onChangeText={(t) => setCardCvv(t.replace(/\D/g, "").slice(0, 4))}
-                      maxLength={4}
-                    />
-                    <TouchableOpacity onPress={() => setCvvVisible((v) => !v)} style={{ paddingRight: 12 }}>
-                      <Ionicons name={cvvVisible ? "eye-off-outline" : "eye-outline"} size={16} color="#555" />
-                    </TouchableOpacity>
-                  </View>
-                  {cardErrors.cvv ? <Text style={s.cardError}>{cardErrors.cvv}</Text> : null}
-                </View>
-              </View>
-
-              {/* Save / Cancel */}
-              <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
-                <TouchableOpacity style={[s.stripeConnectBtn, { flex: 1 }]} onPress={saveDebitCard} activeOpacity={0.85}>
-                  <Ionicons name="checkmark-outline" size={17} color="#000" />
-                  <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_700Bold", color: "#000" }]}>Save Card</Text>
-                </TouchableOpacity>
-                {showDebitCardForm && (
-                  <TouchableOpacity
-                    style={[s.stripeConnectBtn, { flex: 1, backgroundColor: "transparent", borderWidth: 1, borderColor: "#333" }]}
-                    onPress={() => { setShowDebitCardForm(false); setCardErrors({}); }}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_600SemiBold", color: "#888" }]}>Cancel</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <View style={s.stripeLegal}>
-                <Ionicons name="lock-closed-outline" size={12} color="#555" />
-                <Text style={[s.stripeLegalText, { fontFamily: "Inter_400Regular" }]}>
-                  Your card details are encrypted. Only the last 4 digits are stored on this device.
+              <View style={{ flex: 1 }}>
+                <Text style={[s.stripeConnectTitle, {
+                  fontFamily: "Inter_700Bold",
+                  color: isStripeConnected ? "#34FF7A" : stripeStatus === "needs_info" ? "#f59e0b" : "#FFFFFF",
+                }]}>
+                  {isStripeConnected
+                    ? "Stripe Account Connected"
+                    : stripeStatus === "needs_info"
+                    ? "Onboarding Incomplete"
+                    : "Connect Stripe Account"}
+                </Text>
+                <Text style={[s.stripeConnectSub, { fontFamily: "Inter_400Regular" }]}>
+                  {isStripeConnected
+                    ? "Your payouts are fully activated. Withdraw directly to your bank or debit card."
+                    : stripeStatus === "needs_info"
+                    ? "Stripe needs more information to activate your payouts. Tap below to continue."
+                    : "Set up your Stripe account to receive direct payouts. You'll add your bank or debit card during onboarding."}
                 </Text>
               </View>
             </View>
-          )}
+
+            {/* How it works steps */}
+            {!isStripeConnected && (
+              <View style={s.howItWorks}>
+                {[
+                  { icon: "person-outline", text: "Verify your identity with Stripe (takes ~2 min)" },
+                  { icon: "card-outline", text: "Add your bank account or debit card" },
+                  { icon: "flash-outline", text: "Withdraw earnings instantly from your wallet" },
+                ].map((step, i) => (
+                  <View key={i} style={s.howItWorksRow}>
+                    <View style={s.howItWorksIcon}>
+                      <Ionicons name={step.icon as any} size={14} color="#34FF7A" />
+                    </View>
+                    <Text style={[s.howItWorksText, { fontFamily: "Inter_400Regular" }]}>{step.text}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Connect / Re-check button */}
+            <TouchableOpacity
+              style={[s.stripeConnectBtn, stripeConnecting && { opacity: 0.7 }]}
+              onPress={isStripeConnected ? () => checkStripeStatus(stripeAccountId!) : connectStripe}
+              disabled={stripeConnecting}
+              activeOpacity={0.85}
+            >
+              {stripeConnecting ? (
+                <ActivityIndicator color="#000" size="small" />
+              ) : (
+                <Ionicons
+                  name={isStripeConnected ? "refresh-outline" : "open-outline"}
+                  size={17}
+                  color="#000"
+                />
+              )}
+              <Text style={[s.stripeConnectBtnText, { fontFamily: "Inter_700Bold", color: "#000" }]}>
+                {stripeConnecting
+                  ? "Connecting..."
+                  : isStripeConnected
+                  ? "Refresh Status"
+                  : stripeStatus === "needs_info"
+                  ? "Continue Onboarding"
+                  : "Start Stripe Onboarding"}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={s.stripeLegal}>
+              <Ionicons name="lock-closed-outline" size={12} color="#555" />
+              <Text style={[s.stripeLegalText, { fontFamily: "Inter_400Regular" }]}>
+                Your banking details are entered directly on Stripe's secure platform. TheLawnServices never sees your account numbers.
+              </Text>
+            </View>
+          </View>
 
           <View style={{ height: 28 }} />
 
           {/* ── Manual payout details ── */}
-          <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold", marginTop: 28 }]}>Manual Payout Details</Text>
+          <Text style={[s.payoutSectionLabel, { fontFamily: "Inter_700Bold", marginTop: 8 }]}>
+            Manual Payout Details
+          </Text>
           <Text style={[s.payoutSectionSub, { fontFamily: "Inter_400Regular" }]}>
             For PayPal, Zelle, Venmo, or check payouts, save your info below. TheLawnServices processes these manually within 1–3 business days.
           </Text>
@@ -855,16 +759,17 @@ export default function WalletScreen() {
 
             {METHODS.map((m) => {
               const active = selectedMethod?.id === m.id;
-              // Instant debit card uses saved card, bank payout uses Stripe Connect
-              const isInstantCard = m.id === "stripe_instant";
-              const methodReady = isInstantCard ? !!debitCard : m.isStripe ? isStripeConnected : true;
-              const isBlocked   = m.isStripe && !methodReady;
+              const methodReady = m.id === "stripe_instant" ? isStripeConnected : true;
+              const isBlocked = m.id === "stripe_instant" && !isStripeConnected;
 
-              const tagLabel = isInstantCard
-                ? debitCard ? `✓ ${debitCard.brand} ••${debitCard.last4}` : "Setup Required"
-                : m.isStripe
-                ? isStripeConnected ? "✓ Connected" : "Setup Required"
-                : null;
+              const tagLabel =
+                m.id === "stripe_instant"
+                  ? isStripeConnected
+                    ? "✓ Connected"
+                    : stripeStatus === "needs_info"
+                    ? "Setup Incomplete"
+                    : "Setup Required"
+                  : null;
               const tagColor = methodReady ? "#34FF7A22" : "#ffffff0a";
               const tagTextColor = methodReady ? "#34FF7A" : "#555";
 
@@ -879,10 +784,8 @@ export default function WalletScreen() {
                   onPress={() => {
                     if (isBlocked) {
                       Alert.alert(
-                        isInstantCard ? "Add Debit Card" : "Connect Stripe First",
-                        isInstantCard
-                          ? "Go to Payout Settings to add your debit card for instant payouts."
-                          : "Go to Payout Settings to connect your Stripe account for direct bank payouts.",
+                        "Stripe Setup Required",
+                        "Complete Stripe onboarding in Payout Settings to enable instant payouts.",
                         [
                           { text: "Open Settings", onPress: () => setScreen("payout_settings") },
                           { text: "Cancel", style: "cancel" },
@@ -929,6 +832,11 @@ export default function WalletScreen() {
                           <Text style={[s.manualChipText, { fontFamily: "Inter_400Regular" }]}>{m.speed}</Text>
                         </View>
                       )}
+                      {m.feeRate > 0 && (
+                        <View style={s.manualChip}>
+                          <Text style={[s.manualChipText, { fontFamily: "Inter_400Regular" }]}>{m.fee}</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                   {active && !isBlocked && <Ionicons name="checkmark-circle" size={22} color="#34FF7A" />}
@@ -938,7 +846,6 @@ export default function WalletScreen() {
             })}
           </View>
 
-          {/* Manual payout note */}
           {selectedMethod && !selectedMethod.isStripe && (
             <View style={s.manualNote}>
               <Ionicons name="information-circle-outline" size={16} color="#f59e0b" />
@@ -950,19 +857,13 @@ export default function WalletScreen() {
 
           <TouchableOpacity style={s.proceedBtn} onPress={proceedFromWithdraw} activeOpacity={0.85}>
             <Ionicons
-              name={
-                selectedMethod?.id === "stripe_instant" ? "flash-outline"
-                : selectedMethod?.isStripe ? "card-outline"
-                : "send-outline"
-              }
+              name={selectedMethod?.id === "stripe_instant" ? "flash-outline" : "send-outline"}
               size={18}
               color="#000"
             />
             <Text style={[s.proceedBtnText, { fontFamily: "Inter_700Bold" }]}>
               {selectedMethod?.id === "stripe_instant"
                 ? "⚡ Withdraw Instantly"
-                : selectedMethod?.isStripe
-                ? "Withdraw via Stripe"
                 : "Submit Withdrawal Request"}
             </Text>
           </TouchableOpacity>
@@ -975,7 +876,10 @@ export default function WalletScreen() {
 
       {/* ── SUCCESS ──────────────────────────────────────────────── */}
       {screen === "success" && (
-        <ScrollView contentContainerStyle={[s.successRoot, { paddingBottom: bottomPad + 48 }]} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={[s.successRoot, { paddingBottom: bottomPad + 48 }]}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={s.successIconWrap}>
             <Ionicons name="checkmark-circle" size={72} color="#34FF7A" />
           </View>
@@ -1017,10 +921,14 @@ export default function WalletScreen() {
           </View>
 
           <View style={s.successNote}>
-            <Ionicons name={selectedMethod?.isStripe ? "card-outline" : "time-outline"} size={18} color="#34FF7A" />
+            <Ionicons
+              name={selectedMethod?.isStripe ? "card-outline" : "time-outline"}
+              size={18}
+              color="#34FF7A"
+            />
             <Text style={[s.successNoteText, { fontFamily: "Inter_400Regular" }]}>
               {selectedMethod?.isStripe
-                ? "Your funds have been transferred by Stripe. They will appear in your bank account within 1–2 business days."
+                ? "Your funds have been transferred via Stripe and are on their way to your bank or debit card."
                 : `Your manual payout request has been submitted. TheLawnServices will send funds to your ${selectedMethod?.label} account within 1–3 business days.`}
             </Text>
           </View>
@@ -1101,7 +1009,6 @@ const s = StyleSheet.create({
   pendingChip: { backgroundColor: "#f59e0b22", paddingHorizontal: 7, paddingVertical: 2, borderRadius: 6 },
   pendingChipText: { fontSize: 11, color: "#f59e0b" },
 
-  // Payout settings
   payoutSectionLabel: { fontSize: 16, color: "#FFFFFF", marginBottom: 4 },
   payoutSectionSub: { fontSize: 13, color: "#888", lineHeight: 19, marginBottom: 16 },
 
@@ -1134,33 +1041,6 @@ const s = StyleSheet.create({
   stripeLegal: { flexDirection: "row", alignItems: "flex-start", gap: 6 },
   stripeLegalText: { flex: 1, fontSize: 11, color: "#555", lineHeight: 16 },
 
-  // Debit card form
-  debitCardSaved: {
-    backgroundColor: "#0d2e18", borderRadius: 20, borderWidth: 1,
-    borderColor: "#34FF7A33", padding: 20, gap: 14, marginBottom: 4,
-  },
-  debitCardSavedTop: { flexDirection: "row", alignItems: "center", gap: 14 },
-  debitCardForm: {
-    backgroundColor: "#141414", borderRadius: 20, borderWidth: 1,
-    borderColor: "#222", padding: 20, gap: 14, marginBottom: 4,
-  },
-  cardFieldWrap: { gap: 6 },
-  cardFieldLabel: { fontSize: 13, color: "#888" },
-  cardInput: {
-    backgroundColor: "#1A1A1A", borderWidth: 1.5, borderColor: "#2A2A2A",
-    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12,
-    fontSize: 15, color: "#FFFFFF",
-  },
-  cardInputRow: {
-    flexDirection: "row", alignItems: "center",
-    backgroundColor: "#1A1A1A", borderWidth: 1.5, borderColor: "#2A2A2A",
-    borderRadius: 10,
-  },
-  cardInputFlex: { flex: 1, paddingHorizontal: 10, paddingVertical: 12, fontSize: 15, color: "#FFFFFF" },
-  cardInputError: { borderColor: "#FF4444" },
-  cardBrandBadge: { fontSize: 11, color: "#888", paddingRight: 12 },
-  cardError: { fontSize: 11, color: "#FF4444", marginTop: 2 },
-
   manualGroup: { backgroundColor: "#141414", borderRadius: 14, borderWidth: 1, borderColor: "#222", padding: 16, marginBottom: 12 },
   manualFieldLabel: { fontSize: 13, color: "#888", marginBottom: 8 },
   manualInput: {
@@ -1174,7 +1054,6 @@ const s = StyleSheet.create({
   },
   saveManualBtnText: { fontSize: 16, color: "#000" },
 
-  // Withdraw
   section: { paddingHorizontal: 16, marginBottom: 16 },
   availBal: { fontSize: 32, color: "#34FF7A", marginTop: 4 },
   fieldLabel: { fontSize: 13, color: "#CCCCCC", marginBottom: 10 },
@@ -1226,7 +1105,6 @@ const s = StyleSheet.create({
   proceedBtnText: { fontSize: 16, color: "#000" },
   securityNote: { fontSize: 12, color: "#555", textAlign: "center", marginHorizontal: 24, lineHeight: 18 },
 
-  // Success
   successRoot: { paddingHorizontal: 20, alignItems: "center", paddingTop: 20 },
   successIconWrap: {
     width: 100, height: 100, borderRadius: 50,

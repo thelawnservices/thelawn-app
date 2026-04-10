@@ -129,9 +129,35 @@ router.get("/session/:sessionId", async (req, res) => {
 });
 
 // ── GET /api/payments/success ───────────────────────────────────────────────
-// Simple success redirect page (shown in browser after payment).
+// Shown in browser after payment. Also credits the landscaper's DB wallet.
 router.get("/success", async (req, res) => {
   const { session_id } = req.query;
+
+  // Credit landscaper earnings — idempotent (ON CONFLICT DO NOTHING)
+  if (session_id && typeof session_id === "string") {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      if (session.payment_status === "paid") {
+        const proName = session.metadata?.proName ?? "";
+        const payout = parseFloat(session.metadata?.landscaperPayout ?? "0");
+        const serviceName = session.metadata?.serviceName ?? "";
+        const serviceDate = session.metadata?.serviceDate ?? "";
+        if (proName && payout > 0) {
+          const { pool } = await import("../db");
+          await pool.query(
+            `INSERT INTO lawn_earnings (landscaper_name, session_id, amount, service_name, service_date)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (session_id) DO NOTHING`,
+            [proName, session_id, payout, serviceName, serviceDate]
+          );
+        }
+      }
+    } catch (err: any) {
+      console.error("Failed to credit landscaper earnings:", err.message);
+    }
+  }
+
   res.send(`
     <!DOCTYPE html>
     <html>

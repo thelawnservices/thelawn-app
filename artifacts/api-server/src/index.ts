@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { initLawnTables } from "./db";
 
 const rawPort = process.env["PORT"];
 
@@ -47,6 +48,11 @@ async function initStripe() {
 }
 
 initStripe();
+
+// Initialize custom lawn tables (non-fatal)
+initLawnTables().catch((err) =>
+  logger.warn({ err: err.message }, "Lawn table init skipped")
+);
 
 app.listen(port, (err) => {
   if (err) {

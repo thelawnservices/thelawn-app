@@ -5,6 +5,7 @@ import disputesRouter from "./disputes";
 import payoutsRouter from "./payouts";
 import feedbackRouter from "./feedback";
 import moderateImageRouter from "./moderateImage";
+import walletRouter from "./wallet";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use("/disputes", disputesRouter);
 router.use("/payouts", payoutsRouter);
 router.use("/feedback", feedbackRouter);
 router.use("/moderate-image", moderateImageRouter);
+router.use("/wallet", walletRouter);
 
 export default router;
