@@ -132,12 +132,12 @@ export default function LoginScreen() {
   const [showPasskey, setShowPasskey] = useState(false);
   const [pendingUser, setPendingUser] = useState<LawnUser | null>(null);
 
-  function go(user: LawnUser) {
+  async function go(user: LawnUser) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (user.role === "landscaper" && pendingIsRegistration) {
       setNeedsServiceSetup(true);
     }
-    login(user);
+    await login(user);
     router.replace("/(tabs)");
   }
 

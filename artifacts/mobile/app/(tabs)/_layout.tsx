@@ -9,9 +9,11 @@ export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const bottomInset = isWeb ? 0 : insets.bottom;
-  const { role } = useAuth();
+  const { role, isLoading } = useAuth();
   const { balance } = useWallet();
 
+  // Wait for persisted session check before deciding where to navigate
+  if (isLoading) return null;
   if (!role) return <Redirect href="/login" />;
 
   return (

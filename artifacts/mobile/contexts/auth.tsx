@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppState, AppStateStatus } from "react-native";
 
 type Role = "customer" | "landscaper";
 
@@ -18,6 +20,14 @@ export interface LawnUser {
   yearsExperience: string;
 }
 
+interface StoredSession {
+  user: LawnUser;
+  lastActivity: number;
+}
+
+const SESSION_KEY = "lawn_session_v1";
+const INACTIVITY_MS = 72 * 60 * 60 * 1000; // 72 hours
+
 interface AuthContextType {
   role: Role | null;
   user: LawnUser | null;
@@ -26,8 +36,9 @@ interface AuthContextType {
   preferredPayment: string | null;
   needsServiceSetup: boolean;
   isBanned: boolean;
-  login: (user: LawnUser) => void;
-  logout: () => void;
+  isLoading: boolean;
+  login: (user: LawnUser) => Promise<void>;
+  logout: () => Promise<void>;
   banUser: () => void;
   setAvatarUri: (uri: string | null) => void;
   setPreferredPayment: (v: string | null) => void;
@@ -42,8 +53,9 @@ const AuthContext = createContext<AuthContextType>({
   preferredPayment: null,
   needsServiceSetup: false,
   isBanned: false,
-  login: () => {},
-  logout: () => {},
+  isLoading: true,
+  login: async () => {},
+  logout: async () => {},
   banUser: () => {},
   setAvatarUri: () => {},
   setPreferredPayment: () => {},
@@ -56,32 +68,95 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [preferredPayment, setPreferredPayment] = useState<string | null>(null);
   const [needsServiceSetup, setNeedsServiceSetup] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const role = user?.role ?? null;
-  const userName = user?.displayName ?? "";
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
-  const login = (u: LawnUser) => setUser(u);
+  // ── Restore session on mount ─────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(SESSION_KEY);
+        if (raw) {
+          const session = JSON.parse(raw) as StoredSession;
+          const elapsed = Date.now() - session.lastActivity;
+          if (elapsed < INACTIVITY_MS) {
+            setUser(session.user);
+            // Refresh timestamp now that they opened the app
+            await AsyncStorage.setItem(
+              SESSION_KEY,
+              JSON.stringify({ user: session.user, lastActivity: Date.now() })
+            );
+          } else {
+            // Session expired — wipe it
+            await AsyncStorage.removeItem(SESSION_KEY);
+          }
+        }
+      } catch {}
+      setIsLoading(false);
+    })();
+  }, []);
 
-  const logout = () => {
+  // ── Check expiry when app returns to foreground ──────────────────
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", async (next: AppStateStatus) => {
+      const prev = appStateRef.current;
+      appStateRef.current = next;
+
+      if (prev.match(/inactive|background/) && next === "active") {
+        try {
+          const raw = await AsyncStorage.getItem(SESSION_KEY);
+          if (raw) {
+            const { lastActivity } = JSON.parse(raw) as StoredSession;
+            if (Date.now() - lastActivity >= INACTIVITY_MS) {
+              await AsyncStorage.removeItem(SESSION_KEY);
+              clearState();
+            }
+          }
+        } catch {}
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  function clearState() {
     setUser(null);
     setAvatarUri(null);
     setPreferredPayment(null);
     setNeedsServiceSetup(false);
     setIsBanned(false);
+  }
+
+  const role = user?.role ?? null;
+  const userName = user?.displayName ?? "";
+
+  const login = async (u: LawnUser) => {
+    setUser(u);
+    try {
+      await AsyncStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ user: u, lastActivity: Date.now() })
+      );
+    } catch {}
+  };
+
+  const logout = async () => {
+    clearState();
+    try {
+      await AsyncStorage.removeItem(SESSION_KEY);
+    } catch {}
   };
 
   const banUser = () => {
     setIsBanned(true);
-    setUser(null);
-    setAvatarUri(null);
-    setPreferredPayment(null);
-    setNeedsServiceSetup(false);
+    clearState();
+    AsyncStorage.removeItem(SESSION_KEY).catch(() => {});
   };
 
   return (
     <AuthContext.Provider value={{
       role, user, userName, avatarUri, preferredPayment,
-      needsServiceSetup, isBanned,
+      needsServiceSetup, isBanned, isLoading,
       login, logout, banUser,
       setAvatarUri, setPreferredPayment, setNeedsServiceSetup,
     }}>
