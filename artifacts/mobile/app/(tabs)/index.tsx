@@ -444,7 +444,6 @@ function ProfileDropdownModal({
   onSettings,
   onShare,
   onPaymentHistory,
-  onVouchers,
   onHelp,
   onFeedback,
   isLandscaper,
@@ -457,7 +456,6 @@ function ProfileDropdownModal({
   onSettings: () => void;
   onShare: () => void;
   onPaymentHistory: () => void;
-  onVouchers: () => void;
   onHelp: () => void;
   onFeedback: () => void;
   isLandscaper: boolean;
@@ -493,10 +491,6 @@ function ProfileDropdownModal({
           <TouchableOpacity style={dropStyles.item} onPress={onPaymentHistory} activeOpacity={0.7}>
             <Ionicons name="receipt-outline" size={20} color="#34FF7A" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Payment History</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={dropStyles.item} onPress={onVouchers} activeOpacity={0.7}>
-            <Ionicons name="pricetag-outline" size={20} color="#CCCCCC" />
-            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Vouchers</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onHelp} activeOpacity={0.7}>
             <Ionicons name="help-circle-outline" size={20} color="#CCCCCC" />
@@ -832,30 +826,6 @@ const pmStyles = StyleSheet.create({
   optionText: { fontSize: 15, color: "#FFFFFF" },
 });
 
-function VouchersModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={settStyles.overlay} onPress={onClose}>
-        <Pressable style={settStyles.sheet} onPress={(e) => e.stopPropagation()}>
-          <View style={settStyles.header}>
-            <Text style={[settStyles.title, { fontFamily: "Inter_700Bold" }]}>Vouchers</Text>
-            <TouchableOpacity onPress={onClose} style={settStyles.closeBtn} activeOpacity={0.7}>
-              <Ionicons name="close" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-          <View style={{ alignItems: "center", paddingVertical: 40, gap: 12 }}>
-            <Text style={[{ fontSize: 28, color: "#FFFFFF", fontFamily: "Inter_700Bold", letterSpacing: 1 }]}>
-              NONE AVAILABLE
-            </Text>
-            <Text style={[{ fontSize: 11, color: "rgba(255,255,255,0.45)", textAlign: "center", lineHeight: 18, fontFamily: "Inter_400Regular" }]}>
-              TERMS AND CONDITIONS APPLY{"\n"}VOUCHER MUST BE BOOKED BEFORE THE EXPIRING DATE
-            </Text>
-          </View>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
 
 const HELP_ITEMS = [
   "How to book a service",
@@ -1877,7 +1847,6 @@ export default function HomeScreen() {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [paymentVisible, setPaymentVisible] = useState(false);
-  const [vouchersVisible, setVouchersVisible] = useState(false);
   const [helpVisible, setHelpVisible] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [servicesEditVisible, setServicesEditVisible] = useState(false);
@@ -2003,7 +1972,7 @@ export default function HomeScreen() {
           }).catch(() => {});
         }}
         onPaymentHistory={() => { setDropdownVisible(false); setPaymentHistoryVisible(true); }}
-        onVouchers={() => { setDropdownVisible(false); setVouchersVisible(true); }}
+
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
         onFeedback={() => { setDropdownVisible(false); setFeedbackVisible(true); }}
         isLandscaper={role === "landscaper"}
@@ -2111,10 +2080,6 @@ export default function HomeScreen() {
       <PaymentMethodModal
         visible={paymentVisible}
         onClose={() => setPaymentVisible(false)}
-      />
-      <VouchersModal
-        visible={vouchersVisible}
-        onClose={() => setVouchersVisible(false)}
       />
       <HelpSupportModal
         visible={helpVisible}
