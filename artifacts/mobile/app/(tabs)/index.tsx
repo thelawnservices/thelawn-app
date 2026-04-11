@@ -401,7 +401,7 @@ function AppHeader({
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }} />
         <Image
-          source={require("../../assets/images/logo-transparent.png")}
+          source={require("../../assets/images/splash-logo.jpeg")}
           style={styles.logoImg}
           resizeMode="contain"
         />
@@ -2288,7 +2288,7 @@ export default function HomeScreen() {
                 name: "Mowing & Edging",
                 desc: "Crisp, clean cuts that keep your lawn looking its best all season.",
                 est: "1–2 hrs", hot: true,
-                photo: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80",
+                photo: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=400&q=80",
               },
               {
                 name: "Weeding & Mulching",
@@ -2300,19 +2300,19 @@ export default function HomeScreen() {
                 name: "Sod Installation",
                 desc: "Transform bare or damaged areas into a lush, vibrant lawn fast.",
                 est: "4–8 hrs", hot: false,
-                photo: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&q=80",
+                photo: "https://images.unsplash.com/photo-1558904541-efa843a96f01?w=400&q=80",
               },
               {
                 name: "Tree Removal",
                 desc: "Safe, professional removal of hazardous or unwanted trees.",
                 est: "4–8 hrs", hot: false,
-                photo: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=80",
+                photo: "https://images.unsplash.com/photo-1597200381847-30ec200eeb9a?w=400&q=80",
               },
               {
                 name: "Full Service",
                 desc: "Complete lawn care package — mowing, edging, trimming, and cleanup.",
                 est: "3–5 hrs", hot: false,
-                photo: "https://images.unsplash.com/photo-1590579491624-f98f36d4c763?w=400&q=80",
+                photo: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=400&q=80",
               },
             ] as { name: string; desc: string; est: string; hot: boolean; photo: string }[]).map((svc, idx) => (
               <TouchableOpacity
@@ -3275,12 +3275,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   logoImg: {
-    height: 82,
-    width: 300,
+    height: 52,
+    width: 140,
+    borderRadius: 10,
     shadowColor: "#34FF7A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
   },
   notifBtn: {
     width: 36,
