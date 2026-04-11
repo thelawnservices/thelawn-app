@@ -42,7 +42,7 @@ export default function ProfileScreen() {
   const topPadding = isWeb ? 67 : insets.top;
   const { role, logout } = useAuth();
   const router = useRouter();
-  const [isLandscaper, setIsLandscaper] = useState(role === "landscaper");
+  const isLandscaper = role === "landscaper";
   const [helpVisible, setHelpVisible] = useState(false);
   const [custMenuVisible, setCustMenuVisible] = useState(false);
   const [custSettingsVisible, setCustSettingsVisible] = useState(false);
@@ -54,16 +54,10 @@ export default function ProfileScreen() {
   const [custPrivReviews, setCustPrivReviews] = useState(true);
   const [custEditVisible, setCustEditVisible] = useState(false);
 
-  const toggle = () => {
-    Haptics.selectionAsync();
-    setIsLandscaper((v) => !v);
-  };
-
   if (isLandscaper) {
     return (
       <LandscaperProfile
         topPadding={topPadding}
-        toggle={toggle}
         logout={logout}
         helpVisible={helpVisible}
         setHelpVisible={setHelpVisible}
@@ -76,10 +70,6 @@ export default function ProfileScreen() {
       <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
         <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Profile</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <TouchableOpacity style={styles.togglePill} onPress={toggle} activeOpacity={0.8}>
-            <Text style={[styles.togglePillText, { fontFamily: "Inter_500Medium" }]}>Customer View</Text>
-            <Ionicons name="sync-outline" size={14} color="#34FF7A" />
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.menuDotBtn}
             onPress={() => { Haptics.selectionAsync(); setCustMenuVisible(true); }}
@@ -211,13 +201,11 @@ type ReviewItem = {
 
 function LandscaperProfile({
   topPadding,
-  toggle,
   logout,
   helpVisible,
   setHelpVisible,
 }: {
   topPadding: number;
-  toggle: () => void;
   logout: () => void;
   helpVisible: boolean;
   setHelpVisible: (v: boolean) => void;
@@ -448,12 +436,8 @@ function LandscaperProfile({
         ) : null}
         <View style={cutStyles.heroOverlay} />
 
-        {/* Toggle pill + menu button — top right, below status bar */}
-        <View style={[{ position: "absolute", top: topPadding + 14, right: 14, flexDirection: "row", alignItems: "center", gap: 8, zIndex: 10 }]}>
-          <TouchableOpacity style={cutStyles.togglePillInner} onPress={toggle} activeOpacity={0.8}>
-            <Text style={[cutStyles.toggleText, { fontFamily: "Inter_500Medium" }]}>Landscaper View</Text>
-            <Ionicons name="sync-outline" size={13} color="#34FF7A" />
-          </TouchableOpacity>
+        {/* Menu button — top right */}
+        <View style={[{ position: "absolute", top: topPadding + 14, right: 14, zIndex: 10 }]}>
           <TouchableOpacity
             style={cutStyles.menuDotBtnHero}
             onPress={() => { Haptics.selectionAsync(); setLsMenuVisible(true); }}
@@ -704,18 +688,9 @@ function LandscaperProfile({
           </View>
         </TouchableOpacity>
 
-        {/* Business name + badges + location — all centered */}
+        {/* Business name + location — all centered */}
         <Text style={[cutStyles.heroName, { fontFamily: "Inter_700Bold" }]}>{profileName}</Text>
-        <View style={cutStyles.heroBadgeRow}>
-          <View style={cutStyles.ratingPill}>
-            <Text style={[cutStyles.ratingPillText, { fontFamily: "Inter_600SemiBold" }]}>★ 4.9</Text>
-          </View>
-          <View style={cutStyles.proBadge}>
-            <Text style={[cutStyles.proBadgeText, { fontFamily: "Inter_700Bold" }]}>PRO</Text>
-          </View>
-          <Text style={[cutStyles.jobsText, { fontFamily: "Inter_400Regular" }]}>142 jobs</Text>
-        </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 }}>
           <Ionicons name="location-outline" size={13} color="#CCCCCC" />
           <Text style={[cutStyles.heroLocation, { fontFamily: "Inter_400Regular" }]}>
             {profileCity}, {profileState} {profileZip}
@@ -870,14 +845,22 @@ function LandscaperProfile({
         {/* ── REVIEWS TAB ── */}
         {activeTab === "reviews" && (
           <>
-            {/* Rating overview */}
-            <View style={cutStyles.ratingHeader}>
-              <Text style={[cutStyles.ratingBig, { fontFamily: "Inter_700Bold" }]}>4.9</Text>
-              <View>
-                <Text style={cutStyles.starsRow}>★★★★★</Text>
-                <Text style={[cutStyles.ratingSubtext, { fontFamily: "Inter_400Regular" }]}>{reviews.length} reviews</Text>
+            {/* Rating overview — only show when there are real reviews */}
+            {reviews.length > 0 && (
+              <View style={cutStyles.ratingHeader}>
+                <Text style={[cutStyles.ratingBig, { fontFamily: "Inter_700Bold" }]}>
+                  {(reviews.reduce((sum, r) => sum + r.stars, 0) / reviews.length).toFixed(1)}
+                </Text>
+                <View>
+                  <Text style={cutStyles.starsRow}>
+                    {Array.from({ length: 5 }).map((_, i) =>
+                      i < Math.round(reviews.reduce((s, r) => s + r.stars, 0) / reviews.length) ? "★" : "☆"
+                    ).join("")}
+                  </Text>
+                  <Text style={[cutStyles.ratingSubtext, { fontFamily: "Inter_400Regular" }]}>{reviews.length} {reviews.length === 1 ? "review" : "reviews"}</Text>
+                </View>
               </View>
-            </View>
+            )}
 
             {/* Reviews list */}
             {reviews.map((r, i) => (
