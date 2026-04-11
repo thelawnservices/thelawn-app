@@ -751,10 +751,11 @@ function LandscaperProfile({
               <TouchableOpacity
                 style={[cutStyles.actionChip, cutStyles.actionChipShare]}
                 onPress={() => {
+                  const profileUrl = `https://thelawn.app/landscaper/${user?.username ?? ""}`;
                   Share.share({
-                    title: `${profileName} on TheLawn`,
-                    message: `Check out ${profileName} on TheLawn — top-rated landscaping near you! https://thelawn.app`,
-                    url: "https://thelawn.app",
+                    title: `Book ${profileName} on TheLawn`,
+                    message: `Check out ${profileName} on TheLawn — book me directly for landscaping services near you!\n\n👉 ${profileUrl}\n\nDownload the app: https://thelawn.app`,
+                    url: profileUrl,
                   }).catch(() => {});
                 }}
                 activeOpacity={0.75}

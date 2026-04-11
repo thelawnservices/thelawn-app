@@ -1965,10 +1965,12 @@ export default function HomeScreen() {
         onSettings={() => { setDropdownVisible(false); setSettingsVisible(true); }}
         onShare={() => {
           setDropdownVisible(false);
+          const profileUrl = `https://thelawn.app/landscaper/${user?.username ?? ""}`;
+          const displayName = userName || user?.businessName || "a top-rated landscaper";
           Share.share({
-            title: "TheLawn — Book Landscaping Services",
-            message: "Book trusted local landscapers on TheLawn! Check it out: https://thelawn.app",
-            url: "https://thelawn.app",
+            title: `Book ${displayName} on TheLawn`,
+            message: `I use TheLawn for my landscaping — check out my profile and book me directly!\n\n👉 ${profileUrl}\n\nDownload the app: https://thelawn.app`,
+            url: profileUrl,
           }).catch(() => {});
         }}
         onPaymentHistory={() => { setDropdownVisible(false); setPaymentHistoryVisible(true); }}
