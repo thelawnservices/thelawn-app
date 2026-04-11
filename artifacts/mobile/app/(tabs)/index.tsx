@@ -443,7 +443,6 @@ function ProfileDropdownModal({
   onViewProfile,
   onServices,
   onSettings,
-  onShare,
   onPaymentHistory,
   onHelp,
   onFeedback,
@@ -456,7 +455,6 @@ function ProfileDropdownModal({
   onViewProfile: () => void;
   onServices: () => void;
   onSettings: () => void;
-  onShare: () => void;
   onPaymentHistory: () => void;
   onHelp: () => void;
   onFeedback: () => void;
@@ -486,10 +484,6 @@ function ProfileDropdownModal({
           <TouchableOpacity style={dropStyles.item} onPress={onSettings} activeOpacity={0.7}>
             <Ionicons name="settings-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Settings</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={dropStyles.item} onPress={onShare} activeOpacity={0.7}>
-            <Ionicons name="share-social-outline" size={20} color="#CCCCCC" />
-            <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Share with friends</Text>
           </TouchableOpacity>
           <TouchableOpacity style={dropStyles.item} onPress={onPaymentHistory} activeOpacity={0.7}>
             <Ionicons name="receipt-outline" size={20} color="#34FF7A" />
@@ -1974,16 +1968,6 @@ export default function HomeScreen() {
         onViewProfile={() => { setDropdownVisible(false); router.navigate("/(tabs)/profile"); }}
         onServices={() => { setDropdownVisible(false); setServicesEditVisible(true); }}
         onSettings={() => { setDropdownVisible(false); setSettingsVisible(true); }}
-        onShare={() => {
-          setDropdownVisible(false);
-          const profileUrl = `https://thelawn.app/landscaper/${user?.username ?? ""}`;
-          const displayName = userName || user?.businessName || "a top-rated landscaper";
-          Share.share({
-            title: `Book ${displayName} on TheLawn`,
-            message: `I use TheLawn for my landscaping — check out my profile and book me directly!\n\n👉 ${profileUrl}\n\nDownload the app: https://thelawn.app`,
-            url: profileUrl,
-          }).catch(() => {});
-        }}
         onPaymentHistory={() => { setDropdownVisible(false); setPaymentHistoryVisible(true); }}
         onBlocked={() => { setDropdownVisible(false); setBlockedModalVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
@@ -2867,6 +2851,24 @@ function LandscaperProfileViewModal({
               <Text style={[fsStyles.bookBtnText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
             </TouchableOpacity>
 
+            {/* Share Profile */}
+            <TouchableOpacity
+              style={fsStyles.shareProBtn}
+              activeOpacity={0.85}
+              onPress={() => {
+                Haptics.selectionAsync();
+                const profileUrl = `https://thelawn.app/landscaper/${pro.username ?? pro.name.toLowerCase().replace(/\s+/g, "-")}`;
+                Share.share({
+                  title: `Book ${pro.name} on TheLawn`,
+                  message: `Check out ${pro.name} on TheLawn — ★ ${pro.rating} rated landscaper with ${pro.jobs} jobs!\n\n👉 ${profileUrl}\n\nDownload the app: https://thelawn.app`,
+                  url: profileUrl,
+                }).catch(() => {});
+              }}
+            >
+              <Ionicons name="share-social-outline" size={20} color="#34FF7A" />
+              <Text style={[fsStyles.shareProBtnText, { fontFamily: "Inter_600SemiBold" }]}>Share Profile</Text>
+            </TouchableOpacity>
+
             {/* Block */}
             <TouchableOpacity
               style={fsStyles.blockBtn}
@@ -3137,6 +3139,19 @@ const fsStyles = StyleSheet.create({
     elevation: 8,
   },
   bookBtnText: { fontSize: 17, color: "#000000" },
+  shareProBtn: {
+    borderWidth: 1,
+    borderColor: "#34FF7A44",
+    backgroundColor: "#0D2016",
+    borderRadius: 28,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 10,
+  },
+  shareProBtnText: { fontSize: 15, color: "#34FF7A" },
   blockBtn: {
     borderWidth: 1,
     borderColor: "#FF6B6B44",
