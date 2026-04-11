@@ -20,8 +20,6 @@ import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth, LawnUser } from "@/contexts/auth";
 import TermsModal from "@/components/TermsModal";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as LocalAuthentication from "expo-local-authentication";
 import * as AppleAuthentication from "expo-apple-authentication";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
@@ -60,8 +58,6 @@ function PasswordStrengthMeter({ value }: { value: string }) {
     </View>
   );
 }
-
-const PASSKEY_STORAGE_KEY = (role: string) => `lawn_passkey_user_${role}`;
 
 const { height: SCREEN_H } = Dimensions.get("window");
 const LOGO_H = Math.min(280, Math.max(200, SCREEN_H * 0.38));
@@ -137,9 +133,6 @@ export default function LoginScreen() {
   const topPad = isWeb ? 60 : insets.top + 20;
   const botPad = isWeb ? 40 : insets.bottom + 20;
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
-  const [showPasskey, setShowPasskey] = useState(false);
-  const [pendingUser, setPendingUser] = useState<LawnUser | null>(null);
-
   async function go(user: LawnUser) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (user.role === "landscaper" && pendingIsRegistration) {
@@ -147,59 +140,6 @@ export default function LoginScreen() {
     }
     await login(user);
     router.replace("/(tabs)");
-  }
-
-  async function finishPasskey() {
-    if (!pendingUser) return;
-    setShowPasskey(false);
-    try {
-      if (!isWeb) {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        if (hasHardware && enrolled) {
-          const result = await LocalAuthentication.authenticateAsync({
-            promptMessage: "Set up passkey for TheLawn",
-            fallbackLabel: "Use password instead",
-          });
-          if (!result.success) { go(pendingUser); return; }
-        }
-      }
-      await AsyncStorage.setItem(PASSKEY_STORAGE_KEY(pendingUser.role), JSON.stringify(pendingUser));
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (_) {}
-    go(pendingUser);
-  }
-
-  function skipPasskey() {
-    setShowPasskey(false);
-    if (pendingUser) go(pendingUser);
-  }
-
-  async function handlePasskeyLogin(role: "customer" | "landscaper") {
-    Haptics.selectionAsync();
-    setErrors(null);
-    try {
-      const stored = await AsyncStorage.getItem(PASSKEY_STORAGE_KEY(role));
-      if (!stored) {
-        setErrors("No passkey saved on this device. Sign in with your username and password first.");
-        return;
-      }
-      if (!isWeb) {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        if (hasHardware && enrolled) {
-          const result = await LocalAuthentication.authenticateAsync({
-            promptMessage: "Sign in to TheLawn",
-            fallbackLabel: "Use password instead",
-          });
-          if (!result.success) return;
-        }
-      }
-      const user = JSON.parse(stored) as LawnUser;
-      go(user);
-    } catch {
-      setErrors("Passkey sign-in failed. Please use your username and password.");
-    }
   }
 
   async function handleAppleSignIn(role: "customer" | "landscaper" = "customer") {
@@ -256,15 +196,7 @@ export default function LoginScreen() {
       const data = await res.json();
       if (!res.ok) { setErrors(data.error ?? "Login failed"); return; }
       const user = data.user as LawnUser;
-      // Offer passkey setup if not already saved on this device
-      const existing = await AsyncStorage.getItem(PASSKEY_STORAGE_KEY("customer")).catch(() => null);
-      if (!existing) {
-        setPendingUser(user);
-        setPendingIsRegistration(false);
-        setShowPasskey(true);
-      } else {
-        go(user);
-      }
+      go(user);
     } catch {
       setErrors("Could not connect to server. Please try again.");
     } finally {
@@ -289,14 +221,7 @@ export default function LoginScreen() {
       if (!res.ok) { setErrors(data.error ?? "Login failed"); return; }
       const user = data.user as LawnUser;
       setPendingIsRegistration(false);
-      // Offer passkey setup if not already saved on this device
-      const existing = await AsyncStorage.getItem(PASSKEY_STORAGE_KEY("landscaper")).catch(() => null);
-      if (!existing) {
-        setPendingUser(user);
-        setShowPasskey(true);
-      } else {
-        go(user);
-      }
+      go(user);
     } catch {
       setErrors("Could not connect to server. Please try again.");
     } finally {
@@ -338,8 +263,7 @@ export default function LoginScreen() {
       const data = await res.json();
       if (!res.ok) { setErrors(data.error ?? "Registration failed"); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); return; }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setPendingUser(data.user as LawnUser);
-      setTimeout(() => setShowPasskey(true), 400);
+      go(data.user as LawnUser);
     } catch {
       setErrors("Could not connect to server. Please try again.");
     } finally {
@@ -389,8 +313,7 @@ export default function LoginScreen() {
       if (!res.ok) { setErrors(data.error ?? "Registration failed"); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error); return; }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setPendingIsRegistration(true);
-      setPendingUser(data.user as LawnUser);
-      setTimeout(() => setShowPasskey(true), 400);
+      go(data.user as LawnUser);
     } catch {
       setErrors("Could not connect to server. Please try again.");
     } finally {
@@ -745,10 +668,6 @@ export default function LoginScreen() {
               onPress={handleAppleSignIn}
             />
           )}
-          <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("customer")} activeOpacity={0.85}>
-            <Ionicons name="finger-print" size={22} color="#34FF7A" />
-            <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Passkey</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleCustomerLogin} disabled={loading} activeOpacity={0.88}>
             {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Password</Text>}
           </TouchableOpacity>
@@ -757,7 +676,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-      <PasskeyModal visible={showPasskey} onUsePasskey={finishPasskey} onSkip={skipPasskey} insets={insets} isWeb={isWeb} />
       <ForgotModal
         visible={showForgot}
         value={forgotInput}
@@ -820,10 +738,6 @@ export default function LoginScreen() {
               onPress={() => handleAppleSignIn("landscaper")}
             />
           )}
-          <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("landscaper")} activeOpacity={0.85}>
-            <Ionicons name="finger-print" size={22} color="#34FF7A" />
-            <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Passkey</Text>
-          </TouchableOpacity>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: 10 }]} onPress={handleLandscaperLogin} disabled={loading} activeOpacity={0.88}>
             {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Password</Text>}
           </TouchableOpacity>
@@ -832,7 +746,6 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-      <PasskeyModal visible={showPasskey} onUsePasskey={finishPasskey} onSkip={skipPasskey} insets={insets} isWeb={isWeb} />
       <ForgotModal
         visible={showForgot}
         value={forgotInput}
@@ -930,7 +843,6 @@ export default function LoginScreen() {
       {termsDoc && (
         <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
       )}
-      <PasskeyModal visible={showPasskey} onUsePasskey={finishPasskey} onSkip={skipPasskey} insets={insets} isWeb={isWeb} />
     </>
     );
   }
@@ -1027,7 +939,6 @@ export default function LoginScreen() {
     {termsDoc && (
       <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />
     )}
-    <PasskeyModal visible={showPasskey} onUsePasskey={finishPasskey} onSkip={skipPasskey} insets={insets} isWeb={isWeb} />
     </>
   );
 }
@@ -1223,53 +1134,6 @@ function ForgotModal({
   );
 }
 
-function PasskeyModal({
-  visible,
-  onUsePasskey,
-  onSkip,
-  insets,
-  isWeb,
-}: {
-  visible: boolean;
-  onUsePasskey: () => void;
-  onSkip: () => void;
-  insets: { bottom: number };
-  isWeb: boolean;
-}) {
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={pkStyles.backdrop}>
-        <View style={[pkStyles.sheet, { paddingBottom: isWeb ? 36 : insets.bottom + 24 }]}>
-          <View style={pkStyles.handle} />
-          <View style={pkStyles.iconBox}>
-            <Ionicons name="finger-print" size={52} color="#34FF7A" />
-          </View>
-          <Text style={[pkStyles.title, { fontFamily: "Inter_700Bold" }]}>
-            Use Passkey for faster login?
-          </Text>
-          <Text style={[pkStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>
-            Sign in with Face ID or Touch ID — no password needed
-          </Text>
-          <TouchableOpacity style={pkStyles.primaryBtn} onPress={onUsePasskey} activeOpacity={0.88}>
-            <Ionicons name="person-circle-outline" size={24} color="#000" style={{ marginRight: 6 }} />
-            <Text style={[pkStyles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>
-              Continue with Passkey
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={pkStyles.secondaryBtn} onPress={onSkip} activeOpacity={0.85}>
-            <Text style={[pkStyles.secondaryBtnText, { fontFamily: "Inter_500Medium" }]}>
-              Continue with Password
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onSkip} style={{ marginTop: 20, alignItems: "center" }} activeOpacity={0.6}>
-            <Text style={[pkStyles.notNow, { fontFamily: "Inter_400Regular" }]}>Not now</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -1375,20 +1239,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
   },
   rowFields: { flexDirection: "row", gap: 12 },
-  passkeyLoginBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#111111",
-    borderWidth: 1,
-    borderColor: "#333333",
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginVertical: 14,
-  },
-  passkeyLoginIcon: { fontSize: 20 },
-  passkeyLoginText: { color: "#FFFFFF", fontSize: 14, flex: 1 },
   rememberForgotRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1525,55 +1375,3 @@ const fgStyles = StyleSheet.create({
   },
 });
 
-const pkStyles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.7)", justifyContent: "flex-end" },
-  sheet: {
-    backgroundColor: "#1A1A1A",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 28,
-    paddingTop: 16,
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderColor: "#222222",
-  },
-  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: "#333333", marginBottom: 28 },
-  iconBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: "#0d2e18",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: "#1a3a1a",
-  },
-  iconText: { fontSize: 36 },
-  title: { fontSize: 22, color: "#FFFFFF", textAlign: "center", marginBottom: 10 },
-  subtitle: { fontSize: 14, color: "#AAAAAA", textAlign: "center", lineHeight: 22, marginBottom: 28 },
-  primaryBtn: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    backgroundColor: "#34FF7A",
-    paddingVertical: 16,
-    borderRadius: 22,
-    marginBottom: 12,
-  },
-  primaryBtnIcon: { fontSize: 20 },
-  primaryBtnText: { color: "#000", fontSize: 16 },
-  secondaryBtn: {
-    width: "100%",
-    backgroundColor: "#222222",
-    paddingVertical: 16,
-    borderRadius: 22,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#333333",
-  },
-  secondaryBtnText: { color: "#FFFFFF", fontSize: 15 },
-  notNow: { color: "#666666", fontSize: 14 },
-});
