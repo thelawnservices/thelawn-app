@@ -52,6 +52,7 @@ export default function ProfileScreen() {
   const [custPrivVisible, setCustPrivVisible] = useState(true);
   const [custPrivPrices, setCustPrivPrices] = useState(false);
   const [custPrivReviews, setCustPrivReviews] = useState(true);
+  const [custEditVisible, setCustEditVisible] = useState(false);
 
   const toggle = () => {
     Haptics.selectionAsync();
@@ -103,7 +104,7 @@ export default function ProfileScreen() {
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#f59e0b" }]}>File a Dispute</Text>
             </TouchableOpacity>
             <View style={menuStyles.divider} />
-            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); Alert.alert("Edit Profile", "Profile editor coming soon."); }}>
+            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); setCustEditVisible(true); }}>
               <Ionicons name="person-outline" size={18} color="#CCCCCC" />
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Edit Profile</Text>
             </TouchableOpacity>
@@ -180,6 +181,9 @@ export default function ProfileScreen() {
           logout={logout}
           customerAddress={customerAddress}
           onAddressChange={setCustomerAddress}
+          editVisible={custEditVisible}
+          onOpenEdit={() => setCustEditVisible(true)}
+          onCloseEdit={() => setCustEditVisible(false)}
         />
       </ScrollView>
 
@@ -1280,12 +1284,52 @@ function CustomerProfile({
   logout,
   customerAddress,
   onAddressChange,
+  editVisible,
+  onOpenEdit,
+  onCloseEdit,
 }: {
   logout: () => void;
   customerAddress: { street: string; state: string; zip: string } | null;
   onAddressChange: (addr: { street: string; state: string; zip: string } | null) => void;
+  editVisible: boolean;
+  onOpenEdit: () => void;
+  onCloseEdit: () => void;
 }) {
-  const { setAvatarUri, preferredPayment, setPreferredPayment, userName } = useAuth();
+  const { setAvatarUri, preferredPayment, setPreferredPayment, userName, user, updateUser } = useAuth();
+
+  const [draftDisplayName, setDraftDisplayName] = useState(user?.displayName ?? "");
+  const [draftPhone, setDraftPhone] = useState(user?.phone ?? "");
+  const [draftCity, setDraftCity] = useState(user?.city ?? "");
+  const [draftState, setDraftState] = useState(user?.state ?? "");
+  const [draftZip, setDraftZip] = useState(user?.zipCode ?? "");
+  const [editSaveState, setEditSaveState] = useState<"idle" | "saving" | "saved">("idle");
+
+  useEffect(() => {
+    if (editVisible) {
+      setDraftDisplayName(user?.displayName ?? "");
+      setDraftPhone(user?.phone ?? "");
+      setDraftCity(user?.city ?? "");
+      setDraftState(user?.state ?? "");
+      setDraftZip(user?.zipCode ?? "");
+      setEditSaveState("idle");
+    }
+  }, [editVisible]);
+
+  async function saveProfileEdit() {
+    if (editSaveState === "saving") return;
+    setEditSaveState("saving");
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await updateUser({
+      displayName: draftDisplayName.trim() || (user?.displayName ?? ""),
+      phone: draftPhone.trim(),
+      city: draftCity.trim(),
+      state: draftState.trim().toUpperCase().slice(0, 2),
+      zipCode: draftZip.trim(),
+    });
+    setEditSaveState("saved");
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setTimeout(() => { onCloseEdit(); setEditSaveState("idle"); }, 1200);
+  }
   const router = useRouter();
   const [selectedPayment, setSelectedPayment] = useState(preferredPayment ?? "");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
@@ -1356,17 +1400,31 @@ function CustomerProfile({
       <View style={styles.card}>
         <View style={styles.infoRow}>
           <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Email</Text>
-          <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>zamire@example.com</Text>
+          <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>{user?.email || "—"}</Text>
         </View>
-        <View style={styles.divider} />
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Birthday</Text>
-          <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>March 15, 1995</Text>
-        </View>
+        {!!(user?.phone) && (
+          <>
+            <View style={styles.divider} />
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Phone</Text>
+              <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>{user.phone}</Text>
+            </View>
+          </>
+        )}
+        {!!(user?.city) && (
+          <>
+            <View style={styles.divider} />
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoKey, { fontFamily: "Inter_500Medium" }]}>Location</Text>
+              <Text style={[styles.infoVal, { fontFamily: "Inter_400Regular" }]}>
+                {[user.city, user.state, user.zipCode].filter(Boolean).join(", ")}
+              </Text>
+            </View>
+          </>
+        )}
       </View>
 
-
-      <TouchableOpacity style={styles.editBtn} onPress={() => Alert.alert("Edit Profile", "Profile editor would open here")} activeOpacity={0.85}>
+      <TouchableOpacity style={styles.editBtn} onPress={onOpenEdit} activeOpacity={0.85}>
         <Text style={[styles.editBtnText, { fontFamily: "Inter_600SemiBold" }]}>Edit Profile Settings</Text>
       </TouchableOpacity>
 
@@ -1387,6 +1445,131 @@ function CustomerProfile({
       </TouchableOpacity>
 
       {termsDoc && <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />}
+
+      {/* ── Customer Edit Profile Modal ── */}
+      <Modal visible={editVisible} transparent animationType="slide" onRequestClose={onCloseEdit}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+          <Pressable style={custEditStyles.overlay} onPress={onCloseEdit}>
+            <Pressable style={custEditStyles.sheet} onPress={(e) => e.stopPropagation()}>
+              <View style={custEditStyles.handle} />
+              <View style={custEditStyles.header}>
+                <View style={custEditStyles.headerLeft}>
+                  <View style={custEditStyles.headerIconBox}>
+                    <Ionicons name="person-outline" size={18} color="#34FF7A" />
+                  </View>
+                  <Text style={[custEditStyles.headerTitle, { fontFamily: "Inter_700Bold" }]}>Edit Profile</Text>
+                </View>
+                <TouchableOpacity onPress={onCloseEdit} style={custEditStyles.closeBtn} activeOpacity={0.7}>
+                  <Ionicons name="close" size={20} color="#CCCCCC" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
+                {/* Email — read-only */}
+                <View style={custEditStyles.fieldGroup}>
+                  <Text style={[custEditStyles.label, { fontFamily: "Inter_500Medium" }]}>Email</Text>
+                  <View style={[custEditStyles.input, custEditStyles.readOnly]}>
+                    <Text style={[custEditStyles.readOnlyText, { fontFamily: "Inter_400Regular" }]}>{user?.email || "—"}</Text>
+                    <Ionicons name="lock-closed-outline" size={14} color="#444" />
+                  </View>
+                  <Text style={[custEditStyles.hint, { fontFamily: "Inter_400Regular" }]}>Email cannot be changed here</Text>
+                </View>
+
+                {/* Display Name */}
+                <View style={custEditStyles.fieldGroup}>
+                  <Text style={[custEditStyles.label, { fontFamily: "Inter_500Medium" }]}>Display Name</Text>
+                  <TextInput
+                    style={[custEditStyles.input, { fontFamily: "Inter_400Regular" }]}
+                    value={draftDisplayName}
+                    onChangeText={setDraftDisplayName}
+                    placeholder="Your name"
+                    placeholderTextColor="#555"
+                    maxLength={40}
+                    autoCapitalize="words"
+                  />
+                </View>
+
+                {/* Phone */}
+                <View style={custEditStyles.fieldGroup}>
+                  <Text style={[custEditStyles.label, { fontFamily: "Inter_500Medium" }]}>Phone</Text>
+                  <TextInput
+                    style={[custEditStyles.input, { fontFamily: "Inter_400Regular" }]}
+                    value={draftPhone}
+                    onChangeText={setDraftPhone}
+                    placeholder="(555) 000-0000"
+                    placeholderTextColor="#555"
+                    keyboardType="phone-pad"
+                    maxLength={20}
+                  />
+                </View>
+
+                {/* City / State / ZIP */}
+                <View style={custEditStyles.fieldGroup}>
+                  <Text style={[custEditStyles.label, { fontFamily: "Inter_500Medium" }]}>City</Text>
+                  <TextInput
+                    style={[custEditStyles.input, { fontFamily: "Inter_400Regular" }]}
+                    value={draftCity}
+                    onChangeText={setDraftCity}
+                    placeholder="Ellenton"
+                    placeholderTextColor="#555"
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                  <View style={[custEditStyles.fieldGroup, { flex: 1 }]}>
+                    <Text style={[custEditStyles.label, { fontFamily: "Inter_500Medium" }]}>State</Text>
+                    <TextInput
+                      style={[custEditStyles.input, { fontFamily: "Inter_400Regular" }]}
+                      value={draftState}
+                      onChangeText={(t) => setDraftState(t.toUpperCase().slice(0, 2))}
+                      placeholder="FL"
+                      placeholderTextColor="#555"
+                      autoCapitalize="characters"
+                      maxLength={2}
+                    />
+                  </View>
+                  <View style={[custEditStyles.fieldGroup, { flex: 2 }]}>
+                    <Text style={[custEditStyles.label, { fontFamily: "Inter_500Medium" }]}>ZIP Code</Text>
+                    <TextInput
+                      style={[custEditStyles.input, { fontFamily: "Inter_400Regular" }]}
+                      value={draftZip}
+                      onChangeText={setDraftZip}
+                      placeholder="34222"
+                      placeholderTextColor="#555"
+                      keyboardType="numeric"
+                      maxLength={5}
+                    />
+                  </View>
+                </View>
+              </ScrollView>
+
+              {/* Save button */}
+              {editSaveState === "saved" ? (
+                <View style={custEditStyles.savedBox}>
+                  <Ionicons name="checkmark-circle" size={22} color="#34FF7A" />
+                  <Text style={[custEditStyles.savedText, { fontFamily: "Inter_600SemiBold" }]}>Profile saved!</Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[custEditStyles.saveBtn, editSaveState === "saving" && { opacity: 0.7 }]}
+                  onPress={saveProfileEdit}
+                  activeOpacity={0.85}
+                  disabled={editSaveState === "saving"}
+                >
+                  {editSaveState === "saving" ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                      <ActivityIndicator size="small" color="#000" />
+                      <Text style={[custEditStyles.saveBtnText, { fontFamily: "Inter_600SemiBold" }]}>Saving…</Text>
+                    </View>
+                  ) : (
+                    <Text style={[custEditStyles.saveBtnText, { fontFamily: "Inter_700Bold" }]}>Save Changes</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Modal>
     </>
   );
 }
@@ -2002,6 +2185,68 @@ const menuStyles = StyleSheet.create({
   item: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 18, paddingVertical: 15 },
   itemText: { fontSize: 15, color: "#FFFFFF" },
   divider: { height: 1, backgroundColor: "#252525" },
+});
+
+const custEditStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#111111",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 22,
+    paddingBottom: 36,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderColor: "#222",
+    maxHeight: "88%",
+  },
+  handle: { width: 40, height: 4, backgroundColor: "#333", borderRadius: 2, alignSelf: "center", marginBottom: 16 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  headerIconBox: {
+    width: 34, height: 34, borderRadius: 12,
+    backgroundColor: "#0d2e18", alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: "#1a4a2a",
+  },
+  headerTitle: { fontSize: 18, color: "#FFFFFF" },
+  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#1A1A1A", alignItems: "center", justifyContent: "center" },
+  fieldGroup: { marginBottom: 14 },
+  label: { fontSize: 12, color: "#AAAAAA", letterSpacing: 0.6, marginBottom: 6, textTransform: "uppercase" },
+  input: {
+    backgroundColor: "#1A1A1A",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#2A2A2A",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  readOnly: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", opacity: 0.5 },
+  readOnlyText: { fontSize: 15, color: "#AAAAAA" },
+  hint: { fontSize: 11, color: "#555", marginTop: 5 },
+  saveBtn: {
+    backgroundColor: "#34FF7A",
+    borderRadius: 20,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  saveBtnText: { fontSize: 15, color: "#000000" },
+  savedBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: "#0d2e18",
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#1a4a2a",
+    paddingVertical: 16,
+    marginTop: 4,
+  },
+  savedText: { fontSize: 15, color: "#34FF7A" },
 });
 
 const custSettStyles = StyleSheet.create({

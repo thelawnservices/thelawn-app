@@ -419,14 +419,16 @@ function AppHeader({
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.avatarBtn} onPress={onProfilePress} activeOpacity={0.8}>
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatarBtnImage} />
-            ) : (
-              <Text style={[styles.avatarBtnInitial, { fontFamily: "Inter_700Bold" }]}>
-                {userInitial}
-              </Text>
-            )}
+          <TouchableOpacity style={styles.avatarRing} onPress={onProfilePress} activeOpacity={0.8}>
+            <View style={styles.avatarInner}>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatarBtnImage} />
+              ) : (
+                <Text style={[styles.avatarBtnInitial, { fontFamily: "Inter_700Bold" }]}>
+                  {userInitial}
+                </Text>
+              )}
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -3317,25 +3319,34 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#34FF7A",
+  avatarRing: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2.5,
+    borderColor: "#34FF7A",
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
-    overflow: "hidden",
     shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  avatarInner: {
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
+    backgroundColor: "#1A4A2A",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
   },
   avatarBtnImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
   },
   avatarBtnInitial: {
     fontSize: 15,

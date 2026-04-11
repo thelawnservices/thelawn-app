@@ -43,6 +43,7 @@ interface AuthContextType {
   setAvatarUri: (uri: string | null) => void;
   setPreferredPayment: (v: string | null) => void;
   setNeedsServiceSetup: (v: boolean) => void;
+  updateUser: (partial: Partial<LawnUser>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -60,6 +61,7 @@ const AuthContext = createContext<AuthContextType>({
   setAvatarUri: () => {},
   setPreferredPayment: () => {},
   setNeedsServiceSetup: () => {},
+  updateUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -153,12 +155,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.removeItem(SESSION_KEY).catch(() => {});
   };
 
+  const updateUser = async (partial: Partial<LawnUser>) => {
+    if (!user) return;
+    const updated = { ...user, ...partial };
+    setUser(updated);
+    try {
+      await AsyncStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ user: updated, lastActivity: Date.now() })
+      );
+    } catch {}
+  };
+
   return (
     <AuthContext.Provider value={{
       role, user, userName, avatarUri, preferredPayment,
       needsServiceSetup, isBanned, isLoading,
       login, logout, banUser,
       setAvatarUri, setPreferredPayment, setNeedsServiceSetup,
+      updateUser,
     }}>
       {children}
     </AuthContext.Provider>
