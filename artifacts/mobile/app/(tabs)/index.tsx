@@ -397,15 +397,18 @@ function AppHeader({
   userInitial: string;
 }) {
   return (
-    <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1 }} />
+    <View style={styles.header}>
+      {/* Full-width banner image */}
+      <View style={[styles.bannerWrap, { height: topPadding + 86 }]}>
         <Image
-          source={require("../../assets/images/splash-logo.jpeg")}
-          style={styles.logoImg}
-          resizeMode="contain"
+          source={require("../../assets/images/banner-logo.jpeg")}
+          style={styles.bannerImg}
+          resizeMode="cover"
         />
-        <View style={[{ flex: 1 }, styles.headerRight]}>
+        {/* Dark gradient fade at bottom so content below reads cleanly */}
+        <View style={styles.bannerFade} />
+        {/* Bell + avatar floated top-right over the banner */}
+        <View style={[styles.bannerIcons, { top: topPadding + 10 }]}>
           <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
             <Ionicons
               name={notifEnabled ? "notifications-outline" : "notifications-off-outline"}
@@ -3254,14 +3257,35 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A" },
   header: {
     backgroundColor: "#0A0A0A",
-    paddingHorizontal: 20,
-    paddingBottom: 18,
-    position: "relative",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 20,
     elevation: 8,
+  },
+  bannerWrap: {
+    width: "100%",
+    overflow: "hidden",
+    position: "relative",
+  },
+  bannerImg: {
+    width: "100%",
+    height: "100%",
+  },
+  bannerFade: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 28,
+    backgroundColor: "transparent",
+  },
+  bannerIcons: {
+    position: "absolute",
+    right: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   headerRow: {
     flexDirection: "row",
