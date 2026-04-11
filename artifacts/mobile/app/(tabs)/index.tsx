@@ -3253,7 +3253,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#1A1A1A",
     paddingHorizontal: 20,
-    paddingBottom: 18,
+    paddingBottom: 22,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
@@ -3301,12 +3301,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   logoImg: {
-    height: 58,
-    width: 180,
+    height: 72,
+    width: 260,
     shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
-    shadowRadius: 20,
+    shadowRadius: 24,
   },
   notifBtn: {
     width: 36,
