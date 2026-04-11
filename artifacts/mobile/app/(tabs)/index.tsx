@@ -400,11 +400,9 @@ function AppHeader({
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }} />
-        <Image
-          source={require("../../assets/images/icon.jpeg")}
-          style={styles.logoImg}
-          resizeMode="contain"
-        />
+        <Text style={[styles.headerLogoText, { fontFamily: "Inter_700Bold" }]}>
+          the<Text style={{ color: "#34FF7A" }}>Lawn</Text>
+        </Text>
         <View style={[{ flex: 1 }, styles.headerRight]}>
           <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
             <Ionicons
@@ -3251,7 +3249,7 @@ const TRUSTED_PROS: TrustedPro[] = [];
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A" },
   header: {
-    backgroundColor: "#000000",
+    backgroundColor: "#1A1A1A",
     paddingHorizontal: 20,
     paddingBottom: 18,
     shadowColor: "#000",
@@ -3294,6 +3292,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     gap: 4,
+  },
+  headerLogoText: {
+    fontSize: 26,
+    color: "#FFFFFF",
+    letterSpacing: -0.5,
   },
   logoImg: {
     height: 52,
