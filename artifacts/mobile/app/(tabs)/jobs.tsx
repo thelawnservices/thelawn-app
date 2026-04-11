@@ -67,15 +67,6 @@ const SHARED_COMPLETED_JOBS: Array<{
   time: string;
 }> = [];
 
-const SERVICE_HISTORY: Array<{
-  id: string;
-  code: string;
-  service: string;
-  customer: string;
-  landscaper: string;
-  date: string;
-  amount: string;
-}> = [];
 
 const STATUS_STEPS: { key: JobStatus; label: string; icon: string }[] = [
   { key: "started",   label: "Arrived & Work Started", icon: "location-outline" },
@@ -1083,9 +1074,9 @@ export default function JobsScreen() {
           );
         })}
 
-        {/* ── Previous Jobs Completed ─────────────────────────── */}
+        {/* ── Job History ──────────────────────────────────────── */}
         <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 12 }]}>
-          Previous Jobs Completed
+          Job History
         </Text>
 
         {SHARED_COMPLETED_JOBS.length === 0 ? (
@@ -1095,11 +1086,12 @@ export default function JobsScreen() {
         ) : (
           SHARED_COMPLETED_JOBS.map((job) => (
             <View key={job.id} style={styles.completedCard}>
+              {/* Top row: service name + Completed badge */}
               <View style={styles.cardTopRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.jobTitle, { fontFamily: "Inter_600SemiBold" }]}>{job.service}</Text>
                   <Text style={[styles.jobSub, { fontFamily: "Inter_400Regular" }]}>
-                    {isLandscaper ? job.customer : job.landscaper}
+                    {isLandscaper ? job.customer : (job.landscaper || "Your Landscaper")}
                   </Text>
                 </View>
                 <View style={styles.completedBadge}>
@@ -1107,52 +1099,50 @@ export default function JobsScreen() {
                   <Text style={[styles.completedBadgeText, { fontFamily: "Inter_600SemiBold" }]}>Completed</Text>
                 </View>
               </View>
-              <View style={[styles.metaRow, { marginTop: 6 }]}>
-                <Ionicons name="time-outline" size={12} color="#CCCCCC" />
-                <Text style={[styles.metaText, { fontFamily: "Inter_400Regular", color: "#BBBBBB" }]}>{job.date} · {job.time}</Text>
+
+              {/* Divider */}
+              <View style={{ height: 1, backgroundColor: "#222", marginVertical: 10 }} />
+
+              {/* Date & Time */}
+              <View style={[styles.metaRow, { marginTop: 0 }]}>
+                <Ionicons name="time-outline" size={12} color="#888" />
+                <Text style={[styles.metaText, { fontFamily: "Inter_400Regular", color: "#BBBBBB" }]}>
+                  {job.date} · {job.time}
+                </Text>
               </View>
-              <View style={[styles.metaRow, { marginTop: 2 }]}>
-                <Ionicons name="barcode-outline" size={12} color="#34FF7A" />
-                <Text style={[styles.metaText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>{job.code}</Text>
+
+              {/* Address */}
+              {!!job.address && (
+                <View style={[styles.metaRow, { marginTop: 4 }]}>
+                  <Ionicons name="location-outline" size={12} color="#888" />
+                  <Text style={[styles.metaText, { fontFamily: "Inter_400Regular", color: "#BBBBBB" }]} numberOfLines={1}>
+                    {job.address}
+                  </Text>
+                </View>
+              )}
+
+              {/* Amount + Payment method */}
+              <View style={[styles.metaRow, { marginTop: 4 }]}>
+                <Ionicons name="cash-outline" size={12} color="#34FF7A" />
+                <Text style={[styles.metaText, { fontFamily: "Inter_600SemiBold", color: "#34FF7A" }]}>
+                  ${job.amount.toFixed(2)}
+                  {"  "}
+                  <Text style={{ fontFamily: "Inter_400Regular", color: "#888", fontSize: 11 }}>
+                    {job.paymentMethod === "stripe" ? "· Paid via card" : "· Paid in person"}
+                  </Text>
+                </Text>
+              </View>
+
+              {/* Job code */}
+              <View style={[styles.metaRow, { marginTop: 4 }]}>
+                <Ionicons name="barcode-outline" size={12} color="#555" />
+                <Text style={[styles.metaText, { fontFamily: "Inter_500Medium", color: "#555", fontSize: 11 }]}>
+                  {job.code}
+                </Text>
               </View>
             </View>
           ))
         )}
-
-        {/* ── Service History ─────────────────────────────────── */}
-        <Text style={[styles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 12 }]}>
-          Service History
-        </Text>
-
-        {SERVICE_HISTORY.length === 0 && (
-          <View style={styles.emptyRow}>
-            <Text style={[styles.emptyText, { fontFamily: "Inter_400Regular" }]}>No service history yet</Text>
-          </View>
-        )}
-        {SERVICE_HISTORY.map((entry) => (
-          <View key={entry.id} style={styles.historyCard}>
-            <View style={styles.historyIconCol}>
-              <View style={styles.historyIconWrap}>
-                <Ionicons name="leaf" size={14} color="#34FF7A" />
-              </View>
-              <View style={styles.historyLine} />
-            </View>
-            <View style={styles.historyBody}>
-              <View style={styles.historyTopRow}>
-                <Text style={[styles.historyService, { fontFamily: "Inter_600SemiBold" }]}>{entry.service}</Text>
-                <Text style={[styles.historyAmount, { fontFamily: "Inter_600SemiBold" }]}>{entry.amount}</Text>
-              </View>
-              <Text style={[styles.historyPerson, { fontFamily: "Inter_400Regular" }]}>
-                {isLandscaper ? entry.customer : entry.landscaper}
-              </Text>
-              <Text style={[styles.historyDate, { fontFamily: "Inter_400Regular" }]}>{entry.date}</Text>
-              <View style={[styles.metaRow, { marginTop: 4 }]}>
-                <Ionicons name="barcode-outline" size={11} color="#34FF7A" />
-                <Text style={[{ fontSize: 11, color: "#34FF7A", fontFamily: "Inter_500Medium" }]}>{entry.code}</Text>
-              </View>
-            </View>
-          </View>
-        ))}
 
         {/* All sales are final notice */}
         <View style={styles.finalSaleNotice}>
@@ -1277,49 +1267,6 @@ const styles = StyleSheet.create({
 
   emptyRow: { paddingVertical: 24, alignItems: "center" },
   emptyText: { fontSize: 14, color: "#BBBBBB" },
-
-  historyCard: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 2,
-  },
-  historyIconCol: {
-    alignItems: "center",
-    width: 28,
-  },
-  historyIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#0d2e18",
-    borderWidth: 1,
-    borderColor: "#34FF7A33",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  historyLine: {
-    flex: 1,
-    width: 1,
-    backgroundColor: "#222222",
-    marginTop: 4,
-    marginBottom: -8,
-  },
-  historyBody: {
-    flex: 1,
-    paddingBottom: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1C1C1C",
-  },
-  historyTopRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 2,
-  },
-  historyService: { fontSize: 15, color: "#FFFFFF" },
-  historyAmount: { fontSize: 15, color: "#34FF7A" },
-  historyPerson: { fontSize: 13, color: "#BBBBBB", marginBottom: 2 },
-  historyDate: { fontSize: 12, color: "#BBBBBB" },
 
   finalSaleNotice: {
     flexDirection: "row",
