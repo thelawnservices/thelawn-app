@@ -219,7 +219,7 @@ function LandscaperProfile({
   setHelpVisible: (v: boolean) => void;
 }) {
   const { setAvatarUri, banUser, user, userName } = useAuth();
-  const { myServices, bookedSlots } = useLandscaperProfile();
+  const { myServices, bookedSlots, saveMyServices } = useLandscaperProfile();
   const { broadcastAnnouncement } = useNotifications();
   const lsRouter = useRouter();
   const [activeTab, setActiveTab] = useState<LandscaperTab>("info");
@@ -463,6 +463,36 @@ function LandscaperProfile({
         <Modal visible={lsMenuVisible} transparent animationType="fade" onRequestClose={() => setLsMenuVisible(false)}>
           <Pressable style={menuStyles.overlay} onPress={() => setLsMenuVisible(false)}>
             <View style={[menuStyles.dropdown, { top: topPadding + 62, right: 16 }]}>
+              <TouchableOpacity
+                style={menuStyles.item}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setLsMenuVisible(false);
+                  const nowPaused = !myServices.paused;
+                  saveMyServices({ ...myServices, paused: nowPaused });
+                  Haptics.notificationAsync(
+                    nowPaused
+                      ? Haptics.NotificationFeedbackType.Warning
+                      : Haptics.NotificationFeedbackType.Success
+                  );
+                  Alert.alert(
+                    nowPaused ? "Services Paused" : "Services Resumed",
+                    nowPaused
+                      ? "Customers can no longer book new appointments with you until you resume."
+                      : "Your services are now active and customers can book you again."
+                  );
+                }}
+              >
+                <Ionicons
+                  name={myServices.paused ? "play-circle-outline" : "pause-circle-outline"}
+                  size={18}
+                  color={myServices.paused ? "#34FF7A" : "#f59e0b"}
+                />
+                <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: myServices.paused ? "#34FF7A" : "#f59e0b" }]}>
+                  {myServices.paused ? "Resume Services" : "Pause All Services"}
+                </Text>
+              </TouchableOpacity>
+              <View style={menuStyles.divider} />
               <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setHelpVisible(true); }}>
                 <Ionicons name="help-circle-outline" size={18} color="#34FF7A" />
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#34FF7A" }]}>Help & Support</Text>

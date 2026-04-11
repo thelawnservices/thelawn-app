@@ -181,7 +181,7 @@ export default function DisputeScreen() {
         <View style={{ flex: 1 }}>
           <Text style={[styles.headerTitle, { fontFamily: "Inter_700Bold" }]}>File a Dispute</Text>
           <Text style={[styles.headerSub, { fontFamily: "Inter_400Regular" }]}>
-            Sent directly to TheLawnServices@gmail.com
+            Sent directly to TheLawnServices
           </Text>
         </View>
         <View style={styles.disputeIconBadge}>

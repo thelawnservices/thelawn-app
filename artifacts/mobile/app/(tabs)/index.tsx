@@ -977,19 +977,23 @@ function makeDefaultPricing(): ServicePricing {
 // ── Month date grid helper (4 weeks from today) ───────────────────────────────
 const DAY_NAMES_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MON_NAMES_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MON_NAMES_FULL  = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-function buildMonthGrid() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const rows: { key: string; dayLabel: string; dateNum: number; monthLabel: string }[][] = [];
-  let week: { key: string; dayLabel: string; dateNum: number; monthLabel: string }[] = [];
-  for (let i = 0; i < 28; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    const key = `${MON_NAMES_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-    week.push({ key, dayLabel: DAY_NAMES_SHORT[d.getDay()], dateNum: d.getDate(), monthLabel: MON_NAMES_SHORT[d.getMonth()] });
-    if (week.length === 7 || i === 27) { rows.push(week); week = []; }
+type CalCell = { key: string; dayLabel: string; dateNum: number; monthLabel: string } | null;
+function buildMonthGrid(year: number, month: number): CalCell[][] {
+  const firstDay = new Date(year, month, 1);
+  const startDOW = firstDay.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: CalCell[] = [];
+  for (let i = 0; i < startDOW; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d);
+    const key = `${MON_NAMES_SHORT[month]} ${d}, ${year}`;
+    cells.push({ key, dayLabel: DAY_NAMES_SHORT[date.getDay()], dateNum: d, monthLabel: MON_NAMES_SHORT[month] });
   }
+  while (cells.length % 7 !== 0) cells.push(null);
+  const rows: CalCell[][] = [];
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
   return rows;
 }
 
@@ -1013,14 +1017,37 @@ function ServicesEditModal({ visible, onClose, isFirstSetup = false }: { visible
   }>({});
   const [ddTimePicker, setDdTimePicker] = useState<"start" | "end" | null>(null);
 
-  // Derive which days of week are "active" across all offered services
-  const activeDaysOfWeek = useMemo(() => {
-    const s = new Set<string>();
-    for (const svc of offered) { for (const d of (avail[svc]?.days ?? [])) s.add(d); }
-    return s;
-  }, [offered, avail]);
+  const calBaseDate = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
+  const [svcCalMonth, setSvcCalMonth] = useState<Record<string, { year: number; month: number }>>(() => {
+    const now = new Date();
+    const init: Record<string, { year: number; month: number }> = {};
+    for (const svc of ALL_SERVICES) init[svc] = { year: now.getFullYear(), month: now.getMonth() };
+    return init;
+  });
 
-  const calRows = useMemo(() => buildMonthGrid(), [visible]);
+  function prevCalMonth(service: string) {
+    setSvcCalMonth((prev) => {
+      const { year, month } = prev[service] ?? { year: calBaseDate.getFullYear(), month: calBaseDate.getMonth() };
+      const minAbs = calBaseDate.getFullYear() * 12 + calBaseDate.getMonth();
+      if (year * 12 + month <= minAbs) return prev;
+      const newMonth = month === 0 ? 11 : month - 1;
+      const newYear  = month === 0 ? year - 1 : year;
+      return { ...prev, [service]: { year: newYear, month: newMonth } };
+    });
+    Haptics.selectionAsync();
+  }
+
+  function nextCalMonth(service: string) {
+    setSvcCalMonth((prev) => {
+      const { year, month } = prev[service] ?? { year: calBaseDate.getFullYear(), month: calBaseDate.getMonth() };
+      const maxAbs = calBaseDate.getFullYear() * 12 + calBaseDate.getMonth() + 12;
+      if (year * 12 + month >= maxAbs) return prev;
+      const newMonth = month === 11 ? 0 : month + 1;
+      const newYear  = month === 11 ? year + 1 : year;
+      return { ...prev, [service]: { year: newYear, month: newMonth } };
+    });
+    Haptics.selectionAsync();
+  }
 
   // Sync from context whenever modal opens
   useEffect(() => {
@@ -1201,69 +1228,76 @@ function ServicesEditModal({ visible, onClose, isFirstSetup = false }: { visible
                   })}
                 </View>
 
-                {/* Per-service monthly calendar */}
+                {/* Per-service monthly calendar with month navigation */}
                 <Text style={[svcStyles.subLabel, { fontFamily: "Inter_500Medium", marginTop: 10 }]}>MONTHLY SCHEDULE — TAP A DAY TO SET DATES</Text>
-                <View style={svcStyles.calHeader}>
-                  {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
-                    <Text key={d} style={[svcStyles.calHeaderCell, { fontFamily: "Inter_600SemiBold" }]}>{d}</Text>
-                  ))}
-                </View>
-                {calRows.map((week, wi) => {
-                  const monthChangeDay = week.find((day, di) => di > 0 && day.monthLabel !== week[di - 1].monthLabel);
-                  const showLabel = wi === 0 || !!monthChangeDay;
-                  const monthLabelText = (monthChangeDay && wi !== 0) ? monthChangeDay.monthLabel : week[0].monthLabel;
+                {(() => {
+                  const calData = svcCalMonth[service] ?? { year: calBaseDate.getFullYear(), month: calBaseDate.getMonth() };
+                  const { year: calYear, month: calMonth } = calData;
+                  const serviceCalRows = buildMonthGrid(calYear, calMonth);
+                  const minAbs = calBaseDate.getFullYear() * 12 + calBaseDate.getMonth();
+                  const maxAbs = minAbs + 12;
+                  const curAbs = calYear * 12 + calMonth;
+                  const isPrevDisabled = curAbs <= minAbs;
+                  const isNextDisabled = curAbs >= maxAbs;
                   return (
-                    <View key={wi}>
-                      {showLabel && (
-                        <Text style={[svcStyles.calMonthLabel, { fontFamily: "Inter_700Bold" }]}>
-                          {monthLabelText}
+                    <>
+                      <View style={svcStyles.calNavRow}>
+                        <TouchableOpacity onPress={() => prevCalMonth(service)} disabled={isPrevDisabled} activeOpacity={0.7} style={svcStyles.calNavBtn}>
+                          <Ionicons name="chevron-back" size={20} color={isPrevDisabled ? "#2A2A2A" : "#34FF7A"} />
+                        </TouchableOpacity>
+                        <Text style={[svcStyles.calMonthNavLabel, { fontFamily: "Inter_700Bold" }]}>
+                          {MON_NAMES_FULL[calMonth]} {calYear}
                         </Text>
-                      )}
-                      <View style={svcStyles.calWeekRow}>
-                        {week.map((day) => {
-                          const svcDays = avail[service]?.days ?? [];
-                          const isWorkDay = svcDays.includes(day.dayLabel);
-                          const isBlocked = blockedDates.includes(day.key);
-                          const overrideKey = `${service}||${day.key}`;
-                          const hasOverride = !!dayTimeOverrides[overrideKey];
-                          const cellStyle = isBlocked
-                            ? svcStyles.calCellBlocked
-                            : isWorkDay
-                            ? svcStyles.calCellAvail
-                            : svcStyles.calCellOff;
-                          const textColor = isBlocked ? "#EF4444" : isWorkDay ? "#000" : "#555";
-                          const isInteractive = isWorkDay || isBlocked;
-                          return (
-                            <TouchableOpacity
-                              key={day.key}
-                              style={[svcStyles.calCell, cellStyle]}
-                              onPress={() => {
-                                if (!isInteractive) return;
-                                Haptics.selectionAsync();
-                                setDayDetailPicker({
-                                  service,
-                                  dateKey: day.key,
-                                  dateDisplay: day.key,
-                                  isWorkDay,
-                                });
-                              }}
-                              activeOpacity={isInteractive ? 0.72 : 1}
-                            >
-                              <Text style={[svcStyles.calCellDay, { fontFamily: "Inter_400Regular", color: isBlocked ? "#EF4444" : isWorkDay ? "rgba(0,0,0,0.55)" : "#555" }]}>
-                                {day.dayLabel.slice(0, 2)}
-                              </Text>
-                              <Text style={[svcStyles.calCellNum, { fontFamily: "Inter_700Bold", color: textColor }]}>
-                                {day.dateNum}
-                              </Text>
-                              {isBlocked && <Ionicons name="close" size={8} color="#EF4444" />}
-                              {hasOverride && !isBlocked && <View style={svcStyles.calDot} />}
-                            </TouchableOpacity>
-                          );
-                        })}
+                        <TouchableOpacity onPress={() => nextCalMonth(service)} disabled={isNextDisabled} activeOpacity={0.7} style={svcStyles.calNavBtn}>
+                          <Ionicons name="chevron-forward" size={20} color={isNextDisabled ? "#2A2A2A" : "#34FF7A"} />
+                        </TouchableOpacity>
                       </View>
-                    </View>
+                      <View style={svcStyles.calHeader}>
+                        {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
+                          <Text key={d} style={[svcStyles.calHeaderCell, { fontFamily: "Inter_600SemiBold" }]}>{d}</Text>
+                        ))}
+                      </View>
+                      {serviceCalRows.map((week, wi) => (
+                        <View key={wi} style={svcStyles.calWeekRow}>
+                          {week.map((day, di) => {
+                            if (!day) {
+                              return <View key={`e${wi}-${di}`} style={[svcStyles.calCell, svcStyles.calCellOff, { opacity: 0 }]} />;
+                            }
+                            const svcDays = avail[service]?.days ?? [];
+                            const isWorkDay = svcDays.includes(day.dayLabel);
+                            const isBlocked = blockedDates.includes(day.key);
+                            const overrideKey = `${service}||${day.key}`;
+                            const hasOverride = !!dayTimeOverrides[overrideKey];
+                            const cellStyle = isBlocked ? svcStyles.calCellBlocked : isWorkDay ? svcStyles.calCellAvail : svcStyles.calCellOff;
+                            const textColor = isBlocked ? "#EF4444" : isWorkDay ? "#000" : "#555";
+                            const isInteractive = isWorkDay || isBlocked;
+                            return (
+                              <TouchableOpacity
+                                key={day.key}
+                                style={[svcStyles.calCell, cellStyle]}
+                                onPress={() => {
+                                  if (!isInteractive) return;
+                                  Haptics.selectionAsync();
+                                  setDayDetailPicker({ service, dateKey: day.key, dateDisplay: day.key, isWorkDay });
+                                }}
+                                activeOpacity={isInteractive ? 0.72 : 1}
+                              >
+                                <Text style={[svcStyles.calCellDay, { fontFamily: "Inter_400Regular", color: isBlocked ? "#EF4444" : isWorkDay ? "rgba(0,0,0,0.55)" : "#555" }]}>
+                                  {day.dayLabel.slice(0, 2)}
+                                </Text>
+                                <Text style={[svcStyles.calCellNum, { fontFamily: "Inter_700Bold", color: textColor }]}>
+                                  {day.dateNum}
+                                </Text>
+                                {isBlocked && <Ionicons name="close" size={8} color="#EF4444" />}
+                                {hasOverride && !isBlocked && <View style={svcStyles.calDot} />}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      ))}
+                    </>
                   );
-                })}
+                })()}
                 <View style={[svcStyles.calLegend, { marginBottom: 10 }]}>
                   <View style={svcStyles.calLegendItem}>
                     <View style={[svcStyles.calLegendDot, { backgroundColor: "#34FF7A" }]} />
@@ -1714,6 +1748,9 @@ const svcStyles = StyleSheet.create({
   calHeader: { flexDirection: "row", marginBottom: 4 },
   calHeaderCell: { flex: 1, textAlign: "center", fontSize: 10, color: "#666", letterSpacing: 0.4 },
   calMonthLabel: { fontSize: 13, color: "#34FF7A", marginTop: 14, marginBottom: 6 },
+  calNavRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, marginTop: 4 },
+  calNavBtn: { padding: 6, borderRadius: 20 },
+  calMonthNavLabel: { fontSize: 15, color: "#FFFFFF" },
   calWeekRow: { flexDirection: "row", gap: 4, marginBottom: 4 },
   calCell: {
     flex: 1, alignItems: "center", justifyContent: "center",

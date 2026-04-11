@@ -43,6 +43,7 @@ export type MyServicesState = {
   pricing:          Record<string, PricingTierItem[]>;
   acceptedPayments: string[];
   blockedDates:     string[];   // "Apr 10, 2026" style keys the landscaper marked off
+  paused?:          boolean;    // when true, all services are paused for new bookings
 };
 
 const ALL_SVC = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Full Service", "Tree Removal"];
@@ -91,6 +92,7 @@ const DEFAULT_MY_SERVICES: MyServicesState = {
   pricing: makeDefaultPricing(),
   acceptedPayments: ["Stripe", "In Person"],
   blockedDates: [],
+  paused: false,
 };
 
 // ── Context ───────────────────────────────────────────────────────────────────
