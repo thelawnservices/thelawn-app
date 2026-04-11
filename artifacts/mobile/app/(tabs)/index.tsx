@@ -397,7 +397,7 @@ function AppHeader({
   userInitial: string;
 }) {
   return (
-    <View style={[styles.header, { paddingTop: topPadding + 10, paddingBottom: 14 }]}>
+    <View style={[styles.header, { paddingTop: topPadding + 10, paddingBottom: 28, minHeight: topPadding + 80 }]}>
       {/* Icons pinned top-right */}
       <View style={[styles.bannerIcons, { top: topPadding + 10 }]}>
         <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
