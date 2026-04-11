@@ -397,15 +397,9 @@ function AppHeader({
   userInitial: string;
 }) {
   return (
-    <View style={[styles.header, { height: topPadding + 110 }]}>
-      {/* Full-width background image */}
-      <Image
-        source={require("../../assets/images/header-bg.jpeg")}
-        style={styles.headerBgImg}
-        resizeMode="cover"
-      />
-      {/* Icons pinned top-right above status bar */}
-      <View style={[styles.bannerIcons, { top: topPadding + 12 }]}>
+    <View style={[styles.header, { paddingTop: topPadding + 10, paddingBottom: 14 }]}>
+      {/* Icons pinned top-right */}
+      <View style={[styles.bannerIcons, { top: topPadding + 10 }]}>
         <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
           <Ionicons
             name={notifEnabled ? "notifications-outline" : "notifications-off-outline"}
@@ -3251,8 +3245,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A" },
   header: {
     backgroundColor: "#000000",
-    overflow: "hidden",
-    position: "relative",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
