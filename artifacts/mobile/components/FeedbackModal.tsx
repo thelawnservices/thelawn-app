@@ -305,7 +305,7 @@ export default function FeedbackModal({
                 <Ionicons name="mail-outline" size={13} color="#555" />
                 <Text style={[styles.infoText, { fontFamily: "Inter_400Regular" }]}>
                   Feedback is sent directly to{" "}
-                  <Text style={{ color: "#34FF7A" }}>TheLawnServices@gmail.com</Text>.
+                  <Text style={{ color: "#34FF7A" }}>TheLawnServices</Text>.
                   We aim to respond within 24–48 hours.
                 </Text>
               </View>
