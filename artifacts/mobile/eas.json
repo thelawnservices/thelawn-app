@@ -14,13 +14,13 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://4badcd8d-03f5-4cc5-b16a-417f5dd88243-00-2bd4pdtl92w01.riker.replit.dev"
+        "EXPO_PUBLIC_API_URL": "https://arcane-blade.replit.app"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://4badcd8d-03f5-4cc5-b16a-417f5dd88243-00-2bd4pdtl92w01.riker.replit.dev"
+        "EXPO_PUBLIC_API_URL": "https://arcane-blade.replit.app"
       }
     }
   },
