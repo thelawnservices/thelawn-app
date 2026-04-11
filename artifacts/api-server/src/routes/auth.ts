@@ -453,4 +453,34 @@ function sanitize(u: any) {
   };
 }
 
+// POST /api/auth/update-profile
+// Used by Apple Sign In landscapers to complete registration info
+router.post("/update-profile", async (req, res) => {
+  try {
+    const { username, role, phone, city, state, zipCode, services, yearsExperience } = req.body as {
+      username: string; role: string;
+      phone?: string; city?: string; state?: string;
+      zipCode?: string; services?: string; yearsExperience?: string;
+    };
+    if (!username || !role) return res.status(400).json({ error: "Missing username or role" });
+    const result = await pool.query(
+      `UPDATE lawn_users
+       SET phone = COALESCE(NULLIF($3,''), phone),
+           city = COALESCE(NULLIF($4,''), city),
+           state = COALESCE(NULLIF($5,''), state),
+           zip_code = COALESCE(NULLIF($6,''), zip_code),
+           services = COALESCE(NULLIF($7,''), services),
+           years_experience = COALESCE(NULLIF($8,''), years_experience)
+       WHERE username = $1 AND role = $2
+       RETURNING id, username, role, display_name, email, phone, address, zip_code, city, state, business_name, services, years_experience, created_at`,
+      [username, role, phone ?? "", city ?? "", state ?? "", zipCode ?? "", services ?? "", yearsExperience ?? ""]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "User not found" });
+    return res.json({ user: sanitize(result.rows[0]) });
+  } catch (err) {
+    console.error("update-profile error:", err);
+    return res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
 export default router;

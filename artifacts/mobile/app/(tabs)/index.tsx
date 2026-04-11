@@ -604,8 +604,10 @@ function SettingsModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <Pressable style={settStyles.overlay} onPress={handleClose}>
         <Pressable style={settStyles.sheet} onPress={(e) => e.stopPropagation()}>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={settStyles.header}>
             <Text style={[settStyles.title, { fontFamily: "Inter_700Bold" }]}>Settings</Text>
             <TouchableOpacity onPress={handleClose} style={settStyles.closeBtn} activeOpacity={0.7}>
@@ -699,8 +701,10 @@ function SettingsModal({
               Save Address
             </Text>
           </TouchableOpacity>
+          </ScrollView>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

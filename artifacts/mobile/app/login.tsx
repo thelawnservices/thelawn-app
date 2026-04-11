@@ -12,6 +12,7 @@ import {
   Modal,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 
 import { router } from "expo-router";
@@ -115,6 +116,17 @@ export default function LoginScreen() {
   const [pendingIsRegistration, setPendingIsRegistration] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Apple Sign In → landscaper registration completion
+  const [showAppleLsReg, setShowAppleLsReg] = useState(false);
+  const [pendingAppleUser, setPendingAppleUser] = useState<LawnUser | null>(null);
+  const [appleRegPhone, setAppleRegPhone] = useState("");
+  const [appleRegCity, setAppleRegCity] = useState("");
+  const [appleRegState, setAppleRegState] = useState("");
+  const [appleRegZip, setAppleRegZip] = useState("");
+  const [appleRegServices, setAppleRegServices] = useState<string[]>([]);
+  const [appleRegYears, setAppleRegYears] = useState("");
+  const [appleRegLoading, setAppleRegLoading] = useState(false);
+
   // Role selection modal
   const [showRoleModal, setShowRoleModal] = useState(false);
 
@@ -166,9 +178,12 @@ export default function LoginScreen() {
       });
       const data = await res.json();
       if (!res.ok) { setErrors(data.error ?? "Apple sign in failed"); return; }
-      // New landscaper accounts from Apple need service setup
       if (role === "landscaper" && data.isNewUser) {
+        // New landscaper — collect required registration info before entering the app
+        setPendingAppleUser(data.user as LawnUser);
         setPendingIsRegistration(true);
+        setShowAppleLsReg(true);
+        return;
       }
       go(data.user as LawnUser);
     } catch (err: any) {
@@ -762,6 +777,48 @@ export default function LoginScreen() {
         onSelectLandscaper={() => { setShowRoleModal(false); setStep("landscaper-register"); }}
         onClose={() => setShowRoleModal(false)}
       />
+      <AppleLsRegModal
+        visible={showAppleLsReg}
+        user={pendingAppleUser}
+        phone={appleRegPhone} onPhone={setAppleRegPhone}
+        city={appleRegCity} onCity={setAppleRegCity}
+        stateVal={appleRegState} onState={setAppleRegState}
+        zip={appleRegZip} onZip={setAppleRegZip}
+        services={appleRegServices} onServices={setAppleRegServices}
+        years={appleRegYears} onYears={setAppleRegYears}
+        loading={appleRegLoading}
+        onSubmit={async () => {
+          if (!appleRegPhone.trim()) { Alert.alert("Missing", "Please enter your phone number."); return; }
+          if (!appleRegCity.trim()) { Alert.alert("Missing", "Please enter your city."); return; }
+          if (!appleRegState.trim()) { Alert.alert("Missing", "Please enter your state."); return; }
+          if (!appleRegZip.trim() || appleRegZip.length < 5) { Alert.alert("Missing", "Please enter a valid ZIP code."); return; }
+          if (appleRegServices.length === 0) { Alert.alert("Missing", "Please select at least one service you offer."); return; }
+          if (!pendingAppleUser) return;
+          setAppleRegLoading(true);
+          try {
+            await fetch(`${API_URL}/api/auth/update-profile`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                username: pendingAppleUser.username,
+                role: "landscaper",
+                phone: appleRegPhone.trim(),
+                city: appleRegCity.trim(),
+                state: appleRegState.trim(),
+                zipCode: appleRegZip.trim(),
+                services: appleRegServices.join(", "),
+                yearsExperience: appleRegYears.trim(),
+              }),
+            });
+            setShowAppleLsReg(false);
+            go(pendingAppleUser);
+          } catch {
+            Alert.alert("Error", "Could not save your info. Please try again.");
+          } finally {
+            setAppleRegLoading(false);
+          }
+        }}
+      />
       </>
     );
   }
@@ -1046,6 +1103,128 @@ const rsStyles = StyleSheet.create({
   },
   outlineBtnText: { color: "#FFFFFF", fontSize: 17 },
   cancelText: { color: "#888888", fontSize: 14 },
+});
+
+function AppleLsRegModal({
+  visible, user, phone, onPhone, city, onCity, stateVal, onState,
+  zip, onZip, services, onServices, years, onYears, loading, onSubmit,
+}: {
+  visible: boolean; user: any;
+  phone: string; onPhone: (v: string) => void;
+  city: string; onCity: (v: string) => void;
+  stateVal: string; onState: (v: string) => void;
+  zip: string; onZip: (v: string) => void;
+  services: string[]; onServices: (v: string[]) => void;
+  years: string; onYears: (v: string) => void;
+  loading: boolean; onSubmit: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const SRVS = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Full Service", "Tree Removal"];
+  function toggleSvc(s: string) {
+    onServices(services.includes(s) ? services.filter((x) => x !== s) : [...services, s]);
+    Haptics.selectionAsync();
+  }
+  return (
+    <Modal visible={visible} animationType="slide" statusBarTranslucent onRequestClose={() => {}}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#0A0A0A" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <ScrollView contentContainerStyle={{ paddingTop: insets.top + 24, paddingBottom: insets.bottom + 40, paddingHorizontal: 24 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <View style={{ marginBottom: 28 }}>
+            <Ionicons name="leaf" size={32} color="#34FF7A" />
+            <Text style={{ color: "#FFFFFF", fontSize: 24, fontFamily: "Inter_700Bold", marginTop: 12, marginBottom: 6 }}>
+              Almost there!
+            </Text>
+            <Text style={{ color: "#AAAAAA", fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 }}>
+              {user?.businessName ? `Welcome, ${user.businessName}! ` : ""}Just a few more details to complete your landscaper profile.
+            </Text>
+          </View>
+
+          <View style={alrStyles.fieldWrap}>
+            <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>Phone Number *</Text>
+            <TextInput style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]} value={phone} onChangeText={onPhone} placeholder="(555) 000-0000" placeholderTextColor="#777" keyboardType="phone-pad" returnKeyType="next" />
+          </View>
+
+          <View style={alrStyles.fieldWrap}>
+            <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>Services You Offer *</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+              {SRVS.map((s) => (
+                <TouchableOpacity key={s} style={[alrStyles.chip, services.includes(s) && alrStyles.chipOn]} onPress={() => toggleSvc(s)} activeOpacity={0.8}>
+                  <Text style={[alrStyles.chipText, { fontFamily: "Inter_500Medium" }, services.includes(s) && alrStyles.chipTextOn]}>{s}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <View style={[alrStyles.fieldWrap, { flex: 2 }]}>
+              <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>City *</Text>
+              <TextInput style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]} value={city} onChangeText={onCity} placeholder="Sarasota" placeholderTextColor="#777" autoCapitalize="words" returnKeyType="next" />
+            </View>
+            <View style={[alrStyles.fieldWrap, { flex: 1 }]}>
+              <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>State *</Text>
+              <TextInput style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]} value={stateVal} onChangeText={onState} placeholder="FL" placeholderTextColor="#777" autoCapitalize="characters" maxLength={2} returnKeyType="next" />
+            </View>
+          </View>
+
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <View style={[alrStyles.fieldWrap, { flex: 1 }]}>
+              <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>ZIP Code *</Text>
+              <TextInput style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]} value={zip} onChangeText={onZip} placeholder="34222" placeholderTextColor="#777" keyboardType="numeric" maxLength={5} returnKeyType="next" />
+            </View>
+            <View style={[alrStyles.fieldWrap, { flex: 1 }]}>
+              <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>Years Experience</Text>
+              <TextInput style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={onYears} placeholder="3" placeholderTextColor="#777" keyboardType="numeric" maxLength={2} returnKeyType="done" />
+            </View>
+          </View>
+
+          <TouchableOpacity style={[alrStyles.submitBtn, loading && { opacity: 0.6 }]} onPress={loading ? undefined : onSubmit} activeOpacity={0.88}>
+            {loading ? <ActivityIndicator color="#000" /> : (
+              <>
+                <Ionicons name="checkmark-circle" size={20} color="#000" />
+                <Text style={[alrStyles.submitBtnText, { fontFamily: "Inter_700Bold" }]}>Complete Profile</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const alrStyles = StyleSheet.create({
+  fieldWrap: { marginBottom: 18 },
+  label: { fontSize: 13, color: "#AAAAAA", marginBottom: 8, letterSpacing: 0.5 },
+  input: {
+    backgroundColor: "#1A1A1A",
+    borderWidth: 1,
+    borderColor: "#262626",
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#1A1A1A",
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  chipOn: { backgroundColor: "#0D2016", borderColor: "#34FF7A" },
+  chipText: { fontSize: 13, color: "#888" },
+  chipTextOn: { color: "#34FF7A" },
+  submitBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: "#34FF7A",
+    paddingVertical: 18,
+    borderRadius: 28,
+    marginTop: 8,
+  },
+  submitBtnText: { fontSize: 17, color: "#000000" },
 });
 
 function ForgotModal({
