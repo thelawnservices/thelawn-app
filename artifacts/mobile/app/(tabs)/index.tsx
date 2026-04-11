@@ -1845,21 +1845,10 @@ export default function HomeScreen() {
     }
   }, [role, userName]);
 
-  const weekStart = useMemo(() => {
-    const d = new Date(); d.setDate(d.getDate() - d.getDay()); d.setHours(0,0,0,0); return d;
-  }, []);
-
-  const thisWeekEarnings = useMemo(() => {
-    return transactions
-      .filter((t) => t.type === "credit" && t.status === "completed" && new Date(t.date) >= weekStart)
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, [transactions, weekStart]);
-
   const landscaperQuickStats = useMemo(() => [
     { label: "Jobs Completed", value: String(transactions.filter(t => t.type === "credit" && t.status === "completed").length), icon: "checkmark-circle" as const, iconColor: "#34C759" },
-    { label: "This Week",      value: `$${thisWeekEarnings.toFixed(0)}`,  icon: "cash" as const, iconColor: "#34FF7A" },
     { label: "Balance",        value: `$${balance.toFixed(0)}`,           icon: "cash" as const, iconColor: "#34FF7A" },
-  ], [transactions, thisWeekEarnings, balance]);
+  ], [transactions, balance]);
   const { addBookedSlot } = useLandscaperProfile();
   const [prosLoaded, setProsLoaded] = useState(false);
   const [selectedPro, setSelectedPro] = useState<TrustedPro | null>(null);
@@ -2376,7 +2365,7 @@ export default function HomeScreen() {
                 onPress={
                   s.label === "Jobs Completed"
                     ? () => { Haptics.selectionAsync(); setCompletedJobsVisible(true); }
-                    : s.label === "Balance" || s.label === "This Week"
+                    : s.label === "Balance"
                     ? () => router.navigate("/(tabs)/wallet")
                     : undefined
                 }
