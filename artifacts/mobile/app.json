@@ -18,13 +18,16 @@
       "bundleIdentifier": "com.thelawnservices.mobile",
       "infoPlist": {
         "NSCalendarsUsageDescription": "TheLawn uses your calendar to add service appointments.",
-        "NSRemindersUsageDescription": "TheLawn can add appointment reminders to your calendar."
+        "NSRemindersUsageDescription": "TheLawn can add appointment reminders to your calendar.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "permissions": [
         "READ_CALENDAR",
-        "WRITE_CALENDAR"
+        "WRITE_CALENDAR",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.jpeg",
@@ -62,6 +65,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4a03f4d7-dfad-4279-9c26-c8e766ff2711"
+      }
     }
   }
 }
