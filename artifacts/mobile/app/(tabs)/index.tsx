@@ -2309,8 +2309,8 @@ export default function HomeScreen() {
                 name: "Tree Removal",
                 desc: "Safe, professional removal of hazardous or unwanted trees.",
                 est: "4–8 hrs", hot: false,
-                photo: "https://images.unsplash.com/photo-1617550523898-b3e2b9a5e4e3?w=400&q=80",
-                localPhoto: null,
+                photo: null,
+                localPhoto: require("../../assets/images/svc-tree.jpeg"),
               },
               {
                 name: "Full Service",
