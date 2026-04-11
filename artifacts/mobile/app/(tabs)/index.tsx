@@ -397,18 +397,15 @@ function AppHeader({
   userInitial: string;
 }) {
   return (
-    <View style={styles.header}>
-      {/* Full-width banner image */}
-      <View style={[styles.bannerWrap, { height: topPadding + 86 }]}>
+    <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
+      <View style={styles.headerRow}>
+        <View style={{ flex: 1 }} />
         <Image
-          source={require("../../assets/images/banner-logo.jpeg")}
-          style={styles.bannerImg}
-          resizeMode="cover"
+          source={require("../../assets/images/icon.jpeg")}
+          style={styles.logoImg}
+          resizeMode="contain"
         />
-        {/* Dark gradient fade at bottom so content below reads cleanly */}
-        <View style={styles.bannerFade} />
-        {/* Bell + avatar floated top-right over the banner */}
-        <View style={[styles.bannerIcons, { top: topPadding + 10 }]}>
+        <View style={[{ flex: 1 }, styles.headerRight]}>
           <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
             <Ionicons
               name={notifEnabled ? "notifications-outline" : "notifications-off-outline"}
@@ -2312,14 +2309,14 @@ export default function HomeScreen() {
                 name: "Tree Removal",
                 desc: "Safe, professional removal of hazardous or unwanted trees.",
                 est: "4–8 hrs", hot: false,
-                photo: "https://images.unsplash.com/photo-1597200381847-30ec200eeb9a?w=400&q=80",
+                photo: "https://images.unsplash.com/photo-1617550523898-b3e2b9a5e4e3?w=400&q=80",
                 localPhoto: null,
               },
               {
                 name: "Full Service",
                 desc: "Complete lawn care package — mowing, edging, trimming, and cleanup.",
                 est: "3–5 hrs", hot: false,
-                photo: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=400&q=80",
+                photo: "https://images.unsplash.com/photo-1416453072034-c8dbfa2856b2?w=400&q=80",
                 localPhoto: null,
               },
             ] as { name: string; desc: string; est: string; hot: boolean; photo: string | null; localPhoto: any }[]).map((svc, idx) => (
@@ -3262,6 +3259,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A" },
   header: {
     backgroundColor: "#0A0A0A",
+    paddingHorizontal: 20,
+    paddingBottom: 18,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
@@ -3475,13 +3474,13 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   svcPhotoImgWrap: {
-    width: 110,
-    height: 110,
+    width: 120,
+    height: 128,
     position: "relative",
   },
   svcPhotoImg: {
-    width: 110,
-    height: 110,
+    width: 120,
+    height: 128,
   },
   svcPhotoBadge: {
     position: "absolute",
