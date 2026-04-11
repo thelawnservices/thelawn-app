@@ -72,7 +72,8 @@ type Step =
   | "landscaper-login"
   | "customer-register"
   | "landscaper-register"
-  | "verify-code";
+  | "verify-code"
+  | "set-new-password";
 
 const SPECIALTIES = ["Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Full Service", "Tree Removal"];
 
@@ -120,11 +121,17 @@ export default function LoginScreen() {
   // Role selection modal
   const [showRoleModal, setShowRoleModal] = useState(false);
 
-  // Forgot / verify
+  // Forgot / verify / reset
   const [showForgot, setShowForgot] = useState(false);
   const [forgotInput, setForgotInput] = useState("");
   const [forgotRole, setForgotRole] = useState<"customer" | "landscaper">("customer");
+  const [forgotMethod, setForgotMethod] = useState<"email" | "phone">("email");
+  const [forgotLoading, setForgotLoading] = useState(false);
   const [verifyCodeInput, setVerifyCodeInput] = useState("");
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [resetId, setResetId] = useState<number | null>(null);
+  const [newResetPassword, setNewResetPassword] = useState("");
+  const [resetSaving, setResetSaving] = useState(false);
 
   const topPad = isWeb ? 60 : insets.top + 20;
   const botPad = isWeb ? 40 : insets.bottom + 20;
@@ -352,28 +359,114 @@ export default function LoginScreen() {
     }
   }
 
-  function handleSendForgotCode() {
+  async function handleSendForgotCode() {
     if (!forgotInput.trim()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       return;
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setShowForgot(false);
-    setForgotInput("");
-    setVerifyCodeInput("");
-    setStep("verify-code");
+    setForgotLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: forgotInput.trim(),
+          role: forgotRole,
+          method: forgotMethod,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setErrors(data.error ?? "Failed to send code. Please try again.");
+        setShowForgot(false);
+        setStep("verify-code");
+        return;
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setResetId(data.resetId ?? null);
+      setShowForgot(false);
+      setForgotInput("");
+      setVerifyCodeInput("");
+      setErrors(null);
+      setStep("verify-code");
+    } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setErrors("Network error — please check your connection.");
+      setShowForgot(false);
+      setStep("verify-code");
+    } finally {
+      setForgotLoading(false);
+    }
   }
 
-  function handleVerifyCode() {
+  async function handleVerifyCode() {
     if (verifyCodeInput.trim().length < 6) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      setErrors("Please enter the full 6-digit code");
+      setErrors("Please enter the full 6-digit code.");
       return;
     }
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    setErrors(null);
-    // After password reset, redirect back to login to sign in with new credentials
-    navBack(forgotRole === "customer" ? "customer-login" : "landscaper-login");
+    if (!resetId) {
+      setErrors("Reset session expired. Please start over.");
+      return;
+    }
+    setVerifyLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/verify-reset-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetId, code: verifyCodeInput.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setErrors(data.error ?? "Incorrect code. Please try again.");
+        return;
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setErrors(null);
+      setNewResetPassword("");
+      setStep("set-new-password");
+    } catch {
+      setErrors("Network error — please check your connection.");
+    } finally {
+      setVerifyLoading(false);
+    }
+  }
+
+  async function handleSetNewPassword() {
+    if (!newResetPassword.trim()) {
+      setErrors("Please enter a new password.");
+      return;
+    }
+    if (!resetId) {
+      setErrors("Reset session expired. Please start over.");
+      return;
+    }
+    setResetSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resetId, code: verifyCodeInput.trim(), newPassword: newResetPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setErrors(data.error ?? "Failed to reset password. Please try again.");
+        return;
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setErrors(null);
+      setResetId(null);
+      setVerifyCodeInput("");
+      setNewResetPassword("");
+      navBack(forgotRole === "customer" ? "customer-login" : "landscaper-login");
+    } catch {
+      setErrors("Network error — please check your connection.");
+    } finally {
+      setResetSaving(false);
+    }
   }
 
   function navBack(to: Step) {
@@ -456,8 +549,13 @@ export default function LoginScreen() {
             <Ionicons name="mail-outline" size={48} color="#34FF7A" />
           </View>
           <Text style={[styles.verifySubtitle, { fontFamily: "Inter_400Regular" }]}>
-            A 6-digit code was sent to your registered email from{"\n"}
-            <Text style={{ color: "#34FF7A", fontFamily: "Inter_600SemiBold" }}>TheLawnServices</Text>
+            {forgotMethod === "phone"
+              ? "A 6-digit code was sent to the email address linked to your phone number."
+              : "A 6-digit code was sent to your registered email."}
+            {"\n"}Check your inbox from{" "}
+            <Text style={{ color: "#34FF7A", fontFamily: "Inter_600SemiBold" }}>TheLawnServices@gmail.com</Text>
+            {"\n"}
+            <Text style={{ color: "#666", fontSize: 12 }}>Code expires in 15 minutes</Text>
           </Text>
 
           {errors && <ErrorBanner message={errors} />}
@@ -471,10 +569,92 @@ export default function LoginScreen() {
             keyboardType="number-pad"
             maxLength={6}
             textAlign="center"
+            editable={!verifyLoading}
           />
 
-          <TouchableOpacity style={[styles.primaryBtn, { marginTop: 24 }]} onPress={handleVerifyCode} activeOpacity={0.88}>
-            <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Verify Code</Text>
+          <TouchableOpacity
+            style={[styles.primaryBtn, { marginTop: 24, opacity: verifyLoading ? 0.7 : 1 }]}
+            onPress={verifyLoading ? undefined : handleVerifyCode}
+            activeOpacity={0.88}
+          >
+            {verifyLoading ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Verify Code</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => { setShowForgot(true); setVerifyCodeInput(""); setErrors(null); }}
+            style={{ marginTop: 16, alignItems: "center" }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.forgotLink, { fontFamily: "Inter_400Regular" }]}>Resend code</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navBack(forgotRole === "customer" ? "customer-login" : "landscaper-login")} style={{ marginTop: 12, alignItems: "center" }} activeOpacity={0.7}>
+            <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Cancel</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* Allow resend without leaving verify step */}
+        <ForgotModal
+          visible={showForgot}
+          value={forgotInput}
+          onChangeValue={setForgotInput}
+          method={forgotMethod}
+          onChangeMethod={setForgotMethod}
+          onSend={handleSendForgotCode}
+          loading={forgotLoading}
+          onClose={() => { setShowForgot(false); setForgotInput(""); }}
+        />
+      </KeyboardAvoidingView>
+    );
+  }
+
+  // ── Set New Password ─────────────────────────────────────────────
+  if (step === "set-new-password") {
+    return (
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#0A0A0A" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <ScrollView contentContainerStyle={[styles.formScroll, { paddingTop: topPad, paddingBottom: botPad }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <View style={styles.formHeader}>
+            <TouchableOpacity onPress={() => { setStep("verify-code"); setErrors(null); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="chevron-back" size={26} color="#34FF7A" />
+            </TouchableOpacity>
+            <Text style={[styles.formTitle, { fontFamily: "Inter_700Bold" }]}>New Password</Text>
+            <View style={{ width: 26 }} />
+          </View>
+
+          <View style={[styles.verifyIconBox]}>
+            <Ionicons name="lock-closed-outline" size={48} color="#34FF7A" />
+          </View>
+          <Text style={[styles.verifySubtitle, { fontFamily: "Inter_400Regular" }]}>
+            Code verified! Choose a strong new password for your account.
+          </Text>
+
+          {errors && <ErrorBanner message={errors} />}
+
+          <Field label="New Password">
+            <TextInput
+              style={[styles.input, { fontFamily: "Inter_400Regular" }]}
+              value={newResetPassword}
+              onChangeText={setNewResetPassword}
+              placeholder="••••••••"
+              placeholderTextColor="#777"
+              secureTextEntry
+              editable={!resetSaving}
+            />
+          </Field>
+          <PasswordStrengthMeter value={newResetPassword} />
+
+          <TouchableOpacity
+            style={[styles.primaryBtn, { marginTop: 24, opacity: resetSaving ? 0.7 : 1 }]}
+            onPress={resetSaving ? undefined : handleSetNewPassword}
+            activeOpacity={0.88}
+          >
+            {resetSaving ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Set New Password</Text>
+            )}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navBack(forgotRole === "customer" ? "customer-login" : "landscaper-login")} style={{ marginTop: 24, alignItems: "center" }} activeOpacity={0.7}>
             <Text style={[styles.registerLink, { fontFamily: "Inter_400Regular" }]}>Cancel</Text>
@@ -534,7 +714,10 @@ export default function LoginScreen() {
         visible={showForgot}
         value={forgotInput}
         onChangeValue={setForgotInput}
+        method={forgotMethod}
+        onChangeMethod={setForgotMethod}
         onSend={handleSendForgotCode}
+        loading={forgotLoading}
         onClose={() => { setShowForgot(false); setForgotInput(""); }}
       />
       <RoleSelectionModal
@@ -597,7 +780,10 @@ export default function LoginScreen() {
         visible={showForgot}
         value={forgotInput}
         onChangeValue={setForgotInput}
+        method={forgotMethod}
+        onChangeMethod={setForgotMethod}
         onSend={handleSendForgotCode}
+        loading={forgotLoading}
         onClose={() => { setShowForgot(false); setForgotInput(""); }}
       />
       <RoleSelectionModal
@@ -898,36 +1084,80 @@ function ForgotModal({
   visible,
   value,
   onChangeValue,
+  method,
+  onChangeMethod,
   onSend,
+  loading,
   onClose,
 }: {
   visible: boolean;
   value: string;
   onChangeValue: (t: string) => void;
+  method: "email" | "phone";
+  onChangeMethod: (m: "email" | "phone") => void;
   onSend: () => void;
+  loading: boolean;
   onClose: () => void;
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={fgStyles.backdrop}>
         <View style={fgStyles.sheet}>
-          <Text style={[fgStyles.title, { fontFamily: "Inter_700Bold" }]}>Forgot Username or Password?</Text>
+          <Text style={[fgStyles.title, { fontFamily: "Inter_700Bold" }]}>Reset Password</Text>
           <Text style={[fgStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>
-            Enter your email or username and we'll send a verification code.
+            Choose how to identify your account. We'll email you a 6-digit code.
           </Text>
+
+          {/* Email / Phone tab toggle */}
+          <View style={fgStyles.tabRow}>
+            <TouchableOpacity
+              style={[fgStyles.tab, method === "email" && fgStyles.tabActive]}
+              onPress={() => { onChangeMethod("email"); onChangeValue(""); }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="mail-outline" size={15} color={method === "email" ? "#000" : "#888"} style={{ marginRight: 5 }} />
+              <Text style={[fgStyles.tabText, { fontFamily: "Inter_600SemiBold", color: method === "email" ? "#000" : "#888" }]}>Email</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[fgStyles.tab, method === "phone" && fgStyles.tabActive]}
+              onPress={() => { onChangeMethod("phone"); onChangeValue(""); }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="call-outline" size={15} color={method === "phone" ? "#000" : "#888"} style={{ marginRight: 5 }} />
+              <Text style={[fgStyles.tabText, { fontFamily: "Inter_600SemiBold", color: method === "phone" ? "#000" : "#888" }]}>Phone</Text>
+            </TouchableOpacity>
+          </View>
+
+          {method === "phone" && (
+            <Text style={[fgStyles.methodNote, { fontFamily: "Inter_400Regular" }]}>
+              Enter the phone number you registered with. The reset code will be sent to the email linked to that number.
+            </Text>
+          )}
+
           <TextInput
             style={[fgStyles.input, { fontFamily: "Inter_400Regular" }]}
             value={value}
             onChangeText={onChangeValue}
-            placeholder="Email or Username"
+            placeholder={method === "email" ? "Email address" : "Phone number (e.g. +1 555-000-1234)"}
             placeholderTextColor="#777"
             autoCapitalize="none"
             autoCorrect={false}
+            keyboardType={method === "phone" ? "phone-pad" : "email-address"}
+            editable={!loading}
           />
-          <TouchableOpacity style={fgStyles.sendBtn} onPress={onSend} activeOpacity={0.88}>
-            <Text style={[fgStyles.sendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Send Verification Code</Text>
+
+          <TouchableOpacity
+            style={[fgStyles.sendBtn, loading && { opacity: 0.7 }]}
+            onPress={loading ? undefined : onSend}
+            activeOpacity={0.88}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#000" />
+            ) : (
+              <Text style={[fgStyles.sendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Send Reset Code</Text>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity onPress={onClose} style={{ marginTop: 20, alignItems: "center" }} activeOpacity={0.7}>
+          <TouchableOpacity onPress={onClose} style={{ marginTop: 20, alignItems: "center" }} activeOpacity={0.7} disabled={loading}>
             <Text style={[fgStyles.cancelText, { fontFamily: "Inter_400Regular" }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -1204,9 +1434,38 @@ const fgStyles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 22,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 52,
   },
   sendBtnText: { color: "#000", fontSize: 16 },
   cancelText: { color: "#888888", fontSize: 14 },
+  tabRow: {
+    flexDirection: "row",
+    backgroundColor: "#222",
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 14,
+    gap: 4,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 9,
+    borderRadius: 11,
+  },
+  tabActive: {
+    backgroundColor: "#34FF7A",
+  },
+  tabText: { fontSize: 14 },
+  methodNote: {
+    fontSize: 12,
+    color: "#888",
+    lineHeight: 18,
+    marginBottom: 12,
+    textAlign: "center",
+  },
 });
 
 const pkStyles = StyleSheet.create({

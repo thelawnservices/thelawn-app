@@ -1,8 +1,29 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import nodemailer from "nodemailer";
 import { pool } from "../db";
 
 const router = Router();
+
+// ── Email helper ──────────────────────────────────────────────────
+function createTransporter() {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return null;
+  return nodemailer.createTransport({ service: "gmail", auth: { user, pass } });
+}
+
+// ── Ensure password_resets table exists ──────────────────────────
+pool.query(`
+  CREATE TABLE IF NOT EXISTS lawn_password_resets (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL,
+    code        VARCHAR(6) NOT NULL,
+    expires_at  TIMESTAMPTZ NOT NULL,
+    used        BOOLEAN NOT NULL DEFAULT false,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )
+`).catch((e) => console.error("Failed to create lawn_password_resets:", e));
 
 // POST /api/auth/register
 router.post("/register", async (req, res) => {
@@ -25,11 +46,9 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "Invalid role" });
     }
 
-    // Strong password enforcement
     const pwError = validatePassword(password);
     if (pwError) return res.status(400).json({ error: pwError });
 
-    // Check username already taken for same role
     const existing = await pool.query(
       "SELECT id FROM lawn_users WHERE username = $1 AND role = $2",
       [username.toLowerCase().trim(), role]
@@ -38,7 +57,6 @@ router.post("/register", async (req, res) => {
       return res.status(409).json({ error: "Username already taken. Please choose another." });
     }
 
-    // Cross-role uniqueness: email and phone must not be registered under the opposite role
     const oppositeRole = role === "customer" ? "landscaper" : "customer";
     const emailConflict = await pool.query(
       "SELECT id FROM lawn_users WHERE email = $1 AND role = $2",
@@ -153,6 +171,196 @@ router.post("/change-password", async (req, res) => {
   } catch (err: any) {
     console.error("Change password error:", err);
     return res.status(500).json({ error: "Failed to change password. Please try again." });
+  }
+});
+
+// POST /api/auth/forgot-password
+// Accepts: { identifier, role, method }
+//   method = "email"  → look up by email address
+//   method = "phone"  → look up by phone number (code sent to account's email)
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { identifier, role, method } = req.body as {
+      identifier: string; role: string; method: "email" | "phone";
+    };
+
+    if (!identifier || !role || !method) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+    if (!["customer", "landscaper"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role." });
+    }
+
+    // Look up the user
+    let userResult;
+    if (method === "email") {
+      userResult = await pool.query(
+        "SELECT * FROM lawn_users WHERE email = $1 AND role = $2",
+        [identifier.trim().toLowerCase(), role]
+      );
+    } else {
+      // phone: digits only for lookup
+      const digits = identifier.replace(/\D/g, "");
+      userResult = await pool.query(
+        "SELECT * FROM lawn_users WHERE REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = $1 AND role = $2",
+        [digits, role]
+      );
+    }
+
+    // Always return success to prevent user enumeration
+    if (userResult.rows.length === 0) {
+      return res.json({ success: true, resetId: null });
+    }
+
+    const user = userResult.rows[0];
+    if (!user.email) {
+      return res.json({ success: true, resetId: null });
+    }
+
+    // Invalidate any previous unused codes for this user
+    await pool.query(
+      "UPDATE lawn_password_resets SET used = true WHERE user_id = $1 AND used = false",
+      [user.id]
+    );
+
+    // Generate a 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    const insertResult = await pool.query(
+      "INSERT INTO lawn_password_resets (user_id, code, expires_at) VALUES ($1, $2, $3) RETURNING id",
+      [user.id, code, expiresAt]
+    );
+    const resetId = insertResult.rows[0].id;
+
+    // Send the email
+    const transporter = createTransporter();
+    if (transporter) {
+      const displayName = user.display_name || user.username;
+      const deliveryNote = method === "phone"
+        ? `<p style="color:#aaa;font-size:13px;">You requested this code using your registered phone number. It is being delivered to the email address linked to your account.</p>`
+        : "";
+
+      await transporter.sendMail({
+        from: `"The Lawn Services" <${process.env.GMAIL_USER}>`,
+        to: user.email,
+        subject: "Your Password Reset Code — The Lawn Services",
+        html: `
+          <div style="font-family:Arial,sans-serif;background:#0A0A0A;padding:32px;border-radius:12px;max-width:480px;margin:auto;">
+            <div style="text-align:center;margin-bottom:24px;">
+              <span style="font-size:32px;">🌿</span>
+              <h1 style="color:#34FF7A;margin:8px 0 4px;font-size:22px;">The Lawn Services</h1>
+            </div>
+            <h2 style="color:#ffffff;font-size:18px;margin-bottom:8px;">Password Reset Code</h2>
+            <p style="color:#cccccc;font-size:14px;line-height:1.6;">Hi ${displayName},</p>
+            <p style="color:#cccccc;font-size:14px;line-height:1.6;">
+              We received a request to reset your password. Use the code below to continue.
+              This code expires in <strong style="color:#fff;">15 minutes</strong>.
+            </p>
+            ${deliveryNote}
+            <div style="background:#1A1A1A;border:1px solid #222;border-radius:10px;padding:24px;text-align:center;margin:24px 0;">
+              <span style="font-size:36px;font-weight:700;letter-spacing:10px;color:#34FF7A;">${code}</span>
+            </div>
+            <p style="color:#888;font-size:12px;line-height:1.6;">
+              If you didn't request a password reset, you can safely ignore this email.
+              Your password will not be changed until you use this code.
+            </p>
+            <hr style="border-color:#222;margin:20px 0;" />
+            <p style="color:#555;font-size:11px;text-align:center;">
+              © ${new Date().getFullYear()} The Lawn Services · Do not reply to this email
+            </p>
+          </div>
+        `,
+      });
+    }
+
+    return res.json({ success: true, resetId });
+  } catch (err: any) {
+    console.error("Forgot password error:", err);
+    return res.status(500).json({ error: "Failed to send reset code. Please try again." });
+  }
+});
+
+// POST /api/auth/verify-reset-code
+// Accepts: { resetId, code }
+router.post("/verify-reset-code", async (req, res) => {
+  try {
+    const { resetId, code } = req.body as { resetId: number; code: string };
+    if (!resetId || !code) {
+      return res.status(400).json({ error: "Reset ID and code are required." });
+    }
+
+    const result = await pool.query(
+      "SELECT * FROM lawn_password_resets WHERE id = $1",
+      [resetId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid reset request." });
+    }
+
+    const reset = result.rows[0];
+
+    if (reset.used) {
+      return res.status(400).json({ error: "This code has already been used." });
+    }
+    if (new Date() > new Date(reset.expires_at)) {
+      return res.status(400).json({ error: "This code has expired. Please request a new one." });
+    }
+    if (reset.code !== code.trim()) {
+      return res.status(400).json({ error: "Incorrect code. Please check and try again." });
+    }
+
+    return res.json({ valid: true });
+  } catch (err: any) {
+    console.error("Verify reset code error:", err);
+    return res.status(500).json({ error: "Verification failed. Please try again." });
+  }
+});
+
+// POST /api/auth/reset-password
+// Accepts: { resetId, code, newPassword }
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { resetId, code, newPassword } = req.body as {
+      resetId: number; code: string; newPassword: string;
+    };
+    if (!resetId || !code || !newPassword) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+
+    const result = await pool.query(
+      "SELECT * FROM lawn_password_resets WHERE id = $1",
+      [resetId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid reset request." });
+    }
+
+    const reset = result.rows[0];
+
+    if (reset.used) {
+      return res.status(400).json({ error: "This code has already been used." });
+    }
+    if (new Date() > new Date(reset.expires_at)) {
+      return res.status(400).json({ error: "This code has expired. Please request a new one." });
+    }
+    if (reset.code !== code.trim()) {
+      return res.status(400).json({ error: "Incorrect code. Please check and try again." });
+    }
+
+    const pwError = validatePassword(newPassword);
+    if (pwError) return res.status(400).json({ error: pwError });
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await pool.query("UPDATE lawn_users SET password_hash = $1 WHERE id = $2", [newHash, reset.user_id]);
+    await pool.query("UPDATE lawn_password_resets SET used = true WHERE id = $1", [resetId]);
+
+    return res.json({ success: true });
+  } catch (err: any) {
+    console.error("Reset password error:", err);
+    return res.status(500).json({ error: "Failed to reset password. Please try again." });
   }
 });
 
