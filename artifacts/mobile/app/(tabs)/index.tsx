@@ -2302,8 +2302,8 @@ export default function HomeScreen() {
                 name: "Sod Installation",
                 desc: "Transform bare or damaged areas into a lush, vibrant lawn fast.",
                 est: "4–8 hrs", hot: false,
-                photo: "https://images.unsplash.com/photo-1558904541-efa843a96f01?w=400&q=80",
-                localPhoto: null,
+                photo: null,
+                localPhoto: require("../../assets/images/svc-sod.jpeg"),
               },
               {
                 name: "Tree Removal",
