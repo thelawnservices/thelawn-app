@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
@@ -12,6 +12,21 @@ export default function TimerScreen() {
   const isWeb = Platform.OS === "web";
   const [seconds, setSeconds] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const params = useLocalSearchParams<{
+    proName: string;
+    proInitials: string;
+    proColor: string;
+    proRating: string;
+    proSpecialty: string;
+    serviceName: string;
+  }>();
+
+  const proName      = params.proName      || "Your Pro";
+  const proInitials  = params.proInitials  || proName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const proColor     = params.proColor     || "#34C759";
+  const proSpecialty = params.proSpecialty || "Lawn Specialist";
+  const serviceName  = params.serviceName  || "Service";
 
   const topPadding = isWeb ? 67 : insets.top;
   const bottomPadding = isWeb ? 34 : insets.bottom;
@@ -35,7 +50,10 @@ export default function TimerScreen() {
   const handleComplete = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.push("/feedback");
+    router.push({
+      pathname: "/feedback",
+      params: { proName: params.proName, proInitials: params.proInitials, proColor: params.proColor, serviceName },
+    });
   };
 
   return (
@@ -72,15 +90,15 @@ export default function TimerScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.proRow}>
-            <View style={[styles.proAvatar, { backgroundColor: "#34C759" }]}>
-              <Text style={styles.proInitials}>JR</Text>
+            <View style={[styles.proAvatar, { backgroundColor: proColor }]}>
+              <Text style={styles.proInitials}>{proInitials}</Text>
             </View>
             <View>
               <Text style={[styles.proName, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-                John Rivera
+                {proName}
               </Text>
               <Text style={[styles.proSpec, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-                Lawn Mowing · Standard Cut
+                {serviceName} · {proSpecialty}
               </Text>
             </View>
           </View>

@@ -218,7 +218,7 @@ function LandscaperProfile({
   helpVisible: boolean;
   setHelpVisible: (v: boolean) => void;
 }) {
-  const { setAvatarUri, banUser } = useAuth();
+  const { setAvatarUri, banUser, user, userName } = useAuth();
   const { myServices, bookedSlots } = useLandscaperProfile();
   const { broadcastAnnouncement } = useNotifications();
   const lsRouter = useRouter();
@@ -291,11 +291,11 @@ function LandscaperProfile({
 
   // Editable profile fields
   const [editVisible, setEditVisible] = useState(false);
-  const [profileName, setProfileName] = useState("GreenScape Pros");
+  const [profileName, setProfileName] = useState(user?.businessName || userName || "");
   const [profileBio, setProfileBio] = useState("Professional landscaping services with over 10 years of experience. We specialize in mowing/edging, weeding/mulching, sod installation, and artificial turf for residential properties.");
-  const [profileCity, setProfileCity] = useState("Ellenton");
-  const [profileState, setProfileState] = useState("FL");
-  const [profileZip, setProfileZip] = useState("34222");
+  const [profileCity, setProfileCity] = useState(user?.city || "");
+  const [profileState, setProfileState] = useState(user?.state || "");
+  const [profileZip, setProfileZip] = useState(user?.zipCode || "");
   // Draft fields used inside the edit modal
   const [draftName, setDraftName] = useState(profileName);
   const [draftBio, setDraftBio] = useState(profileBio);
@@ -725,8 +725,8 @@ function LandscaperProfile({
                 style={[cutStyles.actionChip, cutStyles.actionChipShare]}
                 onPress={() => {
                   Share.share({
-                    title: "GreenScape Pros on TheLawn",
-                    message: "Check out GreenScape Pros on TheLawn — top-rated landscaping near you! https://thelawn.app",
+                    title: `${profileName} on TheLawn`,
+                    message: `Check out ${profileName} on TheLawn — top-rated landscaping near you! https://thelawn.app`,
                     url: "https://thelawn.app",
                   }).catch(() => {});
                 }}
@@ -904,7 +904,7 @@ function LandscaperProfile({
                           }
                           setReviews((prev) => prev.map((rev, idx) =>
                             idx === i
-                              ? { ...rev, replies: [...rev.replies, { text: t, author: "GreenScape Pros", date: "Just now" }] }
+                              ? { ...rev, replies: [...rev.replies, { text: t, author: profileName || userName || "Pro", date: "Just now" }] }
                               : rev
                           ));
                           setReplyText("");

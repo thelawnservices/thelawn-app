@@ -43,77 +43,16 @@ function normalizeTime(raw: string): string {
 
 type RequestStatus = "pending" | "accepted" | "in_progress" | "completed" | "cancelled";
 
-const CUSTOMER_REQUESTS = [
-  {
-    id: "r1",
-    service: "Mowing/Edging",
-    description: "Full front and back yard, approx 1/4 acre. Gate on left side.",
-    date: "Apr 12, 2026",
-    time: "10:30 AM",
-    budget: "$45 – $70",
-    status: "accepted" as RequestStatus,
-    pro: "John Rivera",
-    postedAgo: "2 days ago",
-  },
-  {
-    id: "r2",
-    service: "Weeding/Mulching",
-    description: "Flower beds around the house, roughly 40 sq ft. Needs fresh mulch too.",
-    date: "Apr 18, 2026",
-    time: "9:00 AM",
-    budget: "$90 – $130",
-    status: "pending" as RequestStatus,
-    pro: null,
-    postedAgo: "5 hours ago",
-  },
-  {
-    id: "r3",
-    service: "Sod Installation",
-    description: "Back yard needs fresh sod — about 800 sq ft total.",
-    date: "Mar 28, 2026",
-    time: "11:00 AM",
-    budget: "$350 – $550",
-    status: "completed" as RequestStatus,
-    pro: "GreenScape Pros",
-    postedAgo: "11 days ago",
-  },
-];
+const CUSTOMER_REQUESTS: Array<{
+  id: string; service: string; description: string; date: string; time: string;
+  budget: string; status: RequestStatus; pro: string | null; postedAgo: string;
+  detail?: string;
+}> = [];
 
-const LANDSCAPER_INCOMING = [
-  {
-    id: "in1",
-    service: "Mowing/Edging",
-    description: "Medium yard, front and back. Edge along driveway and sidewalk.",
-    address: "8910 45th Ave E, Ellenton, FL",
-    budget: "$55 – $70",
-    date: "Apr 14",
-    time: "Flexible",
-    customer: "Alex T.",
-    distance: "1.4 mi",
-  },
-  {
-    id: "in2",
-    service: "Weeding/Mulching",
-    description: "Front flower beds need weeding and about 3 yards of fresh mulch.",
-    address: "22 Palmetto Dr, Bradenton, FL",
-    budget: "$90 – $130",
-    date: "Apr 16",
-    time: "Morning preferred",
-    customer: "Priya N.",
-    distance: "3.1 mi",
-  },
-  {
-    id: "in3",
-    service: "Sod Installation",
-    description: "Back yard — roughly 600 sq ft of bare dirt that needs new sod.",
-    address: "104 Riverside Blvd, Palmetto, FL",
-    budget: "$350 – $550",
-    date: "Apr 17",
-    time: "Anytime",
-    customer: "Marcus R.",
-    distance: "5.8 mi",
-  },
-];
+const LANDSCAPER_INCOMING: Array<{
+  id: string; service: string; description: string; address: string;
+  budget: string; date: string; time: string; customer: string; distance: string;
+}> = [];
 
 function parseTimeToMinutes(t: string): number {
   const s = t.trim().toLowerCase();
@@ -495,8 +434,19 @@ export default function RequestsScreen() {
           /* ── Landscaper: incoming job requests ─────────────── */
           <>
             <Text style={[styles.sectionLabel, { fontFamily: "Inter_400Regular" }]}>
-              {LANDSCAPER_INCOMING.length} open requests near you
+              {LANDSCAPER_INCOMING.length === 0
+                ? "No open requests near you right now"
+                : `${LANDSCAPER_INCOMING.length} open request${LANDSCAPER_INCOMING.length !== 1 ? "s" : ""} near you`}
             </Text>
+            {LANDSCAPER_INCOMING.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="leaf-outline" size={38} color="#444" />
+                <Text style={[styles.emptyTitle, { fontFamily: "Inter_500Medium" }]}>No requests yet</Text>
+                <Text style={[styles.emptySubtitle, { fontFamily: "Inter_400Regular" }]}>
+                  When customers in your area post requests, they'll show up here.
+                </Text>
+              </View>
+            ) : null}
             {LANDSCAPER_INCOMING.map((req) => {
               const isAccepted = accepted.includes(req.id);
               return (

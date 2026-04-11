@@ -29,23 +29,9 @@ type LandscaperPayRecord = {
   earned: string; commission: string; status: PayStatus; yardSize: string; address: string; payMethod: string;
 };
 
-export const CUSTOMER_PAYMENT_HISTORY: CustomerPayRecord[] = [
-  { id: "cp1", orderId: "TL-2026-40812", date: "Apr 8, 2026",  service: "Mowing/Edging",    pro: "John Rivera",       amount: "$70",   status: "paid",     yardSize: "Medium", address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "Apple Pay" },
-  { id: "cp2", orderId: "TL-2026-40267", date: "Apr 2, 2026",  service: "Weeding/Mulching", pro: "EcoGreen Services", amount: "$90",   status: "paid",     yardSize: "Small",  address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Venmo" },
-  { id: "cp3", orderId: "TL-2026-32291", date: "Mar 22, 2026", service: "Sod Installation", pro: "Mike Torres",       amount: "$350",  status: "pending",  yardSize: "Small",  address: "14 Manatee Ave, Ellenton, FL",             payMethod: "PayPal" },
-  { id: "cp4", orderId: "TL-2026-31456", date: "Mar 14, 2026", service: "Artificial Turf",  pro: "GreenScape Pros",   amount: "$1800", status: "refunded", yardSize: "Large",  address: "8910 45th Ave E, Ellenton, FL",            payMethod: "Debit Card" },
-  { id: "cp5", orderId: "TL-2026-28731", date: "Mar 1, 2026",  service: "Mowing/Edging",    pro: "John Rivera",       amount: "$45",   status: "paid",     yardSize: "Small",  address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "In Person" },
-  { id: "cp6", orderId: "TL-2026-21043", date: "Feb 18, 2026", service: "Weeding/Mulching", pro: "GreenScape Pros",   amount: "$130",  status: "paid",     yardSize: "Medium", address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Cash App" },
-];
+export const CUSTOMER_PAYMENT_HISTORY: CustomerPayRecord[] = [];
 
-export const LANDSCAPER_PAYMENT_HISTORY: LandscaperPayRecord[] = [
-  { id: "lp1", orderId: "TL-2026-40812", date: "Apr 8, 2026",  service: "Mowing/Edging",    customer: "Alex T.",   earned: "$66.50",   commission: "$3.50",  status: "paid",    yardSize: "Medium", address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "Apple Pay" },
-  { id: "lp2", orderId: "TL-2026-40267", date: "Apr 5, 2026",  service: "Weeding/Mulching", customer: "Priya N.",  earned: "$85.50",   commission: "$4.50",  status: "pending", yardSize: "Small",  address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Venmo" },
-  { id: "lp3", orderId: "TL-2026-32291", date: "Mar 28, 2026", service: "Sod Installation", customer: "Marcus R.", earned: "$332.50",  commission: "$17.50", status: "paid",    yardSize: "Small",  address: "14 Manatee Ave, Ellenton, FL",             payMethod: "PayPal" },
-  { id: "lp4", orderId: "TL-2026-31456", date: "Mar 15, 2026", service: "Artificial Turf",  customer: "Diane W.",  earned: "$1708.00", commission: "$92.00", status: "paid",    yardSize: "Large",  address: "8910 45th Ave E, Ellenton, FL",            payMethod: "Debit Card" },
-  { id: "lp5", orderId: "TL-2026-28731", date: "Mar 1, 2026",  service: "Mowing/Edging",    customer: "Zamire S.", earned: "$42.75",   commission: "$2.25",  status: "paid",    yardSize: "Small",  address: "4627 Hall's Mill Crossing, Ellenton, FL",  payMethod: "In Person" },
-  { id: "lp6", orderId: "TL-2026-21043", date: "Feb 18, 2026", service: "Weeding/Mulching", customer: "Tasha B.",  earned: "$123.50",  commission: "$6.50",  status: "paid",    yardSize: "Medium", address: "22 Palmetto Dr, Bradenton, FL",            payMethod: "Cash App" },
-];
+export const LANDSCAPER_PAYMENT_HISTORY: LandscaperPayRecord[] = [];
 
 export default function PaymentHistoryModal({
   visible,
@@ -81,6 +67,24 @@ export default function PaymentHistoryModal({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+            {role === "customer" && CUSTOMER_PAYMENT_HISTORY.length === 0 && (
+              <View style={s.emptyWrap}>
+                <Ionicons name="card-outline" size={40} color="#333" />
+                <Text style={[s.emptyTitle, { fontFamily: "Inter_600SemiBold" }]}>No payments yet</Text>
+                <Text style={[s.emptySub, { fontFamily: "Inter_400Regular" }]}>
+                  Your payment receipts will appear here after your first booking.
+                </Text>
+              </View>
+            )}
+            {role === "landscaper" && LANDSCAPER_PAYMENT_HISTORY.length === 0 && (
+              <View style={s.emptyWrap}>
+                <Ionicons name="cash-outline" size={40} color="#333" />
+                <Text style={[s.emptyTitle, { fontFamily: "Inter_600SemiBold" }]}>No earnings yet</Text>
+                <Text style={[s.emptySub, { fontFamily: "Inter_400Regular" }]}>
+                  Your earnings will appear here once you complete your first job.
+                </Text>
+              </View>
+            )}
             {role === "customer"
               ? CUSTOMER_PAYMENT_HISTORY.map((item) => {
                   const cfg = PAY_STATUS_CONFIG[item.status];
@@ -244,4 +248,7 @@ const s = StyleSheet.create({
     padding: 10, marginTop: 4,
   },
   disputeNoteText: { fontSize: 12, color: "#FFAA00", flex: 1, lineHeight: 18 },
+  emptyWrap: { alignItems: "center", paddingTop: 60, paddingBottom: 40, gap: 14, paddingHorizontal: 32 },
+  emptyTitle: { fontSize: 17, color: "#FFFFFF" },
+  emptySub: { fontSize: 13, color: "#BBBBBB", textAlign: "center", lineHeight: 20 },
 });

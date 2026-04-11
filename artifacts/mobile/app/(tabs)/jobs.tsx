@@ -54,82 +54,28 @@ const SHARED_ACTIVE_JOBS: Array<{
   time: string;
   paymentMethod: PayMethod;
   amount: number;
-}> = [
-  {
-    id: "a1",
-    code: "JOB-84712",
-    service: "Mowing/Edging",
-    customer: "Zamire Smith",
-    landscaper: "GreenScape Pros",
-    address: "8910 45th Ave E, Ellenton, FL",
-    date: "Today",
-    time: "10:30 AM",
-    paymentMethod: "stripe",
-    amount: 85,
-  },
-];
+}> = [];
 
-const SHARED_COMPLETED_JOBS = [
-  {
-    id: "c1",
-    code: "JOB-61293",
-    service: "Mowing/Edging",
-    customer: "Marcus T.",
-    landscaper: "GreenScape Pros",
-    address: "88 Palmetto Ave, Ellenton, FL",
-    date: "Apr 7",
-    time: "9:00 AM",
-  },
-  {
-    id: "c2",
-    code: "JOB-38847",
-    service: "Weeding/Mulching",
-    customer: "Alex T.",
-    landscaper: "GreenScape Pros",
-    address: "22 Oak St, Ellenton, FL",
-    date: "Mar 28",
-    time: "11:00 AM",
-  },
-];
+const SHARED_COMPLETED_JOBS: Array<{
+  id: string;
+  code: string;
+  service: string;
+  customer: string;
+  landscaper: string;
+  address: string;
+  date: string;
+  time: string;
+}> = [];
 
-const SERVICE_HISTORY = [
-  {
-    id: "h1",
-    code: "JOB-29341",
-    service: "Mowing/Edging",
-    customer: "Zamire Smith",
-    landscaper: "GreenScape Pros",
-    date: "Apr 7, 2026",
-    amount: "$65.00",
-  },
-  {
-    id: "h2",
-    code: "JOB-74412",
-    service: "Hedge Trimming",
-    customer: "Marcus T.",
-    landscaper: "GreenScape Pros",
-    date: "Mar 28, 2026",
-    amount: "$55.00",
-  },
-  {
-    id: "h3",
-    code: "JOB-51087",
-    service: "Weeding/Mulching",
-    customer: "Alex T.",
-    landscaper: "GreenScape Pros",
-    date: "Mar 15, 2026",
-    amount: "$135.00",
-  },
-  {
-    id: "h4",
-    code: "JOB-66203",
-    service: "Mowing/Edging",
-    customer: "Priya N.",
-    landscaper: "GreenScape Pros",
-    date: "Feb 22, 2026",
-    amount: "$52.00",
-  },
-];
+const SERVICE_HISTORY: Array<{
+  id: string;
+  code: string;
+  service: string;
+  customer: string;
+  landscaper: string;
+  date: string;
+  amount: string;
+}> = [];
 
 const STATUS_STEPS: { key: JobStatus; label: string; icon: string }[] = [
   { key: "started",   label: "Arrived & Work Started", icon: "location-outline" },
@@ -875,6 +821,15 @@ export default function JobsScreen() {
           Active Jobs
         </Text>
 
+        {SHARED_ACTIVE_JOBS.length === 0 && (
+          <View style={styles.emptyRow}>
+            <Ionicons name="leaf-outline" size={36} color="#444" />
+            <Text style={[styles.emptyText, { fontFamily: "Inter_400Regular" }]}>No active jobs today</Text>
+            <Text style={[{ fontSize: 12, color: "#555", textAlign: "center", marginTop: 4 }, { fontFamily: "Inter_400Regular" }]}>
+              Accept requests from customers to see your jobs here
+            </Text>
+          </View>
+        )}
         {SHARED_ACTIVE_JOBS.map((job) => {
           const actualStatus = jobStatuses[job.id];
           const status = actualStatus;
@@ -1169,6 +1124,11 @@ export default function JobsScreen() {
           Service History
         </Text>
 
+        {SERVICE_HISTORY.length === 0 && (
+          <View style={styles.emptyRow}>
+            <Text style={[styles.emptyText, { fontFamily: "Inter_400Regular" }]}>No service history yet</Text>
+          </View>
+        )}
         {SERVICE_HISTORY.map((entry) => (
           <View key={entry.id} style={styles.historyCard}>
             <View style={styles.historyIconCol}>

@@ -8,7 +8,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
@@ -20,6 +20,18 @@ export default function FeedbackScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
+
+  const params = useLocalSearchParams<{
+    proName: string;
+    proInitials: string;
+    proColor: string;
+    serviceName: string;
+  }>();
+
+  const proName      = params.proName      || "Your Pro";
+  const proInitials  = params.proInitials  || proName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const proColor     = params.proColor     || "#34C759";
+  const serviceName  = params.serviceName  || "Service";
   const [rating, setRating] = useState(5);
   const [review, setReview] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -97,15 +109,15 @@ export default function FeedbackScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.proCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[styles.proAvatar, { backgroundColor: "#34C759" }]}>
-            <Text style={styles.proInitials}>JR</Text>
+          <View style={[styles.proAvatar, { backgroundColor: proColor }]}>
+            <Text style={styles.proInitials}>{proInitials}</Text>
           </View>
           <View>
             <Text style={[styles.proName, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-              John Rivera
+              {proName}
             </Text>
             <Text style={[styles.proSvc, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-              Mowing/Edging · Today
+              {serviceName} · Today
             </Text>
           </View>
         </View>

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Platform,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
@@ -26,6 +26,20 @@ export default function BookingScreen() {
   const isWeb = Platform.OS === "web";
   const [selectedId, setSelectedId] = useState<string>("1");
 
+  const params = useLocalSearchParams<{
+    proName: string;
+    proInitials: string;
+    proColor: string;
+    proRating: string;
+    proSpecialty: string;
+  }>();
+
+  const proName     = params.proName     || "Your Pro";
+  const proInitials = params.proInitials || proName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const proColor    = params.proColor    || "#34C759";
+  const proRating   = params.proRating   || "";
+  const proSpecialty = params.proSpecialty || "Lawn Specialist";
+
   const topPadding = isWeb ? 67 : insets.top;
   const bottomPadding = isWeb ? 34 : insets.bottom;
 
@@ -39,7 +53,16 @@ export default function BookingScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push({
       pathname: "/review",
-      params: { serviceId: selectedId, serviceName: svc?.name, price: svc?.price?.toString() },
+      params: {
+        serviceId: selectedId,
+        serviceName: svc?.name,
+        price: svc?.price?.toString(),
+        proName,
+        proInitials,
+        proColor,
+        proRating,
+        proSpecialty,
+      },
     });
   };
 
@@ -59,20 +82,20 @@ export default function BookingScreen() {
           <Ionicons name="chevron-back" size={24} color={colors.foreground} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-          Book with John Rivera
+          Book with {proName}
         </Text>
         <View style={{ width: 36 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: bottomPadding + 96 }}>
         <View style={[styles.proCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[styles.proAvatar, { backgroundColor: "#34C759" }]}>
-            <Text style={styles.proInitials}>JR</Text>
+          <View style={[styles.proAvatar, { backgroundColor: proColor }]}>
+            <Text style={styles.proInitials}>{proInitials}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.proName, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>John Rivera</Text>
+            <Text style={[styles.proName, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>{proName}</Text>
             <Text style={[styles.proSpec, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-              Lawn Specialist · 4.9 ★
+              {proSpecialty}{proRating ? ` · ${proRating} ★` : ""}
             </Text>
           </View>
           <View style={[styles.trustedBadge, { backgroundColor: colors.secondary }]}>

@@ -23,21 +23,39 @@ export default function ReviewScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
-  const params = useLocalSearchParams<{ serviceName: string; price: string }>();
+  const params = useLocalSearchParams<{
+    serviceName: string;
+    price: string;
+    proName: string;
+    proInitials: string;
+    proColor: string;
+    proRating: string;
+    proSpecialty: string;
+  }>();
   const [tipIdx, setTipIdx] = useState(1);
 
   const topPadding = isWeb ? 67 : insets.top;
   const bottomPadding = isWeb ? 34 : insets.bottom;
 
-  const serviceName = params.serviceName || "Mowing/Edging";
-  const price = parseFloat(params.price || "45");
-  const tip = Math.round(price * TIP_OPTIONS[tipIdx].value * 100) / 100;
-  const fee = Math.round(price * 0.03 * 100) / 100;
+  const serviceName  = params.serviceName  || "Mowing/Edging";
+  const price        = parseFloat(params.price || "45");
+  const proName      = params.proName      || "Your Pro";
+  const proInitials  = params.proInitials  || proName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const proColor     = params.proColor     || "#34C759";
+  const proRating    = params.proRating    || "";
+  const proSpecialty = params.proSpecialty || "Lawn Specialist";
+  const proFirstName = proName.split(" ")[0];
+
+  const tip   = Math.round(price * TIP_OPTIONS[tipIdx].value * 100) / 100;
+  const fee   = Math.round(price * 0.03 * 100) / 100;
   const total = (price + tip + fee).toFixed(2);
 
   const handlePay = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push("/timer");
+    router.push({
+      pathname: "/timer",
+      params: { proName, proInitials, proColor, proRating, proSpecialty, serviceName },
+    });
   };
 
   return (
@@ -68,7 +86,7 @@ export default function ReviewScreen() {
                 {serviceName}
               </Text>
               <Text style={[styles.svcSub, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-                John Rivera · Standard
+                {proName} · {proSpecialty}
               </Text>
             </View>
           </View>
@@ -76,7 +94,7 @@ export default function ReviewScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <Text style={[styles.tipLabel, { color: colors.mutedForeground, fontFamily: "Inter_600SemiBold" }]}>
-            Add a tip for John
+            Add a tip for {proFirstName}
           </Text>
           <View style={styles.tipRow}>
             {TIP_OPTIONS.map((t, i) => (

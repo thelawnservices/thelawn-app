@@ -687,7 +687,7 @@ function SearchProProfileModal({
               <TouchableOpacity
                 style={proStyles.contactBtn}
                 activeOpacity={0.8}
-                onPress={() => Linking.openURL("tel:+19415550000").catch(() => Alert.alert("Calling", pro.name))}
+                onPress={() => Alert.alert("Contact " + pro.name, "Direct calling is not available yet. Book this pro and use the in-app chat to coordinate.")}
               >
                 <Ionicons name="call-outline" size={22} color="#34FF7A" />
                 <Text style={[proStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
@@ -695,7 +695,7 @@ function SearchProProfileModal({
               <TouchableOpacity
                 style={proStyles.contactBtn}
                 activeOpacity={0.8}
-                onPress={() => Linking.openURL("sms:+19415550000").catch(() => Alert.alert("Message", "Texting " + pro.name))}
+                onPress={() => Alert.alert("Contact " + pro.name, "Direct messaging is not available yet. Book this pro and use the in-app chat to coordinate.")}
               >
                 <Ionicons name="chatbubble-outline" size={22} color="#34FF7A" />
                 <Text style={[proStyles.contactLabel, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
