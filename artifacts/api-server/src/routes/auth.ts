@@ -373,35 +373,43 @@ function validatePassword(pw: string): string | null {
   return null;
 }
 
-// POST /api/auth/apple — find-or-create customer from Apple Sign In credential
+// POST /api/auth/apple — find-or-create account from Apple Sign In credential
+// Accepts optional `role` ("customer" | "landscaper"), defaults to "customer"
 router.post("/apple", async (req, res) => {
   try {
-    const { appleId, email, givenName, familyName } = req.body as {
-      appleId: string; email?: string; givenName?: string; familyName?: string;
+    const { appleId, email, givenName, familyName, role: rawRole } = req.body as {
+      appleId: string; email?: string; givenName?: string; familyName?: string; role?: string;
     };
     if (!appleId) return res.status(400).json({ error: "Missing Apple credential" });
 
-    // Check if user with this Apple ID already exists
+    const role = rawRole === "landscaper" ? "landscaper" : "customer";
+
+    // Check if user with this Apple ID already exists for this role
     const existing = await pool.query(
-      "SELECT * FROM lawn_users WHERE apple_id = $1 AND role = 'customer'",
-      [appleId]
+      "SELECT * FROM lawn_users WHERE apple_id = $1 AND role = $2",
+      [appleId, role]
     );
     if (existing.rows.length > 0) {
-      return res.json({ user: sanitize(existing.rows[0]) });
+      return res.json({ user: sanitize(existing.rows[0]), isNewUser: false });
     }
 
     // First-time sign in — create account
-    const displayName = [givenName, familyName].filter(Boolean).join(" ").trim() || "Apple User";
+    const displayName = [givenName, familyName].filter(Boolean).join(" ").trim() ||
+      (role === "landscaper" ? "New Landscaper" : "Apple User");
     const safeEmail = email?.trim().toLowerCase() || `apple_${appleId.slice(0, 8)}@noemail.thelawn`;
 
+    // For landscapers, derive a businessName from their display name
+    const businessName = role === "landscaper" ? `${displayName} Landscaping` : "";
+
     // Generate a unique username from name or apple ID fragment
-    const baseUsername = `apple_${appleId.slice(0, 10).replace(/[^a-z0-9]/gi, "").toLowerCase()}`;
+    const rolePrefix = role === "landscaper" ? "lspro" : "apple";
+    const baseUsername = `${rolePrefix}_${appleId.slice(0, 10).replace(/[^a-z0-9]/gi, "").toLowerCase()}`;
     let username = baseUsername;
     let attempt = 0;
     while (true) {
       const taken = await pool.query(
-        "SELECT id FROM lawn_users WHERE username = $1 AND role = 'customer'",
-        [username]
+        "SELECT id FROM lawn_users WHERE username = $1 AND role = $2",
+        [username, role]
       );
       if (taken.rows.length === 0) break;
       attempt++;
@@ -413,13 +421,13 @@ router.post("/apple", async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO lawn_users
-        (username, role, password_hash, display_name, email, apple_id)
-       VALUES ($1, 'customer', $2, $3, $4, $5)
+        (username, role, password_hash, display_name, email, business_name, apple_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [username, passwordHash, displayName, safeEmail, appleId]
+      [username, role, passwordHash, displayName, safeEmail, businessName, appleId]
     );
 
-    return res.status(201).json({ user: sanitize(result.rows[0]) });
+    return res.status(201).json({ user: sanitize(result.rows[0]), isNewUser: true });
   } catch (err: any) {
     console.error("Apple sign in error:", err);
     return res.status(500).json({ error: "Sign in failed. Please try again." });

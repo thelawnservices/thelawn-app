@@ -1082,6 +1082,42 @@ export default function AppointmentsScreen() {
   const pendingRecurring  = instances.filter((i) => i.status === "pending_approval");
   const completedRecurring = instances.filter((i) => i.status === "completed");
 
+  // ── Calendar helper for landscaper jobs ─────────────────────────────────────
+  async function addLsJobToCalendar(date: string, time: string, service: string, address: string, customerName?: string) {
+    try {
+      Haptics.selectionAsync();
+      const { status } = await Calendar.requestCalendarPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission Needed", "Please allow calendar access to add this job.");
+        return;
+      }
+      const apptDate = parseApptDateTime(date, time);
+      if (!apptDate) {
+        Alert.alert("Unable to Parse Date", "Could not read the job date and time.");
+        return;
+      }
+      const endDate = new Date(apptDate.getTime() + 90 * 60 * 1000);
+      const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const defaultCal = calendars.find((c) => c.allowsModifications) ?? calendars[0];
+      if (!defaultCal) {
+        Alert.alert("No Calendar Found", "No modifiable calendar was found on this device.");
+        return;
+      }
+      await Calendar.createEventAsync(defaultCal.id, {
+        title: `TheLawn Job: ${service}`,
+        startDate: apptDate,
+        endDate,
+        location: address,
+        notes: customerName ? `Customer: ${customerName}` : undefined,
+        alarms: [{ relativeOffset: -60 }],
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Added to Calendar", `${service} on ${date} at ${time} has been saved to your calendar.`);
+    } catch {
+      Alert.alert("Error", "Could not add to calendar. Please try again.");
+    }
+  }
+
   // ── LANDSCAPER VIEW ────────────────────────────────────────────────────────
   if (isLandscaper) {
     const totalActive = acceptedJobs.length + visibleScheduled.length;
@@ -1164,6 +1200,14 @@ export default function AppointmentsScreen() {
                       </TouchableOpacity>
                     </View>
                   )}
+                  <TouchableOpacity
+                    style={styles.calendarAddBtn}
+                    activeOpacity={0.8}
+                    onPress={() => addLsJobToCalendar(job.date, job.time, job.service, job.address, job.customer)}
+                  >
+                    <Ionicons name="calendar-outline" size={15} color="#34FF7A" />
+                    <Text style={[styles.calendarAddBtnText, { fontFamily: "Inter_500Medium" }]}>Add to Calendar</Text>
+                  </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.cancelBtn}
                     activeOpacity={0.8}
@@ -1265,6 +1309,14 @@ export default function AppointmentsScreen() {
                     <Text style={[styles.lsTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
                   </TouchableOpacity>
                 </View>
+                <TouchableOpacity
+                  style={styles.calendarAddBtn}
+                  activeOpacity={0.8}
+                  onPress={() => addLsJobToCalendar(appt.date, appt.time, appt.service, appt.address, appt.customer)}
+                >
+                  <Ionicons name="calendar-outline" size={15} color="#34FF7A" />
+                  <Text style={[styles.calendarAddBtnText, { fontFamily: "Inter_500Medium" }]}>Add to Calendar</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelBtn} activeOpacity={0.8} onPress={() => handleCancelLsAppt(appt)}>
                   <Text style={[styles.cancelBtnText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
                 </TouchableOpacity>
@@ -2124,6 +2176,19 @@ const dispStyles = StyleSheet.create({
   },
   submitBtnLoading: { backgroundColor: "#AA2222" },
   submitBtnText: { fontSize: 16, color: "#FFFFFF" },
+  calendarAddBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    paddingVertical: 11,
+    marginBottom: 6,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#34FF7A44",
+    backgroundColor: "#0D2016",
+  },
+  calendarAddBtnText: { fontSize: 14, color: "#34FF7A" },
   cancelBtn: { paddingVertical: 12, alignItems: "center" },
   cancelBtnText: { fontSize: 14, color: "#BBBBBB" },
 });

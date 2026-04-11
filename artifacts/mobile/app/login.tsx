@@ -202,7 +202,7 @@ export default function LoginScreen() {
     }
   }
 
-  async function handleAppleSignIn() {
+  async function handleAppleSignIn(role: "customer" | "landscaper" = "customer") {
     if (Platform.OS !== "ios") return;
     setErrors(null);
     setLoading(true);
@@ -218,6 +218,7 @@ export default function LoginScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           appleId: credential.user,
+          role,
           email: credential.email ?? undefined,
           givenName: credential.fullName?.givenName ?? undefined,
           familyName: credential.fullName?.familyName ?? undefined,
@@ -225,6 +226,10 @@ export default function LoginScreen() {
       });
       const data = await res.json();
       if (!res.ok) { setErrors(data.error ?? "Apple sign in failed"); return; }
+      // New landscaper accounts from Apple need service setup
+      if (role === "landscaper" && data.isNewUser) {
+        setPendingIsRegistration(true);
+      }
       go(data.user as LawnUser);
     } catch (err: any) {
       if (err?.code !== "ERR_REQUEST_CANCELED") {
@@ -806,6 +811,15 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
+          {Platform.OS === "ios" && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={12}
+              style={{ width: "100%", height: 50, marginBottom: 10 }}
+              onPress={() => handleAppleSignIn("landscaper")}
+            />
+          )}
           <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("landscaper")} activeOpacity={0.85}>
             <Ionicons name="finger-print" size={22} color="#34FF7A" />
             <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Passkey</Text>
