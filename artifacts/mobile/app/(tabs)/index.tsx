@@ -397,42 +397,40 @@ function AppHeader({
   userInitial: string;
 }) {
   return (
-    <View style={[styles.header, { paddingTop: topPadding + 8 }]}>
-      {/* Logo absolutely centered so it gets full width */}
-      <View style={{ height: 80, justifyContent: "center", alignItems: "center" }}>
-        <Image
-          source={require("../../assets/images/logo-transparent.png")}
-          style={styles.logoImg}
-          resizeMode="contain"
-        />
-        {/* Icons pinned to the right */}
-        <View style={[styles.bannerIcons, { top: 0, bottom: 0, justifyContent: "center" }]}>
-          <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
-            <Ionicons
-              name={notifEnabled ? "notifications-outline" : "notifications-off-outline"}
-              size={22}
-              color={notifEnabled ? "#fff" : "#666666"}
-            />
-            {!notifEnabled && missedCount > 0 && (
-              <View style={styles.notifBadge}>
-                <Text style={[styles.notifBadgeText, { fontFamily: "Inter_700Bold" }]}>
-                  {missedCount > 9 ? "9+" : String(missedCount)}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.avatarRing} onPress={onProfilePress} activeOpacity={0.8}>
-            <View style={styles.avatarInner}>
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatarBtnImage} />
-              ) : (
-                <Text style={[styles.avatarBtnInitial, { fontFamily: "Inter_700Bold" }]}>
-                  {userInitial}
-                </Text>
-              )}
+    <View style={[styles.header, { height: topPadding + 110 }]}>
+      {/* Full-width background image */}
+      <Image
+        source={require("../../assets/images/header-bg.jpeg")}
+        style={styles.headerBgImg}
+        resizeMode="cover"
+      />
+      {/* Icons pinned top-right above status bar */}
+      <View style={[styles.bannerIcons, { top: topPadding + 12 }]}>
+        <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
+          <Ionicons
+            name={notifEnabled ? "notifications-outline" : "notifications-off-outline"}
+            size={22}
+            color={notifEnabled ? "#fff" : "#666666"}
+          />
+          {!notifEnabled && missedCount > 0 && (
+            <View style={styles.notifBadge}>
+              <Text style={[styles.notifBadgeText, { fontFamily: "Inter_700Bold" }]}>
+                {missedCount > 9 ? "9+" : String(missedCount)}
+              </Text>
             </View>
-          </TouchableOpacity>
-        </View>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.avatarRing} onPress={onProfilePress} activeOpacity={0.8}>
+          <View style={styles.avatarInner}>
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarBtnImage} />
+            ) : (
+              <Text style={[styles.avatarBtnInitial, { fontFamily: "Inter_700Bold" }]}>
+                {userInitial}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -3252,14 +3250,23 @@ const TRUSTED_PROS: TrustedPro[] = [];
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A" },
   header: {
-    backgroundColor: "#1A1A1A",
-    paddingHorizontal: 20,
-    paddingBottom: 22,
+    backgroundColor: "#000000",
+    overflow: "hidden",
+    position: "relative",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
     shadowRadius: 20,
     elevation: 8,
+  },
+  headerBgImg: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: "100%",
+    height: "100%",
   },
   bannerWrap: {
     width: "100%",
