@@ -7,6 +7,7 @@ import feedbackRouter from "./feedback";
 import moderateImageRouter from "./moderateImage";
 import walletRouter from "./wallet";
 import authRouter from "./auth";
+import profilesRouter from "./profiles";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use("/payouts", payoutsRouter);
 router.use("/feedback", feedbackRouter);
 router.use("/moderate-image", moderateImageRouter);
 router.use("/wallet", walletRouter);
+router.use("/profiles", profilesRouter);
 
 export default router;

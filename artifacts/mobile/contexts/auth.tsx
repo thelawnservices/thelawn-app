@@ -2,6 +2,19 @@ import React, { createContext, useContext, useState, useEffect, useRef } from "r
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppState, AppStateStatus } from "react-native";
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
+
+async function fetchRemoteAvatar(username: string, role: string): Promise<string | null> {
+  try {
+    const resp = await fetch(`${API_URL}/api/profiles/${username}/${role}/images`);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data.avatar || null;
+  } catch {
+    return null;
+  }
+}
+
 type Role = "customer" | "landscaper";
 
 export interface LawnUser {
@@ -84,13 +97,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const elapsed = Date.now() - session.lastActivity;
           if (elapsed < INACTIVITY_MS) {
             setUser(session.user);
-            // Refresh timestamp now that they opened the app
             await AsyncStorage.setItem(
               SESSION_KEY,
               JSON.stringify({ user: session.user, lastActivity: Date.now() })
             );
+            const remoteAvatar = await fetchRemoteAvatar(session.user.username, session.user.role);
+            if (remoteAvatar) setAvatarUri(remoteAvatar);
           } else {
-            // Session expired — wipe it
             await AsyncStorage.removeItem(SESSION_KEY);
           }
         }
@@ -140,6 +153,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         JSON.stringify({ user: u, lastActivity: Date.now() })
       );
     } catch {}
+    const remoteAvatar = await fetchRemoteAvatar(u.username, u.role);
+    if (remoteAvatar) setAvatarUri(remoteAvatar);
   };
 
   const logout = async () => {

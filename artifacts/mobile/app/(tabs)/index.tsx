@@ -2616,7 +2616,9 @@ export default function HomeScreen() {
   );
 }
 
-type TrustedPro = { name: string; rating: number; jobs: number; meta: string; icon: "leaf" | "grid" | "flower" | "star" | "cut" | "options" | "earth"; services: string[] };
+type TrustedPro = { name: string; username?: string; rating: number; jobs: number; meta: string; icon: "leaf" | "grid" | "flower" | "star" | "cut" | "options" | "earth"; services: string[] };
+
+const PROFILES_API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
 function LandscaperProfileViewModal({
   pro,
@@ -2631,6 +2633,15 @@ function LandscaperProfileViewModal({
   const isWeb = Platform.OS === "web";
   const topPad = isWeb ? 20 : insets.top;
   const { availability, myServices } = useLandscaperProfile();
+  const [proImages, setProImages] = useState<{ avatar: string | null; banner: string | null }>({ avatar: null, banner: null });
+
+  useEffect(() => {
+    if (!pro?.username) { setProImages({ avatar: null, banner: null }); return; }
+    fetch(`${PROFILES_API_URL}/api/profiles/${pro.username}/landscaper/images`)
+      .then((r) => r.json())
+      .then((data) => setProImages({ avatar: data.avatar || null, banner: data.banner || null }))
+      .catch(() => setProImages({ avatar: null, banner: null }));
+  }, [pro?.username]);
 
   if (!pro) return null;
 
@@ -2656,10 +2667,21 @@ function LandscaperProfileViewModal({
         >
           {/* ── Hero ── */}
           <View style={[fsStyles.hero, { paddingTop: topPad + 56 }]}>
+            {proImages.banner ? (
+              <Image
+                source={{ uri: proImages.banner }}
+                style={[StyleSheet.absoluteFillObject, { opacity: 0.55 }]}
+                resizeMode="cover"
+              />
+            ) : null}
             <View style={fsStyles.avatarWrap}>
-              <View style={fsStyles.avatarInner}>
-                <Ionicons name={pro.icon} size={52} color="#000" />
-              </View>
+              {proImages.avatar ? (
+                <Image source={{ uri: proImages.avatar }} style={fsStyles.avatarImage} />
+              ) : (
+                <View style={fsStyles.avatarInner}>
+                  <Ionicons name={pro.icon} size={52} color="#000" />
+                </View>
+              )}
             </View>
             <Text style={[fsStyles.heroName, { fontFamily: "Inter_700Bold" }]}>{pro.name}</Text>
             <View style={fsStyles.heroBadgeRow}>
@@ -2858,6 +2880,7 @@ const fsStyles = StyleSheet.create({
     alignItems: "center",
     paddingBottom: 32,
     paddingHorizontal: 24,
+    overflow: "hidden",
   },
   avatarWrap: {
     width: 116,
@@ -2882,6 +2905,11 @@ const fsStyles = StyleSheet.create({
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
+  },
+  avatarImage: {
+    width: 108,
+    height: 108,
+    borderRadius: 32,
   },
   heroName: { fontSize: 24, color: "#FFFFFF", textAlign: "center", marginBottom: 10 },
   heroBadgeRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap", justifyContent: "center" },

@@ -31,6 +31,24 @@ import { validateText, simulatePhotoReview, reviewImageWithAI } from "@/utils/mo
 import { sendLocalPush } from "@/utils/pushNotifications";
 import { useNotifications } from "@/contexts/notifications";
 
+const PROFILES_API = process.env.EXPO_PUBLIC_API_URL ?? "";
+
+async function uploadProfileImage(
+  uri: string,
+  type: "avatar" | "banner",
+  username?: string,
+  role?: string
+) {
+  if (!username || !role) return;
+  try {
+    const formData = new FormData();
+    formData.append("image", { uri, type: "image/jpeg", name: `${type}.jpg` } as any);
+    formData.append("username", username);
+    formData.append("role", role);
+    await fetch(`${PROFILES_API}/api/profiles/${type}`, { method: "PUT", body: formData });
+  } catch {}
+}
+
 const PAYMENT_METHODS = [
   { label: "Stripe (Cards · Apple Pay · Google Pay)", value: "Stripe",    ionIcon: "card" as const,                  shortLabel: "Stripe" },
   { label: "Pay In Person (Cash · Check · Other)",    value: "In Person", ionIcon: "cash-outline" as const, shortLabel: "In Person" },
@@ -360,6 +378,7 @@ function LandscaperProfile({
       const uri = result.assets[0].uri;
       setAvatarImage(uri);
       setAvatarUri(uri);
+      uploadProfileImage(uri, "avatar", user?.username, user?.role);
       reviewImageWithAI(uri).then((review) => {
         if (!review.approved) {
           Alert.alert(
@@ -383,6 +402,7 @@ function LandscaperProfile({
     if (!result.canceled) {
       const uri = result.assets[0].uri;
       setHeroBackground(uri);
+      uploadProfileImage(uri, "banner", user?.username, user?.role);
       reviewImageWithAI(uri).then((review) => {
         if (!review.approved) {
           Alert.alert(
@@ -1330,8 +1350,10 @@ function CustomerProfile({
       quality: 0.85,
     });
     if (!result.canceled) {
-      setAvatarImage(result.assets[0].uri);
-      setAvatarUri(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+      setAvatarImage(uri);
+      setAvatarUri(uri);
+      uploadProfileImage(uri, "avatar", user?.username, user?.role);
     }
   }
 
