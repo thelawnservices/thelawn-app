@@ -400,9 +400,11 @@ function AppHeader({
     <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
       <View style={styles.headerRow}>
         <View style={{ flex: 1 }} />
-        <Text style={[styles.headerLogoText, { fontFamily: "Inter_700Bold" }]}>
-          the<Text style={{ color: "#34FF7A" }}>Lawn</Text>
-        </Text>
+        <Image
+          source={require("../../assets/images/logo-transparent.png")}
+          style={styles.logoImg}
+          resizeMode="contain"
+        />
         <View style={[{ flex: 1 }, styles.headerRight]}>
           <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
             <Ionicons
@@ -3299,13 +3301,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   logoImg: {
-    height: 52,
-    width: 140,
-    borderRadius: 10,
+    height: 58,
+    width: 180,
     shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
+    shadowOpacity: 1,
+    shadowRadius: 20,
   },
   notifBtn: {
     width: 36,
