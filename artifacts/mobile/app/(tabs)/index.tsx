@@ -2291,33 +2291,38 @@ export default function HomeScreen() {
                 name: "Mowing & Edging",
                 desc: "Crisp, clean cuts that keep your lawn looking its best all season.",
                 est: "1–2 hrs", hot: true,
-                photo: "https://images.unsplash.com/photo-1589923188900-85dae523342b?w=400&q=80",
+                photo: null,
+                localPhoto: require("../../assets/images/svc-mowing.jpeg"),
               },
               {
                 name: "Weeding & Mulching",
                 desc: "Clear out weeds and lay fresh mulch for healthier, fuller beds.",
                 est: "2–4 hrs", hot: true,
                 photo: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80",
+                localPhoto: null,
               },
               {
                 name: "Sod Installation",
                 desc: "Transform bare or damaged areas into a lush, vibrant lawn fast.",
                 est: "4–8 hrs", hot: false,
                 photo: "https://images.unsplash.com/photo-1558904541-efa843a96f01?w=400&q=80",
+                localPhoto: null,
               },
               {
                 name: "Tree Removal",
                 desc: "Safe, professional removal of hazardous or unwanted trees.",
                 est: "4–8 hrs", hot: false,
                 photo: "https://images.unsplash.com/photo-1597200381847-30ec200eeb9a?w=400&q=80",
+                localPhoto: null,
               },
               {
                 name: "Full Service",
                 desc: "Complete lawn care package — mowing, edging, trimming, and cleanup.",
                 est: "3–5 hrs", hot: false,
                 photo: "https://images.unsplash.com/photo-1560185127-6ed189bf02f4?w=400&q=80",
+                localPhoto: null,
               },
-            ] as { name: string; desc: string; est: string; hot: boolean; photo: string }[]).map((svc, idx) => (
+            ] as { name: string; desc: string; est: string; hot: boolean; photo: string | null; localPhoto: any }[]).map((svc, idx) => (
               <TouchableOpacity
                 key={svc.name}
                 style={styles.svcPhotoCard}
@@ -2326,7 +2331,7 @@ export default function HomeScreen() {
               >
                 <View style={styles.svcPhotoImgWrap}>
                   <Image
-                    source={{ uri: svc.photo }}
+                    source={svc.localPhoto ?? { uri: svc.photo! }}
                     style={styles.svcPhotoImg}
                     resizeMode="cover"
                   />
