@@ -127,6 +127,16 @@ export default function LoginScreen() {
   const [appleRegYears, setAppleRegYears] = useState("");
   const [appleRegLoading, setAppleRegLoading] = useState(false);
 
+  // Apple Sign In → customer registration completion
+  const [showAppleCustReg, setShowAppleCustReg] = useState(false);
+  const [pendingAppleCustUser, setPendingAppleCustUser] = useState<LawnUser | null>(null);
+  const [appleCustPhone, setAppleCustPhone] = useState("");
+  const [appleCustAddress, setAppleCustAddress] = useState("");
+  const [appleCustCity, setAppleCustCity] = useState("");
+  const [appleCustState, setAppleCustState] = useState("");
+  const [appleCustZip, setAppleCustZip] = useState("");
+  const [appleCustLoading, setAppleCustLoading] = useState(false);
+
   // Role selection modal
   const [showRoleModal, setShowRoleModal] = useState(false);
 
@@ -179,10 +189,15 @@ export default function LoginScreen() {
       const data = await res.json();
       if (!res.ok) { setErrors(data.error ?? "Apple sign in failed"); return; }
       if (role === "landscaper" && data.isNewUser) {
-        // New landscaper — collect required registration info before entering the app
         setPendingAppleUser(data.user as LawnUser);
         setPendingIsRegistration(true);
         setShowAppleLsReg(true);
+        return;
+      }
+      if (role === "customer" && data.isNewUser) {
+        setPendingAppleCustUser(data.user as LawnUser);
+        setPendingIsRegistration(true);
+        setShowAppleCustReg(true);
         return;
       }
       go(data.user as LawnUser);
@@ -819,6 +834,46 @@ export default function LoginScreen() {
           }
         }}
       />
+      <AppleCustRegModal
+        visible={showAppleCustReg}
+        user={pendingAppleCustUser}
+        phone={appleCustPhone} onPhone={setAppleCustPhone}
+        address={appleCustAddress} onAddress={setAppleCustAddress}
+        city={appleCustCity} onCity={setAppleCustCity}
+        stateVal={appleCustState} onState={setAppleCustState}
+        zip={appleCustZip} onZip={setAppleCustZip}
+        loading={appleCustLoading}
+        onSubmit={async () => {
+          if (!appleCustPhone.trim()) { Alert.alert("Missing", "Please enter your phone number."); return; }
+          if (!appleCustAddress.trim()) { Alert.alert("Missing", "Please enter your street address."); return; }
+          if (!appleCustCity.trim()) { Alert.alert("Missing", "Please enter your city."); return; }
+          if (!appleCustState.trim()) { Alert.alert("Missing", "Please enter your state."); return; }
+          if (!appleCustZip.trim() || appleCustZip.length < 5) { Alert.alert("Missing", "Please enter a valid ZIP code."); return; }
+          if (!pendingAppleCustUser) return;
+          setAppleCustLoading(true);
+          try {
+            await fetch(`${API_URL}/api/auth/update-profile`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                username: pendingAppleCustUser.username,
+                role: "customer",
+                phone: appleCustPhone.trim(),
+                address: appleCustAddress.trim(),
+                city: appleCustCity.trim(),
+                state: appleCustState.trim(),
+                zipCode: appleCustZip.trim(),
+              }),
+            });
+            setShowAppleCustReg(false);
+            go(pendingAppleCustUser);
+          } catch {
+            Alert.alert("Error", "Could not save your info. Please try again.");
+          } finally {
+            setAppleCustLoading(false);
+          }
+        }}
+      />
       </>
     );
   }
@@ -1184,6 +1239,101 @@ function AppleLsRegModal({
               </>
             )}
           </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function AppleCustRegModal({
+  visible, user, phone, onPhone, address, onAddress, city, onCity,
+  stateVal, onState, zip, onZip, loading, onSubmit,
+}: {
+  visible: boolean; user: any;
+  phone: string; onPhone: (v: string) => void;
+  address: string; onAddress: (v: string) => void;
+  city: string; onCity: (v: string) => void;
+  stateVal: string; onState: (v: string) => void;
+  zip: string; onZip: (v: string) => void;
+  loading: boolean; onSubmit: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const displayName = user?.displayName ?? user?.username ?? "";
+  return (
+    <Modal visible={visible} animationType="slide" statusBarTranslucent onRequestClose={() => {}}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: "#0A0A0A" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <ScrollView contentContainerStyle={{ paddingTop: insets.top + 24, paddingBottom: insets.bottom + 40, paddingHorizontal: 24 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+          <View style={{ marginBottom: 28 }}>
+            <Ionicons name="home" size={32} color="#34FF7A" />
+            <Text style={{ color: "#FFFFFF", fontSize: 24, fontFamily: "Inter_700Bold", marginTop: 12, marginBottom: 6 }}>
+              One last step!
+            </Text>
+            <Text style={{ color: "#AAAAAA", fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 }}>
+              {displayName ? `Welcome, ${displayName}! ` : ""}We need a few details to set up your account.
+            </Text>
+          </View>
+
+          <View style={alrStyles.fieldWrap}>
+            <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>Phone Number *</Text>
+            <TextInput
+              style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]}
+              value={phone} onChangeText={onPhone}
+              placeholder="(555) 000-0000" placeholderTextColor="#777"
+              keyboardType="phone-pad" returnKeyType="next"
+            />
+          </View>
+
+          <View style={alrStyles.fieldWrap}>
+            <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>Street Address *</Text>
+            <TextInput
+              style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]}
+              value={address} onChangeText={onAddress}
+              placeholder="8910 45th Ave E" placeholderTextColor="#777"
+              autoCapitalize="words" returnKeyType="next"
+            />
+          </View>
+
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <View style={[alrStyles.fieldWrap, { flex: 2 }]}>
+              <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>City *</Text>
+              <TextInput
+                style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]}
+                value={city} onChangeText={onCity}
+                placeholder="Sarasota" placeholderTextColor="#777"
+                autoCapitalize="words" returnKeyType="next"
+              />
+            </View>
+            <View style={[alrStyles.fieldWrap, { flex: 1 }]}>
+              <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>State *</Text>
+              <TextInput
+                style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]}
+                value={stateVal} onChangeText={onState}
+                placeholder="FL" placeholderTextColor="#777"
+                autoCapitalize="characters" maxLength={2} returnKeyType="next"
+              />
+            </View>
+          </View>
+
+          <View style={alrStyles.fieldWrap}>
+            <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>ZIP Code *</Text>
+            <TextInput
+              style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]}
+              value={zip} onChangeText={onZip}
+              placeholder="34222" placeholderTextColor="#777"
+              keyboardType="numeric" maxLength={5} returnKeyType="done"
+            />
+          </View>
+
+          <TouchableOpacity style={[alrStyles.submitBtn, loading && { opacity: 0.6 }]} onPress={loading ? undefined : onSubmit} activeOpacity={0.88}>
+            {loading ? <ActivityIndicator color="#000" /> : (
+              <>
+                <Ionicons name="checkmark-circle" size={20} color="#000" />
+                <Text style={[alrStyles.submitBtnText, { fontFamily: "Inter_700Bold" }]}>Complete Setup</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
         </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
