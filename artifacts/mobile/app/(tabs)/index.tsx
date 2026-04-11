@@ -32,6 +32,7 @@ import { sendLocalPush } from "@/utils/pushNotifications";
 import PaymentHistoryModal from "@/components/PaymentHistoryModal";
 import HelpSupportModal from "@/components/HelpSupportModal";
 import FeedbackModal from "@/components/FeedbackModal";
+import { useBlocked } from "@/contexts/blocked";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
@@ -446,6 +447,7 @@ function ProfileDropdownModal({
   onPaymentHistory,
   onHelp,
   onFeedback,
+  onBlocked,
   isLandscaper,
   onSignOut,
 }: {
@@ -458,6 +460,7 @@ function ProfileDropdownModal({
   onPaymentHistory: () => void;
   onHelp: () => void;
   onFeedback: () => void;
+  onBlocked: () => void;
   isLandscaper: boolean;
   onSignOut: () => void;
 }) {
@@ -492,6 +495,12 @@ function ProfileDropdownModal({
             <Ionicons name="receipt-outline" size={20} color="#34FF7A" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Payment History</Text>
           </TouchableOpacity>
+          {!isLandscaper && (
+            <TouchableOpacity style={dropStyles.item} onPress={onBlocked} activeOpacity={0.7}>
+              <Ionicons name="ban-outline" size={20} color="#FF6B6B" />
+              <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium", color: "#FF6B6B" }]}>Blocked Landscapers</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity style={dropStyles.item} onPress={onHelp} activeOpacity={0.7}>
             <Ionicons name="help-circle-outline" size={20} color="#CCCCCC" />
             <Text style={[dropStyles.itemText, { fontFamily: "Inter_500Medium" }]}>Help and Resources</Text>
@@ -1810,6 +1819,7 @@ export default function HomeScreen() {
   const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "P" : "C");
   const { acceptJob, acceptedJobs } = useJobs();
   const { balance, transactions, refreshWallet } = useWallet();
+  const { blockedNames, isBlocked, blockLandscaper, unblockLandscaper } = useBlocked();
 
   useEffect(() => {
     if (role === "landscaper" && userName) {
@@ -1852,6 +1862,7 @@ export default function HomeScreen() {
   const [servicesEditVisible, setServicesEditVisible] = useState(false);
   const [servicesIsFirstSetup, setServicesIsFirstSetup] = useState(false);
   const [paymentHistoryVisible, setPaymentHistoryVisible] = useState(false);
+  const [blockedModalVisible, setBlockedModalVisible] = useState(false);
 
   useEffect(() => {
     if (needsServiceSetup && role === "landscaper") {
@@ -1974,7 +1985,7 @@ export default function HomeScreen() {
           }).catch(() => {});
         }}
         onPaymentHistory={() => { setDropdownVisible(false); setPaymentHistoryVisible(true); }}
-
+        onBlocked={() => { setDropdownVisible(false); setBlockedModalVisible(true); }}
         onHelp={() => { setDropdownVisible(false); setHelpVisible(true); }}
         onFeedback={() => { setDropdownVisible(false); setFeedbackVisible(true); }}
         isLandscaper={role === "landscaper"}
@@ -2218,7 +2229,7 @@ export default function HomeScreen() {
                 <SkeletonCard />
                 <SkeletonCard />
               </>
-            ) : TRUSTED_PROS.length === 0 ? (
+            ) : TRUSTED_PROS.filter((p) => !isBlocked(p.name)).length === 0 ? (
               <View style={{ paddingHorizontal: 24, paddingVertical: 32, alignItems: "center", gap: 10 }}>
                 <Ionicons name="leaf-outline" size={36} color="#333" />
                 <Text style={{ color: "#BBBBBB", fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" }}>
@@ -2226,7 +2237,7 @@ export default function HomeScreen() {
                 </Text>
               </View>
             ) : (
-              TRUSTED_PROS.map((pro) => {
+              TRUSTED_PROS.filter((p) => !isBlocked(p.name)).map((pro) => {
                 const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
                 const isFav = favorites.has(pro.name);
                 return (
@@ -2582,7 +2593,7 @@ export default function HomeScreen() {
               </View>
             ) : (
               <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
-                {TRUSTED_PROS.filter((p) => favorites.has(p.name)).map((pro) => (
+                {TRUSTED_PROS.filter((p) => favorites.has(p.name) && !isBlocked(p.name)).map((pro) => (
                   <TouchableOpacity
                     key={pro.name}
                     style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 24, paddingVertical: 14, gap: 14, borderBottomWidth: 1, borderBottomColor: "#222" }}
@@ -2613,6 +2624,18 @@ export default function HomeScreen() {
           setSelectedPro(null);
           handleBooking(() => router.push({ pathname: "/pay", params: { proServices: services.join(",") } }));
         }}
+        onBlock={(name) => {
+          blockLandscaper(name);
+          setSelectedPro(null);
+        }}
+      />
+
+      {/* Blocked Landscapers Modal — customers only */}
+      <BlockedLandscapersModal
+        visible={blockedModalVisible}
+        onClose={() => setBlockedModalVisible(false)}
+        blockedNames={blockedNames}
+        onUnblock={unblockLandscaper}
       />
     </View>
   );
@@ -2620,16 +2643,126 @@ export default function HomeScreen() {
 
 type TrustedPro = { name: string; username?: string; rating: number; jobs: number; meta: string; icon: "leaf" | "grid" | "flower" | "star" | "cut" | "options" | "earth"; services: string[] };
 
+// ── Blocked Landscapers Modal ──────────────────────────────────────────────
+function BlockedLandscapersModal({
+  visible,
+  onClose,
+  blockedNames,
+  onUnblock,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  blockedNames: Set<string>;
+  onUnblock: (name: string) => void;
+}) {
+  const blocked = [...blockedNames].sort();
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable
+        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" }}
+        onPress={onClose}
+      >
+        <Pressable
+          style={{
+            backgroundColor: "#1A1A1A",
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+            borderWidth: 1,
+            borderColor: "#2A1A1A",
+            paddingBottom: 36,
+            maxHeight: "75%",
+          }}
+          onPress={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <View style={{
+            flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+            paddingHorizontal: 24, paddingTop: 24, paddingBottom: 6,
+          }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Ionicons name="ban" size={20} color="#FF6B6B" />
+              <Text style={{ color: "#fff", fontSize: 18, fontFamily: "Inter_700Bold" }}>
+                Blocked Landscapers
+                {blocked.length > 0 && (
+                  <Text style={{ color: "#FF6B6B" }}> ({blocked.length})</Text>
+                )}
+              </Text>
+            </View>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+              <Ionicons name="close" size={24} color="#CCCCCC" />
+            </TouchableOpacity>
+          </View>
+          <Text style={{ color: "#666", fontSize: 13, fontFamily: "Inter_400Regular", paddingHorizontal: 24, marginBottom: 16 }}>
+            Blocked landscapers won't appear in your recommendations or search results.
+          </Text>
+
+          {blocked.length === 0 ? (
+            <View style={{ alignItems: "center", paddingVertical: 48, gap: 12 }}>
+              <Ionicons name="shield-checkmark-outline" size={48} color="#333" />
+              <Text style={{ color: "#BBBBBB", fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center" }}>
+                You haven't blocked any landscapers.
+              </Text>
+            </View>
+          ) : (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {blocked.map((name) => (
+                <View
+                  key={name}
+                  style={{
+                    flexDirection: "row", alignItems: "center",
+                    paddingHorizontal: 24, paddingVertical: 16,
+                    borderBottomWidth: 1, borderBottomColor: "#222", gap: 14,
+                  }}
+                >
+                  <View style={{
+                    width: 44, height: 44, borderRadius: 22,
+                    backgroundColor: "#2A1A1A", alignItems: "center", justifyContent: "center",
+                    borderWidth: 1, borderColor: "#FF6B6B44",
+                  }}>
+                    <Ionicons name="person" size={20} color="#FF6B6B" />
+                  </View>
+                  <Text style={{ flex: 1, color: "#FFFFFF", fontSize: 15, fontFamily: "Inter_500Medium" }}>
+                    {name}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      onUnblock(name);
+                    }}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    activeOpacity={0.7}
+                    style={{
+                      flexDirection: "row", alignItems: "center", gap: 6,
+                      backgroundColor: "#0D2016", borderRadius: 20, borderWidth: 1,
+                      borderColor: "#34FF7A44", paddingHorizontal: 12, paddingVertical: 7,
+                    }}
+                  >
+                    <Ionicons name="close-circle" size={15} color="#34FF7A" />
+                    <Text style={{ color: "#34FF7A", fontSize: 13, fontFamily: "Inter_500Medium" }}>Unblock</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 const PROFILES_API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
 function LandscaperProfileViewModal({
   pro,
   onClose,
   onBook,
+  onBlock,
 }: {
   pro: TrustedPro | null;
   onClose: () => void;
   onBook: (services: string[]) => void;
+  onBlock: (name: string) => void;
 }) {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
@@ -2732,6 +2865,26 @@ function LandscaperProfileViewModal({
             <TouchableOpacity style={fsStyles.bookBtn} activeOpacity={0.85} onPress={() => onBook(pro.services)}>
               <Ionicons name="calendar-outline" size={20} color="#000" />
               <Text style={[fsStyles.bookBtnText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
+            </TouchableOpacity>
+
+            {/* Block */}
+            <TouchableOpacity
+              style={fsStyles.blockBtn}
+              activeOpacity={0.8}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                Alert.alert(
+                  `Block ${pro.name}?`,
+                  `${pro.name} will no longer appear in your recommendations or search results. You can unblock them anytime from the Blocked Landscapers list in your menu.`,
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Block", style: "destructive", onPress: () => onBlock(pro.name) },
+                  ]
+                );
+              }}
+            >
+              <Ionicons name="ban-outline" size={18} color="#FF6B6B" />
+              <Text style={[fsStyles.blockBtnText, { fontFamily: "Inter_500Medium" }]}>Block this Landscaper</Text>
             </TouchableOpacity>
 
             {/* About */}
@@ -2984,6 +3137,19 @@ const fsStyles = StyleSheet.create({
     elevation: 8,
   },
   bookBtnText: { fontSize: 17, color: "#000000" },
+  blockBtn: {
+    borderWidth: 1,
+    borderColor: "#FF6B6B44",
+    backgroundColor: "#1A0A0A",
+    borderRadius: 28,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 10,
+  },
+  blockBtnText: { fontSize: 14, color: "#FF6B6B" },
 
   availCard: {
     backgroundColor: "#1a2e1f",

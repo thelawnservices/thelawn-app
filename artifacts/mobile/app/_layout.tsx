@@ -18,6 +18,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/auth";
 import { initAnalytics } from "@/utils/analytics";
 import { JobsProvider } from "@/contexts/jobs";
+import { BlockedProvider } from "@/contexts/blocked";
 import { NotificationsProvider } from "@/contexts/notifications";
 import { LandscaperProfileProvider, useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
 import { RecurringProvider, useRecurring } from "@/contexts/recurring";
@@ -113,6 +114,7 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
+            <BlockedProvider>
             <WalletProvider>
             <JobsProvider>
               <RecurringProvider>
@@ -129,6 +131,7 @@ export default function RootLayout() {
               </RecurringProvider>
             </JobsProvider>
             </WalletProvider>
+            </BlockedProvider>
           </AuthProvider>
         </QueryClientProvider>
       </ErrorBoundary>
