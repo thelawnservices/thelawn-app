@@ -1914,7 +1914,7 @@ export default function HomeScreen() {
   const [homeAnnounceTitle, setHomeAnnounceTitle] = useState("");
   const [homeAnnounceMsg, setHomeAnnounceMsg] = useState("");
   const [homeAnnounceState, setHomeAnnounceState] = useState<"idle" | "sending" | "sent">("idle");
-  const HOME_ANNOUNCE_FOLLOWER_COUNT = 12;
+  const HOME_ANNOUNCE_FOLLOWER_COUNT = 0;
   const openHomeAnnounce = () => {
     setHomeAnnounceTitle(""); setHomeAnnounceMsg(""); setHomeAnnounceState("idle");
     setHomeAnnounceVisible(true);
@@ -2032,7 +2032,7 @@ export default function HomeScreen() {
                 <Ionicons name="checkmark-circle" size={52} color="#34FF7A" />
                 <Text style={[styles.announceSentTitle, { fontFamily: "Inter_700Bold" }]}>Announcement Sent!</Text>
                 <Text style={[styles.announceSentSub, { fontFamily: "Inter_400Regular" }]}>
-                  Your message was delivered to {HOME_ANNOUNCE_FOLLOWER_COUNT} followers.
+                  {HOME_ANNOUNCE_FOLLOWER_COUNT > 0 ? `Your message was delivered to ${HOME_ANNOUNCE_FOLLOWER_COUNT} followers.` : "Your announcement has been sent."}
                 </Text>
               </View>
             ) : (
@@ -2049,7 +2049,7 @@ export default function HomeScreen() {
                 <View style={styles.announceFollowerPill}>
                   <Ionicons name="heart" size={13} color="#f87171" />
                   <Text style={[styles.announceFollowerText, { fontFamily: "Inter_500Medium" }]}>
-                    {HOME_ANNOUNCE_FOLLOWER_COUNT} customers will be notified
+                    {HOME_ANNOUNCE_FOLLOWER_COUNT > 0 ? `${HOME_ANNOUNCE_FOLLOWER_COUNT} customers will be notified` : "Customers who follow you will be notified"}
                   </Text>
                 </View>
                 <Text style={[styles.announceFieldLabel, { fontFamily: "Inter_500Medium" }]}>Title</Text>
@@ -2082,12 +2082,14 @@ export default function HomeScreen() {
                   {homeAnnounceState === "sending" ? (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                       <ActivityIndicator size="small" color="#000" />
-                      <Text style={[styles.announceSendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sending to {HOME_ANNOUNCE_FOLLOWER_COUNT} customers…</Text>
+                      <Text style={[styles.announceSendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sending…</Text>
                     </View>
                   ) : (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                       <Ionicons name="megaphone-outline" size={18} color="#000" />
-                      <Text style={[styles.announceSendBtnText, { fontFamily: "Inter_700Bold" }]}>Send to {HOME_ANNOUNCE_FOLLOWER_COUNT} Followers</Text>
+                      <Text style={[styles.announceSendBtnText, { fontFamily: "Inter_700Bold" }]}>
+                        {HOME_ANNOUNCE_FOLLOWER_COUNT > 0 ? `Send to ${HOME_ANNOUNCE_FOLLOWER_COUNT} Followers` : "Send Announcement"}
+                      </Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -2473,7 +2475,9 @@ export default function HomeScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.announceCardTitle, { fontFamily: "Inter_600SemiBold" }]}>Send Announcement</Text>
-              <Text style={[styles.announceCardSub, { fontFamily: "Inter_400Regular" }]}>Notify your {HOME_ANNOUNCE_FOLLOWER_COUNT} followers</Text>
+              <Text style={[styles.announceCardSub, { fontFamily: "Inter_400Regular" }]}>
+                {HOME_ANNOUNCE_FOLLOWER_COUNT > 0 ? `Notify your ${HOME_ANNOUNCE_FOLLOWER_COUNT} followers` : "Share updates with your customers"}
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#FFAA00" />
           </TouchableOpacity>

@@ -246,7 +246,7 @@ function LandscaperProfile({
   const [announceTitleErr, setAnnounceTitleErr] = useState<string | null>(null);
   const [announceMsgErr, setAnnounceMsgErr] = useState<string | null>(null);
   const [announceExpiryErr, setAnnounceExpiryErr] = useState<string | null>(null);
-  const ANNOUNCE_FOLLOWER_COUNT = 12;
+  const ANNOUNCE_FOLLOWER_COUNT = 0;
 
   function openAnnounce() {
     setAnnounceTitle("");
@@ -552,7 +552,7 @@ function LandscaperProfile({
               <View style={announceStyles.followersPill}>
                 <Ionicons name="heart" size={13} color="#f87171" />
                 <Text style={[announceStyles.followersText, { fontFamily: "Inter_500Medium" }]}>
-                  {ANNOUNCE_FOLLOWER_COUNT} customers will be notified
+                  {ANNOUNCE_FOLLOWER_COUNT > 0 ? `${ANNOUNCE_FOLLOWER_COUNT} customers will be notified` : "Customers who follow you will be notified"}
                 </Text>
               </View>
 
@@ -561,7 +561,7 @@ function LandscaperProfile({
                   <Ionicons name="checkmark-circle" size={48} color="#34FF7A" />
                   <Text style={[announceStyles.sentTitle, { fontFamily: "Inter_700Bold" }]}>Announcement Sent!</Text>
                   <Text style={[announceStyles.sentSub, { fontFamily: "Inter_400Regular" }]}>
-                    {ANNOUNCE_FOLLOWER_COUNT} customers who favorited you have been notified.
+                    {ANNOUNCE_FOLLOWER_COUNT > 0 ? `${ANNOUNCE_FOLLOWER_COUNT} customers who favorited you have been notified.` : "Your announcement has been sent."}
                   </Text>
                 </View>
               ) : (
@@ -657,12 +657,14 @@ function LandscaperProfile({
                     {announceState === "sending" ? (
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                         <ActivityIndicator size="small" color="#000" />
-                        <Text style={[announceStyles.sendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sending to {ANNOUNCE_FOLLOWER_COUNT} customers…</Text>
+                        <Text style={[announceStyles.sendBtnText, { fontFamily: "Inter_600SemiBold" }]}>Sending…</Text>
                       </View>
                     ) : (
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                         <Ionicons name="megaphone-outline" size={18} color="#000" />
-                        <Text style={[announceStyles.sendBtnText, { fontFamily: "Inter_700Bold" }]}>Send to {ANNOUNCE_FOLLOWER_COUNT} Followers</Text>
+                        <Text style={[announceStyles.sendBtnText, { fontFamily: "Inter_700Bold" }]}>
+                          {ANNOUNCE_FOLLOWER_COUNT > 0 ? `Send to ${ANNOUNCE_FOLLOWER_COUNT} Followers` : "Send Announcement"}
+                        </Text>
                       </View>
                     )}
                   </TouchableOpacity>
