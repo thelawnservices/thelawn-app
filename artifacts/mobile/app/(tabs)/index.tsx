@@ -2298,8 +2298,8 @@ export default function HomeScreen() {
                 name: "Weeding & Mulching",
                 desc: "Clear out weeds and lay fresh mulch for healthier, fuller beds.",
                 est: "2–4 hrs", hot: true,
-                photo: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80",
-                localPhoto: null,
+                photo: null,
+                localPhoto: require("../../assets/images/svc-weeding.jpeg"),
               },
               {
                 name: "Sod Installation",
