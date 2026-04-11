@@ -46,26 +46,21 @@ function canCancelAppt(date: string, time: string): { ok: boolean; reason: strin
   return { ok: true, reason: "" };
 }
 
-// ── Static demo data ────────────────────────────────────────────────────────
-const SINGLE_UPCOMING = [
-  {
-    id: "1",
-    code: "JOB-37594",
-    service: "Mowing/Edging",
-    date: "April 12, 2026",
-    time: "10:30 AM",
-    pro: "John Rivera",
-    price: "$70",
-    initials: "JR",
-    color: "#FFFFFF",
-    address: "4627 Hall's Mill Crossing, Ellenton, FL 34222",
-    recurring: false,
-    size: "Medium",
-    notes: "Please edge along the driveway and bag all clippings. Gate code is 1234.",
-  },
-];
-
-type CustomerAppt = typeof SINGLE_UPCOMING[0];
+type CustomerAppt = {
+  id: string;
+  code: string;
+  service: string;
+  date: string;
+  time: string;
+  pro: string;
+  price: string;
+  initials: string;
+  color: string;
+  address: string;
+  recurring: boolean;
+  size: string;
+  notes: string;
+};
 
 // ── Job Details Modal (single appointments) ─────────────────────────────────
 function JobDetailsModal({
@@ -415,7 +410,6 @@ function CompletionPhotoModal({
 
 // ── Recurring Series Card (customer) ────────────────────────────────────────
 const TWENTY_FOUR_HOURS = 24 * 3600 * 1000;
-const RECURRING_CUSTOMER_PHONE = "(941) 555-1820";
 
 function useCountdown(targetMs: number | undefined): { h: number; m: number; s: number; expired: boolean } {
   const [now, setNow] = useState(Date.now());
@@ -1255,7 +1249,7 @@ export default function AppointmentsScreen() {
                     setTimeout(() => {
                       Alert.alert(
                         "Customer Notified",
-                        "Zamire Smith has been notified that the job is complete. They have 24 hours to approve or dispute. If no action is taken within 24 hours, payment will be automatically released to you.",
+                        "The customer has been notified that the job is complete. They have 24 hours to approve or dispute. If no action is taken within 24 hours, payment will be automatically released to you.",
                         [{ text: "OK" }]
                       );
                     }, 400);
@@ -1291,13 +1285,13 @@ export default function AppointmentsScreen() {
                     </View>
                     <View style={styles.lsMetaRow}>
                       <Ionicons name="person-outline" size={13} color="#CCCCCC" />
-                      <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>Zamire Smith</Text>
+                      <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>Customer</Text>
                     </View>
                     <View style={styles.lsContactRow}>
                       <TouchableOpacity
                         style={styles.lsCallBtn}
                         activeOpacity={0.8}
-                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`tel:${RECURRING_CUSTOMER_PHONE}`); }}
+                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Alert.alert("Call Customer", "Use the in-app chat to coordinate with your customer directly."); }}
                       >
                         <Ionicons name="call" size={14} color="#000" />
                         <Text style={[styles.lsCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
@@ -1305,7 +1299,7 @@ export default function AppointmentsScreen() {
                       <TouchableOpacity
                         style={styles.lsTextBtn}
                         activeOpacity={0.8}
-                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`sms:${RECURRING_CUSTOMER_PHONE}`); }}
+                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Alert.alert("Text Customer", "Use the in-app chat to coordinate with your customer directly."); }}
                       >
                         <Ionicons name="chatbubble-outline" size={14} color="#FFFFFF" />
                         <Text style={[styles.lsTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>
@@ -1374,13 +1368,13 @@ export default function AppointmentsScreen() {
                   </View>
                   <View style={styles.lsMetaRow}>
                     <Ionicons name="person-outline" size={13} color="#CCCCCC" />
-                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>Zamire Smith</Text>
+                    <Text style={[styles.lsMetaText, { fontFamily: "Inter_400Regular" }]}>Customer</Text>
                   </View>
                   <View style={styles.lsContactRow}>
                     <TouchableOpacity
                       style={styles.lsCallBtn}
                       activeOpacity={0.8}
-                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`tel:${RECURRING_CUSTOMER_PHONE}`); }}
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Alert.alert("Call Customer", "Use the in-app chat to coordinate with your customer directly."); }}
                     >
                       <Ionicons name="call" size={14} color="#000" />
                       <Text style={[styles.lsCallBtnText, { fontFamily: "Inter_600SemiBold" }]}>Call</Text>
@@ -1388,7 +1382,7 @@ export default function AppointmentsScreen() {
                     <TouchableOpacity
                       style={styles.lsTextBtn}
                       activeOpacity={0.8}
-                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Linking.openURL(`sms:${RECURRING_CUSTOMER_PHONE}`); }}
+                      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Alert.alert("Text Customer", "Use the in-app chat to coordinate with your customer directly."); }}
                     >
                       <Ionicons name="chatbubble-outline" size={14} color="#FFFFFF" />
                       <Text style={[styles.lsTextBtnText, { fontFamily: "Inter_600SemiBold" }]}>Text</Text>

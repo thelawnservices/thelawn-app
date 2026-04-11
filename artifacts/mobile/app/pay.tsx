@@ -142,8 +142,8 @@ export default function PayScreen() {
     discountTitle: string;
   }>();
 
-  const proName = params.proName || "John Rivera";
-  const proInitials = params.proInitials || "JR";
+  const proName = params.proName || "Your Pro";
+  const proInitials = params.proInitials || "??";
   const proColor = params.proColor || "#34FF7A";
   const jobAccepted = params.jobAccepted === "true";
 

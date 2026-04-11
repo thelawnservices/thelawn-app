@@ -58,9 +58,9 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
     const enriched: AcceptedJob = {
       ...job,
       code:     job.code     ?? generateJobCode(),
-      pro:      job.pro      ?? "GreenScape Pros",
-      initials: job.initials ?? "GP",
-      color:    job.color    ?? "#166D42",
+      pro:      job.pro      ?? "Your Landscaper",
+      initials: job.initials ?? "YL",
+      color:    job.color    ?? "#34FF7A",
       address:  job.address  ?? "",
       notes:    job.notes    ?? "",
     };

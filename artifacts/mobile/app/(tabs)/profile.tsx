@@ -355,11 +355,7 @@ function LandscaperProfile({
   }, []);
 
 
-  const [reviews, setReviews] = useState<ReviewItem[]>([
-    { text: '"John did an amazing job on our yard – very professional and on time!"', author: "Sarah M.", date: "4 days ago", stars: 5, avatarInitials: "SM", avatarColor: "#166D42", replies: [] },
-    { text: '"Reliable, on time, and the yard looks fantastic every time. Highly recommend."', author: "Marcus T.", date: "2 weeks ago", stars: 5, avatarInitials: "MT", avatarColor: "#2C5282", replies: [] },
-    { text: '"Great hedge trimming, left the property spotless. Will book again."', author: "Alex R.", date: "3 weeks ago", stars: 5, avatarInitials: "AR", avatarColor: "#6B21A8", replies: [] },
-  ]);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
   async function pickAvatar() {
     Haptics.selectionAsync();
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -942,7 +938,7 @@ function LandscaperProfile({
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
               {([
-                { label: "Business Name", value: draftName, onChange: setDraftName, placeholder: "GreenScape Pros", multiline: false },
+                { label: "Business Name", value: draftName, onChange: setDraftName, placeholder: "Your Business Name", multiline: false },
                 { label: "About / Bio", value: draftBio, onChange: setDraftBio, placeholder: "Tell customers about your services…", multiline: true },
                 { label: "City", value: draftCity, onChange: setDraftCity, placeholder: "Ellenton", multiline: false },
                 { label: "State", value: draftState, onChange: setDraftState, placeholder: "FL", multiline: false },
@@ -1257,7 +1253,7 @@ function CustomerProfile({
   customerAddress: { street: string; state: string; zip: string } | null;
   onAddressChange: (addr: { street: string; state: string; zip: string } | null) => void;
 }) {
-  const { setAvatarUri, preferredPayment, setPreferredPayment } = useAuth();
+  const { setAvatarUri, preferredPayment, setPreferredPayment, userName } = useAuth();
   const router = useRouter();
   const [selectedPayment, setSelectedPayment] = useState(preferredPayment ?? "");
   const [paymentState, setPaymentState] = useState<"idle" | "loading" | "success">("idle");
@@ -1316,7 +1312,7 @@ function CustomerProfile({
           </View>
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>Zamire Smith</Text>
+          <Text style={[styles.proName, { fontFamily: "Inter_700Bold" }]}>{userName || "Your Profile"}</Text>
           <Text style={[styles.proSub, { fontFamily: "Inter_400Regular" }]}>
             {customerAddress
               ? `${customerAddress.street}, ${customerAddress.state} ${customerAddress.zip}`

@@ -22,64 +22,11 @@ import { useNotifications } from "@/contexts/notifications";
 
 const FILTERS = ["All", "Mowing/Edging", "Weeding/Mulching", "Sod Installation", "Tree Removal"];
 
-const PROS = [
-  {
-    id: "1",
-    name: "John Rivera",
-    specialty: "Lawn Specialist",
-    rating: 4.9,
-    reviews: 128,
-    price: 45,
-    distance: "0.8 mi",
-    tags: ["Mowing/Edging"],
-    initials: "JR",
-    color: "#FFFFFF",
-    trusted: true,
-    acceptedPayments: ["Venmo", "PayPal", "In Person"],
-  },
-  {
-    id: "2",
-    name: "GreenScape Pros",
-    specialty: "Full Service Landscaping",
-    rating: 4.7,
-    reviews: 84,
-    price: 65,
-    distance: "1.2 mi",
-    tags: ["Mowing/Edging", "Weeding/Mulching", "Sod Installation"],
-    initials: "GP",
-    color: "#166D42",
-    trusted: true,
-    acceptedPayments: ["Venmo", "Zelle", "Cash App", "In Person"],
-  },
-  {
-    id: "3",
-    name: "Maria Santos",
-    specialty: "Garden Expert",
-    rating: 4.8,
-    reviews: 61,
-    price: 40,
-    distance: "2.1 mi",
-    tags: ["Weeding/Mulching", "Mowing/Edging"],
-    initials: "MS",
-    color: "#4CAF50",
-    trusted: false,
-    acceptedPayments: ["Cash App", "In Person"],
-  },
-  {
-    id: "4",
-    name: "EcoGreen Services",
-    specialty: "Sod & Turf Specialists",
-    rating: 4.6,
-    reviews: 43,
-    price: 350,
-    distance: "2.8 mi",
-    tags: ["Sod Installation"],
-    initials: "EG",
-    color: "#2E7D32",
-    trusted: false,
-    acceptedPayments: ["Venmo", "PayPal", "Zelle", "In Person"],
-  },
-];
+const PROS: Array<{
+  id: string; name: string; specialty: string; rating: number; reviews: number;
+  price: number; distance: string; tags: string[]; initials: string; color: string;
+  trusted: boolean; acceptedPayments: string[];
+}> = [];
 
 function parseSearchTimeToMinutes(t: string): number {
   const s = t.trim().toLowerCase();
@@ -112,18 +59,17 @@ const PRICE_RANGES = [
 const NEW_CUSTOMER_FEE = 5;
 const PLATFORM_COMMISSION_RATE = 0.03;
 
-const SERVICE_REQUESTS = [
-  { id: "r1", service: "Mowing/Edging",    size: "Medium", customer: "Alex T.",   distance: "1.4 mi", zip: "34222", date: "Apr 14", time: "Flexible",          budget: "$70",   description: "Front and back yard, medium lot. Edge along the driveway and sidewalk.",              address: "8910 45th Ave E, Ellenton, FL",           phone: "(941) 555-0192", isNewCustomer: true  },
-  { id: "r2", service: "Weeding/Mulching", size: "Small",  customer: "Priya N.",  distance: "3.1 mi", zip: "34208", date: "Apr 16", time: "Morning preferred",  budget: "$90",   description: "Flower beds need weeding and about 2 yards of fresh mulch around shrubs.",            address: "22 Palmetto Dr, Bradenton, FL",            phone: "(941) 555-3841", isNewCustomer: true  },
-  { id: "r3", service: "Sod Installation", size: "Large",  customer: "Carlos R.", distance: "3.8 mi", zip: "34208", date: "Apr 16", time: "8:30 AM",            budget: "$850",  description: "Large back yard needs full sod replacement — approx 1,000 sq ft.",                   address: "4400 53rd Ave E, Bradenton, FL",           phone: "(941) 555-7743", isNewCustomer: false },
-  { id: "r5", service: "Mowing/Edging",    size: "Large",  customer: "James W.",  distance: "4.5 mi", zip: "34211", date: "Apr 18", time: "7:30 AM",            budget: "$100",  description: "Large corner lot, front and back. Edge along sidewalk and entire driveway perimeter.", address: "6021 Greenfield Way, Lakewood Ranch, FL",  phone: "(941) 555-6614", isNewCustomer: false },
-];
+const SERVICE_REQUESTS: Array<{
+  id: string; service: string; size: string; customer: string; distance: string;
+  zip: string; date: string; time: string; budget: string; description: string;
+  address: string; phone: string; isNewCustomer: boolean;
+}> = [];
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [sortIdx, setSortIdx] = useState(0);
@@ -193,7 +139,7 @@ export default function SearchScreen() {
             Incoming Requests
           </Text>
           <Text style={[styles.reqSubtitle, { fontFamily: "Inter_400Regular" }]}>
-            Within 25 mi · ZIP 34222
+            {`Within 25 mi${user?.zipCode ? ` · ZIP ${user.zipCode}` : ""}`}
           </Text>
         </View>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 16, gap: 12 }}>
@@ -773,31 +719,12 @@ function SearchProProfileModal({
 
             {/* Customer Reviews */}
             <Text style={[proStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>CUSTOMER REVIEWS</Text>
-            {[
-              { name: "Sarah M.", initials: "SM", color: "#166D42", stars: 5, text: "Incredible job — super clean edges and left no mess behind. Will be booking regularly!", date: "2 days ago" },
-              { name: "Marcus T.", initials: "MT", color: "#2C5282", stars: 5, text: "Reliable, on time, and the yard looks fantastic every time. Highly recommend.", date: "1 week ago" },
-              { name: "Alex R.", initials: "AR", color: "#6B21A8", stars: 5, text: "Professional and thorough. Left the property spotless. Will book again.", date: "2 weeks ago" },
-              { name: "Priya N.", initials: "PN", color: "#B45309", stars: 4, text: "Great quality work. Only minor delay on arrival but the results were worth it.", date: "3 weeks ago" },
-            ].map((rv, i) => (
-              <View key={i} style={proStyles.reviewCard}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <View style={[proStyles.reviewAvatar, { backgroundColor: rv.color }]}>
-                    <Text style={[proStyles.reviewAvatarText, { fontFamily: "Inter_700Bold" }]}>{rv.initials}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    {/* Plain Text — not tappable, customers cannot view other customer profiles */}
-                    <Text style={[proStyles.reviewAuthor, { fontFamily: "Inter_600SemiBold" }]}>{rv.name}</Text>
-                    <View style={{ flexDirection: "row", gap: 2, marginTop: 2 }}>
-                      {[1,2,3,4,5].map((s) => (
-                        <Ionicons key={s} name="star" size={11} color={s <= rv.stars ? "#f59e0b" : "#333"} />
-                      ))}
-                    </View>
-                  </View>
-                  <Text style={[proStyles.reviewDate, { fontFamily: "Inter_400Regular" }]}>{rv.date}</Text>
-                </View>
-                <Text style={[proStyles.reviewText, { fontFamily: "Inter_400Regular" }]}>{rv.text}</Text>
-              </View>
-            ))}
+            <View style={{ alignItems: "center", paddingVertical: 28, gap: 8 }}>
+              <Ionicons name="star-outline" size={32} color="#333" />
+              <Text style={{ color: "#BBBBBB", fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" }}>
+                No reviews yet
+              </Text>
+            </View>
 
             {/* Availability indicator */}
             {availability.saved && (

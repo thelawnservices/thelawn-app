@@ -42,16 +42,7 @@ type FeedPost = {
   photoIcon: "leaf-outline" | "cut-outline" | "flower-outline" | "grid-outline" | "layers-outline" | "construct-outline";
   likes: number;
 };
-const HOME_FEED_POSTS: FeedPost[] = [
-  { id: "f1", customerName: "Sarah M.", customerInitials: "SM", customerColor: "#166D42", landscaperName: "John Rivera Landscaping", service: "Mowing/Edging", stars: 5, text: "John did an incredible job on our front yard. Super clean edges and done in under 2 hours. Highly recommend!", timestamp: "2 hours ago", hasPhoto: true, photoIcon: "cut-outline", likes: 12 },
-  { id: "f2", customerName: "Marcus T.", customerInitials: "MT", customerColor: "#2C5282", landscaperName: "GreenScape Pros", service: "Weeding/Mulching", stars: 5, text: "Flower beds look brand new. They cleared all the weeds and laid fresh mulch — the whole yard smells amazing. Will book again.", timestamp: "5 hours ago", hasPhoto: true, photoIcon: "flower-outline", likes: 8 },
-  { id: "f3", customerName: "Alex R.", customerInitials: "AR", customerColor: "#6B21A8", landscaperName: "Maria Santos", service: "Mowing/Edging", stars: 5, text: "Really professional service. Maria showed up right on time and the lawn looks perfect. Already booked my next appointment.", timestamp: "Yesterday at 4:30 PM", hasPhoto: false, photoIcon: "leaf-outline", likes: 21 },
-  { id: "f4", customerName: "Priya N.", customerInitials: "PN", customerColor: "#B45309", landscaperName: "EcoGreen Services", service: "Sod Installation", stars: 4, text: "Great sod installation — the new grass is already looking lush. Only minor thing was a 15-min late arrival, but quality more than made up for it.", timestamp: "Yesterday at 11:00 AM", hasPhoto: true, photoIcon: "grid-outline", likes: 5 },
-  { id: "f5", customerName: "Carlos R.", customerInitials: "CR", customerColor: "#0F766E", landscaperName: "John Rivera Landscaping", service: "Weeding/Mulching", stars: 5, text: "Completely transformed my back yard. Pulled every weed and the mulch color they chose looks perfect with my house.", timestamp: "2 days ago", hasPhoto: true, photoIcon: "leaf-outline", likes: 34 },
-  { id: "f6", customerName: "James W.", customerInitials: "JW", customerColor: "#1D4ED8", landscaperName: "GreenScape Pros", service: "Artificial Turf", stars: 5, text: "Artificial turf installation was seamless. My dogs love it and it looks better than real grass. Zero maintenance — worth every penny.", timestamp: "3 days ago", hasPhoto: true, photoIcon: "layers-outline", likes: 47 },
-  { id: "f7", customerName: "Diane W.", customerInitials: "DW", customerColor: "#BE185D", landscaperName: "EcoGreen Services", service: "Sod Installation", stars: 4, text: "Good work overall. The sod looks healthy and they cleaned up well afterward. A few small patches need to settle but I'm told that's normal.", timestamp: "4 days ago", hasPhoto: false, photoIcon: "grid-outline", likes: 9 },
-  { id: "f8", customerName: "Tina B.", customerInitials: "TB", customerColor: "#047857", landscaperName: "Maria Santos", service: "Weeding/Mulching", stars: 5, text: "Maria is a gem. She went above and beyond — even trimmed around our mailbox without being asked. The garden has never looked better!", timestamp: "5 days ago", hasPhoto: true, photoIcon: "flower-outline", likes: 18 },
-];
+const HOME_FEED_POSTS: FeedPost[] = [];
 
 function normalizeDateKey(raw: string): string {
   const parts = raw.trim().split(/\s+/);
@@ -1806,8 +1797,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
-  const { logout, role, avatarUri, userName, needsServiceSetup, setNeedsServiceSetup } = useAuth();
-  const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "G" : "Z");
+  const { logout, role, avatarUri, userName, user, needsServiceSetup, setNeedsServiceSetup } = useAuth();
+  const userInitial = userName ? userName.charAt(0).toUpperCase() : (role === "landscaper" ? "P" : "C");
   const { acceptJob, acceptedJobs } = useJobs();
   const { balance, transactions, refreshWallet } = useWallet();
 
@@ -2185,14 +2176,14 @@ export default function HomeScreen() {
             {(() => {
               const h = new Date().getHours();
               const tod = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-              const name = role === "landscaper" ? "John" : "Alex";
+              const name = userName || (role === "landscaper" ? "Pro" : "there");
               return `${tod}, ${name}`;
             })()}
           </Text>
           <Text style={[styles.greetingZip, { fontFamily: "Inter_400Regular" }]}>
             {role === "landscaper"
-              ? "Your dashboard · ZIP 34222"
-              : "Landscapers near you · ZIP 34222"}
+              ? `Your dashboard${user?.zipCode ? ` · ZIP ${user.zipCode}` : ""}`
+              : `Landscapers near you${user?.zipCode ? ` · ZIP ${user.zipCode}` : ""}`}
           </Text>
         </View>
 
@@ -2230,6 +2221,13 @@ export default function HomeScreen() {
                 <SkeletonCard />
                 <SkeletonCard />
               </>
+            ) : TRUSTED_PROS.length === 0 ? (
+              <View style={{ paddingHorizontal: 24, paddingVertical: 32, alignItems: "center", gap: 10 }}>
+                <Ionicons name="leaf-outline" size={36} color="#333" />
+                <Text style={{ color: "#BBBBBB", fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" }}>
+                  No landscapers in your area yet.{"\n"}Check back soon!
+                </Text>
+              </View>
             ) : (
               TRUSTED_PROS.map((pro) => {
                 const isTrustedPro = pro.rating >= 4.7 && pro.jobs >= 50;
@@ -2481,6 +2479,14 @@ export default function HomeScreen() {
           Recent reviews & photos from customers
         </Text>
 
+        {HOME_FEED_POSTS.length === 0 && (
+          <View style={{ alignItems: "center", paddingVertical: 32, gap: 10 }}>
+            <Ionicons name="leaf-outline" size={36} color="#333" />
+            <Text style={{ color: "#BBBBBB", fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" }}>
+              No community reviews yet.{"\n"}Be the first to book a landscaper!
+            </Text>
+          </View>
+        )}
         {HOME_FEED_POSTS.map((post) => (
           <View key={post.id} style={styles.feedCard}>
             {/* Card header */}
@@ -2725,31 +2731,12 @@ function LandscaperProfileViewModal({
 
             {/* Customer Reviews */}
             <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 24 }]}>CUSTOMER REVIEWS</Text>
-            {[
-              { name: "Sarah M.", initials: "SM", color: "#166D42", stars: 5, text: "Incredible job — super clean edges and left no mess behind. Will be booking regularly!", date: "2 days ago" },
-              { name: "Marcus T.", initials: "MT", color: "#2C5282", stars: 5, text: "Reliable, on time, and the yard looks fantastic every time. Highly recommend.", date: "1 week ago" },
-              { name: "Alex R.", initials: "AR", color: "#6B21A8", stars: 5, text: "Professional and thorough. Left the property spotless. Will book again.", date: "2 weeks ago" },
-              { name: "Priya N.", initials: "PN", color: "#B45309", stars: 4, text: "Great quality work. Only minor delay on arrival but the results were worth it.", date: "3 weeks ago" },
-            ].map((rv, i) => (
-              <View key={i} style={fsStyles.reviewCard}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <View style={[fsStyles.reviewAvatar, { backgroundColor: rv.color }]}>
-                    <Text style={[fsStyles.reviewAvatarText, { fontFamily: "Inter_700Bold" }]}>{rv.initials}</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    {/* Plain Text — not tappable, customers cannot navigate to other customer profiles */}
-                    <Text style={[fsStyles.reviewAuthor, { fontFamily: "Inter_600SemiBold" }]}>{rv.name}</Text>
-                    <View style={{ flexDirection: "row", gap: 2, marginTop: 2 }}>
-                      {[1,2,3,4,5].map((s) => (
-                        <Ionicons key={s} name="star" size={11} color={s <= rv.stars ? "#f59e0b" : "#333"} />
-                      ))}
-                    </View>
-                  </View>
-                  <Text style={[fsStyles.reviewDate, { fontFamily: "Inter_400Regular" }]}>{rv.date}</Text>
-                </View>
-                <Text style={[fsStyles.reviewText, { fontFamily: "Inter_400Regular" }]}>{rv.text}</Text>
-              </View>
-            ))}
+            <View style={{ alignItems: "center", paddingVertical: 28, gap: 8 }}>
+              <Ionicons name="star-outline" size={32} color="#333" />
+              <Text style={{ color: "#BBBBBB", fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" }}>
+                No reviews yet
+              </Text>
+            </View>
 
             {/* Services & Availability */}
             <Text style={[fsStyles.sectionLabel, { fontFamily: "Inter_600SemiBold", marginTop: 28 }]}>
@@ -3022,15 +3009,7 @@ const fsStyles = StyleSheet.create({
   paymentChipText: { fontSize: 13, color: "#CCCCCC" },
 });
 
-const TRUSTED_PROS: TrustedPro[] = [
-  { name: "John Rivera Landscaping", rating: 4.9, jobs: 142, meta: "2.3 mi • 142 jobs completed", icon: "leaf",    services: ["Mowing/Edging"] },
-  { name: "Sarah's Lawn Care",       rating: 5.0, jobs: 98,  meta: "1.8 mi • 98 jobs completed",  icon: "grid",    services: ["Mowing/Edging", "Weeding/Mulching"] },
-  { name: "GreenScape Pros",         rating: 4.8, jobs: 87,  meta: "3.1 mi • 87 jobs completed",  icon: "flower",  services: ["Mowing/Edging", "Weeding/Mulching", "Sod Installation"] },
-  { name: "Elite Lawn Services",     rating: 4.9, jobs: 65,  meta: "2.9 mi • 65 jobs completed",  icon: "star",    services: ["Mowing/Edging", "Weeding/Mulching"] },
-  { name: "FreshCut Landscaping",    rating: 5.0, jobs: 112, meta: "1.4 mi • 112 jobs completed", icon: "cut",     services: ["Mowing/Edging"] },
-  { name: "Premier Turf Care",       rating: 4.7, jobs: 79,  meta: "4.2 mi • 79 jobs completed",  icon: "options", services: ["Sod Installation", "Tree Removal"] },
-  { name: "Nature's Edge Lawn",      rating: 4.9, jobs: 53,  meta: "2.7 mi • 53 jobs completed",  icon: "earth",   services: ["Weeding/Mulching", "Mowing/Edging"] },
-];
+const TRUSTED_PROS: TrustedPro[] = [];
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A" },

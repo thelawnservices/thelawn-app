@@ -26,120 +26,7 @@ type FeedPost = {
   likes: number;
 };
 
-const FEED_POSTS: FeedPost[] = [
-  {
-    id: "f1",
-    customerName: "Sarah M.",
-    customerInitials: "SM",
-    customerColor: "#166D42",
-    landscaperName: "John Rivera Landscaping",
-    service: "Mowing/Edging",
-    stars: 5,
-    text: "John did an incredible job on our front yard. Super clean edges and he was done in under 2 hours. Highly recommend!",
-    timestamp: "2 hours ago",
-    hasPhoto: true,
-    photoIcon: "cut-outline",
-    likes: 12,
-  },
-  {
-    id: "f2",
-    customerName: "Marcus T.",
-    customerInitials: "MT",
-    customerColor: "#2C5282",
-    landscaperName: "GreenScape Pros",
-    service: "Weeding/Mulching",
-    stars: 5,
-    text: "Flower beds look brand new. They cleared all the weeds and laid fresh mulch — the whole yard smells amazing. Will book again for sure.",
-    timestamp: "5 hours ago",
-    hasPhoto: true,
-    photoIcon: "flower-outline",
-    likes: 8,
-  },
-  {
-    id: "f3",
-    customerName: "Alex R.",
-    customerInitials: "AR",
-    customerColor: "#6B21A8",
-    landscaperName: "Maria Santos",
-    service: "Mowing/Edging",
-    stars: 5,
-    text: "Really professional service. Maria showed up right on time and the lawn looks perfect. Already booked my next appointment.",
-    timestamp: "Yesterday at 4:30 PM",
-    hasPhoto: false,
-    photoIcon: "leaf-outline",
-    likes: 21,
-  },
-  {
-    id: "f4",
-    customerName: "Priya N.",
-    customerInitials: "PN",
-    customerColor: "#B45309",
-    landscaperName: "EcoGreen Services",
-    service: "Sod Installation",
-    stars: 4,
-    text: "Great sod installation — the new grass is already looking lush. Only minor thing was they arrived 15 mins late, but the quality more than made up for it.",
-    timestamp: "Yesterday at 11:00 AM",
-    hasPhoto: true,
-    photoIcon: "grid-outline",
-    likes: 5,
-  },
-  {
-    id: "f5",
-    customerName: "Carlos R.",
-    customerInitials: "CR",
-    customerColor: "#0F766E",
-    landscaperName: "John Rivera Landscaping",
-    service: "Weeding/Mulching",
-    stars: 5,
-    text: "Completely transformed my back yard. Pulled every weed and the mulch color they chose looks perfect with my house. Outstanding work.",
-    timestamp: "2 days ago",
-    hasPhoto: true,
-    photoIcon: "leaf-outline",
-    likes: 34,
-  },
-  {
-    id: "f6",
-    customerName: "James W.",
-    customerInitials: "JW",
-    customerColor: "#1D4ED8",
-    landscaperName: "GreenScape Pros",
-    service: "Artificial Turf",
-    stars: 5,
-    text: "Artificial turf installation was seamless. My dogs love it and it looks better than real grass. Zero maintenance — worth every penny.",
-    timestamp: "3 days ago",
-    hasPhoto: true,
-    photoIcon: "layers-outline",
-    likes: 47,
-  },
-  {
-    id: "f7",
-    customerName: "Diane W.",
-    customerInitials: "DW",
-    customerColor: "#BE185D",
-    landscaperName: "EcoGreen Services",
-    service: "Sod Installation",
-    stars: 4,
-    text: "Good work overall. The sod looks healthy and they cleaned up well afterward. A few small patches need to settle in but I'm told that's normal.",
-    timestamp: "4 days ago",
-    hasPhoto: false,
-    photoIcon: "grid-outline",
-    likes: 9,
-  },
-  {
-    id: "f8",
-    customerName: "Tina B.",
-    customerInitials: "TB",
-    customerColor: "#047857",
-    landscaperName: "Maria Santos",
-    service: "Weeding/Mulching",
-    stars: 5,
-    text: "Maria is a gem. She went above and beyond — even trimmed around our mailbox without being asked. The garden has never looked better!",
-    timestamp: "5 days ago",
-    hasPhoto: true,
-    photoIcon: "flower-outline",
-    likes: 18,
-  },
-];
+const FEED_POSTS: FeedPost[] = [];
 
 function StarRow({ count }: { count: number }) {
   return (
@@ -215,6 +102,18 @@ export default function FeedScreen() {
         <Text style={[styles.countLabel, { fontFamily: "Inter_400Regular" }]}>
           {visible.length} post{visible.length !== 1 ? "s" : ""}
         </Text>
+
+        {visible.length === 0 && (
+          <View style={{ alignItems: "center", paddingTop: 64, paddingBottom: 40, gap: 16 }}>
+            <Ionicons name="leaf-outline" size={48} color="#333" />
+            <Text style={{ color: "#FFFFFF", fontSize: 17, fontFamily: "Inter_500Medium" }}>
+              No posts yet
+            </Text>
+            <Text style={{ color: "#BBBBBB", fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center", paddingHorizontal: 32, lineHeight: 20 }}>
+              When customers in your area complete bookings and leave reviews, they'll appear here.
+            </Text>
+          </View>
+        )}
 
         {visible.map((post) => (
           <View key={post.id} style={styles.card}>
