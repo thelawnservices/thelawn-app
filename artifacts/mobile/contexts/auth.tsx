@@ -34,6 +34,7 @@ export interface LawnUser {
   businessName: string;
   services: string;
   yearsExperience: string;
+  appleId?: string;
 }
 
 interface StoredSession {

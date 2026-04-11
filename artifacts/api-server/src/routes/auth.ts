@@ -450,6 +450,7 @@ function sanitize(u: any) {
     services: u.services,
     yearsExperience: u.years_experience,
     createdAt: u.created_at,
+    appleId: u.apple_id ?? undefined,
   };
 }
 
@@ -481,6 +482,37 @@ router.post("/update-profile", async (req, res) => {
   } catch (err) {
     console.error("update-profile error:", err);
     return res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
+// POST /api/auth/delete-account
+router.post("/delete-account", async (req, res) => {
+  try {
+    const { username, role, password } = req.body as {
+      username: string; role: string; password?: string;
+    };
+    if (!username || !role) return res.status(400).json({ error: "Missing username or role" });
+
+    const result = await pool.query(
+      `SELECT password_hash, apple_id FROM lawn_users WHERE username = $1 AND role = $2`,
+      [username, role]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: "Account not found" });
+
+    const { password_hash, apple_id } = result.rows[0];
+
+    // Apple-only users don't know their generated password — skip password check
+    if (!apple_id) {
+      if (!password) return res.status(401).json({ error: "Password is required to delete your account" });
+      const match = await bcrypt.compare(password, password_hash);
+      if (!match) return res.status(401).json({ error: "Incorrect password" });
+    }
+
+    await pool.query(`DELETE FROM lawn_users WHERE username = $1 AND role = $2`, [username, role]);
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("delete-account error:", err);
+    return res.status(500).json({ error: "Failed to delete account" });
   }
 });
 

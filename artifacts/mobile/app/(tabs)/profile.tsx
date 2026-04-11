@@ -58,11 +58,12 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const isWeb = Platform.OS === "web";
   const topPadding = isWeb ? 67 : insets.top;
-  const { role, logout } = useAuth();
+  const { role, logout, user } = useAuth();
   const router = useRouter();
   const isLandscaper = role === "landscaper";
   const [helpVisible, setHelpVisible] = useState(false);
   const [custMenuVisible, setCustMenuVisible] = useState(false);
+  const [showCustDeleteModal, setShowCustDeleteModal] = useState(false);
   const [custSettingsVisible, setCustSettingsVisible] = useState(false);
   const [customerAddress, setCustomerAddress] = useState<{ street: string; state: string; zip: string } | null>(null);
   const [custTermsDoc, setCustTermsDoc] = useState<"terms" | "privacy" | null>(null);
@@ -141,9 +142,23 @@ export default function ProfileScreen() {
               <Ionicons name="log-out-outline" size={18} color="#ef4444" />
               <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#ef4444" }]}>Sign Out</Text>
             </TouchableOpacity>
+            <View style={menuStyles.divider} />
+            <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setCustMenuVisible(false); setShowCustDeleteModal(true); }}>
+              <Ionicons name="trash-outline" size={18} color="#ef4444" />
+              <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#ef4444" }]}>Delete Account</Text>
+            </TouchableOpacity>
           </View>
         </Pressable>
       </Modal>
+
+      <DeleteAccountModal
+        visible={showCustDeleteModal}
+        onClose={() => setShowCustDeleteModal(false)}
+        username={user?.username ?? ""}
+        role="customer"
+        hasPassword={!user?.appleId}
+        onDeleted={() => { setShowCustDeleteModal(false); logout(); }}
+      />
 
       {/* Customer Terms Modal */}
       {custTermsDoc && <TermsModal visible={true} docType={custTermsDoc} onClose={() => setCustTermsDoc(null)} />}
@@ -231,6 +246,7 @@ function LandscaperProfile({
   const { setAvatarUri, banUser, user, userName } = useAuth();
   const { myServices, bookedSlots, saveMyServices } = useLandscaperProfile();
   const { broadcastAnnouncement } = useNotifications();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const lsRouter = useRouter();
   const [activeTab, setActiveTab] = useState<LandscaperTab>("info");
   const [termsDoc, setTermsDoc] = useState<"terms" | "privacy" | null>(null);
@@ -525,6 +541,11 @@ function LandscaperProfile({
                 <Ionicons name="log-out-outline" size={18} color="#ef4444" />
                 <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#ef4444" }]}>Sign Out</Text>
               </TouchableOpacity>
+              <View style={menuStyles.divider} />
+              <TouchableOpacity style={menuStyles.item} activeOpacity={0.8} onPress={() => { setLsMenuVisible(false); setShowDeleteModal(true); }}>
+                <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                <Text style={[menuStyles.itemText, { fontFamily: "Inter_500Medium", color: "#ef4444" }]}>Delete Account</Text>
+              </TouchableOpacity>
             </View>
           </Pressable>
         </Modal>
@@ -818,6 +839,20 @@ function LandscaperProfile({
               <Ionicons name="log-out-outline" size={18} color="#ef4444" />
               <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Sign Out</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.logoutBtn, { marginTop: 2 }]} onPress={() => setShowDeleteModal(true)} activeOpacity={0.75}>
+              <Ionicons name="trash-outline" size={18} color="#ef4444" />
+              <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Delete Account</Text>
+            </TouchableOpacity>
+
+            <DeleteAccountModal
+              visible={showDeleteModal}
+              onClose={() => setShowDeleteModal(false)}
+              username={user?.username ?? ""}
+              role="landscaper"
+              hasPassword={!user?.appleId}
+              onDeleted={() => { setShowDeleteModal(false); logout(); }}
+            />
 
             {/* ── Privacy Settings Modal ── */}
             <Modal visible={privacyVisible} transparent animationType="slide" onRequestClose={() => setPrivacyVisible(false)}>
@@ -1300,6 +1335,7 @@ function CustomerProfile({
   onCloseEdit: () => void;
 }) {
   const { setAvatarUri, preferredPayment, setPreferredPayment, userName, user, updateUser } = useAuth();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [draftDisplayName, setDraftDisplayName] = useState(user?.displayName ?? "");
   const [draftPhone, setDraftPhone] = useState(user?.phone ?? "");
@@ -1449,6 +1485,20 @@ function CustomerProfile({
         <Ionicons name="log-out-outline" size={18} color="#ef4444" />
         <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Sign Out</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.logoutBtn, { marginTop: 2 }]} onPress={() => setShowDeleteModal(true)} activeOpacity={0.75}>
+        <Ionicons name="trash-outline" size={18} color="#ef4444" />
+        <Text style={[styles.logoutText, { fontFamily: "Inter_500Medium" }]}>Delete Account</Text>
+      </TouchableOpacity>
+
+      <DeleteAccountModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        username={user?.username ?? ""}
+        role="customer"
+        hasPassword={!user?.appleId}
+        onDeleted={() => { setShowDeleteModal(false); logout(); }}
+      />
 
       {termsDoc && <TermsModal visible={true} docType={termsDoc} onClose={() => setTermsDoc(null)} />}
 
@@ -2407,5 +2457,165 @@ const announceStyles = StyleSheet.create({
     color: "#FFFFFF", fontSize: 13,
     paddingHorizontal: 12, paddingVertical: 10,
   },
+});
+
+// ── Delete Account Modal ──────────────────────────────────────────────────────
+function DeleteAccountModal({
+  visible, onClose, username, role, hasPassword, onDeleted,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  username: string;
+  role: string;
+  hasPassword: boolean;
+  onDeleted: () => void;
+}) {
+  const insets = useSafeAreaInsets();
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  function reset() {
+    setPassword("");
+    setError(null);
+    setLoading(false);
+  }
+
+  async function handleDelete() {
+    if (hasPassword && !password.trim()) {
+      setError("Please enter your password to confirm deletion.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${PROFILES_API}/api/auth/delete-account`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, role, password: password.trim() || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Could not delete account."); return; }
+      reset();
+      onDeleted();
+    } catch {
+      setError("Could not connect to server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent onRequestClose={() => { if (!loading) { reset(); onClose(); } }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <Pressable style={delStyles.overlay} onPress={() => { if (!loading) { reset(); onClose(); } }}>
+          <Pressable style={[delStyles.sheet, { paddingBottom: insets.bottom + 24 }]} onPress={(e) => e.stopPropagation()}>
+
+            <View style={delStyles.iconWrap}>
+              <Ionicons name="warning" size={32} color="#ef4444" />
+            </View>
+            <Text style={[delStyles.title, { fontFamily: "Inter_700Bold" }]}>Delete Account?</Text>
+            <Text style={[delStyles.body, { fontFamily: "Inter_400Regular" }]}>
+              This will permanently delete your account and all your data. This action{" "}
+              <Text style={{ color: "#ef4444", fontFamily: "Inter_600SemiBold" }}>cannot be undone</Text>.
+            </Text>
+
+            {hasPassword ? (
+              <View style={delStyles.fieldWrap}>
+                <Text style={[delStyles.label, { fontFamily: "Inter_600SemiBold" }]}>Enter your password to confirm</Text>
+                <TextInput
+                  style={[delStyles.input, { fontFamily: "Inter_400Regular" }]}
+                  value={password}
+                  onChangeText={(v) => { setPassword(v); setError(null); }}
+                  placeholder="Your password"
+                  placeholderTextColor="#555"
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!loading}
+                />
+              </View>
+            ) : (
+              <View style={[delStyles.fieldWrap, { backgroundColor: "#1A1A1A", borderRadius: 10, padding: 12, marginBottom: 4 }]}>
+                <Text style={[delStyles.label, { fontFamily: "Inter_400Regular", color: "#AAAAAA", textAlign: "center" }]}>
+                  You signed in with Apple. No password is required.
+                </Text>
+              </View>
+            )}
+
+            {error && (
+              <Text style={[delStyles.errorText, { fontFamily: "Inter_400Regular" }]}>{error}</Text>
+            )}
+
+            <TouchableOpacity
+              style={[delStyles.deleteBtn, loading && { opacity: 0.6 }]}
+              onPress={loading ? undefined : handleDelete}
+              activeOpacity={0.88}
+            >
+              {loading
+                ? <ActivityIndicator color="#FFFFFF" />
+                : (
+                  <>
+                    <Ionicons name="trash-outline" size={18} color="#FFFFFF" />
+                    <Text style={[delStyles.deleteBtnText, { fontFamily: "Inter_700Bold" }]}>Yes, Delete My Account</Text>
+                  </>
+                )
+              }
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={delStyles.cancelBtn}
+              onPress={() => { reset(); onClose(); }}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <Text style={[delStyles.cancelBtnText, { fontFamily: "Inter_500Medium" }]}>Cancel</Text>
+            </TouchableOpacity>
+
+          </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const delStyles = StyleSheet.create({
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.75)", justifyContent: "flex-end" },
+  sheet: {
+    backgroundColor: "#161616",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 28,
+    paddingHorizontal: 24,
+  },
+  iconWrap: {
+    width: 60, height: 60, borderRadius: 30,
+    backgroundColor: "rgba(239,68,68,0.12)",
+    alignItems: "center", justifyContent: "center",
+    alignSelf: "center", marginBottom: 16,
+  },
+  title: { fontSize: 20, color: "#FFFFFF", textAlign: "center", marginBottom: 10 },
+  body: { fontSize: 14, color: "#AAAAAA", textAlign: "center", lineHeight: 22, marginBottom: 20 },
+  fieldWrap: { marginBottom: 12 },
+  label: { fontSize: 12, color: "#AAAAAA", marginBottom: 8, letterSpacing: 0.4 },
+  input: {
+    backgroundColor: "#1A1A1A",
+    borderWidth: 1,
+    borderColor: "#333",
+    borderRadius: 12,
+    color: "#FFFFFF",
+    fontSize: 15,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
+  errorText: { fontSize: 13, color: "#ef4444", textAlign: "center", marginBottom: 10 },
+  deleteBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, backgroundColor: "#ef4444",
+    borderRadius: 14, paddingVertical: 15, marginTop: 8, marginBottom: 10,
+  },
+  deleteBtnText: { fontSize: 15, color: "#FFFFFF" },
+  cancelBtn: { alignItems: "center", paddingVertical: 12, marginBottom: 4 },
+  cancelBtnText: { fontSize: 15, color: "#AAAAAA" },
 });
 
