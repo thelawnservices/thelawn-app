@@ -2312,13 +2312,6 @@ export default function HomeScreen() {
                 photo: null,
                 localPhoto: require("../../assets/images/svc-tree.jpeg"),
               },
-              {
-                name: "Full Service",
-                desc: "Complete lawn care package — mowing, edging, trimming, and cleanup.",
-                est: "3–5 hrs", hot: false,
-                photo: "https://images.unsplash.com/photo-1416453072034-c8dbfa2856b2?w=400&q=80",
-                localPhoto: null,
-              },
             ] as { name: string; desc: string; est: string; hot: boolean; photo: string | null; localPhoto: any }[]).map((svc, idx) => (
               <TouchableOpacity
                 key={svc.name}
