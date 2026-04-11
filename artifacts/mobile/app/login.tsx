@@ -1029,9 +1029,7 @@ export default function LoginScreen() {
             </Field>
           </View>
         </View>
-        <Field label="Years of Experience">
-          <TextInput style={[styles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={setYears} placeholder="e.g. 5" placeholderTextColor="#777" keyboardType="numeric" maxLength={2} />
-        </Field>
+
 
         <TouchableOpacity style={[styles.primaryBtn, { marginTop: 8 }]} onPress={handleLandscaperRegister} disabled={loading} activeOpacity={0.88}>
           {loading ? <ActivityIndicator color="#000" /> : <Text style={[styles.primaryBtnText, { fontFamily: "Inter_600SemiBold" }]}>Create Landscaper Account</Text>}
@@ -1220,15 +1218,9 @@ function AppleLsRegModal({
             </View>
           </View>
 
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <View style={[alrStyles.fieldWrap, { flex: 1 }]}>
-              <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>ZIP Code *</Text>
-              <TextInput style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]} value={zip} onChangeText={onZip} placeholder="34222" placeholderTextColor="#777" keyboardType="numeric" maxLength={5} returnKeyType="next" />
-            </View>
-            <View style={[alrStyles.fieldWrap, { flex: 1 }]}>
-              <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>Years Experience</Text>
-              <TextInput style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]} value={years} onChangeText={onYears} placeholder="3" placeholderTextColor="#777" keyboardType="numeric" maxLength={2} returnKeyType="done" />
-            </View>
+          <View style={alrStyles.fieldWrap}>
+            <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>ZIP Code *</Text>
+            <TextInput style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]} value={zip} onChangeText={onZip} placeholder="34222" placeholderTextColor="#777" keyboardType="numeric" maxLength={5} returnKeyType="done" />
           </View>
 
           <TouchableOpacity style={[alrStyles.submitBtn, loading && { opacity: 0.6 }]} onPress={loading ? undefined : onSubmit} activeOpacity={0.88}>
