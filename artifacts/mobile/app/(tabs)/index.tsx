@@ -2275,52 +2275,79 @@ export default function HomeScreen() {
         {/* Popular Services — customers only */}
         {role !== "landscaper" && (
           <>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <Text style={[styles.sectionTitle, { fontFamily: "Inter_600SemiBold", marginBottom: 0 }]}>
-                Popular Services
+                Services to Explore
               </Text>
               <TouchableOpacity onPress={() => router.navigate("/(tabs)/search")} activeOpacity={0.7}>
                 <Text style={{ fontSize: 12, color: "#34FF7A", fontFamily: "Inter_500Medium" }}>See all →</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 4, gap: 10 }}
-              style={{ marginBottom: 28 }}
-            >
-              {[
-                { name: "Mowing/Edging",          icon: "cut-outline" as const,    est: "1–2 hrs",   hot: true  },
-                { name: "Weeding/Mulching",        icon: "flower-outline" as const, est: "2–4 hrs",   hot: true  },
-                { name: "Sod Installation",        icon: "grid-outline" as const,   est: "4–8 hrs",   hot: false },
-                { name: "Tree Removal",            icon: "cut-outline" as const,    est: "4–8 hrs",   hot: false },
-              ].map((svc) => (
-                <View key={svc.name} style={styles.svcGridCardWrap}>
-                  {svc.hot ? (
-                    <View style={styles.svcHotBadge}>
-                      <Text style={{ fontSize: 11, fontFamily: "Inter_700Bold", color: "#FF6B35" }}>🔥 HOT</Text>
+            {([
+              {
+                name: "Mowing & Edging",
+                desc: "Crisp, clean cuts that keep your lawn looking its best all season.",
+                est: "1–2 hrs", hot: true,
+                photo: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80",
+              },
+              {
+                name: "Weeding & Mulching",
+                desc: "Clear out weeds and lay fresh mulch for healthier, fuller beds.",
+                est: "2–4 hrs", hot: true,
+                photo: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80",
+              },
+              {
+                name: "Sod Installation",
+                desc: "Transform bare or damaged areas into a lush, vibrant lawn fast.",
+                est: "4–8 hrs", hot: false,
+                photo: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&q=80",
+              },
+              {
+                name: "Tree Removal",
+                desc: "Safe, professional removal of hazardous or unwanted trees.",
+                est: "4–8 hrs", hot: false,
+                photo: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=80",
+              },
+              {
+                name: "Full Service",
+                desc: "Complete lawn care package — mowing, edging, trimming, and cleanup.",
+                est: "3–5 hrs", hot: false,
+                photo: "https://images.unsplash.com/photo-1590579491624-f98f36d4c763?w=400&q=80",
+              },
+            ] as { name: string; desc: string; est: string; hot: boolean; photo: string }[]).map((svc, idx) => (
+              <TouchableOpacity
+                key={svc.name}
+                style={styles.svcPhotoCard}
+                onPress={() => router.navigate("/(tabs)/search")}
+                activeOpacity={0.88}
+              >
+                <View style={styles.svcPhotoImgWrap}>
+                  <Image
+                    source={{ uri: svc.photo }}
+                    style={styles.svcPhotoImg}
+                    resizeMode="cover"
+                  />
+                  {svc.hot && (
+                    <View style={styles.svcPhotoBadge}>
+                      <Text style={{ fontSize: 10, fontFamily: "Inter_700Bold", color: "#FF6B35" }}>🔥 HOT</Text>
                     </View>
-                  ) : (
-                    <View style={styles.svcHotSpacer} />
                   )}
-                  <TouchableOpacity
-                    style={styles.svcGridCard}
-                    onPress={() => router.navigate("/(tabs)/search")}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.svcGridIconWrap}>
-                      <Ionicons name={svc.icon} size={28} color="#34FF7A" />
-                    </View>
-                    <Text style={[styles.svcGridName, { fontFamily: "Inter_600SemiBold" }]} numberOfLines={2}>
-                      {svc.name}
-                    </Text>
-                    <Text style={[styles.svcGridUpdated, { fontFamily: "Inter_400Regular" }]}>
-                      Est. {svc.est}
-                    </Text>
-                  </TouchableOpacity>
                 </View>
-              ))}
-            </ScrollView>
+                <View style={styles.svcPhotoInfo}>
+                  <Text style={[styles.svcPhotoName, { fontFamily: "Inter_700Bold" }]} numberOfLines={1}>{svc.name}</Text>
+                  <Text style={[styles.svcPhotoDesc, { fontFamily: "Inter_400Regular" }]} numberOfLines={2}>{svc.desc}</Text>
+                  <View style={styles.svcPhotoMeta}>
+                    <Ionicons name="time-outline" size={12} color="#666" />
+                    <Text style={[styles.svcPhotoEst, { fontFamily: "Inter_400Regular" }]}>Est. {svc.est}</Text>
+                  </View>
+                  <View style={styles.svcPhotoBtn}>
+                    <Text style={[styles.svcPhotoBtnText, { fontFamily: "Inter_600SemiBold" }]}>Book Now</Text>
+                    <Ionicons name="arrow-forward" size={13} color="#000" />
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+            <View style={{ height: 12 }} />
           </>
         )}
 
@@ -3401,6 +3428,65 @@ const styles = StyleSheet.create({
   svcGridName: { fontSize: 12, color: "#FFFFFF", textAlign: "center", lineHeight: 16, minHeight: 32 },
   svcGridPrice: { fontSize: 11, color: "#34FF7A", textAlign: "center" },
   svcGridUpdated: { fontSize: 10, color: "#777", textAlign: "center", marginTop: 0 },
+
+  // ── Photo service cards ─────────────────────────────────────────
+  svcPhotoCard: {
+    flexDirection: "row",
+    backgroundColor: "#161616",
+    borderRadius: 20,
+    marginBottom: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#242424",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  svcPhotoImgWrap: {
+    width: 110,
+    height: 110,
+    position: "relative",
+  },
+  svcPhotoImg: {
+    width: 110,
+    height: 110,
+  },
+  svcPhotoBadge: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "#2A1200EE",
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: "#FF6B35",
+  },
+  svcPhotoInfo: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    justifyContent: "space-between",
+  },
+  svcPhotoName: { fontSize: 15, color: "#FFFFFF", marginBottom: 3 },
+  svcPhotoDesc: { fontSize: 12, color: "#999999", lineHeight: 17, flex: 1 },
+  svcPhotoMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
+  svcPhotoEst: { fontSize: 11, color: "#666666" },
+  svcPhotoBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#34FF7A",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    marginTop: 8,
+  },
+  svcPhotoBtnText: { fontSize: 12, color: "#000000" },
+
   feedHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
   feedLiveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#34FF7A" },
   feedLiveText: { fontSize: 12, color: "#34FF7A" },
