@@ -498,17 +498,20 @@ function JobCompletionPhotoModal({
 }) {
   const [photos, setPhotos] = useState<string[]>([]);
 
+  const MIN_PHOTOS = 3;
+  const MAX_PHOTOS = 5;
+
   async function pickFromLibrary() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) { Alert.alert("Permission needed", "Allow photo library access to add completion photos."); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
-      selectionLimit: 4 - photos.length,
+      selectionLimit: MAX_PHOTOS - photos.length,
       quality: 0.7,
     });
     if (!result.canceled) {
-      setPhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, 4));
+      setPhotos((prev) => [...prev, ...result.assets.map((a) => a.uri)].slice(0, MAX_PHOTOS));
       Haptics.selectionAsync();
     }
   }
@@ -518,15 +521,18 @@ function JobCompletionPhotoModal({
     if (!perm.granted) { Alert.alert("Permission needed", "Allow camera access to take completion photos."); return; }
     const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
     if (!result.canceled) {
-      setPhotos((prev) => [...prev, result.assets[0].uri].slice(0, 4));
+      setPhotos((prev) => [...prev, result.assets[0].uri].slice(0, MAX_PHOTOS));
       Haptics.selectionAsync();
     }
   }
 
   function handleSubmit() {
-    if (photos.length === 0) {
+    if (photos.length < MIN_PHOTOS) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert("Photos Required", "Please add at least 1 photo of the completed work before submitting.");
+      Alert.alert(
+        "3 Photos Required",
+        `Please add at least ${MIN_PHOTOS} photos of the completed work before submitting. You have ${photos.length} so far.`
+      );
       return;
     }
     onSubmit(photos);
@@ -534,6 +540,9 @@ function JobCompletionPhotoModal({
     onClose();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
+
+  const ready = photos.length >= MIN_PHOTOS;
+  const remaining = Math.max(0, MIN_PHOTOS - photos.length);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -549,8 +558,23 @@ function JobCompletionPhotoModal({
           </View>
 
           <Text style={[jcpStyles.subtitle, { fontFamily: "Inter_400Regular" }]}>
-            At least 1 photo is required. Add up to 4 photos of the completed work — the customer will see these when reviewing your submission.
+            Exactly <Text style={{ color: "#34FF7A", fontFamily: "Inter_600SemiBold" }}>3 photos minimum</Text> are required to prove the work is complete. Add up to 5. The customer will see these when reviewing.
           </Text>
+
+          {/* Progress dots */}
+          <View style={{ flexDirection: "row", gap: 6, justifyContent: "center", marginBottom: 14 }}>
+            {Array.from({ length: MIN_PHOTOS }).map((_, i) => (
+              <View
+                key={i}
+                style={{
+                  width: 28,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: i < photos.length ? "#34FF7A" : "#2a2a2a",
+                }}
+              />
+            ))}
+          </View>
 
           {photos.length > 0 && (
             <View style={jcpStyles.photoGrid}>
@@ -569,7 +593,7 @@ function JobCompletionPhotoModal({
             </View>
           )}
 
-          {photos.length < 4 && (
+          {photos.length < MAX_PHOTOS && (
             <View style={jcpStyles.addRow}>
               <TouchableOpacity style={jcpStyles.addBtn} onPress={pickFromCamera} activeOpacity={0.8}>
                 <Ionicons name="camera-outline" size={18} color="#34FF7A" />
@@ -583,22 +607,30 @@ function JobCompletionPhotoModal({
           )}
 
           <View style={jcpStyles.infoNote}>
-            <Ionicons name="alert-circle-outline" size={14} color={photos.length === 0 ? "#f59e0b" : "#34FF7A"} />
-            <Text style={[jcpStyles.infoText, { fontFamily: "Inter_400Regular", color: photos.length === 0 ? "#f59e0b" : "#888" }]}>
-              {photos.length === 0
-                ? "1–4 photos required to submit. After submitting, the customer has 24 hours to approve or dispute."
-                : `${photos.length} photo${photos.length > 1 ? "s" : ""} added. After submitting, the customer has 24 hours to approve or dispute.`}
+            <Ionicons
+              name={ready ? "checkmark-circle-outline" : "alert-circle-outline"}
+              size={14}
+              color={ready ? "#34FF7A" : "#f59e0b"}
+            />
+            <Text style={[jcpStyles.infoText, { fontFamily: "Inter_400Regular", color: ready ? "#888" : "#f59e0b" }]}>
+              {ready
+                ? `${photos.length} photo${photos.length > 1 ? "s" : ""} added — ready to submit. Customer has 24 hours to approve or dispute.`
+                : `${remaining} more photo${remaining > 1 ? "s" : ""} needed. 3–5 required to submit.`}
             </Text>
           </View>
 
           <TouchableOpacity
-            style={[jcpStyles.submitBtn, photos.length === 0 && jcpStyles.submitBtnDisabled]}
+            style={[jcpStyles.submitBtn, !ready && jcpStyles.submitBtnDisabled]}
             onPress={handleSubmit}
             activeOpacity={0.85}
           >
-            <Ionicons name="checkmark-circle-outline" size={18} color={photos.length === 0 ? "#555" : "#000"} />
-            <Text style={[jcpStyles.submitBtnText, { fontFamily: "Inter_700Bold", color: photos.length === 0 ? "#555" : "#000" }]}>
-              {photos.length > 0 ? `Submit ${photos.length} Photo${photos.length > 1 ? "s" : ""} & Notify Customer` : "Add Photos to Continue"}
+            <Ionicons name="checkmark-circle-outline" size={18} color={ready ? "#000" : "#555"} />
+            <Text style={[jcpStyles.submitBtnText, { fontFamily: "Inter_700Bold", color: ready ? "#000" : "#555" }]}>
+              {ready
+                ? `Submit ${photos.length} Photo${photos.length > 1 ? "s" : ""} & Notify Customer`
+                : remaining === MIN_PHOTOS
+                  ? "Add 3 Photos to Continue"
+                  : `Add ${remaining} More Photo${remaining > 1 ? "s" : ""} to Continue`}
             </Text>
           </TouchableOpacity>
         </Pressable>
