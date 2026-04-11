@@ -35,24 +35,21 @@ All Landscapers on TheLawn are independent contractors, not employees, agents, o
 4. ELIGIBILITY
 You must be at least 18 years old to use this app. By registering, you confirm that you are 18 or older and that all information you provide is accurate and truthful.
 
-5. BACKGROUND CHECKS & VERIFICATION
-TheLawn may perform or require background checks on Landscapers, but does NOT guarantee that all Landscapers have been fully vetted. Users are encouraged to review ratings and reviews before booking and to use their own judgment when granting access to their property.
-
-6. PROPERTY ACCESS & LIABILITY
+5. PROPERTY ACCESS & LIABILITY
 When you book a service, you are granting the Landscaper permission to access your property. TheLawn is NOT responsible or liable for any damage to property, injury, theft, or other incidents that occur during or as a result of a service. Any disputes regarding property damage must be resolved directly between the customer and the Landscaper.
 
-7. PAYMENTS & COMMISSION FEES
+6. PAYMENTS & COMMISSION FEES
 Payments are processed through the app. By adding a payment method, you authorize TheLawn to charge you for services booked. All pricing is set by individual Landscapers and is subject to change. Tips are voluntary.
 
 TheLawn collects a platform commission fee on each completed booking. All commission fees collected by TheLawn are remitted to TheLawn's business PayPal account at thelawnservice@gmail.com. Landscapers receive the agreed service amount minus the applicable platform commission. Commission rates are displayed at the time of booking confirmation.
 
-8. CANCELLATION POLICY
+7. CANCELLATION POLICY
 Cancellations made more than 24 hours before a scheduled appointment are free of charge. Cancellations within 24 hours of the appointment may incur a cancellation fee set by the Landscaper. No-shows may be charged the full service price.
 
-9. RATINGS & REVIEWS
+8. RATINGS & REVIEWS
 Both customers and Landscapers may leave reviews. Reviews must be honest and based on actual experiences. TheLawn reserves the right to remove reviews that violate our community guidelines.
 
-10. PROHIBITED CONDUCT
+9. PROHIBITED CONDUCT
 You agree NOT to:
 • Use the app for any unlawful purpose
 • Harass, threaten, or discriminate against any user
@@ -60,16 +57,16 @@ You agree NOT to:
 • Attempt to circumvent the app to avoid paying service fees
 • Share your account credentials with others
 
-11. LIMITATION OF LIABILITY
+10. LIMITATION OF LIABILITY
 TO THE FULLEST EXTENT PERMITTED BY LAW, THELAWN AND ITS AFFILIATES WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE APP OR ANY SERVICES BOOKED THROUGH IT.
 
-12. DISPUTE RESOLUTION
+11. DISPUTE RESOLUTION
 Any disputes arising out of or related to these Terms will be resolved through binding arbitration, except where prohibited by law. You waive the right to participate in a class-action lawsuit.
 
-13. CHANGES TO TERMS
+12. CHANGES TO TERMS
 TheLawn may update these Terms at any time. Continued use of the app after changes constitutes acceptance of the new Terms.
 
-14. CONTACT
+13. CONTACT
 For questions about these Terms, email us at TheLawnServices@gmail.com.`;
 
 const PRIVACY_CONTENT = `Last updated: April 7, 2026
