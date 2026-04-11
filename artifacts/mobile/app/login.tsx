@@ -119,12 +119,12 @@ export default function LoginScreen() {
   // Apple Sign In → landscaper registration completion
   const [showAppleLsReg, setShowAppleLsReg] = useState(false);
   const [pendingAppleUser, setPendingAppleUser] = useState<LawnUser | null>(null);
+  const [appleRegBusinessName, setAppleRegBusinessName] = useState("");
   const [appleRegPhone, setAppleRegPhone] = useState("");
   const [appleRegCity, setAppleRegCity] = useState("");
   const [appleRegState, setAppleRegState] = useState("");
   const [appleRegZip, setAppleRegZip] = useState("");
   const [appleRegServices, setAppleRegServices] = useState<string[]>([]);
-  const [appleRegYears, setAppleRegYears] = useState("");
   const [appleRegLoading, setAppleRegLoading] = useState(false);
 
   // Apple Sign In → customer registration completion
@@ -795,14 +795,15 @@ export default function LoginScreen() {
       <AppleLsRegModal
         visible={showAppleLsReg}
         user={pendingAppleUser}
+        businessName={appleRegBusinessName} onBusinessName={setAppleRegBusinessName}
         phone={appleRegPhone} onPhone={setAppleRegPhone}
         city={appleRegCity} onCity={setAppleRegCity}
         stateVal={appleRegState} onState={setAppleRegState}
         zip={appleRegZip} onZip={setAppleRegZip}
         services={appleRegServices} onServices={setAppleRegServices}
-        years={appleRegYears} onYears={setAppleRegYears}
         loading={appleRegLoading}
         onSubmit={async () => {
+          if (!appleRegBusinessName.trim()) { Alert.alert("Missing", "Please enter your business name."); return; }
           if (!appleRegPhone.trim()) { Alert.alert("Missing", "Please enter your phone number."); return; }
           if (!appleRegCity.trim()) { Alert.alert("Missing", "Please enter your city."); return; }
           if (!appleRegState.trim()) { Alert.alert("Missing", "Please enter your state."); return; }
@@ -817,16 +818,27 @@ export default function LoginScreen() {
               body: JSON.stringify({
                 username: pendingAppleUser.username,
                 role: "landscaper",
+                displayName: appleRegBusinessName.trim(),
+                businessName: appleRegBusinessName.trim(),
                 phone: appleRegPhone.trim(),
                 city: appleRegCity.trim(),
                 state: appleRegState.trim(),
                 zipCode: appleRegZip.trim(),
                 services: appleRegServices.join(", "),
-                yearsExperience: appleRegYears.trim(),
               }),
             });
+            const updatedUser: LawnUser = {
+              ...pendingAppleUser,
+              displayName: appleRegBusinessName.trim(),
+              businessName: appleRegBusinessName.trim(),
+              phone: appleRegPhone.trim(),
+              city: appleRegCity.trim(),
+              state: appleRegState.trim(),
+              zipCode: appleRegZip.trim(),
+              services: appleRegServices.join(", "),
+            };
             setShowAppleLsReg(false);
-            go(pendingAppleUser);
+            go(updatedUser);
           } catch {
             Alert.alert("Error", "Could not save your info. Please try again.");
           } finally {
@@ -865,8 +877,16 @@ export default function LoginScreen() {
                 zipCode: appleCustZip.trim(),
               }),
             });
+            const updatedCustUser: LawnUser = {
+              ...pendingAppleCustUser,
+              phone: appleCustPhone.trim(),
+              address: appleCustAddress.trim(),
+              city: appleCustCity.trim(),
+              state: appleCustState.trim(),
+              zipCode: appleCustZip.trim(),
+            };
             setShowAppleCustReg(false);
-            go(pendingAppleCustUser);
+            go(updatedCustUser);
           } catch {
             Alert.alert("Error", "Could not save your info. Please try again.");
           } finally {
@@ -1159,16 +1179,16 @@ const rsStyles = StyleSheet.create({
 });
 
 function AppleLsRegModal({
-  visible, user, phone, onPhone, city, onCity, stateVal, onState,
-  zip, onZip, services, onServices, years, onYears, loading, onSubmit,
+  visible, user, businessName, onBusinessName, phone, onPhone,
+  city, onCity, stateVal, onState, zip, onZip, services, onServices, loading, onSubmit,
 }: {
   visible: boolean; user: any;
+  businessName: string; onBusinessName: (v: string) => void;
   phone: string; onPhone: (v: string) => void;
   city: string; onCity: (v: string) => void;
   stateVal: string; onState: (v: string) => void;
   zip: string; onZip: (v: string) => void;
   services: string[]; onServices: (v: string[]) => void;
-  years: string; onYears: (v: string) => void;
   loading: boolean; onSubmit: () => void;
 }) {
   const insets = useSafeAreaInsets();
@@ -1187,8 +1207,18 @@ function AppleLsRegModal({
               Almost there!
             </Text>
             <Text style={{ color: "#AAAAAA", fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 }}>
-              {user?.businessName ? `Welcome, ${user.businessName}! ` : ""}Just a few more details to complete your landscaper profile.
+              Just a few more details to complete your landscaper profile.
             </Text>
+          </View>
+
+          <View style={alrStyles.fieldWrap}>
+            <Text style={[alrStyles.label, { fontFamily: "Inter_600SemiBold" }]}>Business Name *</Text>
+            <TextInput
+              style={[alrStyles.input, { fontFamily: "Inter_400Regular" }]}
+              value={businessName} onChangeText={onBusinessName}
+              placeholder="Green Edge Landscaping" placeholderTextColor="#777"
+              autoCapitalize="words" returnKeyType="next"
+            />
           </View>
 
           <View style={alrStyles.fieldWrap}>

@@ -458,10 +458,11 @@ function sanitize(u: any) {
 // Used by Apple Sign In users to complete registration info
 router.post("/update-profile", async (req, res) => {
   try {
-    const { username, role, phone, address, city, state, zipCode, services, yearsExperience } = req.body as {
+    const { username, role, phone, address, city, state, zipCode, services, yearsExperience, displayName, businessName } = req.body as {
       username: string; role: string;
       phone?: string; address?: string; city?: string; state?: string;
       zipCode?: string; services?: string; yearsExperience?: string;
+      displayName?: string; businessName?: string;
     };
     if (!username || !role) return res.status(400).json({ error: "Missing username or role" });
     const result = await pool.query(
@@ -472,10 +473,12 @@ router.post("/update-profile", async (req, res) => {
            state = COALESCE(NULLIF($6,''), state),
            zip_code = COALESCE(NULLIF($7,''), zip_code),
            services = COALESCE(NULLIF($8,''), services),
-           years_experience = COALESCE(NULLIF($9,''), years_experience)
+           years_experience = COALESCE(NULLIF($9,''), years_experience),
+           display_name = COALESCE(NULLIF($10,''), display_name),
+           business_name = COALESCE(NULLIF($11,''), business_name)
        WHERE username = $1 AND role = $2
        RETURNING id, username, role, display_name, email, phone, address, zip_code, city, state, business_name, services, years_experience, created_at`,
-      [username, role, phone ?? "", address ?? "", city ?? "", state ?? "", zipCode ?? "", services ?? "", yearsExperience ?? ""]
+      [username, role, phone ?? "", address ?? "", city ?? "", state ?? "", zipCode ?? "", services ?? "", yearsExperience ?? "", displayName ?? "", businessName ?? ""]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: "User not found" });
     return res.json({ user: sanitize(result.rows[0]) });
