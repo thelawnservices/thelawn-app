@@ -3251,7 +3251,7 @@ const TRUSTED_PROS: TrustedPro[] = [];
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0A0A0A" },
   header: {
-    backgroundColor: "#0A0A0A",
+    backgroundColor: "#000000",
     paddingHorizontal: 20,
     paddingBottom: 18,
     shadowColor: "#000",
