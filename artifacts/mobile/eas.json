@@ -25,6 +25,12 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "env:ASC_APP_ID",
+        "appleId": "env:EXPO_APPLE_ID",
+        "appleTeamId": "env:APPLE_TEAM_ID"
+      }
+    }
   }
 }
