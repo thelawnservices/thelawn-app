@@ -373,6 +373,59 @@ function validatePassword(pw: string): string | null {
   return null;
 }
 
+// POST /api/auth/apple — find-or-create customer from Apple Sign In credential
+router.post("/apple", async (req, res) => {
+  try {
+    const { appleId, email, givenName, familyName } = req.body as {
+      appleId: string; email?: string; givenName?: string; familyName?: string;
+    };
+    if (!appleId) return res.status(400).json({ error: "Missing Apple credential" });
+
+    // Check if user with this Apple ID already exists
+    const existing = await pool.query(
+      "SELECT * FROM lawn_users WHERE apple_id = $1 AND role = 'customer'",
+      [appleId]
+    );
+    if (existing.rows.length > 0) {
+      return res.json({ user: sanitize(existing.rows[0]) });
+    }
+
+    // First-time sign in — create account
+    const displayName = [givenName, familyName].filter(Boolean).join(" ").trim() || "Apple User";
+    const safeEmail = email?.trim().toLowerCase() || `apple_${appleId.slice(0, 8)}@noemail.thelawn`;
+
+    // Generate a unique username from name or apple ID fragment
+    const baseUsername = `apple_${appleId.slice(0, 10).replace(/[^a-z0-9]/gi, "").toLowerCase()}`;
+    let username = baseUsername;
+    let attempt = 0;
+    while (true) {
+      const taken = await pool.query(
+        "SELECT id FROM lawn_users WHERE username = $1 AND role = 'customer'",
+        [username]
+      );
+      if (taken.rows.length === 0) break;
+      attempt++;
+      username = `${baseUsername}${attempt}`;
+    }
+
+    // Random password hash — Apple users won't log in with password
+    const passwordHash = await bcrypt.hash(`apple_${appleId}_${Date.now()}`, 12);
+
+    const result = await pool.query(
+      `INSERT INTO lawn_users
+        (username, role, password_hash, display_name, email, apple_id)
+       VALUES ($1, 'customer', $2, $3, $4, $5)
+       RETURNING *`,
+      [username, passwordHash, displayName, safeEmail, appleId]
+    );
+
+    return res.status(201).json({ user: sanitize(result.rows[0]) });
+  } catch (err: any) {
+    console.error("Apple sign in error:", err);
+    return res.status(500).json({ error: "Sign in failed. Please try again." });
+  }
+});
+
 function sanitize(u: any) {
   return {
     id: u.id,

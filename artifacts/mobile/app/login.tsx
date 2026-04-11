@@ -22,6 +22,7 @@ import { useAuth, LawnUser } from "@/contexts/auth";
 import TermsModal from "@/components/TermsModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
+import * as AppleAuthentication from "expo-apple-authentication";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
@@ -198,6 +199,39 @@ export default function LoginScreen() {
       go(user);
     } catch {
       setErrors("Passkey sign-in failed. Please use your username and password.");
+    }
+  }
+
+  async function handleAppleSignIn() {
+    if (Platform.OS !== "ios") return;
+    setErrors(null);
+    setLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      const res = await fetch(`${API_URL}/api/auth/apple`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appleId: credential.user,
+          email: credential.email ?? undefined,
+          givenName: credential.fullName?.givenName ?? undefined,
+          familyName: credential.fullName?.familyName ?? undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setErrors(data.error ?? "Apple sign in failed"); return; }
+      go(data.user as LawnUser);
+    } catch (err: any) {
+      if (err?.code !== "ERR_REQUEST_CANCELED") {
+        setErrors("Apple sign in failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -697,6 +731,15 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
+          {Platform.OS === "ios" && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={12}
+              style={{ width: "100%", height: 50, marginBottom: 10 }}
+              onPress={handleAppleSignIn}
+            />
+          )}
           <TouchableOpacity style={styles.passkeyLoginBtn} onPress={() => handlePasskeyLogin("customer")} activeOpacity={0.85}>
             <Ionicons name="finger-print" size={22} color="#34FF7A" />
             <Text style={[styles.passkeyLoginText, { fontFamily: "Inter_600SemiBold" }]}>Sign in with Passkey</Text>

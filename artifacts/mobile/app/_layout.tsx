@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/auth";
+import { initAnalytics } from "@/utils/analytics";
 import { JobsProvider } from "@/contexts/jobs";
 import { NotificationsProvider } from "@/contexts/notifications";
 import { LandscaperProfileProvider, useLandscaperProfile, SERVICE_BLOCK_MINUTES } from "@/contexts/landscaperProfile";
@@ -100,6 +101,10 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    initAnalytics().catch(() => {});
+  }, []);
 
   if (!fontsLoaded && !fontError) return null;
 

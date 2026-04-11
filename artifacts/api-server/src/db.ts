@@ -56,6 +56,7 @@ export async function initLawnTables() {
   await pool.query(`
     ALTER TABLE lawn_users ADD COLUMN IF NOT EXISTS avatar_base64 TEXT DEFAULT '';
     ALTER TABLE lawn_users ADD COLUMN IF NOT EXISTS banner_base64 TEXT DEFAULT '';
+    ALTER TABLE lawn_users ADD COLUMN IF NOT EXISTS apple_id TEXT DEFAULT NULL;
   `);
 
   logger.info("Lawn DB tables ready");

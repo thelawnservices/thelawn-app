@@ -27,7 +27,8 @@
     "pino": "^9",
     "pino-http": "^10",
     "stripe": "20.0.0",
-    "stripe-replit-sync": "1.0.0"
+    "stripe-replit-sync": "1.0.0",
+    "twilio": "^5.13.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",

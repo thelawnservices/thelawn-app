@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/auth";
 import { useJobs } from "@/contexts/jobs";
 import { useRecurring, RecurringInstance } from "@/contexts/recurring";
 import { useNotifications } from "@/contexts/notifications";
+import * as Calendar from "expo-calendar";
 
 function parseApptDateTime(date: string, time: string): Date | null {
   let full = date.trim();
@@ -85,6 +86,41 @@ function JobDetailsModal({
     Linking.openURL(url).catch(() =>
       Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${encoded}`)
     );
+  }
+
+  async function handleAddToCalendar() {
+    try {
+      Haptics.selectionAsync();
+      const { status } = await Calendar.requestCalendarPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission Needed", "Please allow calendar access to add this appointment.");
+        return;
+      }
+      const apptDate = parseApptDateTime(appt!.date, appt!.time);
+      if (!apptDate) {
+        Alert.alert("Unable to Parse Date", "Could not read the appointment date and time.");
+        return;
+      }
+      const endDate = new Date(apptDate.getTime() + 90 * 60 * 1000);
+      const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+      const defaultCal = calendars.find((c) => c.allowsModifications) ?? calendars[0];
+      if (!defaultCal) {
+        Alert.alert("No Calendar Found", "No modifiable calendar was found on this device.");
+        return;
+      }
+      await Calendar.createEventAsync(defaultCal.id, {
+        title: `TheLawn: ${appt!.service}`,
+        startDate: apptDate,
+        endDate,
+        location: appt!.address,
+        notes: `Service by ${appt!.pro}\nPrice: ${appt!.price}`,
+        alarms: [{ relativeOffset: -60 }],
+      });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Added to Calendar", `${appt!.service} on ${appt!.date} at ${appt!.time} has been saved to your calendar.`);
+    } catch {
+      Alert.alert("Error", "Could not add to calendar. Please try again.");
+    }
   }
 
   return (
@@ -198,6 +234,11 @@ function JobDetailsModal({
               {appt.pro} has accepted your request. No further action needed — just be available on {appt.date} at {appt.time}. Payment is only charged once you approve the completed work.
             </Text>
           </View>
+
+          <TouchableOpacity style={jdStyles.calendarBtn} onPress={handleAddToCalendar} activeOpacity={0.8}>
+            <Ionicons name="calendar" size={17} color="#34FF7A" />
+            <Text style={[jdStyles.calendarBtnText, { fontFamily: "Inter_500Medium" }]}>Add to Calendar</Text>
+          </TouchableOpacity>
 
           <View style={jdStyles.waitingRow}>
             <Ionicons name="time-outline" size={14} color="#FFAA00" />
@@ -1971,6 +2012,12 @@ const jdStyles = StyleSheet.create({
     borderWidth: 1, borderColor: "#FFAA0022",
   },
   waitingText: { fontSize: 13, color: "#BBBBBB", flex: 1, lineHeight: 18 },
+  calendarBtn: {
+    borderWidth: 1, borderColor: "#34FF7A44", borderRadius: 20, paddingVertical: 12,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#0D2016",
+  },
+  calendarBtnText: { fontSize: 15, color: "#34FF7A" },
   cancelApptBtn: {
     borderWidth: 1, borderColor: "#FF4444", borderRadius: 20, paddingVertical: 14,
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,

@@ -54,9 +54,21 @@ Contains "TheLawnServices" — a dark-themed Expo mobile app for a landscaping b
 - Accepted payment options: "Pay Now (Online)" (was "Stripe") + "In Person"
 - Customer settings: "Update Service Address" section requires both street address and ZIP code (two separate inputs); both validated before saving
 
+## Pre-Launch Integrations
+
+- **Push Notifications**: `utils/pushNotifications.ts` — `getExpoPushToken()`, `registerPushTokenWithServer()`, `sendLocalPush()`. Token stored in `lawn_push_tokens` table. Remote push not supported in Expo Go (requires dev build).
+- **Crash Reporting**: Custom crash reporter (replaces Sentry — incompatible). `utils/crashReporter.ts` — `reportCrash(err, context)` called by `ErrorBoundary.tsx`. Reports POST to `/api/crash` → emails TheLawnServices@gmail.com. `setCrashUser(username, role)` called on login/session-restore.
+- **PostHog Analytics**: `utils/analytics.ts` — `initAnalytics()` reads `EXPO_PUBLIC_POSTHOG_KEY`. `track()` / `identifyUser()` / `resetUser()`. Events tracked: `login`, `logout`, `booking_confirmed`. Init called in `_layout.tsx`.
+- **Calendar Sync**: "Add to Calendar" button in customer appointment detail modal. Calls `expo-calendar` — requests permission, creates event with service details + 1-hour reminder.
+- **Twilio SMS**: `utils/sms.ts` server route at `/api/sms/send`. Reads `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER` — graceful no-op when missing. SMS fires in `jobs.tsx` `acceptJob()` when landscaper accepts.
+- **Apple Sign In**: `expo-apple-authentication` button shown on iOS customer login screen. POST `/api/auth/apple` — find-or-create customer account by Apple user ID. `apple_id` column added to `lawn_users`.
+- **app.json**: `ios.bundleIdentifier = "com.thelawnservices.mobile"`. Plugins: `expo-notifications`, `expo-calendar`, `expo-apple-authentication`.
+- **CRITICAL**: `@sentry/react-native` is INCOMPATIBLE — babel plugin creates temp dir Metro can't watch (ENOENT crash). Do NOT install.
+
 ## Known Notes
 
 - `path-to-regexp@8.x` (used by Express 5 → router@2.2.0) is ESM-only; pnpm symlinks must be correct. Run `pnpm install` if "Cannot find module 'path-to-regexp'" error appears.
 - `stripe` and `stripe-replit-sync` are externalized in esbuild to avoid bundling issues.
+- `react-native-keyboard-controller@1.21.3` is installed (expected: 1.18.5 for Expo SDK 53) — pre-existing mismatch, does not cause crashes.
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

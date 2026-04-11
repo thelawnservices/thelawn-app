@@ -1,4 +1,23 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
+import { track } from "@/utils/analytics";
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
+
+async function sendBookingConfirmationSMS(job: AcceptedJob) {
+  try {
+    if (!job.phone) return;
+    const message =
+      `TheLawn: Your ${job.service} appointment is confirmed!\n` +
+      `Date: ${job.date} at ${job.time}\n` +
+      `Pro: ${job.pro}\n` +
+      `Code: ${job.code}`;
+    await fetch(`${API_URL}/api/sms/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ to: job.phone, message }),
+    });
+  } catch {}
+}
 
 function generateJobCode(): string {
   const num = Math.floor(10000 + Math.random() * 89999);
@@ -68,6 +87,8 @@ export function JobsProvider({ children }: { children: React.ReactNode }) {
       if (prev.some((j) => j.id === enriched.id)) return prev;
       return [enriched, ...prev];
     });
+    sendBookingConfirmationSMS(enriched);
+    track("booking_confirmed", { service: enriched.service });
   }
 
   function cancelAccepted(id: string) {

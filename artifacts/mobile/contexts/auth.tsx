@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AppState, AppStateStatus } from "react-native";
+import { registerPushTokenWithServer } from "@/utils/pushNotifications";
+import { identifyUser, resetUser, track } from "@/utils/analytics";
+import { setCrashUser, clearCrashUser } from "@/utils/crashReporter";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "";
 
@@ -103,6 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             );
             const remoteAvatar = await fetchRemoteAvatar(session.user.username, session.user.role);
             if (remoteAvatar) setAvatarUri(remoteAvatar);
+            setCrashUser(session.user.username, session.user.role);
+            identifyUser(session.user.username, { role: session.user.role });
+            registerPushTokenWithServer(session.user.username, session.user.role).catch(() => {});
           } else {
             await AsyncStorage.removeItem(SESSION_KEY);
           }
@@ -155,9 +161,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {}
     const remoteAvatar = await fetchRemoteAvatar(u.username, u.role);
     if (remoteAvatar) setAvatarUri(remoteAvatar);
+    setCrashUser(u.username, u.role);
+    identifyUser(u.username, { role: u.role, displayName: u.displayName });
+    track("login", { role: u.role });
+    registerPushTokenWithServer(u.username, u.role).catch(() => {});
   };
 
   const logout = async () => {
+    resetUser();
+    clearCrashUser();
+    track("logout");
     clearState();
     try {
       await AsyncStorage.removeItem(SESSION_KEY);
