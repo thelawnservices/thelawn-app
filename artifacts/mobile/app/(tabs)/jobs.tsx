@@ -766,17 +766,14 @@ export default function JobsScreen() {
     const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
 
     if (next === "started" && statusOrder(current) < statusOrder("started")) {
-      // Combined arrived + started: notify customer of both events at once
+      // Queue an in-app notification for the customer's device only
       addNotification({
         icon: "location-outline",
         title: "Landscaper Arrived & Work Started",
         sub: `${job?.landscaper ?? "Your landscaper"} has arrived and begun your ${job?.service ?? "service"} — ${job?.date ?? ""} at ${job?.time ?? ""}`,
         targetRole: "customer",
       });
-      sendLocalPush(
-        "🌿 Your Landscaper Has Arrived",
-        `${job?.landscaper ?? "Your landscaper"} has arrived and started your ${job?.service ?? "job"} — ${job?.date ?? ""} at ${job?.time ?? ""}. Job: ${job?.code ?? jobId}`
-      );
+      // Confirm to the landscaper (no push on their own device)
       setTimeout(() => {
         Alert.alert(
           "Customer Notified ✓",
@@ -810,17 +807,14 @@ export default function JobsScreen() {
       });
     }
     const job = SHARED_ACTIVE_JOBS.find((j) => j.id === jobId);
-    // Notify customer that work is done (customer-targeted)
+    // Queue an in-app notification for the customer's device only
     addNotification({
       icon: "checkmark-circle",
       title: "Job Complete — Action Needed",
       sub: `${job?.landscaper ?? "Your landscaper"} has completed your ${job?.service ?? "service"} — ${job?.date ?? ""} at ${job?.time ?? ""}. Review & approve within 24 hours.`,
       targetRole: "customer",
     });
-    sendLocalPush(
-      "✅ Job Complete — Action Needed",
-      `${job?.landscaper ?? "Your landscaper"} has finished your ${job?.service ?? "service"} — ${job?.date ?? ""} at ${job?.time ?? ""}. Approve or dispute within 24 hrs. Job: ${job?.code ?? jobId}`
-    );
+    // Confirm to the landscaper only (no push on their own device)
     setTimeout(() => {
       Alert.alert(
         "Customer Notified ✓",
