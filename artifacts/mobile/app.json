@@ -4,14 +4,14 @@
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon.jpeg",
     "scheme": "mobile",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/icon.png",
+      "image": "./assets/images/icon.jpeg",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": false,
@@ -25,10 +25,14 @@
       "permissions": [
         "READ_CALENDAR",
         "WRITE_CALENDAR"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.jpeg",
+        "backgroundColor": "#000000"
+      }
     },
     "web": {
-      "favicon": "./assets/images/icon.png"
+      "favicon": "./assets/images/icon.jpeg"
     },
     "plugins": [
       [
@@ -42,7 +46,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/icon.jpeg",
           "color": "#34FF7A",
           "sounds": []
         }
