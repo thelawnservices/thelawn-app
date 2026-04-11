@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Linking,
   Platform,
   ScrollView,
@@ -291,7 +292,7 @@ export default function WalletScreen() {
   }
 
   return (
-    <View style={[s.root, { paddingTop: topPad }]}>
+    <KeyboardAvoidingView style={[s.root, { paddingTop: topPad }]} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       {/* ── HEADER ──────────────────────────────────────────────── */}
       <View style={s.header}>
         {screen !== "main" ? (
@@ -739,7 +740,7 @@ export default function WalletScreen() {
           </TouchableOpacity>
         </ScrollView>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

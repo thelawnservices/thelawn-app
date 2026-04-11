@@ -349,7 +349,7 @@ export default function SearchScreen() {
       </View>
 
       {/* Find Pros */}
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {/* Filter Chips */}
         <ScrollView
           horizontal

@@ -10,6 +10,7 @@ import {
   TextInput,
   Modal,
   Pressable,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -176,6 +177,7 @@ function NewRequestModal({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <Pressable style={modalStyles.overlay} onPress={onClose}>
         <Pressable style={modalStyles.sheet} onPress={(e) => e.stopPropagation()}>
           <View style={modalStyles.handleBar} />
@@ -334,6 +336,7 @@ function NewRequestModal({
           </ScrollView>
         </Pressable>
       </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
