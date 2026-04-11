@@ -243,7 +243,7 @@ function LandscaperProfile({
   helpVisible: boolean;
   setHelpVisible: (v: boolean) => void;
 }) {
-  const { setAvatarUri, banUser, user, userName } = useAuth();
+  const { setAvatarUri, banUser, user, userName, updateUser } = useAuth();
   const { myServices, bookedSlots, saveMyServices } = useLandscaperProfile();
   const { broadcastAnnouncement } = useNotifications();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -339,12 +339,14 @@ function LandscaperProfile({
   }
 
   function saveEdit() {
-    setProfileName(draftName.trim() || profileName);
+    const newName = draftName.trim() || profileName;
+    setProfileName(newName);
     setProfileBio(draftBio.trim() || profileBio);
     setProfileCity(draftCity.trim() || profileCity);
     setProfileState(draftState.trim() || profileState);
     setProfileZip(draftZip.trim() || profileZip);
     setEditVisible(false);
+    updateUser({ displayName: newName });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Alert.alert("Profile Updated");
   }
