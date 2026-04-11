@@ -397,15 +397,16 @@ function AppHeader({
   userInitial: string;
 }) {
   return (
-    <View style={[styles.header, { paddingTop: topPadding + 10 }]}>
-      <View style={styles.headerRow}>
-        <View style={{ flex: 1 }} />
+    <View style={[styles.header, { paddingTop: topPadding + 8 }]}>
+      {/* Logo absolutely centered so it gets full width */}
+      <View style={{ height: 80, justifyContent: "center", alignItems: "center" }}>
         <Image
           source={require("../../assets/images/logo-transparent.png")}
           style={styles.logoImg}
           resizeMode="contain"
         />
-        <View style={[{ flex: 1 }, styles.headerRight]}>
+        {/* Icons pinned to the right */}
+        <View style={[styles.bannerIcons, { top: 0, bottom: 0, justifyContent: "center" }]}>
           <TouchableOpacity style={styles.notifBtn} onPress={onBellPress} activeOpacity={0.7}>
             <Ionicons
               name={notifEnabled ? "notifications-outline" : "notifications-off-outline"}
@@ -3301,12 +3302,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   logoImg: {
-    height: 72,
-    width: 260,
+    height: 80,
+    width: 320,
     shadowColor: "#34FF7A",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
-    shadowRadius: 24,
+    shadowRadius: 28,
   },
   notifBtn: {
     width: 36,
