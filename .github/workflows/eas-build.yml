@@ -1,9 +1,6 @@
 name: EAS Build & Submit to TestFlight
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -18,12 +15,22 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20.x
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
+
+      - name: Remove Linux-only overrides before install
+        run: |
+          node -e "
+          const fs = require('fs');
+          let c = fs.readFileSync('pnpm-workspace.yaml', 'utf8');
+          c = c.replace(/\noverrides:[\s\S]*/, '\n');
+          fs.writeFileSync('pnpm-workspace.yaml', c);
+          console.log('Overrides removed');
+          "
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
@@ -38,6 +45,7 @@ jobs:
           EXPO_APPLE_ID: ${{ secrets.APPLE_ID }}
           EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          EAS_NO_VCS: 1
         run: eas build --platform ios --profile production --non-interactive
 
       - name: Submit to TestFlight
