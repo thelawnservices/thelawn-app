@@ -1,0 +1,19 @@
+build:
+  name: iOS Production Build
+  steps:
+    - eas/checkout
+    - run:
+        name: Install dependencies (no frozen lockfile)
+        command: pnpm install --no-frozen-lockfile
+    - eas/resolve_apple_team_id_from_credentials:
+        inputs:
+          apple_team_id: ${{ eas.job.credentials.ios.appleTeamId }}
+    - eas/configure_ios_credentials
+    - eas/prebuild:
+        inputs:
+          clean: false
+          platform: ios
+    - eas/run_fastlane
+    - eas/upload_artifact:
+        inputs:
+          path: /tmp/build-artifact.tar.gz
