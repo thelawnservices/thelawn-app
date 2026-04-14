@@ -22,7 +22,7 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://arcane-blade.replit.app"
       },
-      "config": ".eas/build/ios-production.yml"
+      "config": "ios-production.yml"
     }
   },
   "submit": {
